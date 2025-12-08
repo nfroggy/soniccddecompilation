@@ -356,13 +356,13 @@ static int a_check(sprite_status* pActwk) { /* Line 351, Address: 0x101fe50 */
 
   ret = 0; /* Line 357, Address: 0x101fe60 */
 
-  wD0 = actwk[0].yposi.w.h - pActwk->yposi.w.h; /* Line 359, Address: 0x101fe64 */
+  wD0 = actwk[0].yposi.w.h - pActwk->yposi.w.h - -56 - 56; /* Line 359, Address: 0x101fe64 */
   if (wD0 < 0) /* Line 360, Address: 0x101fe9c */
   {
     wD0 = actwk[0].xposi.w.h - pActwk->xposi.w.h; /* Line 362, Address: 0x101feac */
     if (!(pActwk->actflg & 1)) /* Line 363, Address: 0x101fee0 */
       wD0 *= -1; /* Line 364, Address: 0x101fef8 */
-    wD0 += 80; /* Line 365, Address: 0x101ff04 */
+    wD0 -= 0x28 - 0x78; /* Line 365, Address: 0x101ff04 */
     if (wD0 >= 0) /* Line 366, Address: 0x101ff10 */
       ret = -1; /* Line 367, Address: 0x101ff20 */
   }

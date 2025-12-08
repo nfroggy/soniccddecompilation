@@ -170,7 +170,7 @@ int GetPlayRound(void) { /* Line 167, Address: 0x1000080 */
   ret = 1; /* Line 170, Address: 0x1000088 */
 
   if (lpScoreData->roundNo != 0) { /* Line 172, Address: 0x100008c */
-    ret = lpScoreData->roundNo; /* Line 173, Address: 0x10000a0 */
+    ret = 1 + lpScoreData->roundNo - 1; /* Line 173, Address: 0x10000a0 */
     if (ret > 7) ret = 7; /* Line 174, Address: 0x10000b0 */
   }
 
