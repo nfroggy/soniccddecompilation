@@ -11,8 +11,20 @@ static int TileCnt;
 static int SprBmpCnt;
 static grid_rect BkgRect = { 0, 0, 320, 224 };
 static grid_rect GridRectPic = { 0, 0, 128, 144 };
-static POINT ptSprLocPic[2];
-static unsigned char TAGridSize[8][3];
+static POINT ptSprLocPic[2] = {
+  { 24, 96 },
+  { 24, 24 }
+};
+static unsigned char TAGridSize[8][3] = {
+  { 64, 32, 0 },
+  { 64, 28, 0 },
+  { 64, 32, 0 },
+  { 64, 28, 0 },
+  {  0,  0, 0 },
+  {  0,  0, 0 },
+  {  0,  0, 0 },
+  {  0,  0, 0 }
+};
 static map_info MapInfo1[3] = {
   { 1, 18, 0, 22, 28,   0, 0, "TIME_BGC.BIN" },
   { 3,  0, 0, 18, 28,  93, 0, "TIME_BGL.BIN" },
@@ -265,18 +277,6 @@ int gZure;
 extern int gNewMenuRound;
 extern int gNewMenu1;
 static int ErrRet;
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
