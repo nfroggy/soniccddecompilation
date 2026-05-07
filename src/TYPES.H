@@ -246,10 +246,14 @@ typedef struct {
 }
 edit_data_entry;
 
+#ifndef EDIT_DATA_ENTRY_COUNT
+#define EDIT_DATA_ENTRY_COUNT 1
+#endif
+
 typedef struct {
   char num;
   char dummy;
-  edit_data_entry dat[];
+  edit_data_entry dat[EDIT_DATA_ENTRY_COUNT];
 }
 edit_data;
 

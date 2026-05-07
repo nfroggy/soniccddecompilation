@@ -746,7 +746,7 @@ static sprite_pattern patb9 = {
 };
 static sprite_pattern patba = {
   1,
-  { { -16, -20, 0, 204 } }
+  { { -16, -20, 16, 204 } }
 };
 static sprite_pattern patbb = {
   1,

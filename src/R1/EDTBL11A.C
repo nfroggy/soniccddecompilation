@@ -24,7 +24,7 @@ extern sprite_pattern* patbase_kuzure_b[];
 extern sprite_pattern* markerpat[];
 extern sprite_pattern* bariapat[];
 
-edit_data edit_tbl = {
+edit_data edit_tbl __attribute__((aligned(8))) = {
   52,
   0,
   {
@@ -35,7 +35,7 @@ edit_data edit_tbl = {
     { 38, 1, hari12pat,          800 },
     { 13, 1, futapat,            808 },
     {  9, 1, k_daipat,           820 },
-    { 33, 1, dai11a_pattbl,    17598 },
+    { 33, 1, dai11a_pattbl,    17598, 1, 0, 0, 0 },
     { 10, 1, springpat,         1312 },
     { 10, 1, springpat,         1312, 0, 2, 0, 0 },
     { 10, 1, spring90pat,       1312, 4, 0, 0, 0 },

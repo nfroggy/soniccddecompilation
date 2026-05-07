@@ -558,8 +558,8 @@ void tobita_yure_l(sprite_status* pActwk) { /* Line 495, Address: 0x101eb30 */
 void hariyama(sprite_status* pActwk) { /* Line 558, Address: 0x101ed30 */
   void(*hari_tbl[2])(sprite_status*) = /* Line 559, Address: 0x101ed3c */
   {
-    &hari_normal,
-    0
+    &hari_init,
+    &hari_normal
   };
 
   hari_tbl[pActwk->r_no0 / 2](pActwk); /* Line 565, Address: 0x101ed58 */

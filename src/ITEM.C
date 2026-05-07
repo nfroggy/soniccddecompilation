@@ -76,7 +76,7 @@ static sprite_pattern ite0d = {
 };
 static sprite_pattern ite0e = {
   2,
-  { { -16, -40, 8, 283 }, { -8, -24, 0, 285 } }
+  { { -8, -40, 8, 283 }, { -8, -24, 0, 285 } }
 };
 static sprite_pattern ite0f = {
   2,
@@ -96,34 +96,34 @@ static sprite_pattern ite13 = {
 };
 sprite_pattern* itempat[20] = { &ite00, &ite01, &ite02, &ite03, &ite04, &ite05, &ite06, &ite07, &ite08, &ite09, &ite0a, &ite0b, &ite0c, &ite0d, &ite0e, &ite0f, &ite10, &ite11, &ite12, &ite13 };
 static sprite_pattern cor00 = {
-  1, { { -8, -16, 0, 272 } }
+  1, { { -8, -10, 0, 272 } }
 };
 static sprite_pattern cor01 = {
-  1, { { -8, -16, 0, 273 } }
+  1, { { -8, -10, 0, 273 } }
 };
 static sprite_pattern cor02 = {
-  1, { { -8, -16, 0, 274 } }
+  1, { { -8, -10, 0, 274 } }
 };
 static sprite_pattern cor03 = {
-  1, { { -8, -16, 0, 275 } }
+  1, { { -8, -10, 0, 275 } }
 };
 static sprite_pattern cor04 = {
-  1, { { -8, -16, 0, 276 } }
+  1, { { -8, -10, 0, 276 } }
 };
 static sprite_pattern cor05 = {
-  1, { { -8, -16, 0, 277 } }
+  1, { { -8, -10, 0, 277 } }
 };
 static sprite_pattern cor06 = {
-  1, { { -8, -16, 0, 278 } }
+  1, { { -8, -10, 0, 278 } }
 };
 static sprite_pattern cor07 = {
-  1, { { -8, -16, 0, 279 } }
+  1, { { -8, -10, 0, 279 } }
 };
 static sprite_pattern cor08 = {
-  1, { { -8, -16, 0, 280 } }
+  1, { { -8, -10, 0, 280 } }
 };
 static sprite_pattern cor09 = {
-  1, { { -8, -16, 8, 280 } }
+  1, { { -8, -10, 8, 280 } }
 };
 static sprite_pattern cor0a = {
   1, { { -16, -40, 0, 281 } }
@@ -138,7 +138,7 @@ static sprite_pattern cor0d = {
   1, { { -16, -40, 8, 282 } }
 };
 static sprite_pattern cor0e = {
-  1, { { -16, -40, 0, 283 } }
+  1, { { -8, -40, 0, 283 } }
 };
 static sprite_pattern cor0f = {
   1, { { -4, -40, 0, 284 } }

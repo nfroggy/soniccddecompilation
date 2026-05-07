@@ -19,33 +19,11 @@ void(*gene_tbl[6])(sprite_status*) = {
 extern sprite_pattern* genepat[];
 extern unsigned char* genechg[];
 extern map_init_data mapinittbl;
-void(*bring2_tbl[3])(sprite_status*) = {
-  &bring2init,
-  &bring2move0,
-  &bring2move1
-};
 extern sprite_pattern* bring2pat[];
 extern unsigned char* bring2chg[];
-void(*bigring_tbl[3])(sprite_status*) = {
-  &bring_init,
-  &bring_move0,
-  &bring_move1
-};
 extern sprite_pattern* bringpat[];
 extern unsigned char* bringchg[];
-void(*mosugu_tbl[3])(sprite_status*, sprite_status*) = {
-  &mosug_init,
-  &mosug_move0,
-  &mosug_move1
-};
 extern sprite_pattern* goalpat[];
-void(*goal_tbl[5])(sprite_status*) = {
-  &goal_init,
-  &goal_move0,
-  &goal_move1,
-  &goal_move2,
-  &goal_move3
-};
 extern unsigned char* goalchg[];
 
 
@@ -262,6 +240,22 @@ void kira_set(sprite_status* pActwk) { /* Line 239, Address: 0x100f770 */
     pActfree->xspeed.w = tbl[iD1]; /* Line 262, Address: 0x100f87c */
   } /* Line 263, Address: 0x100f898 */
 } /* Line 264, Address: 0x100f8b4 */
+
+void(*bring2_tbl[3])(sprite_status*) = {
+  &bring2init,
+  &bring2move0,
+  &bring2move1
+};
+void(*bigring_tbl[3])(sprite_status*) = {
+  &bring_init,
+  &bring_move0,
+  &bring_move1
+};
+void(*mosugu_tbl[3])(sprite_status*, sprite_status*) = {
+  &mosug_init,
+  &mosug_move0,
+  &mosug_move1
+};
 
 
 
@@ -728,6 +722,14 @@ void offset_set(sprite_status* pActwk) { /* Line 697, Address: 0x1010640 */
   if (stageno.b.h != 3) /* Line 728, Address: 0x1010748 */
     pActwk->sproffset |= 32768; /* Line 729, Address: 0x1010764 */
 } /* Line 730, Address: 0x1010774 */
+
+void(*goal_tbl[5])(sprite_status*) = {
+  &goal_init,
+  &goal_move0,
+  &goal_move1,
+  &goal_move2,
+  &goal_move3
+};
 
 
 

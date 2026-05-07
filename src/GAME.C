@@ -24,42 +24,28 @@ static void Print_Msg(void);
 static void back_to_cnt(void);
 static void bye_cnt(void);
 
-static short Interupt_Counter;
-static unsigned int PauseIcon;
 extern bmp_info SprBmp[700];
-void(*sMemCpy)(void*, void*, int);
 unsigned int* lpghWnd;
-void(*sCloseFile)(int);
-int(*sReadFile)(int, void*, int);
-int(*sOpenFile)(char*);
 void(*sOutputDebugString)(char*);
 void(*sPrintf)(char*, const char*, ...);
 int(*sRandom)(void);
 void(*sMemSet)(void*, unsigned char, int);
-void(*WaveAllStop)(void);
-void(*ChangeTileBmp)(int, int);
-void(*CDPause)(short);
-void(*CDPlay)(short);
-void(*WaveRequest)(short);
-void(*ClrSpriteDebug)(void);
-void(*EAsprset)(short, short, unsigned short, unsigned short, unsigned short);
-int(*SetGrid)(int, int, int, int);
-extern unsigned char zone1scd[];
-dlink_export ExportedFunctions = {
-  &game_init,
-  (void (*)(void))&game,
-  &DLL_meminit,
-  &DLL_memfree,
-  (void (*)(short, short))&SWdataSet,
-  &Get_vscroll,
-  &Get_scra_h_posiw,
-  &Get_scrb_h_posiw,
-  &FadeProc,
-  &SetDebugFlag,
-  &GetRoundStr,
-  0
-};
+void(*sMemCpy)(void*, void*, int);
+int(*sOpenFile)(char*);
+int(*sReadFile)(int, void*, int);
 int(*sGetFileSize)(int);
+void(*sCloseFile)(int);
+int(*SetGrid)(int, int, int, int);
+void(*EAsprset)(short, short, unsigned short, unsigned short, unsigned short);
+void(*ClrSpriteDebug)(void);
+void(*WaveRequest)(short);
+void(*CDPlay)(short);
+void(*CDPause)(short);
+void(*ChangeTileBmp)(int, int);
+void(*WaveAllStop)(void);
+static unsigned int PauseIcon;
+static short Interupt_Counter;
+extern unsigned char zone1scd[];
 
 
 
@@ -930,3 +916,18 @@ void da_set(void) { /* Line 910, Address: 0x1019490 */
 
 
 } /* Line 932, Address: 0x1019528 */
+
+dlink_export ExportedFunctions = {
+  &game_init,
+  (void (*)(void))&game,
+  &DLL_meminit,
+  &DLL_memfree,
+  (void (*)(short, short))&SWdataSet,
+  &Get_vscroll,
+  &Get_scra_h_posiw,
+  &Get_scrb_h_posiw,
+  &FadeProc,
+  &SetDebugFlag,
+  &GetRoundStr,
+  0
+};

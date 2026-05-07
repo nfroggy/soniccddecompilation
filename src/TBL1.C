@@ -119,7 +119,7 @@ static sprite_pattern bar06 = {
   2,
   {
     { -24, -24,  0, 217 },
-    { -24, -24, 24, 217 }
+    {   0, -24, 24, 217 }
   }
 };
 static sprite_pattern bar07 = {
@@ -328,7 +328,7 @@ static sprite_pattern big02 = {
 };
 static sprite_pattern big03 = {
   1,
-  { { -24, -32, 8, 235 } }
+  { { -24, -32, 8, 233 } }
 };
 sprite_pattern* bigringpat[4] = {
   &big00,

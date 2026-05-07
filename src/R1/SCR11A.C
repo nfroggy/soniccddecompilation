@@ -1802,7 +1802,7 @@ void vramadrset99(unsigned short wH_posiw, unsigned short wV_posiw, unsigned sho
 
 
 static void scr11a_test(void) { /* Line 1804, Address: 0x1027140 */
-  sOutputDebugString("?\n"); /* Line 1805, Address: 0x1027148 */
+  sOutputDebugString("\x8a\xc3\x82\xa6\x82\xc4\x82\xcd\x82\xa2\x82\xaf\x82\xc8\x82\xa2\n"); /* Line 1805, Address: 0x1027148 */
 } /* Line 1806, Address: 0x1027160 */
 
 

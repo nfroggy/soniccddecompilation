@@ -69,6 +69,8 @@ static void(*dodai_acttbl[2])(sprite_status*) = {
   &dodai_init,
   &dodai_move
 };
+static unsigned char dai_hstbl[3] = { 16, 32, 48 };
+static unsigned char dai_mcnttbl[4] = { 2, 3, 4, 6 };
 static void(*dodai_mtype[10])(sprite_status*) = {
   &dodai_ud,
   &dodai_lr,
@@ -158,8 +160,6 @@ void dodai(sprite_status* pActwk) { /* Line 149, Address: 0x1002090 */
 static void dodai_init(sprite_status* pActwk) { /* Line 158, Address: 0x1002100 */
   char wk;
   sprite_status* pNewact;
-  static unsigned char dai_mcnttbl[4] = { 0, 3, 4, 6 };
-  static unsigned char dai_hstbl[3] = { 16, 32, 48 };
 
 
 

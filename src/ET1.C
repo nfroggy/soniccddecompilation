@@ -62,7 +62,7 @@ static sprite_pattern tpat05 = {
   4,
   {
     { -22, -8, 0, SPRITE_ET1_BASE + 11 },
-    { -24, -32, 0, SPRITE_ET1_BASE + 13 },
+    { -24, -32, 0, SPRITE_ET1_BASE + 14 },
     { -24, -32, 0, SPRITE_ET1_BASE + 7 },
     { -40, -32, 0, SPRITE_ET1_BASE + 8 }
   }

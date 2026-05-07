@@ -5,50 +5,7 @@
 #include "PLAYSUB.H"
 
 void(*hoshi_tbl[2])(sprite_status*, sprite_status*) = { &hoshi_init, &hoshi_move };
-void(*k0_tbl[2])(sprite_status*, sprite_status*) = { &k0_init, &k0_move };
-void(*kasoku_tbl[2])(sprite_status*, sprite_status*) = { &kasoku_init, &kasoku_move };
-sprite_pattern hoshipat0 = {
-  1, { { -24, -20, 0, 392 } }
-};
-sprite_pattern hoshipat1 = {
-  1, { { -12, -12, 0, 393 } }
-};
-sprite_pattern* hoshipat[2] = { &hoshipat0, &hoshipat1 };
-unsigned char kasokuchg0[12] = { 0, 4, 4, 3, 3, 3, 5, 5, 2, 2, 2, 255 };
-unsigned char kasokuchg1[6] = { 2, 4, 7, 5, 6, 255 };
-unsigned char kasokuchg2[6] = { 2, 8, 0, 9, 0, 255 };
-unsigned char* kasokuchg[3] = { kasokuchg0, kasokuchg1, kasokuchg2 };
-sprite_pattern kasokupat_a = {
-  1, { { -24, -24, 0, 382 } }
-};
-sprite_pattern kasokupat_b = {
-  1, { { -35, -24, 0, 383 } }
-};
-sprite_pattern kasokupat_c = {
-  1, { { -40, -24, 0, 384 } }
-};
-sprite_pattern kasokupat_d = {
-  1, { { -43, -24, 0, 385 } }
-};
-sprite_pattern kasokupat_e = {
-  1, { { -40, -24, 0, 386 } }
-};
-sprite_pattern kasokupat_f = {
-  1, { { -40, -24, 0, 387 } }
-};
-sprite_pattern kasokupat_g = {
-  1, { { -40, -24, 0, 387 } }
-};
-sprite_pattern kasokupat_h = {
-  1, { { -40, -24, 0, 388 } }
-};
-sprite_pattern kasokupat_i = {
-  1, { { -28, -24, 0, 389 } }
-};
-sprite_pattern kasokupat_j = {
-  1, { { -28, -24, 0, 390 } }
-};
-sprite_pattern* kasokupat[10] = { &kasokupat_a, &kasokupat_b, &kasokupat_c, &kasokupat_d, &kasokupat_e, &kasokupat_f, &kasokupat_g, &kasokupat_h, &kasokupat_i, &kasokupat_j };
+extern sprite_pattern* hoshipat[];
 
 void hoshi(sprite_status* pActwk) { /* Line 53, Address: 0x101ae10 */
   short iXposi;
@@ -138,6 +95,51 @@ void hoshi_init(sprite_status* pActwk, sprite_status* pPlaywk) { /* Line 81, Add
     pActfree->xposi.w.h += tbl1[iOffset]; /* Line 138, Address: 0x101b1cc */
   } /* Line 139, Address: 0x101b1f0 */
 } /* Line 140, Address: 0x101b224 */
+
+void(*k0_tbl[2])(sprite_status*, sprite_status*) = { &k0_init, &k0_move };
+void(*kasoku_tbl[2])(sprite_status*, sprite_status*) = { &kasoku_init, &kasoku_move };
+sprite_pattern hoshipat0 = {
+  1, { { -24, -20, 0, 392 } }
+};
+sprite_pattern hoshipat1 = {
+  1, { { -12, -12, 0, 393 } }
+};
+sprite_pattern* hoshipat[2] = { &hoshipat0, &hoshipat1 };
+unsigned char kasokuchg0[12] = { 0, 4, 4, 3, 3, 3, 5, 5, 2, 2, 2, 255 };
+unsigned char kasokuchg1[6] = { 2, 4, 7, 5, 6, 255 };
+unsigned char kasokuchg2[6] = { 2, 8, 0, 9, 0, 255 };
+unsigned char* kasokuchg[3] = { kasokuchg0, kasokuchg1, kasokuchg2 };
+sprite_pattern kasokupat_a = {
+  1, { { -24, -24, 0, 382 } }
+};
+sprite_pattern kasokupat_b = {
+  1, { { -35, -24, 0, 383 } }
+};
+sprite_pattern kasokupat_c = {
+  1, { { -40, -24, 0, 384 } }
+};
+sprite_pattern kasokupat_d = {
+  1, { { -43, -24, 0, 385 } }
+};
+sprite_pattern kasokupat_e = {
+  1, { { -40, -24, 0, 386 } }
+};
+sprite_pattern kasokupat_f = {
+  1, { { -40, -24, 0, 387 } }
+};
+sprite_pattern kasokupat_g = {
+  1, { { -40, -24, 0, 387 } }
+};
+sprite_pattern kasokupat_h = {
+  1, { { -40, -24, 0, 388 } }
+};
+sprite_pattern kasokupat_i = {
+  1, { { -28, -24, 0, 389 } }
+};
+sprite_pattern kasokupat_j = {
+  1, { { -28, -24, 0, 390 } }
+};
+sprite_pattern* kasokupat[10] = { &kasokupat_a, &kasokupat_b, &kasokupat_c, &kasokupat_d, &kasokupat_e, &kasokupat_f, &kasokupat_g, &kasokupat_h, &kasokupat_i, &kasokupat_j };
 
 
 

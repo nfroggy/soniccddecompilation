@@ -170,8 +170,8 @@ sprite_pattern* madepat_0[5] = {
 };
 extern sprite_pattern* title_pat[];
 extern unsigned short title_tbl[];
-static unsigned short ClearSountWait;
 static short WaitCount;
+static unsigned short ClearSountWait;
 static unsigned short cleartbl[12] = {
   204,   0, 288,   0,
   272, 512, 240,   1,

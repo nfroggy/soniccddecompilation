@@ -43,7 +43,11 @@ unsigned char colitbl[64][2] =
   {  12,  20 }, {  32,  12 },
   {  12,  16 }, {   0,   0 }
 };
+#ifdef R11A
+extern unsigned char bCarry;
+#else
 static unsigned char bCarry;
+#endif
 
 
 

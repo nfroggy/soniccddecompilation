@@ -31,7 +31,7 @@ static void p_movie(sprite_status* pActwk);
   #define SPRITE_FRIEND_BASE 536
 #endif
 
-static unsigned char pchg00[4] = { 29, 0, 1, 255 };
+static unsigned char pchg00[4] = { 19, 0, 1, 255 };
 static unsigned char pchg01[30] =
 {
   0,
@@ -104,7 +104,7 @@ static sprite_pattern spr_friend0 =
 static sprite_pattern spr_ricky5 =
 {
   1,
-  { { -12, -8, 0, SPRITE_FRIEND_BASE + 56} }
+  { { -12, -8, 0, SPRITE_FRIEND_BASE + 6} }
 };
 sprite_pattern* pat_friend0[3] =
 {

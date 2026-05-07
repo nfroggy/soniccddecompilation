@@ -93,7 +93,7 @@ sprite_pattern bringpat2 = {
 };
 sprite_pattern bringpat3 = {
   1,
-  { { -24, -32, 0, 247 } }
+  { { -24, -32, 0, 249 } }
 };
 sprite_pattern* bringpat[4] = {
   &bringpat0,
@@ -129,7 +129,7 @@ sprite_pattern bring2pat4 = {
 };
 sprite_pattern bring2pat5 = {
   1,
-  { { -32, -26, 0, 255 } }
+  { { -26, -32, 0, 255 } }
 };
 sprite_pattern bring2pat6 = {
   1,

@@ -3,11 +3,14 @@
 #include "ACTION.H"
 #include "IMPFUNCS.H"
 
+#ifdef R11A
+int CKeyTogle;
+#endif
+aset_info* pAsetadr_dummy;
 aset_info* pAsetadr_w;
 asetz_info* pAsetadrz_w;
 extern asetz_info asettblz[1];
 extern aset_info asettbl[1];
-aset_info* pAsetadr_dummy;
 extern unsigned char dummyarea[];
 
 
