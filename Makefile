@@ -1,5 +1,4 @@
 TARGET := build/R11A.ELF
-EXACT_TARGET := build/R11A.exact.ELF
 REFERENCE := R11A.ELF
 BUILD_DIR := build
 LINKER_SCRIPT ?= linker.lcf
@@ -17,9 +16,16 @@ CC := $(COMPILER_DIR)/mwccps2.exe
 LD := $(COMPILER_DIR)/mwldps2.exe
 
 DEFINES := -DR11A -DEDIT_DATA_ENTRY_COUNT=52
-INCLUDES := -i main -i main/R1
-CFLAGS := -c -lang c -nostdinc -cwd include -fl divbyzerocheck -g -nodead -sdatathreshold 0
-LDFLAGS := -nostdlib -nodead -g -main ""
+MSL_DIR ?= C:/Program Files (x86)/Metrowerks/CodeWarrior/PS2 Support/Msl/MSL_C
+RUNTIME_LIB_DIR ?= C:/Program Files (x86)/Metrowerks/CodeWarrior/PS2 Support/Runtime/Libraries
+PROJECT_INCLUDES := -i "main" -i "src/R1"
+MSL_INCLUDES := -i "$(MSL_DIR)"
+INCLUDES := $(PROJECT_INCLUDES) $(MSL_INCLUDES)
+export MWCIncludes := $(MSL_INCLUDES)
+export MWLibraries := "$(RUNTIME_LIB_DIR)"
+CFLAGS := -cwd include -fl divbyzerocheck -g -nodead -sdatathreshold 0
+COMPILE_ONLY := -c
+LDFLAGS := -nodead -g -main ""
 
 R11A_SOURCES := \
 	src/DLLMAIN.C \
@@ -72,36 +78,28 @@ R11A_SOURCES := \
 	src/BLOCK.C \
 	src/LOADER2.C \
 	src/R1/COLI1.C \
-	src/R1/Z11ATBL.C \
 	src/SAVE.C \
+	src/R1/Z11ATBL.C \
 	src/R1/FRIEND1.C \
 	src/R1/MOVIE1.C \
 	src/BMP.C
 
 OBJECTS := $(R11A_SOURCES:%.C=$(BUILD_DIR)/obj/%.o)
 
-.PHONY: all clean compare exact compare-exact
+.PHONY: all clean compare
 
 all: $(TARGET)
 
 $(TARGET): $(OBJECTS) $(LINKER_SCRIPT) Makefile
 	@$(MKDIR_P) $(dir $@)
-	$(LD) $(LDFLAGS) -o $@ $(LINKER_SCRIPT) $(OBJECTS)
+	"$(LD)" $(LDFLAGS) -o $@ $(LINKER_SCRIPT) $(OBJECTS)
 
 $(BUILD_DIR)/obj/%.o: %.C
 	@$(MKDIR_P) $(dir $@)
-	$(CC) $(CFLAGS) $(DEFINES) $(INCLUDES) -o $@ $<
+	"$(CC)" $(COMPILE_ONLY) $(CFLAGS) $(DEFINES) $(INCLUDES) -o $@ $<
 
 compare: $(TARGET)
 	python tools/compare_elf.py $(REFERENCE) $(TARGET)
 
-exact: $(EXACT_TARGET)
-
-$(EXACT_TARGET): $(TARGET) $(REFERENCE) tools/make_exact_elf.py
-	python tools/make_exact_elf.py $(REFERENCE) $(TARGET) $@
-
-compare-exact: $(EXACT_TARGET)
-	python tools/compare_elf.py $(REFERENCE) $(EXACT_TARGET)
-
 clean:
-	$(RM_RF) $(BUILD_DIR)/obj $(TARGET) $(EXACT_TARGET) $(TARGET:.ELF=.map) $(BUILD_DIR)/probe.o
+	$(RM_RF) $(BUILD_DIR)/obj $(TARGET) $(TARGET:.ELF=.map) $(BUILD_DIR)/probe.o
