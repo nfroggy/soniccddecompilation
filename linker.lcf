@@ -25,10 +25,9 @@ SECTIONS
  
         # pad text section
         .   = ALIGN(0x80);
-        .   = . + 0x80;
-
+ 
         #   data sections
-       .   = ALIGN(0x100);
+       .   = ALIGN(256);
        __data_start   = .;
        ALIGNALL(0x8);
        GROUP(ROOT)   (.data)
