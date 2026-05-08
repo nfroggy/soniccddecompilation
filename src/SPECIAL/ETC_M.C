@@ -3,12 +3,24 @@
 #include "SPM_EQU.H"
 #include "ETC_M.H"
 
-static short sonic_upcnt;
-static short sonic_upcnt2;
+static short sonic_upcnt = 0;
+static short sonic_upcnt2 = 0;
 static int subtbl[8] = { 10000000, 1000000, 100000, 10000, 1000, 100, 10, 1 };
+static unsigned short chibi_sonic_map[2][3][2] = {
+  {
+    { 863, 864 },
+    { 869, 870 },
+    { 871, 872 }
+  },
+  {
+    { 863, 864 },
+    { 869, 870 },
+    { 871, 873 }
+  }
+};
 extern void(*SetGrid)(int, int, int, int, int);
 extern int time_bonus;
-static unsigned char nullflg;
+static unsigned char nullflg = 0;
 extern int ring_bonus;
 static unsigned short disp_ascii[20] = {
   503, 505, 507, 509, 510, 512, 514, 515, 516, 517,
@@ -54,19 +66,6 @@ void sonic_disp(void) { /* Line 30, Address: 0x1003500 */
 void sonic_disp_disp(short tbl_no) { /* Line 54, Address: 0x1003650 */
   int x;
   int y;
-  static unsigned short chibi_sonic_map[2][3][2] = {
-    {
-      { 863, 864 },
-      { 869, 870 },
-      { 871, 872 }
-    },
-    {
-      { 863, 864 },
-      { 869, 870 },
-      { 871, 873 }
-    }
-  };
-
 
   for (y = 0; y < 3; ++y) { /* Line 71, Address: 0x1003664 */
     for (x = 0; x < 2; ++x) { /* Line 72, Address: 0x1003670 */

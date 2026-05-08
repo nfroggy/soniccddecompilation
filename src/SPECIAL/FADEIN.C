@@ -4,11 +4,11 @@
 #include "FADEIN.H"
 
 static unsigned short code_tbl[3] = { 1, 5, 9 };
-static unsigned short wColwk;
-static int FadeCount;
+static unsigned char byMskwk = 0;
+static unsigned short wColwk = 0;
+static int FadeCount = 0;
 extern int* lpFadeFlag;
 extern PALETTEENTRY* lpcolorwk;
-static unsigned char byMskwk;
 
 
 

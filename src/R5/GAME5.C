@@ -108,6 +108,20 @@ extern unsigned char zone1scd[1000];
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void DLL_meminit(char*** pBufTbl, void** pFuncTbl) { /* Line 125, Address: 0x1017e10 */
 
 

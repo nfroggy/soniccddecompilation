@@ -12,61 +12,49 @@
 #include "FADEIN.H"
 #include "KAITEN.H"
 
-int time_bonus;
-int ring_bonus;
-unsigned char seregiflg;
-unsigned char scroll_stop;
+int time_bonus = 0;
+int ring_bonus = 0;
+unsigned char seregiflg = 0;
+unsigned char scroll_stop = 0;
 static unsigned short hscrcnt = 256;
-static unsigned int PauseIcon;
-game_info* lpKeepWork;
+static unsigned int PauseIcon = 0;
+static int scoreup_setm = 0;
+int_union scrb_v_posiw = { 0 };
+int_union scrb_h_posiw = { 0 };
+int_union scra_v_posiw = { 0 };
+int_union scra_h_posiw = { 0 };
+int_union hscroll = { 0 };
+int_union vscroll = { 0 };
+short plring_dmy = 0;
+int* lpFadeFlag = 0;
+game_info* lpKeepWork = 0;
 extern bmp_info SprBmp[700];
-void(*sCloseFile)(int);
-int(*sReadFile)(int, void*, int);
-int(*sOpenFile)(char*);
-void(*sPrintf)(char*, const char*, ...);
-short plring_dmy;
-int* lpFadeFlag;
-PALETTEENTRY* lpcolorwk4;
-PALETTEENTRY* lpcolorwk3;
-PALETTEENTRY* lpcolorwk2;
-PALETTEENTRY* lpcolorwk;
-unsigned short* pmapwk;
-void(*sOutputDebugString)(char*);
-int(*sRandom)(void);
-void(*sMemCpy)(void*, void*, int);
-void(*sMemSet)(void*, unsigned char, int);
-void(*WaveAllStop)(void);
-void(*CDPause)(short);
-void(*CDPlay)(short);
-void(*WaveRequest)(short);
-void(*ClrSpriteDebug)(void);
-void(*EAsprset)(short, short, unsigned short, unsigned short, unsigned short);
-int(*SetGrid)(int, int, int, int, int);
-int_union vscroll;
-int_union scra_h_posiw;
-int_union scrb_h_posiw;
-static int scoreup_setm;
-ushort_union swdata2;
-static short clchgcnt[4];
-dlink_export ExportedFunctions = {
-  &game_init,
-  (void (*)(void))&game,
-  &DLL_meminit,
-  &DLL_memfree,
-  (void (*)(short, short))&SWdataSet,
-  &Get_vscroll,
-  &Get_scra_h_posiw,
-  &Get_scrb_h_posiw,
-  &FadeProc,
-  0,
-  0,
-  &Special_block_chg
-};
-int_union scrb_v_posiw;
-int_union scra_v_posiw;
-int_union hscroll;
-int_union* lphscrollbuff;
-int(*sGetFileSize)(int);
+unsigned short* pmapwk = 0;
+PALETTEENTRY* lpcolorwk4 = 0;
+PALETTEENTRY* lpcolorwk3 = 0;
+PALETTEENTRY* lpcolorwk2 = 0;
+PALETTEENTRY* lpcolorwk = 0;
+int_union* lphscrollbuff = 0;
+ushort_union swdata2 = { 0 };
+static unsigned char hscrflg = 0;
+static unsigned short hscrcnt4 = 0;
+static short clchgcnt[4] = { 0 };
+void(*sCloseFile)(int) = 0;
+int(*sGetFileSize)(int) = 0;
+int(*sReadFile)(int, void*, int) = 0;
+int(*sOpenFile)(char*) = 0;
+void(*sMemCpy)(void*, void*, int) = 0;
+void(*sMemSet)(void*, unsigned char, int) = 0;
+int(*sRandom)(void) = 0;
+void(*sPrintf)(char*, const char*, ...) = 0;
+void(*sOutputDebugString)(char*) = 0;
+void(*WaveAllStop)(void) = 0;
+void(*CDPause)(short) = 0;
+void(*CDPlay)(short) = 0;
+void(*WaveRequest)(short) = 0;
+void(*ClrSpriteDebug)(void) = 0;
+void(*EAsprset)(short, short, unsigned short, unsigned short, unsigned short) = 0;
+int(*SetGrid)(int, int, int, int, int) = 0;
 
 
 
@@ -325,6 +313,7 @@ static unsigned char cltbl[1008] = {
 };
 static int hdatatbl4[111] = { 249856, 253952, 258048, 262144, 262144, 266240, 266240, 270336, 274432, 274432, 278528, 282624, 282624, 286720, 286720, 290816, 290816, 294912, 299008, 299008, 303104, 303104, 307200, 307200, 311296, 311296, 315392, 315392, 319488, 319488, 323584, 323584, 323584, 327680, 327680, 331776, 331776, 335872, 335872, 335872, 339968, 339968, 344064, 344064, 344064, 348160, 348160, 348160, 352256, 352256, 352256, 356352, 356352, 356352, 360448, 360448, 360448, 364544, 364544, 364544, 364544, 368640, 368640, 368640, 368640, 372736, 372736, 372736, 372736, 376832, 376832, 376832, 376832, 376832, 380928, 380928, 380928, 380928, 380928, 380928, 385024, 385024, 385024, 385024, 385024, 385024, 385024, 389120, 389120, 389120, 389120, 389120, 389120, 389120, 389120, 389120, 389120, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216, 393216 };
 static char hdatatbl5[128] = { 0, -5, -10, -15, -20, -25, -30, -35, -40, -44, -48, -52, -56, -60, -64, -67, -70, -73, -76, -78, -80, -82, -84, -86, -88, -90, -92, -93, -94, -93, -92, -90, -88, -85, -82, -80, -78, -71, -64, -56, -48, -32, -16, 0, 16, 21, 26, 30, 34, 35, 36, 37, 38, 37, 36, 34, 32, 28, 24, 20, 16, 10, 5, 0, -4, -9, -13, -18, -22, -24, -26, -28, -30, -31, -32, -33, -34, -33, -32, -31, -30, -28, -27, -25, -24, -20, -16, -12, -8, 0, 8, 15, 22, 30, 38, 47, 56, 64, 72, 80, 88, 94, 100, 106, 112, 115, 118, 120, 122, 123, 124, 125, 126, 125, 124, 122, 120, 114, 108, 102, 96, 86, 76, 66, 56, 42, 28, 14 };
+static char map_filename[] = "SPECIAL\\MAP\\SP%1dMAP.MAP";
 static unsigned short mp01[4] = { 1, 2, 3, 4 };
 static unsigned short mp02[4] = { 5, 6, 7, 8 };
 static unsigned short mp03[4] = { 9, 10, 11, 12 };
@@ -371,10 +360,6 @@ static PALETTEENTRY stone_color_set_tbl[40] = {
   { 224,   0,   0, 1 }, { 128,   0,   0, 1 }, {  64,   0,  32, 1 }, {   0,  64,   0, 1 },
   { 224, 224, 224, 1 }, { 128, 224,   0, 1 }, {  64, 160,   0, 1 }, {  32,  96,   0, 1 },
 };
-static unsigned char hscrflg;
-static unsigned short hscrcnt4;
-static void(*hscrltbl[8])(void) = { &hscrl0, &hscrl1, &hscrl2, &hscrl3, &hscrl4, &hscrl5, &hscrl6, &hscrl7 };
-
 void m2mainchk(void) {} /* Line 378, Address: 0x1005110 */
 
 
@@ -451,7 +436,7 @@ void DLL_meminit(char*** pBufTbl, void** pFuncTbl) { /* Line 392, Address: 0x100
 
 
 
-  sPrintf(fn, "SPECIAL\\MAP\\SP%1dMAP.MAP", lpKeepWork->stagenm); /* Line 454, Address: 0x10054c4 */
+  sPrintf(fn, map_filename, lpKeepWork->stagenm); /* Line 454, Address: 0x10054c4 */
   hf = sOpenFile(fn); /* Line 455, Address: 0x10054f0 */
   sReadFile(hf, sm_adr0, sizeof(sm_adr0)); /* Line 456, Address: 0x1005508 */
   sCloseFile(hf); /* Line 457, Address: 0x1005528 */
@@ -1298,6 +1283,7 @@ static unsigned char SeToWavTbl[80] = {
   67, 68, 69, 70, 71, 71, 72, 73, 74, 32,
   33, 34, 35, 36, 37, 38, 39, 40, 41, 42,
 };
+static void(*hscrltbl[8])(void) = { &hscrl0, &hscrl1, &hscrl2, &hscrl3, &hscrl4, &hscrl5, &hscrl6, &hscrl7 };
 
 
 void soundset(short ReqNo) { /* Line 1303, Address: 0x1006bb0 */
@@ -1968,7 +1954,7 @@ void colchg3(void) { /* Line 1945, Address: 0x1008820 */
   d5 = 1; /* Line 1968, Address: 0x10089e0 */
   d6 = 0; /* Line 1969, Address: 0x10089ec */
   d7 = 2; /* Line 1970, Address: 0x10089f0 */
-  d0 = (short)cntplus((unsigned short*)&clchgcnt[0], (unsigned short)d5, (unsigned short)d6, (unsigned short)d7); /* Line 1971, Address: 0x10089fc */
+  d0 = (short)cntplus((unsigned short*)&clchgcnt[1], (unsigned short)d5, (unsigned short)d6, (unsigned short)d7); /* Line 1971, Address: 0x10089fc */
   if (d0) return; /* Line 1972, Address: 0x1008a28 */
 
   d0 = clchgcnt[2]; /* Line 1974, Address: 0x1008a30 */
@@ -2119,3 +2105,19 @@ void color_change(void) { /* Line 2115, Address: 0x1009110 */
 
   jptbl[stagenm](); /* Line 2120, Address: 0x100914c */
 } /* Line 2121, Address: 0x100916c */
+
+
+dlink_export ExportedFunctions = {
+  &game_init,
+  (void (*)(void))&game,
+  &DLL_meminit,
+  &DLL_memfree,
+  (void (*)(short, short))&SWdataSet,
+  &Get_vscroll,
+  &Get_scra_h_posiw,
+  &Get_scrb_h_posiw,
+  &FadeProc,
+  0,
+  0,
+  &Special_block_chg
+};

@@ -24,6 +24,16 @@ static sprite_pattern sitem04 =  { 1, { { -10,  -24, 0, 123 } } };
 static sprite_pattern sitem05 =  { 1, { { -10,  -24, 0, 124 } } };
 static sprite_pattern sitem06 =  { 1, { {  -5,  -24, 0, 125 } } };
 static sprite_pattern sitem07 =  { 1, { { -10,  -24, 0, 126 } } };
+static sprite_pattern skage00 =  { 1, { { -40,   -8, 0,  71 } } };
+static sprite_pattern skage01 =  { 1, { { -35,   -8, 0,  72 } } };
+static sprite_pattern skage02 =  { 1, { { -30,   -4, 0,  73 } } };
+static sprite_pattern skage03 =  { 1, { { -30,   -4, 0,  74 } } };
+static sprite_pattern skage04 =  { 1, { { -25,   -4, 0,  75 } } };
+static sprite_pattern skage05 =  { 1, { { -20,   -4, 0,  76 } } };
+static sprite_pattern skage06 =  { 1, { { -15,   -4, 0,  77 } } };
+static sprite_pattern skage07 =  { 1, { { -15,   -4, 0,  78 } } };
+static sprite_pattern skage08 =  { 1, { { -10,   -4, 0,  79 } } };
+static sprite_pattern skage09 =  { 1, { {  -5,   -4, 0,  80 } } };
 static sprite_pattern Tufo00 =   { 1, { { -40,  -56, 0,  81 } } };
 static sprite_pattern Tufo01 =   { 1, { { -30,  -48, 0,  82 } } };
 static sprite_pattern Tufo02 =   { 1, { { -30,  -40, 0,  83 } } };
@@ -34,6 +44,26 @@ static sprite_pattern Tufo06 =   { 1, { { -20,  -32, 0,  87 } } };
 static sprite_pattern Tufo07 =   { 1, { { -15,  -24, 0,  88 } } };
 static sprite_pattern Tufo08 =   { 1, { { -10,  -16, 0,  89 } } };
 static sprite_pattern Tufo09 =   { 1, { {  -5,   -8, 0,  90 } } };
+static sprite_pattern sufo00 = { 1, { { -40, -56, 0,  91 } } };
+static sprite_pattern sufo01 = { 1, { { -30, -48, 0,  92 } } };
+static sprite_pattern sufo02 = { 1, { { -30, -40, 0,  93 } } };
+static sprite_pattern sufo03 = { 1, { { -30, -40, 0,  94 } } };
+static sprite_pattern sufo04 = { 1, { { -30, -32, 0,  95 } } };
+static sprite_pattern sufo05 = { 1, { { -20, -32, 0,  96 } } };
+static sprite_pattern sufo06 = { 1, { { -20, -32, 0,  97 } } };
+static sprite_pattern sufo07 = { 1, { { -15, -24, 0,  98 } } };
+static sprite_pattern sufo08 = { 1, { { -10, -16, 0,  99 } } };
+static sprite_pattern sufo09 = { 1, { {  -5,  -8, 0, 100 } } };
+static sprite_pattern sufo10 = { 1, { { -40,  -8, 0, 101 } } };
+static sprite_pattern sufo11 = { 1, { { -30, -48, 0, 102 } } };
+static sprite_pattern sufo12 = { 1, { { -30, -40, 0, 103 } } };
+static sprite_pattern sufo13 = { 1, { { -30, -40, 0, 104 } } };
+static sprite_pattern sufo14 = { 1, { { -30, -32, 0, 105 } } };
+static sprite_pattern sufo15 = { 1, { { -20, -32, 0, 106 } } };
+static sprite_pattern sufo16 = { 1, { { -20, -32, 0, 107 } } };
+static sprite_pattern sufo17 = { 1, { { -15, -24, 0, 108 } } };
+static sprite_pattern sufo18 = { 1, { { -10, -16, 0, 109 } } };
+static sprite_pattern sufo19 = { 1, { {  -5,  -8, 0, 110 } } };
 sprite_patterns_sp mpeexpTBL0 = { 5,  2, { &seexp00, &seexp01, &seexp02, &seexp03, &seexp04 } };
 sprite_patterns_sp* mpeexp[1] = { &mpeexpTBL0 };
 sprite_patterns_sp mpitemTBL0 = { 1, -1, { &sitem00 } }, mpitemTBL1 = { 1, -1, { &sitem01 } }, mpitemTBL2 = { 1, -1, { &sitem02 } }, mpitemTBL3 = { 1, -1, { &sitem03 } }, mpitemTBL4 = { 4,  4, { &sitem04, &sitem05, &sitem06, &sitem07 } };
@@ -44,8 +74,38 @@ sprite_patterns_sp mptobiTBL0 =  { 1, -1, { &sobi00 } };
 sprite_patterns_sp* mptobi[1] = { &mptobiTBL0 };
 sprite_patterns_sp mppressTBL0 = { 1, -1, { &spress00 } };
 sprite_patterns_sp* mppress[1] = { &mppressTBL0 };
+sprite_patterns_sp mpkageTBL0 = { 1, -1, { &skage00 } };
+sprite_patterns_sp mpkageTBL1 = { 1, -1, { &skage01 } };
+sprite_patterns_sp mpkageTBL2 = { 1, -1, { &skage02 } };
+sprite_patterns_sp mpkageTBL3 = { 1, -1, { &skage03 } };
+sprite_patterns_sp mpkageTBL4 = { 1, -1, { &skage04 } };
+sprite_patterns_sp mpkageTBL5 = { 1, -1, { &skage05 } };
+sprite_patterns_sp mpkageTBL6 = { 1, -1, { &skage06 } };
+sprite_patterns_sp mpkageTBL7 = { 1, -1, { &skage07 } };
+sprite_patterns_sp mpkageTBL8 = { 1, -1, { &skage08 } };
+sprite_patterns_sp mpkageTBL9 = { 1, -1, { &skage09 } };
+sprite_patterns_sp mpufoxTBL0 = { 1, -1, { &sufo00 } };
+sprite_patterns_sp mpufoxTBL1 = { 1, -1, { &sufo01 } };
+sprite_patterns_sp mpufoxTBL2 = { 1, -1, { &sufo02 } };
+sprite_patterns_sp mpufoxTBL3 = { 1, -1, { &sufo03 } };
+sprite_patterns_sp mpufoxTBL4 = { 1, -1, { &sufo04 } };
+sprite_patterns_sp mpufoxTBL5 = { 1, -1, { &sufo05 } };
+sprite_patterns_sp mpufoxTBL6 = { 1, -1, { &sufo06 } };
+sprite_patterns_sp mpufoxTBL7 = { 1, -1, { &sufo07 } };
+sprite_patterns_sp mpufoxTBL8 = { 1, -1, { &sufo08 } };
+sprite_patterns_sp mpufoxTBL9 = { 1, -1, { &sufo09 } };
 sprite_patterns_sp tpufoxTBL0 = { 1, -1, { &Tufo00 } }, tpufoxTBL1 = { 1, -1, { &Tufo01 } }, tpufoxTBL2 = { 1, -1, { &Tufo02 } }, tpufoxTBL3 = { 1, -1, { &Tufo03 } }, tpufoxTBL4 = { 1, -1, { &Tufo04 } }, tpufoxTBL5 = { 1, -1, { &Tufo05 } }, tpufoxTBL6 = { 1, -1, { &Tufo06 } }, tpufoxTBL7 = { 1, -1, { &Tufo07 } }, tpufoxTBL8 = { 1, -1, { &Tufo08 } }, tpufoxTBL9 = { 1, -1, { &Tufo09 } };
 sprite_patterns_sp* tpufox[10] = { &tpufoxTBL0, &tpufoxTBL1, &tpufoxTBL2, &tpufoxTBL3, &tpufoxTBL4, &tpufoxTBL5, &tpufoxTBL6, &tpufoxTBL7, &tpufoxTBL8, &tpufoxTBL9 };
+sprite_patterns_sp mpufoyTBL0 = { 1, -1, { &sufo10 } };
+sprite_patterns_sp mpufoyTBL1 = { 1, -1, { &sufo11 } };
+sprite_patterns_sp mpufoyTBL2 = { 1, -1, { &sufo12 } };
+sprite_patterns_sp mpufoyTBL3 = { 1, -1, { &sufo13 } };
+sprite_patterns_sp mpufoyTBL4 = { 1, -1, { &sufo14 } };
+sprite_patterns_sp mpufoyTBL5 = { 1, -1, { &sufo15 } };
+sprite_patterns_sp mpufoyTBL6 = { 1, -1, { &sufo16 } };
+sprite_patterns_sp mpufoyTBL7 = { 1, -1, { &sufo17 } };
+sprite_patterns_sp mpufoyTBL8 = { 1, -1, { &sufo18 } };
+sprite_patterns_sp mpufoyTBL9 = { 1, -1, { &sufo19 } };
 short mvtbl0_0[13] = { 0, 0, 144, 1920, 2880, 2304, 2560, 96, 2304, 2560, 1920, 2880, -1 }, mvtbl0_1[18] = { 0, 0, 144, 1536, 2176, 1920, 1664, 96, 1920, 1664, 1408, 1920, 96, 1408, 1920, 1536, 2176, -1 }, mvtbl0_2[18] = { 1, 0, 144, 2688, 1408, 2304, 1280, 96, 2304, 1280, 2432, 1664, 240, 2432, 1664, 2688, 1408, -1 }, mvtbl0_3[13] = { 0, 0, 240, 1920, 1152, 1408, 1280, 96, 1408, 1280, 1920, 1152, -1 }, mvtbl0_4[23] = { 0, 0, 48, 2816, 2560, 2816, 2432, 144, 2816, 2432, 2560, 2560, 96, 2560, 2560, 2688, 2816, 96, 2688, 2816, 2816, 2560, -1 }, mvtbl0_5[18] = { 1, 0, 144, 2432, 2176, 2304, 2432, 96, 2304, 2432, 2816, 2176, 240, 2816, 2176, 2432, 2176, -1 }, mvtbl1_0[23] = { 0, 0, 240, 2816, 1408, 2240, 1216, 240, 2240, 1216, 2048, 1536, 240, 2048, 1536, 2560, 1728, 240, 2560, 1728, 2816, 1408, -1 };
 short mvtbl1_1[18] = { 0, 0, 144, 1408, 1280, 1280, 1408, 240, 1280, 1408, 1664, 1664, 240, 1664, 1664, 1408, 1280, -1 }, mvtbl1_2[23] = { 1, 0, 240, 1664, 1792, 1408, 1792, 300, 1408, 1792, 1216, 2048, 300, 1216, 2048, 1664, 2048, 360, 1664, 2048, 1664, 1792, -1 }, mvtbl1_3[13] = { 0, 0, 96, 1536, 2432, 1792, 2560, 48, 1792, 2560, 1536, 2432, -1 }, mvtbl1_4[18] = { 0, 0, 300, 2560, 2304, 2112, 2752, 300, 2112, 2752, 2560, 2816, 240, 2560, 2816, 2560, 2304, -1 }, mvtbl1_5[18] = { 1, 0, 240, 2880, 2048, 2560, 1920, 96, 2560, 1920, 2432, 2240, 240, 2432, 2240, 2880, 2048, -1 };
 short mvtbl2_0[23] = { 0, 0, 64, 2816, 1280, 2560, 1280, 200, 2560, 1280, 2304, 1792, 96, 2304, 1792, 2560, 1664, 160, 2560, 1664, 2816, 1280, -1 }, mvtbl2_1[18] = { 0, 0, 200, 1728, 1216, 1280, 1536, 160, 1280, 1536, 1600, 1408, 160, 1600, 1408, 1728, 1216, -1 }, mvtbl2_2[23] = { 1, 0, 96, 1536, 1920, 1280, 1920, 200, 1280, 1920, 1280, 2176, 160, 1280, 2176, 1536, 2176, 160, 1536, 2176, 1536, 1920, -1 }, mvtbl2_3[18] = { 0, 0, 96, 1536, 2432, 1280, 2432, 200, 1280, 2432, 1280, 2816, 96, 1280, 2816, 1536, 2432, -1 }, mvtbl2_4[23] = { 0, 0, 200, 2240, 2560, 1792, 2496, 200, 1792, 2496, 1792, 2816, 160, 1792, 2816, 2240, 2816, 160, 2240, 2816, 2240, 2560, -1 }, mvtbl2_5[23] = { 1, 0, 200, 2816, 2432, 2560, 2176, 200, 2560, 2176, 2432, 2560, 96, 2432, 2560, 2432, 2816, 240, 2432, 2816, 2816, 2432, -1 };
@@ -415,19 +475,27 @@ void ufo_frout_chk(sprite_status_sp* actionwk) { /* Line 397, Address: 0x1002410
   actionwk->actflg |= 4; /* Line 415, Address: 0x10024b8 */
 } /* Line 416, Address: 0x10024c8 */
 
+mvtbl mvtbl0 = { 6, { mvtbl0_0, mvtbl0_1, mvtbl0_2, mvtbl0_3, mvtbl0_4, mvtbl0_5 } };
+mvtbl mvtbl1 = { 6, { mvtbl1_0, mvtbl1_1, mvtbl1_2, mvtbl1_3, mvtbl1_4, mvtbl1_5 } };
+mvtbl mvtbl2 = { 6, { mvtbl2_0, mvtbl2_1, mvtbl2_2, mvtbl2_3, mvtbl2_4, mvtbl2_5 } };
+mvtbl mvtbl3 = { 6, { mvtbl3_0, mvtbl3_1, mvtbl3_2, mvtbl3_3, mvtbl3_4, mvtbl3_5 } };
+mvtbl mvtbl4 = { 6, { mvtbl4_0, mvtbl4_1, mvtbl4_2, mvtbl4_3, mvtbl4_4, mvtbl4_5 } };
+mvtbl mvtbl5 = { 6, { mvtbl5_0, mvtbl5_1, mvtbl5_2, mvtbl5_3, mvtbl5_4, mvtbl5_5 } };
+mvtbl mvtbl6 = { 6, { mvtbl6_0, mvtbl6_1, mvtbl6_2, mvtbl6_3, mvtbl6_4, mvtbl6_5 } };
+mvtbl mvtbl7 = { 6, { mvtbl7_0, mvtbl7_1, mvtbl7_2, mvtbl7_3, mvtbl7_4, mvtbl7_5 } };
+
 void ptset_ufo(sprite_status_sp* actionwk) { /* Line 418, Address: 0x10024e0 */
-  unsigned char tbl[81] = /* Line 419, Address: 0x100250c */
-  {
+  sprite_status_sp* a6;
+  unsigned short d0, d1, d3, d4, d5, d6;
+  int d0l;
+  unsigned char d1b, d2b;
+  unsigned char ufo_pat_tbl[81] = {
     0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5,
     5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6,
     6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7,
     7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8,
     8, 8, 8, 8, 8, 8, 8, 8, 9
   };
-  sprite_status_sp* a6;
-  unsigned short d0, d1, d3, d4, d5, d6;
-  int d0l;
-  unsigned char d1b, d2b;
 
   a6 = &actwk[0]; /* Line 432, Address: 0x1002538 */
 
@@ -448,8 +516,8 @@ void ptset_ufo(sprite_status_sp* actionwk) { /* Line 418, Address: 0x10024e0 */
   d0l >>= 4; /* Line 448, Address: 0x1002614 */
   if (d0l > 80) d0l = 80; /* Line 449, Address: 0x1002618 */
 
-  if (actionwk->actfree[2] == tbl[d0l]) return; /* Line 451, Address: 0x1002628 */
-  actionwk->actfree[2] = tbl[d0l]; /* Line 452, Address: 0x1002648 */
+  if (actionwk->actfree[2] == ufo_pat_tbl[d0l]) return; /* Line 451, Address: 0x1002628 */
+  actionwk->actfree[2] = ufo_pat_tbl[d0l]; /* Line 452, Address: 0x1002648 */
   patinit1(actionwk, actionwk->actfree[2]); /* Line 453, Address: 0x1002658 */
 
 
@@ -465,14 +533,6 @@ void ptset_ufo(sprite_status_sp* actionwk) { /* Line 418, Address: 0x10024e0 */
 
 
 
-mvtbl mvtbl0 = { 6, { mvtbl0_0, mvtbl0_1, mvtbl0_2, mvtbl0_3, mvtbl0_4, mvtbl0_5 } };
-mvtbl mvtbl1 = { 6, { mvtbl1_0, mvtbl1_1, mvtbl1_2, mvtbl1_3, mvtbl1_4, mvtbl1_5 } };
-mvtbl mvtbl2 = { 6, { mvtbl2_0, mvtbl2_1, mvtbl2_2, mvtbl2_3, mvtbl2_4, mvtbl2_5 } };
-mvtbl mvtbl3 = { 6, { mvtbl3_0, mvtbl3_1, mvtbl3_2, mvtbl3_3, mvtbl3_4, mvtbl3_5 } };
-mvtbl mvtbl4 = { 6, { mvtbl4_0, mvtbl4_1, mvtbl4_2, mvtbl4_3, mvtbl4_4, mvtbl4_5 } };
-mvtbl mvtbl5 = { 6, { mvtbl5_0, mvtbl5_1, mvtbl5_2, mvtbl5_3, mvtbl5_4, mvtbl5_5 } };
-mvtbl mvtbl6 = { 6, { mvtbl6_0, mvtbl6_1, mvtbl6_2, mvtbl6_3, mvtbl6_4, mvtbl6_5 } };
-mvtbl mvtbl7 = { 6, { mvtbl7_0, mvtbl7_1, mvtbl7_2, mvtbl7_3, mvtbl7_4, mvtbl7_5 } };
 mvtbl* mvtbl_tbl[8] = { &mvtbl0, &mvtbl1, &mvtbl2, &mvtbl3, &mvtbl4, &mvtbl5, &mvtbl6, &mvtbl7 };
 short tufo_tbl[43] = { 2, 0, 90, 2048, 2048, 1920, 2048, 90, 1920, 2048, 2048, 2048, 90, 2048, 2048, 2048, 1920, 90, 2048, 1920, 2048, 2048, 90, 2048, 2048, 2176, 2048, 90, 2176, 2048, 2048, 2048, 90, 2048, 2048, 2048, 2176, 90, 2048, 2176, 2048, 2048, -1 };
 
@@ -790,63 +850,3 @@ void eexp01(sprite_status_sp* actionwk) { /* Line 787, Address: 0x10034c0 */
 } /* Line 790, Address: 0x10034f4 */
 
 
-static sprite_pattern skage00 =  { 1, { { -40,   -8, 0,  71 } } };
-static sprite_pattern skage01 =  { 1, { { -35,   -8, 0,  72 } } };
-static sprite_pattern skage02 =  { 1, { { -30,   -4, 0,  73 } } };
-static sprite_pattern skage03 =  { 1, { { -30,   -4, 0,  74 } } };
-static sprite_pattern skage04 =  { 1, { { -25,   -4, 0,  75 } } };
-static sprite_pattern skage05 =  { 1, { { -20,   -4, 0,  76 } } };
-static sprite_pattern skage06 =  { 1, { { -15,   -4, 0,  77 } } };
-static sprite_pattern skage07 =  { 1, { { -15,   -4, 0,  78 } } };
-static sprite_pattern skage08 =  { 1, { { -10,   -4, 0,  79 } } };
-static sprite_pattern skage09 =  { 1, { {  -5,   -4, 0,  80 } } };
-static sprite_pattern sufo00 = { 1, { { -40, -56, 0,  91 } } };
-static sprite_pattern sufo01 = { 1, { { -30, -48, 0,  92 } } };
-static sprite_pattern sufo02 = { 1, { { -30, -40, 0,  93 } } };
-static sprite_pattern sufo03 = { 1, { { -30, -40, 0,  94 } } };
-static sprite_pattern sufo04 = { 1, { { -30, -32, 0,  95 } } };
-static sprite_pattern sufo05 = { 1, { { -20, -32, 0,  96 } } };
-static sprite_pattern sufo06 = { 1, { { -20, -32, 0,  97 } } };
-static sprite_pattern sufo07 = { 1, { { -15, -24, 0,  98 } } };
-static sprite_pattern sufo08 = { 1, { { -10, -16, 0,  99 } } };
-static sprite_pattern sufo09 = { 1, { {  -5,  -8, 0, 100 } } };
-static sprite_pattern sufo10 = { 1, { { -40,  -8, 0, 101 } } };
-static sprite_pattern sufo11 = { 1, { { -30, -48, 0, 102 } } };
-static sprite_pattern sufo12 = { 1, { { -30, -40, 0, 103 } } };
-static sprite_pattern sufo13 = { 1, { { -30, -40, 0, 104 } } };
-static sprite_pattern sufo14 = { 1, { { -30, -32, 0, 105 } } };
-static sprite_pattern sufo15 = { 1, { { -20, -32, 0, 106 } } };
-static sprite_pattern sufo16 = { 1, { { -20, -32, 0, 107 } } };
-static sprite_pattern sufo17 = { 1, { { -15, -24, 0, 108 } } };
-static sprite_pattern sufo18 = { 1, { { -10, -16, 0, 109 } } };
-static sprite_pattern sufo19 = { 1, { {  -5,  -8, 0, 110 } } };
-sprite_patterns_sp mpkageTBL0 = { 1, -1, { &skage00 } };
-sprite_patterns_sp mpkageTBL1 = { 1, -1, { &skage01 } };
-sprite_patterns_sp mpkageTBL2 = { 1, -1, { &skage02 } };
-sprite_patterns_sp mpkageTBL3 = { 1, -1, { &skage03 } };
-sprite_patterns_sp mpkageTBL4 = { 1, -1, { &skage04 } };
-sprite_patterns_sp mpkageTBL5 = { 1, -1, { &skage05 } };
-sprite_patterns_sp mpkageTBL6 = { 1, -1, { &skage06 } };
-sprite_patterns_sp mpkageTBL7 = { 1, -1, { &skage07 } };
-sprite_patterns_sp mpkageTBL8 = { 1, -1, { &skage08 } };
-sprite_patterns_sp mpkageTBL9 = { 1, -1, { &skage09 } };
-sprite_patterns_sp mpufoxTBL0 = { 1, -1, { &sufo00 } };
-sprite_patterns_sp mpufoxTBL1 = { 1, -1, { &sufo01 } };
-sprite_patterns_sp mpufoxTBL2 = { 1, -1, { &sufo02 } };
-sprite_patterns_sp mpufoxTBL3 = { 1, -1, { &sufo03 } };
-sprite_patterns_sp mpufoxTBL4 = { 1, -1, { &sufo04 } };
-sprite_patterns_sp mpufoxTBL5 = { 1, -1, { &sufo05 } };
-sprite_patterns_sp mpufoxTBL6 = { 1, -1, { &sufo06 } };
-sprite_patterns_sp mpufoxTBL7 = { 1, -1, { &sufo07 } };
-sprite_patterns_sp mpufoxTBL8 = { 1, -1, { &sufo08 } };
-sprite_patterns_sp mpufoxTBL9 = { 1, -1, { &sufo09 } };
-sprite_patterns_sp mpufoyTBL0 = { 1, -1, { &sufo10 } };
-sprite_patterns_sp mpufoyTBL1 = { 1, -1, { &sufo11 } };
-sprite_patterns_sp mpufoyTBL2 = { 1, -1, { &sufo12 } };
-sprite_patterns_sp mpufoyTBL3 = { 1, -1, { &sufo13 } };
-sprite_patterns_sp mpufoyTBL4 = { 1, -1, { &sufo14 } };
-sprite_patterns_sp mpufoyTBL5 = { 1, -1, { &sufo15 } };
-sprite_patterns_sp mpufoyTBL6 = { 1, -1, { &sufo16 } };
-sprite_patterns_sp mpufoyTBL7 = { 1, -1, { &sufo17 } };
-sprite_patterns_sp mpufoyTBL8 = { 1, -1, { &sufo18 } };
-sprite_patterns_sp mpufoyTBL9 = { 1, -1, { &sufo19 } };

@@ -351,7 +351,7 @@ static sprite_patterns_sp table01 = {
   { &tbl37, &tbl38, &rev37, &rev38 }
 };
 static sprite_patterns_sp table02 = {
-  4,
+  6,
   0,
   { &rev03, &rev04, &rev05, &rev06, &rev07, &rev08 }
 };
@@ -398,7 +398,7 @@ static sprite_patterns_sp table10 = {
 static sprite_patterns_sp table11 = {
   6,
   2,
-  { &tbl21, &tbl22, &tbl21, &tbl23, &tbl24, &tbl23 }
+  { &tbl21, &tbl22, &rev21, &tbl23, &tbl24, &rev23 }
 };
 static sprite_patterns_sp table12 = {
   2,
@@ -419,7 +419,7 @@ static sprite_patterns_sp table13 = {
 static sprite_patterns_sp table14 = {
   8,
   2,
-  { &tbl27, &tbl25, &tbl26, &tbl25, &tbl27, &tbl25, &tbl26, &tbl25 }
+  { &tbl27, &tbl25, &rev26, &rev25, &rev27, &rev25, &tbl26, &tbl25 }
 };
 static sprite_patterns_sp table15 = {
   64,
