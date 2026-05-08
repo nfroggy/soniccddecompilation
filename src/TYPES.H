@@ -255,7 +255,7 @@ typedef struct {
   char dummy;
   edit_data_entry dat[EDIT_DATA_ENTRY_COUNT];
 }
-edit_data;
+edit_data __attribute__((aligned(8)));
 
 typedef struct {
   unsigned char* CGdata;

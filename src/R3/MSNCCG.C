@@ -184,12 +184,22 @@ sprite_pattern emie3_pat5 = {
   { { -12, -20, 0, 438 } }
 };
 sprite_pattern emie3_pat6 = {
+#if defined(R31A) || defined(R31B) || defined(R32A)
+  0,
+  { { -8, -8, 0, 439 } }
+#else
   0,
   {}
+#endif
 };
 sprite_pattern emie3_pat7 = {
+#if defined(R31A) || defined(R31B) || defined(R32A)
+  0,
+  { { -8, -8, 0, 440 } }
+#else
   0,
   {}
+#endif
 };
 sprite_pattern emie3_pat8 = {
   1,
@@ -212,8 +222,13 @@ sprite_pattern emie3_patC = {
   { { -12, -20, 0, 445 } }
 };
 sprite_pattern emie3_patD = {
+#if defined(R31A) || defined(R31B) || defined(R32A)
+  0,
+  { { -8, -8, 0, 446 } }
+#else
   0,
   {}
+#endif
 };
 sprite_pattern* emie3pat[14] = {
   &emie3_pat0,

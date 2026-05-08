@@ -7,6 +7,7 @@
 #include "..\SCORE.H"
 
 static unsigned char bCarry;
+unsigned short escoretbl[4] = { 10, 20, 50, 100 };
 unsigned char colitbl[64][2] =
 {
   {  20,  20 },
@@ -74,7 +75,6 @@ unsigned char colitbl[64][2] =
   {  64,  16 },
   {   0,   0 }
 };
-unsigned short escoretbl[4] = { 10, 20, 50, 100 };
 
 
 short pcol(sprite_status* pActwk) { /* Line 80, Address: 0x101b500 */

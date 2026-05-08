@@ -37,8 +37,11 @@ static sprite_pattern tpat07 =
 };
 static sprite_pattern tpat02 =
 {
-  1,
-  { { -24, -32, 0, SPRITE_ET_BASE + 7 } }
+  2,
+  {
+    { -24, -32, 0, SPRITE_ET_BASE + 7 },
+    { -40, -32, 0, SPRITE_ET_BASE + 8 }
+  }
 };
 static sprite_pattern tpat03 =
 {

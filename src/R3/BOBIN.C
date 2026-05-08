@@ -40,7 +40,7 @@ static sprite_pattern fripsp1 = {
 };
 static sprite_pattern fripsp2 = {
   1,
-  { { -32, -20, 0, SPRITE_BOBIN_BASE + 4 } }
+  { { -32, -20, 0, SPRITE_BOBIN_BASE + 5 } }
 };
 sprite_pattern* bobinpat[3] = { &bobinsp0, &bobinsp1, &bobinsp2 };
 sprite_pattern* frippat[3] = { &fripsp0, &fripsp1, &fripsp2 };

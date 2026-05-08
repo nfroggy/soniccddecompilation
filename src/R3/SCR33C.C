@@ -561,7 +561,7 @@ void scroll(void) { /* Line 365, Address: 0x102b610 */
   } /* Line 561, Address: 0x102be98 */
 
   pHScrollBuff = lphscrollbuff; /* Line 563, Address: 0x102bea8 */
-  pHScrollWork = &hscrollwork[160]; /* Line 564, Address: 0x102beb4 */
+  pHScrollWork = &hscrollwork[152]; /* Line 564, Address: 0x102beb4 */
   lD0.w.l = scrb_v_posit.w.h; /* Line 565, Address: 0x102bec0 */
   lD2.w.l = lD0.w.l; /* Line 566, Address: 0x102becc */
   wD4 = lD0.w.l; /* Line 567, Address: 0x102bed4 */

@@ -13,44 +13,6 @@ static sprite_pattern har01 = { 1, { { -16, -16, 0, 289 } } };
 static sprite_pattern har02 = { 1, { { -16, -16, 0, 290 } } };
 static sprite_pattern har03 = { 1, { { -16, -16, 0, 291 } } };
 sprite_pattern* harir3pat[4] = { &har00, &har01, &har02, &har03 };
-static sprite_pattern frd00 = { 1, { { -16, -16, 0, 292 } } };
-sprite_pattern* frdr3pat[1] = { &frd00 };
-static sprite_pattern trd00 = { 1, { { -16, -16, 0, 293 } } };
-static sprite_pattern trd01 = { 1, { { -16, -16, 0, 294 } } };
-sprite_pattern* trapdr3pat[2] = { &trd00, &trd01 };
-static sprite_pattern fo00 = { 1, { { -32, -16, 0, 295 } } };
-sprite_pattern* for3pat[1] = { &fo00 };
-static sprite_pattern gtd00 = { 1, { { -32, -8, 0, 296 } } };
-sprite_pattern* getdair3pat[1] = { &gtd00 };
-static unsigned char pchg1[4] = { 2, 1, 2, 255 };
-static unsigned char pchg2[4] = { 2, 3, 5, 255 };
-static unsigned char pchg3[4] = { 2, 4, 5, 255 };
-static unsigned char pchg4[6] = { 0, 3, 6, 5, 6, 255 };
-static unsigned char pchg5[6] = { 0, 4, 6, 5, 6, 255 };
-unsigned char* gandair3_pchg[5] = { pchg1, pchg2, pchg3, pchg4, pchg5 };
-static sprite_pattern gnd00 = { 1, { { -16, -4, 0, 297 } } };
-static sprite_pattern gnd01 = { 1, { { -16, -20, 0, 298 } } };
-static sprite_pattern gnd02 = { 1, { { -16, -20, 0, 299 } } };
-static sprite_pattern gnd03 = { 1, { { -8, -8, 0, 300 } } };
-static sprite_pattern gnd04 = { 1, { { -8, -8, 0, 301 } } };
-static sprite_pattern gnd05 = { 1, { { -16, -20, 0, 0 } } };
-sprite_pattern* gandair3pat[7] = { &gnd00, &gnd01, &gnd02, &gnd03, &gnd04, &gnd05, &gnd05 };
-static sprite_pattern drm00 = { 1, { { -24, -16, 0, 302 } } };
-static sprite_pattern drm01 = { 1, { { -24, -12, 0, 303 } } };
-static sprite_pattern drm02 = { 1, { { -24, -8, 0, 304 } } };
-static sprite_pattern drm03 = { 1, { { -24, -4, 0, 305 } } };
-static sprite_pattern drm04 = { 1, { { -24, -4, 0, 306 } } };
-static sprite_pattern drm05 = { 1, { { -24, -4, 0, 307 } } };
-static sprite_pattern drm06 = { 1, { { -24, -4, 0, 308 } } };
-static sprite_pattern drm07 = { 1, { { -24, -4, 0, 309 } } };
-static sprite_pattern drm08 = { 1, { { -24, 0, 0, 310 } } };
-static sprite_pattern drm09 = { 1, { { -24, 0, 0, 311 } } };
-static sprite_pattern drm0a = { 1, { { -16, -20, 0, 0 } } };
-static sprite_pattern drm0b = { 1, { { -24, -8, 0, 312 } } };
-sprite_pattern* drumr3pat[12] = {
-  &drm00, &drm01, &drm02, &drm03, &drm04, &drm05,
-  &drm06, &drm07, &drm08, &drm09, &drm0a, &drm0b
-};
 
 
 
@@ -202,6 +164,9 @@ void harir3_sub(sprite_status* hariwk) { /* Line 185, Address: 0x1020680 */
   hariwk->actfree[16] = 60; /* Line 202, Address: 0x1020788 */
 } /* Line 203, Address: 0x1020794 */
 
+static sprite_pattern frd00 = { 1, { { -16, -16, 0, 292 } } };
+sprite_pattern* frdr3pat[1] = { &frd00 };
+
 
 
 
@@ -320,6 +285,10 @@ void frdr3_move(sprite_status* floorwk) { /* Line 289, Address: 0x1020a20 */
     floorwk->actfree[17] = floorwk->actfree[17] + 1 & 3; /* Line 320, Address: 0x1020bc4 */
   } while (1); /* Line 321, Address: 0x1020be4 */
 } /* Line 322, Address: 0x1020bec */
+
+static sprite_pattern trd00 = { 1, { { -16, -16, 0, 293 } } };
+static sprite_pattern trd01 = { 1, { { -16, -16, 0, 294 } } };
+sprite_pattern* trapdr3pat[2] = { &trd00, &trd01 };
 
 
 
@@ -453,6 +422,9 @@ void trapdr3_updown(sprite_status* floorwk) { /* Line 440, Address: 0x1021010 */
   if ((floorwk->actfree[17] += 8) >= 32) floorwk->actfree[17] = 32; /* Line 453, Address: 0x10210c8 */
 
 } /* Line 455, Address: 0x10210f8 */
+
+static sprite_pattern fo00 = { 1, { { -32, -16, 0, 295 } } };
+sprite_pattern* for3pat[1] = { &fo00 };
 
 
 
@@ -789,6 +761,9 @@ void for3_rup3(sprite_status* floorwk) { /* Line 788, Address: 0x1021f80 */
   floorwk->actno = floorwk->actno; /* Line 789, Address: 0x1021f88 */
 } /* Line 790, Address: 0x1021f98 */
 
+static sprite_pattern gtd00 = { 1, { { -32, -8, 0, 296 } } };
+sprite_pattern* getdair3pat[1] = { &gtd00 };
+
 
 
 
@@ -897,6 +872,20 @@ void getdair3_move_sub(sprite_status* floorwk) { /* Line 883, Address: 0x1022260
   floorwk->actfree[17] = 64; /* Line 897, Address: 0x102233c */
   floorwk->actfree[16] = 8; /* Line 898, Address: 0x1022348 */
 } /* Line 899, Address: 0x1022354 */
+
+static unsigned char pchg1[4] = { 2, 1, 2, 255 };
+static unsigned char pchg2[4] = { 2, 3, 5, 255 };
+static unsigned char pchg3[4] = { 2, 4, 5, 255 };
+static unsigned char pchg4[6] = { 0, 3, 6, 5, 6, 255 };
+static unsigned char pchg5[6] = { 0, 4, 6, 5, 6, 255 };
+unsigned char* gandair3_pchg[5] = { pchg1, pchg2, pchg3, pchg4, pchg5 };
+static sprite_pattern gnd00 = { 1, { { -16, -4, 0, 297 } } };
+static sprite_pattern gnd01 = { 1, { { -16, -20, 0, 298 } } };
+static sprite_pattern gnd02 = { 1, { { -16, -20, 0, 299 } } };
+static sprite_pattern gnd03 = { 1, { { -8, -8, 0, 300 } } };
+static sprite_pattern gnd04 = { 1, { { -8, -8, 0, 301 } } };
+static sprite_pattern gnd05 = { 1, { { -16, -20, 0, 0 } } };
+sprite_pattern* gandair3pat[7] = { &gnd00, &gnd01, &gnd02, &gnd03, &gnd04, &gnd05, &gnd05 };
 
 
 
@@ -1208,6 +1197,23 @@ void gandair3_tamm(sprite_status* bulletwk) { /* Line 1190, Address: 0x1022eb0 *
 
   frameout(bulletwk); /* Line 1209, Address: 0x1022fdc */
 } /* Line 1210, Address: 0x1022fe8 */
+
+static sprite_pattern drm00 = { 1, { { -24, -16, 0, 302 } } };
+static sprite_pattern drm01 = { 1, { { -24, -12, 0, 303 } } };
+static sprite_pattern drm02 = { 1, { { -24, -8, 0, 304 } } };
+static sprite_pattern drm03 = { 1, { { -24, -4, 0, 305 } } };
+static sprite_pattern drm04 = { 1, { { -24, -4, 0, 306 } } };
+static sprite_pattern drm05 = { 1, { { -24, -4, 0, 307 } } };
+static sprite_pattern drm06 = { 1, { { -24, -4, 0, 308 } } };
+static sprite_pattern drm07 = { 1, { { -24, -4, 0, 309 } } };
+static sprite_pattern drm08 = { 1, { { -24, 0, 0, 310 } } };
+static sprite_pattern drm09 = { 1, { { -24, 0, 0, 311 } } };
+static sprite_pattern drm0a = { 1, { { -16, -20, 0, 0 } } };
+static sprite_pattern drm0b = { 1, { { -24, -8, 0, 312 } } };
+sprite_pattern* drumr3pat[12] = {
+  &drm00, &drm01, &drm02, &drm03, &drm04, &drm05,
+  &drm06, &drm07, &drm08, &drm09, &drm0a, &drm0b
+};
 
 
 

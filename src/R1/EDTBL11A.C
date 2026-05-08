@@ -24,7 +24,7 @@ extern sprite_pattern* patbase_kuzure_b[];
 extern sprite_pattern* markerpat[];
 extern sprite_pattern* bariapat[];
 
-edit_data edit_tbl __attribute__((aligned(8))) = {
+edit_data edit_tbl = {
   52,
   0,
   {

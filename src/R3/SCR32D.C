@@ -579,7 +579,7 @@ void scroll(void) { /* Line 366, Address: 0x1027700 */
 
 
   wD1 = (wD5 << 3) - 1; /* Line 581, Address: 0x1027fd0 */
-  pHScrollWork = &hscrollwork[28]; /* Line 582, Address: 0x1027fe4 */
+  pHScrollWork = &hscrollwork[32]; /* Line 582, Address: 0x1027fe4 */
   wD5 = (unsigned char)waterdirec.b.h; /* Line 583, Address: 0x1027ff0 */
   wD4 -= (unsigned short)scrb_v_posit.w.h; /* Line 584, Address: 0x1028004 */
 

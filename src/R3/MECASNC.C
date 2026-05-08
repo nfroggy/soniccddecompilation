@@ -9,6 +9,7 @@
 #include "..\RIDECHK.H"
 #include "COLI3.H"
 
+static unsigned char jmp_flg;
 static unsigned char bCarry;
 void(*msnc_tbl[6])(sprite_status*) = {
   &mecasnc3_init,
@@ -18,22 +19,13 @@ void(*msnc_tbl[6])(sprite_status*) = {
   &mecasnc3_upmv,
   &mecasnc3_rght
 };
-static unsigned char jmp_flg;
 extern sprite_pattern* mecasnc3pat[];
-unsigned char vatck_pchg[5] = { 0, 0, 1, 0, 255 };
-unsigned char elec_pchg[9] = { 6, 1, 7, 1, 8, 1, 9, 1, 255 };
-unsigned char hover_pchg[3] = { 14, 1, 255 };
-unsigned char* msc_pchg[3] = {
-  vatck_pchg,
-  elec_pchg,
-  hover_pchg
-};
-extern PALETTEENTRY zone3colora[];
 void(*emie3_tbl[3])(sprite_status*) = {
   &emie3_init,
   &emie3_walk,
   &emie3_help
 };
+extern PALETTEENTRY zone3colora[];
 extern unsigned char* em_pchg[];
 extern sprite_pattern* emie3pat[];
 static PALETTEENTRY emie3_clr[16] = {
@@ -56,6 +48,14 @@ void(*heart_tbl[2])(sprite_status*) = {
 void(*msfire_tbl[2])(sprite_status*) = {
   &msnc3fire_init,
   &msnc3fire_move
+};
+unsigned char vatck_pchg[5] = { 0, 0, 1, 0, 255 };
+unsigned char elec_pchg[9] = { 6, 1, 7, 1, 8, 1, 9, 1, 255 };
+unsigned char hover_pchg[3] = { 14, 1, 255 };
+unsigned char* msc_pchg[3] = {
+  vatck_pchg,
+  elec_pchg,
+  hover_pchg
 };
 unsigned char fire_pchg0[6] = { 1, 12, 15, 13, 15, 255 };
 unsigned char* fire_pchg[1] = { fire_pchg0 };

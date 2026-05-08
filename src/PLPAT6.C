@@ -26,7 +26,7 @@ static sprite_pattern pat05 = {
 };
 static sprite_pattern pat06 = {
   1,
-  { { -16, -20, 0, 6 } }
+  { { -16, -20, 0, 7 } }
 };
 static sprite_pattern pat07 = {
   1,

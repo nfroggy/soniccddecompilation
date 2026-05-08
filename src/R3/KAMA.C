@@ -16,8 +16,8 @@
   #define SPRITE_KAMA_BASE 418
 #endif
 
-static unsigned char bCarry;
 static unsigned char jmp_flg;
+static unsigned char bCarry;
 void(*kama_tbl[7])(sprite_status*) = { &kama_init, &kama_fall, &kama_wait, &kama_atck, &kama_pati, &kama_move, &kama_reve };
 void(*wpkama_tbl[3])(sprite_status*) = { &wpkama_init, &wpkama_wait, &wpkama_move };
 unsigned char kama_pchg0[6] = { 7, 0, 1, 2, 3, 255 };
@@ -32,7 +32,7 @@ sprite_pattern kama_patC = { 3, { { -18, -20, 0, SPRITE_KAMA_BASE + 12 }, { -12,
 sprite_pattern kama_patD = { 3, { { -18, -19, 0, SPRITE_KAMA_BASE + 15 }, { -12, -3, 0, SPRITE_KAMA_BASE + 16 }, { -2, 4, 0, SPRITE_KAMA_BASE + 17 } } };
 sprite_pattern kama_patE = { 3, { { -18, -19, 0, SPRITE_KAMA_BASE + 18 }, { -12, -3, 0, SPRITE_KAMA_BASE + 19 }, { -2, 4, 0, SPRITE_KAMA_BASE + 20 } } };
 sprite_pattern kama_patF = { 4, { { -18, -19, 0, SPRITE_KAMA_BASE + 21 }, { -24, -12, 0, SPRITE_KAMA_BASE + 22 }, { -12, -4, 0, SPRITE_KAMA_BASE + 23 }, { -2, 4, 0, SPRITE_KAMA_BASE + 24 } } };
-sprite_pattern kama_patG = { 3, { { -18, -19, 0, SPRITE_KAMA_BASE + 25 }, { -24, -11, 0, SPRITE_KAMA_BASE + 26 }, { -12, -3, 0, SPRITE_KAMA_BASE + 27 }, { -2, 4, 0, SPRITE_KAMA_BASE + 28 } } };
+sprite_pattern kama_patG = { 4, { { -18, -19, 0, SPRITE_KAMA_BASE + 25 }, { -24, -11, 0, SPRITE_KAMA_BASE + 26 }, { -12, -3, 0, SPRITE_KAMA_BASE + 27 }, { -2, 4, 0, SPRITE_KAMA_BASE + 28 } } };
 sprite_pattern kama_patH = { 3, { { -18, -20, 0, SPRITE_KAMA_BASE + 29 }, { -12, -4, 0, SPRITE_KAMA_BASE + 30 }, { -2, 4, 0, SPRITE_KAMA_BASE + 31 } } };
 sprite_pattern* kamapat[8] = { &kama_patA, &kama_patB, &kama_patC, &kama_patD, &kama_patE, &kama_patF, &kama_patG, &kama_patH };
 sprite_pattern bkama_patA = { 3, { { -18, -20, 0, SPRITE_KAMA_BASE + 32 }, { -12, -4, 0, SPRITE_KAMA_BASE + 33 }, { -2, 4, 0, SPRITE_KAMA_BASE + 34 } } };
