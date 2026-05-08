@@ -8,6 +8,7 @@
 extern short actwkchk(sprite_status** ppActwk);
 
 static unsigned char bCarry;
+unsigned short escoretbl[4] = { 10, 20, 50, 100 };
 unsigned char colitbl[64][2] = {
   {  20,  20 },
   {  18,  12 },
@@ -74,7 +75,6 @@ unsigned char colitbl[64][2] = {
   {  32,   8 },
   {   0,   0 }
 };
-unsigned short escoretbl[4] = { 10, 20, 50, 100 };
 
 short pcol(sprite_status* pActwk) { /* Line 79, Address: 0x101acd0 */
   short iXwork = pActwk->xposi.w.h, /* Line 80, Address: 0x101acfc */

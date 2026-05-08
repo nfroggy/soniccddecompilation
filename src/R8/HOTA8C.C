@@ -32,6 +32,11 @@ static void colchg2(unsigned char tbl_number);
 static void clrtrn(PALETTEENTRY* color_tbl);
 static void colchg(sprite_status* roomwk, unsigned char* chgtbl);
 
+extern unsigned char clrchgtbl1[16];
+extern unsigned char clrchgtbl2[16];
+extern PALETTEENTRY clrtblC1[48];
+extern PALETTEENTRY clrtblD[108];
+
 static unsigned char pchg0[6] = { 1, 5, 0, 5, 0, 255 };
 static unsigned char pchg1[5] = { 0, 4, 10, 10, 255 };
 static unsigned char pchg2[4] = { 7, 11, 12, 255 };
@@ -55,23 +60,6 @@ static sprite_pattern hotaru0f = { 1, { { -12, -8, 0, 301 } } };
 static sprite_pattern hotaru10 = { 1, { { -12, -8, 8, 301 } } };
 static sprite_pattern hotaru = { 1, { { -16, -20, 0, 0 } } };
 sprite_pattern* hotaru8pat[17] = { &hotaru00, &hotaru01, &hotaru, &hotaru, &hotaru04, &hotaru05, &hotaru06, &hotaru07, &hotaru08, &hotaru09, &hotaru, &hotaru0b, &hotaru0c, &hotaru, &hotaru, &hotaru0f, &hotaru10 };
-static unsigned char clrchgtbl1[16] = { 84, 64, 72, 4, 60, 5, 48, 6, 36, 7, 24, 8, 12, 9, 0, 0 };
-static unsigned char clrchgtbl2[16] = { 0, 64, 12, 9, 24, 8, 36, 7, 48, 6, 60, 5, 72, 4, 84, 32 };
-static PALETTEENTRY clrtblC1[48] = {
-  {   0,   0,   0, 1 }, {   0,   0,   0, 1 }, {   0,   0,   0, 1 }, {   0,   0,   0, 1 },
-  {   0,   0,   0, 1 }, {   0,   0,   0, 1 }, {   0,   0,   0, 1 }, {   0,   0,  32, 1 },
-  {   0,   0,   0, 1 }, {   0,   0,   0, 1 }, {   0,   0,  32, 1 }, {   0,   0,   0, 1 },
-  {   0,   0,   0, 1 }, {   0,   0,  64, 1 }, {   0,   0,   0, 1 }, {   0,   0,  32, 1 },
-  {   0,   0,  64, 1 }, {   0,   0,   0, 1 }, {   0,   0,   0, 1 }, {   0,   0,  96, 1 },
-  {   0,   0,   0, 1 }, {   0,   0,  64, 1 }, {   0,   0,  96, 1 }, {   0,   0,   0, 1 },
-  {   0,   0,   0, 1 }, {  32,  32, 128, 1 }, {   0,   0,  32, 1 }, {   0,   0,  96, 1 },
-  {   0,   0, 128, 1 }, {   0,   0,   0, 1 }, {   0,   0,   0, 1 }, {  64,  64, 160, 1 },
-  {   0,   0,  64, 1 }, {   0,   0, 128, 1 }, {  32,   0, 160, 1 }, {   0,   0,  32, 1 },
-  {   0,   0,   0, 1 }, {  96,  96, 192, 1 }, {   0,   0,  96, 1 }, {  32,   0, 160, 1 },
-  {  64,  32, 192, 1 }, {   0,   0,  64, 1 }, {   0,   0,  32, 1 }, { 128, 128, 224, 1 },
-  {   0,  32, 128, 1 }, {  64,  32, 192, 1 }, {  96,  64, 224, 1 }, {   0,   0,  96, 1 }
-};
-static PALETTEENTRY clrtblD[108];
 
 
 
@@ -452,3 +440,22 @@ static void colchg(sprite_status* roomwk, unsigned char* chgtbl) { /* Line 444, 
   clrtrn(&clrtblC1[clrtbl_index / 2]); /* Line 452, Address: 0x10300c8 */
   roomwk->actfree[16] += 2; /* Line 453, Address: 0x10300fc */
 } /* Line 454, Address: 0x103010c */
+
+
+unsigned char clrchgtbl1[16] = { 84, 64, 72, 4, 60, 5, 48, 6, 36, 7, 24, 8, 12, 9, 0, 0 };
+unsigned char clrchgtbl2[16] = { 0, 64, 12, 9, 24, 8, 36, 7, 48, 6, 60, 5, 72, 4, 84, 32 };
+PALETTEENTRY clrtblC1[48] = {
+  {   0,   0,   0, 1 }, {   0,   0,   0, 1 }, {   0,   0,   0, 1 }, {   0,   0,   0, 1 },
+  {   0,   0,   0, 1 }, {   0,   0,   0, 1 }, {   0,   0,   0, 1 }, {   0,   0,  32, 1 },
+  {   0,   0,   0, 1 }, {   0,   0,   0, 1 }, {   0,   0,  32, 1 }, {   0,   0,   0, 1 },
+  {   0,   0,   0, 1 }, {   0,   0,  64, 1 }, {   0,   0,   0, 1 }, {   0,   0,  32, 1 },
+  {   0,   0,  64, 1 }, {   0,   0,   0, 1 }, {   0,   0,   0, 1 }, {   0,   0,  96, 1 },
+  {   0,   0,   0, 1 }, {   0,   0,  64, 1 }, {   0,   0,  96, 1 }, {   0,   0,   0, 1 },
+  {   0,   0,   0, 1 }, {  32,  32, 128, 1 }, {   0,   0,  32, 1 }, {   0,   0,  96, 1 },
+  {   0,   0, 128, 1 }, {   0,   0,   0, 1 }, {   0,   0,   0, 1 }, {  64,  64, 160, 1 },
+  {   0,   0,  64, 1 }, {   0,   0, 128, 1 }, {  32,   0, 160, 1 }, {   0,   0,  32, 1 },
+  {   0,   0,   0, 1 }, {  96,  96, 192, 1 }, {   0,   0,  96, 1 }, {  32,   0, 160, 1 },
+  {  64,  32, 192, 1 }, {   0,   0,  64, 1 }, {   0,   0,  32, 1 }, { 128, 128, 224, 1 },
+  {   0,  32, 128, 1 }, {  64,  32, 192, 1 }, {  96,  64, 224, 1 }, {   0,   0,  96, 1 }
+};
+PALETTEENTRY clrtblD[108];

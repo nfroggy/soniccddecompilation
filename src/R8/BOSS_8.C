@@ -3508,8 +3508,17 @@ static int egg8hane_kill(sprite_status* pActwk, sprite_status* pMecawk, sprite_s
 
 
 
-static char hane_reset_tbl_2mai[12];
-static char hane_reset_tbl_3mai[16];
+static char hane_reset_tbl_2mai[12] = {
+  -1, 0, 1, -1,
+   0, -1, 1, -1,
+   0, 1, -1, -1
+};
+static char hane_reset_tbl_3mai[16] = {
+  -1, 0, 1, 2,
+   2, -1, 0, 1,
+   1, 2, -1, 0,
+   0, 1, 2, -1
+};
 static char* hane_no_reset_tbl[4] = {
   0,
   0,

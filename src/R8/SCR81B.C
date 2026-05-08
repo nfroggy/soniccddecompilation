@@ -388,14 +388,14 @@ void scroll(void) { /* Line 382, Address: 0x1028180 */
   short sYnum;
   short* psHscr;
   short* psHscw;
+  static int scaddtbl[5] = { 65536, 57344, 49152, 40960, 32768 };
+  static unsigned char z12c_cnttbl[5] = { 1, 3, 3, 3, 1 };
   static char z81bscrtbl0[9] = {
     3, 3, 1, 5, 1, 1, 1, 1, 1
   };
   static char z81bscrtbl1[7] = {
     3, 1, 1, 3, 1, 1, 1
   };
-  static int scaddtbl[5] = { 65536, 57344, 49152, 40960, 32768 };
-  static unsigned char z12c_cnttbl[5] = { 1, 3, 3, 3, 1 };
 
   if (scroll_start.b.h) return; /* Line 400, Address: 0x102819c */
 

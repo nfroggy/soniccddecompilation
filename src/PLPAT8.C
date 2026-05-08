@@ -114,7 +114,7 @@ static sprite_pattern pat1b = {
 };
 static sprite_pattern pat1c = {
   1,
-  { { -20, -24, 0, 0 } }
+  { { -24, -20, 0, 0 } }
 };
 static sprite_pattern pat1d = {
   1,
@@ -366,11 +366,11 @@ static sprite_pattern pat5a = {
 };
 static sprite_pattern pat5b = {
   1,
-  { { -20, -20, 0, 91 } }
+  { { -20, -20, 8, 91 } }
 };
 static sprite_pattern pat5c = {
   1,
-  { { -20, -20, 0, 92 } }
+  { { -20, -20, 8, 92 } }
 };
 static sprite_pattern pat5d = {
   1,
@@ -694,7 +694,7 @@ static sprite_pattern patac = {
 };
 static sprite_pattern patad = {
   1,
-  { { -16, -20, 0, 173 } }
+  { { -16, -20, 0, 0 } }
 };
 static sprite_pattern patae = {
   1,

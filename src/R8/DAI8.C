@@ -5,6 +5,14 @@
 #include "..\PLAYSUB.H"
 #include "..\RIDECHK.H"
 
+#if defined(R81)
+  #define SPRITE_DAI8_BASE 475
+#elif defined(R82)
+  #define SPRITE_DAI8_BASE 437
+#else
+  #define SPRITE_DAI8_BASE 433
+#endif
+
 static void act_init(sprite_status* actionwk);
 
 static char p00[47] =
@@ -42,32 +50,32 @@ static char* pchg[2] =
 static sprite_pattern pat00 =
 {
   1,
-  { { -16, -16, 0, 433 } }
+  { { -16, -16, 0, SPRITE_DAI8_BASE } }
 };
 static sprite_pattern pat01 =
 {
   1,
-  { { -16, -16, 0, 434 } }
+  { { -16, -16, 0, SPRITE_DAI8_BASE + 1 } }
 };
 static sprite_pattern pat02 =
 {
   1,
-  { { -8, -16, 0, 435 } }
+  { { -8, -16, 0, SPRITE_DAI8_BASE + 2 } }
 };
 static sprite_pattern pat03 =
 {
   1,
-  { { -8, -16, 0, 436 } }
+  { { -8, -16, 0, SPRITE_DAI8_BASE + 3 } }
 };
 static sprite_pattern pat04 =
 {
   1,
-  { { -4, -16, 0, 437 } }
+  { { -4, -16, 0, SPRITE_DAI8_BASE + 4 } }
 };
 static sprite_pattern pat05 =
 {
   1,
-  { { -4, -16, 0, 438 } }
+  { { -4, -16, 0, SPRITE_DAI8_BASE + 5 } }
 };
 static sprite_pattern patnull =
 {

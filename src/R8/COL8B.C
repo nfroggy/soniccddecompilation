@@ -16,15 +16,15 @@ static void colorset00(int ColorNo, int WorkOffs);
 
 unsigned char col8a0cnt[8] = { 38, 3, 4, 2, 4, 1, 4, 0 };
 PALETTEENTRY col8a0col[3] = {
-  {  96, 224, 224, 1 }, {   0, 160, 192, 1 }, {   0,  96, 160, 1 }
+  { 224, 160,  96, 1 }, { 192,  96,  64, 1 }, { 160,  32,  32, 1 }
 };
 unsigned char col8a1cnt[8] = { 39, 3, 4, 2, 4, 1, 4, 0 };
 PALETTEENTRY col8a1col[3] = {
-  {   0, 160, 192, 1 }, {   0,  96, 160, 1 }, {  96, 224, 224, 1 }
+  { 192,  96,  64, 1 }, { 160,  32,  32, 1 }, { 224, 160,  96, 1 }
 };
 unsigned char col8a2cnt[8] = { 40, 3, 4, 2, 4, 1, 4, 0 };
 PALETTEENTRY col8a2col[3] = {
-  {   0,  96, 160, 1 }, {  96, 224, 224, 1 }, {   0, 160, 192, 1 }
+  { 160,  32,  32, 1 }, { 224, 160,  96, 1 }, { 192,  96,  64, 1 }
 };
 unsigned char col8a3cnt[18] = { 62, 8, 99, 0, 2, 1, 2, 0, 2, 1, 2, 2, 2, 1, 2, 2, 2, 1 };
 PALETTEENTRY col8a3col[3] = {

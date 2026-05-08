@@ -14,6 +14,8 @@
   #define SPRITE_BOBIN_BASE 544
 #elif defined(R33C) || defined(R33D)
   #define SPRITE_BOBIN_BASE 548
+#elif defined(R83)
+  #define SPRITE_BOBIN_BASE 489
 #else
   #define SPRITE_BOBIN_BASE 497
 #endif

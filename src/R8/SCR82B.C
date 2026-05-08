@@ -24,7 +24,12 @@ static void sv_move_plus(short sSpd);
 static void scrv_down_ch(int_union lSpd);
 static void scrv_move(int_union lSpd);
 
-static unsigned char z81awrttbl[33];
+static unsigned char z81awrttbl[33] = {
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 2, 2, 0, 0, 0,
+  0, 0, 6, 6, 6, 6, 6, 4, 4, 4,
+  4, 4, 4
+};
 static int_union* vblockwrtbtbl[8] = {
   &scrb_h_posiw,
   &scrb_v_posiw,

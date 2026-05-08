@@ -126,7 +126,7 @@ palette_part colortbl[6] = {
   { advacolor2, 0, 64 },
   { gamecolor, 0, 16 },
   { zone8colora, 16, 48 },
-  { zone8colora, 16, 48 }
+  { zone82colora, 16, 48 }
 };
 static int FadeCount;
 
