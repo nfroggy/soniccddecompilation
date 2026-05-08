@@ -3,8 +3,10 @@
 #include "..\ACTION.H"
 #include "..\ACTSET.H"
 
-#if defined(R73C) || defined(R73D)
-  #define SPRITE_TEKKYU7_BASE 441
+#if defined(R71) || defined(R72)
+  #define SPRITE_TEKKYU7_BASE 427
+#elif defined(R73C) || defined(R73D)
+  #define SPRITE_TEKKYU7_BASE 410
 #else
   #define SPRITE_TEKKYU7_BASE 462
 #endif

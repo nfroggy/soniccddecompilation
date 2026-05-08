@@ -204,7 +204,7 @@ void scr_set(void) { /* Line 176, Address: 0x1025090 */
 void playposiset(void) { /* Line 204, Address: 0x10252a0 */
   unsigned short playpositbl[2] = { /* Line 205, Address: 0x10252b4 */
     64,
-    396
+    652
   };
   unsigned char playmapnotbl[4] = { /* Line 209, Address: 0x10252d0 */
     132,

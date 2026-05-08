@@ -8,6 +8,7 @@
 extern short actwkchk(sprite_status** ppActwk);
 
 static unsigned char bCarry;
+unsigned short escoretbl[4] = { 10, 20, 50, 100 };
 unsigned char colitbl[64][2] = {
   {  20,  20 }, {  18,  12 },
   {  12,  16 }, {   4,  16 },
@@ -42,7 +43,6 @@ unsigned char colitbl[64][2] = {
   {  20,  20 }, {   8,  16 },
   {   0,   0 }, {   0,   0 }
 };
-unsigned short escoretbl[4] = { 10, 20, 50, 100 };
 
 
 

@@ -421,11 +421,11 @@ sprite_pattern* hahen73_pat[4] = {
   &hahen73_pat2,
   &hahen73_pat3
 };
-short QuickReturn;
-sprite_status* pEggman;
 sprite_status* pPlayerwk;
-short GL_d5;
+sprite_status* pEggman;
 sprite_status* pMsnc;
+short GL_d5;
+short QuickReturn;
 extern unsigned short scr_dir_tbl[];
 extern sprite_pattern* bakupat[7];
 

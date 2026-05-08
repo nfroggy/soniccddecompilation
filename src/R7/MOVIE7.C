@@ -6,8 +6,10 @@
 #include "..\PLAYSUB.H"
 #include "..\RIDECHK.H"
 
-#if defined(R73C) || defined(R73D)
-  #define SPRITE_MOVIE7_BASE 441
+#if defined(R71) || defined(R72)
+  #define SPRITE_MOVIE7_BASE 503
+#elif defined(R73C) || defined(R73D)
+  #define SPRITE_MOVIE7_BASE 447
 #else
   #define SPRITE_MOVIE7_BASE 462
 #endif

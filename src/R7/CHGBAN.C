@@ -181,8 +181,8 @@ sprite_pattern* chgbanpat[5] = {
   &chgbanpat0,
   &chgbanpat1,
   &chgbanpat2,
-  &chgbanpat3,
-  &chgbanpat4
+  &chgbanpat4,
+  &chgbanpat3
 };
 static void(*chgban_act_tbl[4])(sprite_status*) = {
   &chgban_init,
@@ -1002,10 +1002,10 @@ static void spr_r_set(sprite_status* pActwk) { /* Line 1000, Address: 0x101b880 
   short* pPostbl;
   short patcntwk;
   sprite_status* pMstwk;
+  static char tbl0[9] = { 2, 0, 2, 1, 2, 0, 2, 1, 2 };
   static sprite_pattern** tbl1[3] = {
     spring90pat2, springpat2, spring45pat2
   };
-  static char tbl0[9] = { 2, 0, 2, 1, 2, 0, 2, 1, 2 };
 
 
   switch (pActwk->userflag.b.h) { /* Line 1011, Address: 0x101b898 */
