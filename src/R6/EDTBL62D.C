@@ -26,6 +26,7 @@ extern sprite_pattern* itempat[];
 extern sprite_pattern* goalpat[];
 extern sprite_pattern* bringpat[];
 extern sprite_pattern* gaspat[];
+extern sprite_pattern* cata_pat[];
 
 edit_data edit_tbl = {
   52,
@@ -82,6 +83,7 @@ edit_data edit_tbl = {
     { 22, 1, goalpat,          736, 0, 0, 0, 5 },
     { 23, 1, goalpat,         1084 },
     { 20, 1, bringpat,        1160 },
-    {  5, 1, gaspat,           768 }
+    {  5, 1, gaspat,           768 },
+    {  4, 1, cata_pat,        1024 }
   }
 };

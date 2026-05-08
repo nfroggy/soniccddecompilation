@@ -11,14 +11,15 @@
 
 extern void sub_sync(short ReqNo); extern short playdamageset(sprite_status* pActwk, sprite_status* pColliAct); extern void soundset(short ReqNo); extern short pcol(sprite_status* pActwk); extern void da_set(void); extern short playdieset(sprite_status* pActwk);
 
+sprite_pattern** playpat;
+unsigned char* playcg;
+static unsigned char Brake_Req;
+static unsigned char Brake_Sw;
 static unsigned int WaveClear;
-static unsigned char Brake_Sw, Brake_Req;
 extern sprite_pattern* sncpat[];
 extern unsigned char mapwka[8][64];
 static short tate[2] = { 426, -1 }, yoko[2] = { 449, -1 }, naname[9] = { 444, 475, 468, 465, 419, 409, 408, 418, -1 };
 extern unsigned char *playchg[60], plchg00[8], plchg01[8], plchg49[8], plchg53[8], plchg03[8], plchg02[8], plchg54[8], plchg35[6], plchg04[8], plchg39[7], plchg33[6], plchg34[6];
-unsigned char* playcg;
-sprite_pattern** playpat;
 
 void bye_chk(void) { /* Line 23, Address: 0x1020870 */
   if (actwk[0].mstno.b.h != 5) { byecnt0.w = 0; return; } /* Line 24, Address: 0x1020878 */
@@ -238,7 +239,7 @@ void bura(void) { /* Line 209, Address: 0x1021030 */
 
 void sibi2(void) { /* Line 239, Address: 0x10211d0 */
   short block_no, i;
-  short* block_tbl;
+  short* volatile block_tbl;
   short* tbl[3] = { tate, yoko, naname }; /* Line 242, Address: 0x10211e0 */
 
   if (actwk[0].mstno.b.h == 43 || actwk[0].r_no0 >= 4 /* Line 244, Address: 0x1021204 */
@@ -668,7 +669,7 @@ void kuru2move(void) { /* Line 666, Address: 0x10227b0 */
 
   if (actwk[0].actfree[2] & 16) { /* Line 669, Address: 0x10227bc */
     if ((actwk[0].actfree[1] & 127) == 0) { /* Line 670, Address: 0x10227d4 */
-      actwk[0].mspeed.w = (char)actwk[0].actfree[1] < 0 ? -3072 : 3072; /* Line 671, Address: 0x10227ec */
+      actwk[0].xspeed.w = (char)actwk[0].actfree[1] < 0 ? -3072 : 3072; /* Line 671, Address: 0x10227ec */
 
       actwk[0].sproffset &= 32767; /* Line 673, Address: 0x102282c */
       actwk[0].actfree[2] &= 231; /* Line 674, Address: 0x1022840 */
@@ -681,7 +682,7 @@ void kuru2move(void) { /* Line 666, Address: 0x10227b0 */
   if ((char)(actwk[0].actfree[1] += 8) >= 0) actwk[0].sproffset |= 32768; /* Line 681, Address: 0x1022890 */
   else actwk[0].sproffset &= 32767; /* Line 682, Address: 0x10228dc */
 
-  sinset(actwk[0].actfree[2], &tmp_sin, &tmp_cos); /* Line 684, Address: 0x10228f0 */
+  sinset(actwk[0].actfree[1], &tmp_sin, &tmp_cos); /* Line 684, Address: 0x10228f0 */
   tmp_cos = (tmp_cos * 23) / 256; /* Line 685, Address: 0x1022908 */
   actwk[0].xposi.w.h = *(short*)&actwk[0].actfree[20] + tmp_cos; /* Line 686, Address: 0x1022948 */
 
@@ -1603,7 +1604,7 @@ void jumpcolchk(void) { /* Line 1506, Address: 0x10256c0 */
 
       if (chk_d1 < 0) { /* Line 1604, Address: 0x1025bb4 */
         actwk[0].xposi.w.h += chk_d1; /* Line 1605, Address: 0x1025bc8 */
-        actwk[0].mspeed.w = 0; /* Line 1606, Address: 0x1025be0 */
+        actwk[0].xspeed.w = 0; /* Line 1606, Address: 0x1025be0 */
       }
 
       dircol_u(&actwk[0], &chk_d0, &chk_d1, &tmp_d3); /* Line 1609, Address: 0x1025be8 */

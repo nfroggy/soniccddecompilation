@@ -30,17 +30,6 @@ sprite_pattern* pat_egg6[2] = {
 static char tbl0[28] = { 1, 0, 0, 5, -18, -10, 10, -10, 10, 15, 0, -10, 20, -10, -10, 25, 13, -10, 30, -10, 20, 35, 13, -10, 40, -10, 10, -1 };
 static char tbl1[21] = { -24, -64, -8, 64, 8, 0, 24, -128, 40, -128, 56, 64, 72, 64, 88, -128, 104, 64, 120, -64, -1 };
 static unsigned char stack_pointer;
-static unsigned char pchg_bomb00[4] = { 1, 0, 1, 255 };
-static unsigned char* pchg_bomb[1] = { pchg_bomb00 };
-static sprite_pattern bomb0 = {
-  1,
-  { { -8, -8, 0, 300 } }
-};
-static sprite_pattern bomb1 = {
-  1,
-  { { -8, -8, 0, 301 } }
-};
-sprite_pattern* pat_bomb[2] = { &bomb0, &bomb1 };
 
 
 
@@ -56,6 +45,20 @@ void eggz6(sprite_status* eggwk) { /* Line 47, Address: 0x101a7a0 */
   actionsub(eggwk); /* Line 56, Address: 0x101a85c */
   if (eggwk->r_no0 <= 2) frameout_s(eggwk); /* Line 57, Address: 0x101a868 */
 } /* Line 58, Address: 0x101a88c */
+
+
+
+static unsigned char pchg_bomb00[4] = { 1, 0, 1, 255 };
+static unsigned char* pchg_bomb[1] = { pchg_bomb00 };
+static sprite_pattern bomb0 = {
+  1,
+  { { -8, -8, 0, 300 } }
+};
+static sprite_pattern bomb1 = {
+  1,
+  { { -8, -8, 0, 301 } }
+};
+sprite_pattern* pat_bomb[2] = { &bomb0, &bomb1 };
 
 
 

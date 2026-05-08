@@ -71,7 +71,8 @@ sprite_pattern* pat_et[8] = {
   &tpat03,
   &tpat04,
   &tpat05,
-  &tpat06
+  &tpat06,
+  &tpat07
 };
 static unsigned short tbl0sproffset[11] = {
   1087, 1033, 0, 0,

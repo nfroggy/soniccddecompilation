@@ -11,54 +11,8 @@ void(*kdai6_tbl[2])(sprite_status*) =
   &kdai6_init,
   &kdai6_move
 };
-void(*move_tbl[4])(sprite_status*) =
-{
-  &kd_mv_right,
-  &kd_mv_left,
-  &kd_mv_up,
-  &kd_mv_down
-};
-unsigned char kdpat0[8] = { 9, 0, 1, 2, 3, 4, 5, 255 };
-unsigned char* kdai6pchg[1] = { kdpat0 };
-sprite_pattern kdai6pat0 =
-{
-  1,
-  { { -24, -16, 0, 314 } }
-};
-sprite_pattern kdai6pat1 =
-{
-  1,
-  { { -24, -16, 0, 315 } }
-};
-sprite_pattern kdai6pat2 =
-{
-  1,
-  { { -24, -16, 0, 316 } }
-};
-sprite_pattern kdai6pat3 =
-{
-  1,
-  { { -24, -16, 0, 317 } }
-};
-sprite_pattern kdai6pat4 =
-{
-  1,
-  { { -24, -16, 0, 318 } }
-};
-sprite_pattern kdai6pat5 =
-{
-  1,
-  { { -24, -16, 0, 319 } }
-};
-sprite_pattern* kdai6pat[6] =
-{
-  &kdai6pat0,
-  &kdai6pat1,
-  &kdai6pat2,
-  &kdai6pat3,
-  &kdai6pat4,
-  &kdai6pat5
-};
+extern unsigned char* kdai6pchg[1];
+extern sprite_pattern* kdai6pat[6];
 
 
 
@@ -231,6 +185,59 @@ void kaiten_play(sprite_status* pActwk) { /* Line 193, Address: 0x1017fc0 */
 
 
 
+
+
+
+
+
+void(*move_tbl[4])(sprite_status*) =
+{
+  &kd_mv_right,
+  &kd_mv_left,
+  &kd_mv_up,
+  &kd_mv_down
+};
+unsigned char kdpat0[8] = { 9, 0, 1, 2, 3, 4, 5, 255 };
+unsigned char* kdai6pchg[1] = { kdpat0 };
+sprite_pattern kdai6pat0 =
+{
+  1,
+  { { -24, -16, 0, 314 } }
+};
+sprite_pattern kdai6pat1 =
+{
+  1,
+  { { -24, -16, 0, 315 } }
+};
+sprite_pattern kdai6pat2 =
+{
+  1,
+  { { -24, -16, 0, 316 } }
+};
+sprite_pattern kdai6pat3 =
+{
+  1,
+  { { -24, -16, 0, 317 } }
+};
+sprite_pattern kdai6pat4 =
+{
+  1,
+  { { -24, -16, 0, 318 } }
+};
+sprite_pattern kdai6pat5 =
+{
+  1,
+  { { -24, -16, 0, 319 } }
+};
+sprite_pattern* kdai6pat[6] =
+{
+  &kdai6pat0,
+  &kdai6pat1,
+  &kdai6pat2,
+  &kdai6pat3,
+  &kdai6pat4,
+  &kdai6pat5
+};
 
 
 

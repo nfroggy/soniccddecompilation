@@ -94,7 +94,7 @@ void beem6_wait(sprite_status* actionwk) { /* Line 81, Address: 0x10188e0 */
     if (generate_flag) return; /* Line 94, Address: 0x1018960 */
   }
 
-  if (stageno.b.l + 1 == 0) /* Line 97, Address: 0x1018970 */
+  if (stageno.b.h + 1 == 0) /* Line 97, Address: 0x1018970 */
   {
     if (scra_v_posit.w.h >= 1024) return; /* Line 99, Address: 0x101898c */
   }

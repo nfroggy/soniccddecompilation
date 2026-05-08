@@ -13,9 +13,30 @@
 #include "COL6C.H"
 #include "COLI6.H"
 
-static unsigned char stbStx;
 static unsigned char stbPatOff;
-static char stbRad;
+static unsigned char stbStx;
+static char stbRad = 1;
+extern short scr_dir_tbl[];
+unsigned char* egg6_pchg[];
+sprite_pattern* egg6_pat[];
+sprite_pattern* egg6meca0_pat[];
+sprite_pattern* egg6meca1_pat[];
+unsigned char* egg6meca2_pchg[];
+sprite_pattern* egg6meca2_pat[];
+sprite_pattern* egg6bakuha_pat[];
+unsigned char* egg6bakuha_pchg[];
+sprite_pattern* egg6toge_pat[];
+sprite_pattern* egg6gareki_pat[];
+unsigned char* egg6gareki_pchg[];
+sprite_pattern* egg6beam_pat[];
+sprite_pattern* egg6beam2_pat[];
+sprite_pattern* egg6beam3_pat[];
+sprite_pattern* egg6yuka_pat[];
+sprite_pattern* egg6beamer_pat[];
+sprite_pattern* egg6door_pat[];
+sprite_pattern* egg6gareki4_pat[];
+sprite_pattern* egg6_pat_yarare[];
+unsigned char* egg6beam_pchg[];
 void(*boss6_tbl[11])(sprite_status*) =
 {
   &egg6_start,
@@ -30,121 +51,6 @@ void(*boss6_tbl[11])(sprite_status*) =
   &egg6_dead4,
   &egg6_none
 };
-unsigned char e6pat_pchg0[22] = { 4, 0, 0, 1, 1, 0, 2, 3, 3, 2, 2, 1, 1, 0, 0, 1, 3, 2, 2, 3, 3, 255 };
-unsigned char e6pat_pchg1[6] = { 4, 6, 4, 7, 5, 255 };
-unsigned char e6pat_pchg2[3] = { 255, 8, 255 };
-unsigned char e6pat_pchg3[4] = { 20, 9, 10, 255 };
-unsigned char e6pat_pchg4[10] = { 2, 11, 14, 13, 16, 12, 15, 13, 16, 255 };
-unsigned char* egg6_pchg[5] =
-{
-  e6pat_pchg0,
-  e6pat_pchg1,
-  e6pat_pchg2,
-  e6pat_pchg3,
-  e6pat_pchg4
-};
-sprite_pattern e6spr_pat00 = { 1, { { -24, -20, 0, 462 } } };
-sprite_pattern e6spr_pat01 = { 1, { { -24, -20, 0, 463 } } };
-sprite_pattern e6spr_pat02 = { 1, { { -24, -20, 0, 464 } } };
-sprite_pattern e6spr_pat03 = { 1, { { -24, -20, 0, 465 } } };
-sprite_pattern e6spr_pat04 = { 1, { { -24, -20, 0, 466 } } };
-sprite_pattern e6spr_pat05 = { 1, { { -24, -20, 0, 467 } } };
-sprite_pattern e6spr_pat06 = { 1, { { -24, -36, 0, 468 } } };
-sprite_pattern e6spr_pat07 = { 1, { { -24, -36, 0, 469 } } };
-sprite_pattern e6spr_pat08 = { 1, { { -28, -36, 0, 470 } } };
-sprite_pattern e6spr_pat09 = { 1, { { -24, -28, 0, 471 } } };
-sprite_pattern e6spr_pat10 = { 1, { { -24, -28, 0, 472 } } };
-sprite_pattern e6spr_pat11 = { 1, { { -32, -36, 0, 473 } } };
-sprite_pattern e6spr_pat12 = { 1, { { -32, -32, 0, 474 } } };
-sprite_pattern e6spr_pat13 = { 1, { { -32, -34, 0, 475 } } };
-sprite_pattern e6spr_pat14 = { 1, { { -32, -52, 0, 476 } } };
-sprite_pattern e6spr_pat15 = { 1, { { -32, -52, 0, 477 } } };
-sprite_pattern e6spr_pat16 = { 1, { { -32, -50, 0, 478 } } };
-sprite_pattern* egg6_pat[17] = { &e6spr_pat00, &e6spr_pat01, &e6spr_pat02, &e6spr_pat03, &e6spr_pat04, &e6spr_pat05, &e6spr_pat06, &e6spr_pat07, &e6spr_pat08, &e6spr_pat09, &e6spr_pat10, &e6spr_pat11, &e6spr_pat12, &e6spr_pat13, &e6spr_pat14, &e6spr_pat15, &e6spr_pat16 };
-extern short scr_dir_tbl[];
-sprite_pattern e6meca_pat00 = { 1, { { -64, -32, 0, 479 } } };
-sprite_pattern e6meca_pat01 = { 1, { { -64, -16, 0, 480 } } };
-sprite_pattern* egg6meca0_pat[2] = { &e6meca_pat00, &e6meca_pat01 };
-sprite_pattern e6hari_pat00 = { 1, { { -16, -16, 0, 481 } } };
-sprite_pattern e6hari_pat01 = { 1, { { -16, -16, 0, 482 } } };
-sprite_pattern e6hari_pat02 = { 1, { { -16, -16, 0, 483 } } };
-sprite_pattern e6hari_pat03 = { 1, { { -16, -16, 0, 484 } } };
-sprite_pattern* egg6meca1_pat[4] = { &e6hari_pat00, &e6hari_pat01, &e6hari_pat02, &e6hari_pat03 };
-unsigned char egg6_fire_pchg00[6] = { 2, 0, 2, 1, 3, 255 };
-unsigned char egg6_fire_pchg01[4] = { 1, 2, 3, 255 };
-unsigned char* egg6meca2_pchg[2] =
-{
-  egg6_fire_pchg00,
-  egg6_fire_pchg01
-};
-sprite_pattern e6fire_pat00 = { 1, { { -16, -16, 0, 485 } } };
-sprite_pattern e6fire_pat01 = { 1, { { -16, -16, 0, 486 } } };
-sprite_pattern e6fire_pat02 = { 1, { { -16, -16, 0, 487 } } };
-sprite_pattern e6fire_pat03 = { 1, { { -16, -16, 0, 488 } } };
-sprite_pattern* egg6meca2_pat[4] = { &e6fire_pat00, &e6fire_pat01, &e6fire_pat02, &e6fire_pat03 };
-sprite_pattern e6bakuha_pat00 = { 1, { { -12, -12, 0, 490 } } };
-sprite_pattern e6bakuha_pat01 = { 1, { { -16, -16, 0, 491 } } };
-sprite_pattern e6bakuha_pat02 = { 1, { { -16, -16, 0, 492 } } };
-sprite_pattern e6bakuha_pat03 = { 1, { { -12, -16, 0, 493 } } };
-sprite_pattern e6bakuha_pat04 = { 1, { { -12, -16, 0, 494 } } };
-sprite_pattern e6bakuha_pat05 = { 1, { { -12, -16, 0, 495 } } };
-sprite_pattern e6bakuha_pat06 = { 1, { { -12, -16, 0, 496 } } };
-sprite_pattern* egg6bakuha_pat[8] = { &e6bakuha_pat00, &e6bakuha_pat01, &e6bakuha_pat02, &e6bakuha_pat03, &e6bakuha_pat04, &e6bakuha_pat05, &e6bakuha_pat06, &e6bakuha_pat06 };
-unsigned char egg6bakuha_pchg00[5] = { 8, 0, 1, 2, 255 };
-unsigned char egg6bakuha_pchg01[12] = { 2, 3, 4, 5, 6, 7, 7, 7, 7, 7, 7, 255 };
-unsigned char* egg6bakuha_pchg[2] =
-{
-  egg6bakuha_pchg00,
-  egg6bakuha_pchg01
-};
-sprite_pattern e6toge_pat00 = { 1, { { -4, -12, 0, 489 } } };
-sprite_pattern* egg6toge_pat[1] = { &e6toge_pat00 };
-sprite_pattern e6gareki_pat00 = { 1, { { -8, -8, 0, 501 } } };
-sprite_pattern e6gareki_pat01 = { 1, { { -8, -8, 0, 502 } } };
-sprite_pattern* egg6gareki_pat[2] = { &e6gareki_pat00, &e6gareki_pat01 };
-unsigned char egg6gareki_pchg00[4] = { 8, 0, 1, 255 };
-unsigned char* egg6gareki_pchg[1] = { egg6gareki_pchg00 };
-sprite_pattern e6beam_pat00 = { 1, { { -8, -8, 0, 509 } } };
-sprite_pattern e6beam_pat01 = { 1, { { -8, -8, 0, 510 } } };
-sprite_pattern e6beam_pat02 = { 1, { { -8, -8, 0, 511 } } };
-sprite_pattern e6beam_pat03 = { 1, { { -8, -8, 0, 512 } } };
-sprite_pattern e6beam_pat04 = { 1, { { -8, -8, 0, 513 } } };
-sprite_pattern* egg6beam_pat[5] = { &e6beam_pat00, &e6beam_pat01, &e6beam_pat02, &e6beam_pat03, &e6beam_pat04 };
-sprite_pattern e6beam2_pat00 = { 1, { { -8, -8, 0, 514 } } };
-sprite_pattern e6beam2_pat01 = { 1, { { -8, -8, 0, 515 } } };
-sprite_pattern e6beam2_pat02 = { 1, { { -8, -8, 0, 516 } } };
-sprite_pattern e6beam2_pat03 = { 1, { { -8, -8, 0, 517 } } };
-sprite_pattern e6beam2_pat04 = { 1, { { -8, -8, 0, 518 } } };
-sprite_pattern* egg6beam2_pat[5] = { &e6beam2_pat00, &e6beam2_pat01, &e6beam2_pat02, &e6beam2_pat03, &e6beam2_pat04 };
-sprite_pattern e6beam3_pat00 = { 1, { { -8, -8, 0, 519 } } };
-sprite_pattern e6beam3_pat01 = { 1, { { -8, -8, 0, 520 } } };
-sprite_pattern e6beam3_pat02 = { 1, { { -8, -8, 0, 521 } } };
-sprite_pattern e6beam3_pat03 = { 1, { { -8, -8, 0, 522 } } };
-sprite_pattern e6beam3_pat04 = { 1, { { -8, -8, 0, 523 } } };
-sprite_pattern* egg6beam3_pat[5] = { &e6beam3_pat00, &e6beam3_pat01, &e6beam3_pat02, &e6beam3_pat03, &e6beam3_pat04 };
-sprite_pattern e6yuka_pat00 =
-{
-  2,
-  {
-    { -16, -16, 0, 507 },
-    { -16, 0, 0, 508 }
-  }
-};
-sprite_pattern* egg6yuka_pat[1] = { &e6yuka_pat00 };
-sprite_pattern e6beamer_pat00 = { 1, { { -8, -16, 0, 497 } } };
-sprite_pattern e6beamer_pat01 = { 1, { { -8, -16, 0, 498 } } };
-sprite_pattern* egg6beamer_pat[2] = { &e6beamer_pat00, &e6beamer_pat01 };
-sprite_pattern e6door_pat00 = { 1, { { -40, -42, 0, 499 } } };
-sprite_pattern e6door_pat01 = { 1, { { -8, -74, 0, 500 } } };
-sprite_pattern* egg6door_pat[2] = { &e6door_pat00, &e6door_pat01 };
-sprite_pattern e6gareki4_pat00 = { 1, { { -8, -8, 0, 503 } } };
-sprite_pattern e6gareki4_pat01 = { 1, { { -8, -8, 0, 504 } } };
-sprite_pattern e6gareki4_pat02 = { 1, { { -8, -8, 0, 505 } } };
-sprite_pattern e6gareki4_pat03 = { 1, { { -8, -8, 0, 506 } } };
-sprite_pattern* egg6gareki4_pat[4] = { &e6gareki4_pat00, &e6gareki4_pat01, &e6gareki4_pat02, &e6gareki4_pat03 };
-sprite_pattern* egg6_pat_yarare[6] = { &e6spr_pat11, &e6spr_pat12, &e6spr_pat13, &e6spr_pat14, &e6spr_pat15, &e6spr_pat16 };
-unsigned char egg6beam_pchg00[18] = { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5 };
-unsigned char* egg6beam_pchg[1] = { egg6beam_pchg00 };
 
 
 
@@ -2891,3 +2797,118 @@ void colchg_stop(void) { /* Line 2887, Address: 0x102c450 */
 void colchg_start(void) { /* Line 2891, Address: 0x102c480 */
   colchg_set(0); /* Line 2892, Address: 0x102c488 */
 } /* Line 2893, Address: 0x102c494 */
+
+unsigned char e6pat_pchg0[22] = { 4, 0, 0, 1, 1, 0, 2, 3, 3, 2, 2, 1, 1, 0, 0, 1, 3, 2, 2, 3, 3, 255 };
+unsigned char e6pat_pchg1[6] = { 4, 6, 4, 7, 5, 255 };
+unsigned char e6pat_pchg2[3] = { 255, 8, 255 };
+unsigned char e6pat_pchg3[4] = { 20, 9, 10, 255 };
+unsigned char e6pat_pchg4[10] = { 2, 11, 14, 13, 16, 12, 15, 13, 16, 255 };
+unsigned char* egg6_pchg[5] =
+{
+  e6pat_pchg0,
+  e6pat_pchg1,
+  e6pat_pchg2,
+  e6pat_pchg3,
+  e6pat_pchg4
+};
+sprite_pattern e6spr_pat00 = { 1, { { -24, -20, 0, 462 } } };
+sprite_pattern e6spr_pat01 = { 1, { { -24, -20, 0, 463 } } };
+sprite_pattern e6spr_pat02 = { 1, { { -24, -20, 0, 464 } } };
+sprite_pattern e6spr_pat03 = { 1, { { -24, -20, 0, 465 } } };
+sprite_pattern e6spr_pat04 = { 1, { { -24, -20, 0, 466 } } };
+sprite_pattern e6spr_pat05 = { 1, { { -24, -20, 0, 467 } } };
+sprite_pattern e6spr_pat06 = { 1, { { -24, -36, 0, 468 } } };
+sprite_pattern e6spr_pat07 = { 1, { { -24, -36, 0, 469 } } };
+sprite_pattern e6spr_pat08 = { 1, { { -28, -36, 0, 470 } } };
+sprite_pattern e6spr_pat09 = { 1, { { -24, -28, 0, 471 } } };
+sprite_pattern e6spr_pat10 = { 1, { { -24, -28, 0, 472 } } };
+sprite_pattern e6spr_pat11 = { 1, { { -32, -36, 0, 473 } } };
+sprite_pattern e6spr_pat12 = { 1, { { -32, -32, 0, 474 } } };
+sprite_pattern e6spr_pat13 = { 1, { { -32, -34, 0, 475 } } };
+sprite_pattern e6spr_pat14 = { 1, { { -32, -52, 0, 476 } } };
+sprite_pattern e6spr_pat15 = { 1, { { -32, -52, 0, 477 } } };
+sprite_pattern e6spr_pat16 = { 1, { { -32, -50, 0, 478 } } };
+sprite_pattern* egg6_pat[17] = { &e6spr_pat00, &e6spr_pat01, &e6spr_pat02, &e6spr_pat03, &e6spr_pat04, &e6spr_pat05, &e6spr_pat06, &e6spr_pat07, &e6spr_pat08, &e6spr_pat09, &e6spr_pat10, &e6spr_pat11, &e6spr_pat12, &e6spr_pat13, &e6spr_pat14, &e6spr_pat15, &e6spr_pat16 };
+sprite_pattern* egg6_pat_yarare[6] = { &e6spr_pat11, &e6spr_pat12, &e6spr_pat13, &e6spr_pat14, &e6spr_pat15, &e6spr_pat16 };
+sprite_pattern e6meca_pat00 = { 1, { { -64, -32, 0, 479 } } };
+sprite_pattern e6meca_pat01 = { 1, { { -64, -16, 0, 480 } } };
+sprite_pattern* egg6meca0_pat[2] = { &e6meca_pat00, &e6meca_pat01 };
+sprite_pattern e6hari_pat00 = { 1, { { -16, -16, 0, 481 } } };
+sprite_pattern e6hari_pat01 = { 1, { { -16, -16, 0, 482 } } };
+sprite_pattern e6hari_pat02 = { 1, { { -16, -16, 0, 483 } } };
+sprite_pattern e6hari_pat03 = { 1, { { -16, -16, 0, 484 } } };
+sprite_pattern* egg6meca1_pat[4] = { &e6hari_pat00, &e6hari_pat01, &e6hari_pat02, &e6hari_pat03 };
+unsigned char egg6_fire_pchg00[6] = { 2, 0, 2, 1, 3, 255 };
+unsigned char egg6_fire_pchg01[4] = { 1, 2, 3, 255 };
+unsigned char* egg6meca2_pchg[2] =
+{
+  egg6_fire_pchg00,
+  egg6_fire_pchg01
+};
+sprite_pattern e6fire_pat00 = { 1, { { -16, -16, 0, 485 } } };
+sprite_pattern e6fire_pat01 = { 1, { { -16, -16, 0, 486 } } };
+sprite_pattern e6fire_pat02 = { 1, { { -16, -16, 0, 487 } } };
+sprite_pattern e6fire_pat03 = { 1, { { -16, -16, 0, 488 } } };
+sprite_pattern* egg6meca2_pat[4] = { &e6fire_pat00, &e6fire_pat01, &e6fire_pat02, &e6fire_pat03 };
+sprite_pattern e6toge_pat00 = { 1, { { -4, -12, 0, 489 } } };
+sprite_pattern* egg6toge_pat[1] = { &e6toge_pat00 };
+unsigned char egg6bakuha_pchg00[5] = { 8, 0, 1, 2, 255 };
+unsigned char egg6bakuha_pchg01[12] = { 2, 3, 4, 5, 6, 7, 7, 7, 7, 7, 7, 255 };
+unsigned char* egg6bakuha_pchg[2] =
+{
+  egg6bakuha_pchg00,
+  egg6bakuha_pchg01
+};
+sprite_pattern e6bakuha_pat00 = { 1, { { -12, -12, 0, 490 } } };
+sprite_pattern e6bakuha_pat01 = { 1, { { -16, -16, 0, 491 } } };
+sprite_pattern e6bakuha_pat02 = { 1, { { -16, -16, 0, 492 } } };
+sprite_pattern e6bakuha_pat03 = { 1, { { -12, -16, 0, 493 } } };
+sprite_pattern e6bakuha_pat04 = { 1, { { -12, -16, 0, 494 } } };
+sprite_pattern e6bakuha_pat05 = { 1, { { -12, -16, 0, 495 } } };
+sprite_pattern e6bakuha_pat06 = { 1, { { -12, -16, 0, 496 } } };
+sprite_pattern* egg6bakuha_pat[8] = { &e6bakuha_pat00, &e6bakuha_pat01, &e6bakuha_pat02, &e6bakuha_pat03, &e6bakuha_pat04, &e6bakuha_pat05, &e6bakuha_pat06, &e6bakuha_pat06 };
+sprite_pattern e6beamer_pat00 = { 1, { { -8, -16, 0, 497 } } };
+sprite_pattern e6beamer_pat01 = { 1, { { -8, -16, 0, 498 } } };
+sprite_pattern* egg6beamer_pat[2] = { &e6beamer_pat00, &e6beamer_pat01 };
+sprite_pattern e6door_pat00 = { 1, { { -40, -42, 0, 499 } } };
+sprite_pattern e6door_pat01 = { 1, { { -8, -74, 0, 500 } } };
+sprite_pattern* egg6door_pat[2] = { &e6door_pat00, &e6door_pat01 };
+unsigned char egg6gareki_pchg00[4] = { 8, 0, 1, 255 };
+unsigned char* egg6gareki_pchg[1] = { egg6gareki_pchg00 };
+sprite_pattern e6gareki_pat00 = { 1, { { -8, -8, 0, 501 } } };
+sprite_pattern e6gareki_pat01 = { 1, { { -8, -8, 0, 502 } } };
+sprite_pattern* egg6gareki_pat[2] = { &e6gareki_pat00, &e6gareki_pat01 };
+sprite_pattern e6gareki4_pat00 = { 1, { { -8, -8, 0, 503 } } };
+sprite_pattern e6gareki4_pat01 = { 1, { { -8, -8, 0, 504 } } };
+sprite_pattern e6gareki4_pat02 = { 1, { { -8, -8, 0, 505 } } };
+sprite_pattern e6gareki4_pat03 = { 1, { { -8, -8, 0, 506 } } };
+sprite_pattern* egg6gareki4_pat[4] = { &e6gareki4_pat00, &e6gareki4_pat01, &e6gareki4_pat02, &e6gareki4_pat03 };
+sprite_pattern e6yuka_pat00 =
+{
+  2,
+  {
+    { -16, -16, 0, 507 },
+    { -16, 0, 0, 508 }
+  }
+};
+sprite_pattern* egg6yuka_pat[1] = { &e6yuka_pat00 };
+unsigned char egg6beam_pchg00[18] = { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5 };
+unsigned char* egg6beam_pchg[1] = { egg6beam_pchg00 };
+sprite_pattern e6beam_pat00 = { 1, { { -8, -8, 0, 509 } } };
+sprite_pattern e6beam_pat01 = { 1, { { -8, -8, 0, 510 } } };
+sprite_pattern e6beam_pat02 = { 1, { { -8, -8, 0, 511 } } };
+sprite_pattern e6beam_pat03 = { 1, { { -8, -8, 0, 512 } } };
+sprite_pattern e6beam_pat04 = { 1, { { -8, -8, 0, 513 } } };
+sprite_pattern* egg6beam_pat[5] = { &e6beam_pat00, &e6beam_pat01, &e6beam_pat02, &e6beam_pat03, &e6beam_pat04 };
+sprite_pattern e6beam2_pat00 = { 1, { { -8, -8, 0, 514 } } };
+sprite_pattern e6beam2_pat01 = { 1, { { -8, -8, 0, 515 } } };
+sprite_pattern e6beam2_pat02 = { 1, { { -8, -8, 0, 516 } } };
+sprite_pattern e6beam2_pat03 = { 1, { { -8, -8, 0, 517 } } };
+sprite_pattern e6beam2_pat04 = { 1, { { -8, -8, 0, 518 } } };
+sprite_pattern* egg6beam2_pat[5] = { &e6beam2_pat00, &e6beam2_pat01, &e6beam2_pat02, &e6beam2_pat03, &e6beam2_pat04 };
+sprite_pattern e6beam3_pat00 = { 1, { { -8, -8, 0, 519 } } };
+sprite_pattern e6beam3_pat01 = { 1, { { -8, -8, 0, 520 } } };
+sprite_pattern e6beam3_pat02 = { 1, { { -8, -8, 0, 521 } } };
+sprite_pattern e6beam3_pat03 = { 1, { { -8, -8, 0, 522 } } };
+sprite_pattern e6beam3_pat04 = { 1, { { -8, -8, 0, 523 } } };
+sprite_pattern* egg6beam3_pat[5] = { &e6beam3_pat00, &e6beam3_pat01, &e6beam3_pat02, &e6beam3_pat03, &e6beam3_pat04 };

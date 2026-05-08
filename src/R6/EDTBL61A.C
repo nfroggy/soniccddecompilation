@@ -4,7 +4,7 @@ extern sprite_pattern* optbr6pat[];
 extern sprite_pattern* itempat[];
 extern sprite_pattern* kdai6pat[];
 extern sprite_pattern* tobidai6pat[];
-extern sprite_pattern* pat0_sw6[];
+extern sprite_pattern* pat_sw6[];
 extern sprite_pattern* tobira6pat[];
 extern sprite_pattern* beem6pat[];
 extern sprite_pattern* piston6pat[];
@@ -25,6 +25,9 @@ extern sprite_pattern* springpat[];
 extern sprite_pattern* spring90pat[];
 extern sprite_pattern* goalpat[];
 extern sprite_pattern* bringpat[];
+extern sprite_pattern* flow_pat[];
+extern sprite_pattern* gaspat[];
+extern sprite_pattern* cata_pat[];
 
 edit_data edit_tbl = {
   52,
@@ -81,6 +84,9 @@ edit_data edit_tbl = {
     { 25, 4, itempat,         1448, 9, 0, 0, 12 },
     { 22, 1, goalpat,          736, 0, 0, 0, 5 },
     { 23, 1, goalpat,         1084 },
-    { 20, 1, bringpat,        1160 }
+    { 20, 1, bringpat,        1160 },
+    { 31, 1, flow_pat,        1750 },
+    {  5, 1, gaspat,           768 },
+    {  4, 1, cata_pat,        1024 }
   }
 };
