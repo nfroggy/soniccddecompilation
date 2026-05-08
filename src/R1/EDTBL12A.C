@@ -22,7 +22,7 @@ extern sprite_pattern* patbase_kuzure_b[];
 extern sprite_pattern* kagepat[];
 extern sprite_pattern* bariapat[];
 
-edit_data edit_tbl = {
+edit_data edit_tbl __attribute__((aligned(8))) = {
   47,
   0,
   {
@@ -31,7 +31,7 @@ edit_data edit_tbl = {
     { 13, 1, futapat,            846 },
     {  9, 1, k_daipat,           896 },
     { 27, 1, iwapat,             876 },
-    { 33, 1, dai11a_pattbl,    17598 },
+    { 33, 1, dai11a_pattbl,    17598, 1, 0, 0, 0 },
     { 15, 4, komapat,            824 },
     { 10, 1, springpat,         1312 },
     { 10, 1, springpat,         1312, 0, 2, 0, 0 },
@@ -70,7 +70,7 @@ edit_data edit_tbl = {
     { 32, 3, patbase_kuzure_b, 17598, 129, 0, 0, 1 },
     { 25, 4, itempat,           1448, 8, 0, 0, 10 },
     { 25, 4, itempat,           1448, 9, 0, 0, 12 },
-    { 51, 3, kagepat,           1008 },
+    { 51, 4, kagepat,           1008, 1, 0, 0, 1 },
     { 52, 3, bariapat,          1348, 0, 0, 0, 1 },
     { 52, 3, bariapat,          1348, 1, 0, 0, 2 }
   }

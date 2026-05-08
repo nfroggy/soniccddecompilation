@@ -395,8 +395,8 @@ void scroll(void) { /* Line 389, Address: 0x10263d0 */
   short sYline;
   short sYnum;
   short *psHscr, *psHscw;
-  static unsigned char z12b_cnttbl[8] = { 1, 1, 1, 1, 1, 1, 1, 1 };
   static int scaddtbl[8] = { 65536, 57344, 49152, 40960, 32768, 24576, 20480, 16384 };
+  static unsigned char z12b_cnttbl[8] = { 1, 1, 1, 1, 1, 1, 1, 1 };
 
   if (scroll_start.b.h) return; /* Line 401, Address: 0x10263fc */
 

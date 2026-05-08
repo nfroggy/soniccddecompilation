@@ -26,7 +26,7 @@ extern sprite_pattern* edapat[];
 extern sprite_pattern* kagepat[];
 extern sprite_pattern* bariapat[];
 
-edit_data edit_tbl = {
+edit_data edit_tbl __attribute__((aligned(8))) = {
   58,
   0,
   {

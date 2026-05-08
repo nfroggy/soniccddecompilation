@@ -1,0 +1,108 @@
+# default lcf memory segments
+MEMORY
+{
+    main (RWX)  : ORIGIN = 0x01000000,  LENGTH = 0
+    heap (RW)   : ORIGIN = AFTER(main), LENGTH = 0
+}
+ 
+SECTIONS
+{
+    #   defines for crt0, unused but present in the symbol table
+    _heap_size   = -1;
+    _stack   = -1;
+    _stack_size   = 0x00100000;
+    _align_segment   = 0x80;
+ 
+    # main
+    .main :
+    {
+        # Initial text alignment
+        .   = ALIGN(0x80);
+ 
+        # All aligned to 0x10, thankfully there's no GCC code to worry about
+        ALIGNALL(16);
+        GROUP(ROOT)(.text)
+ 
+        # pad text section
+        .   = ALIGN(0x80);
+
+       #   data sections
+       .   = ALIGN(0x80);
+       __data_start   = .;
+       ALIGNALL(0x8);
+       GROUP(ROOT)   (.data)
+ 
+        # rodata
+        .   = ALIGN(0x80);
+       ALIGNALL(0x8);
+       GROUP(ROOT)   (.rodata)
+       .   = ALIGN(0x80);
+       ALIGNALL(0x8);
+       GROUP(ROOT)   (.rdata)
+ 
+        # None of these are C++, but they still export these symbols
+        #   static initializers
+       .   = ALIGN(0x10);
+       __static_init   = .;
+       __static_init_end   = .;
+ 
+       #   exception table
+       __exception_table_start__   = .;
+       __exception_table_end__   = .;
+ 
+        # All of them have the overlay groups too, even though they are standalone modules
+       _overlay_group_addresses   = .;
+       WRITEW ADDR(.main);   # just main
+ 
+        # end of data
+       __data_end   = .;
+       __data_size   = __data_end - __data_start;
+ 
+       # Set GP register
+       _gp   = ALIGN(128) + 0x7FF0;
+ 
+ 
+        # All of the files are -G0 / -sdatathreshold 0 so these sections aren't needed
+       # literal section
+        .   = ALIGN(0x80);
+     
+        # ALIGNALL(0x8);
+       # LITERAL
+ 
+       # sdata
+       # .   = ALIGN(0x80); ALIGNALL(0x4);
+       # *   (.sdata)
+       # .   = ALIGN(0x80);
+ 
+       # sbss
+       _fbss   = .; # this symbol is present
+       # ALIGNALL(0x4);
+       # *   (.sbss)
+       # ALIGNALL(0x4);
+       # *   (.scommon)
+       # ALIGNALL(0x4);
+       # *   (SCOMMON)
+ 
+        # bss
+       __bss_start   = .;
+       .   = ALIGN(0x80);
+       ALIGNALL(0x8);
+       GROUP(ROOT)   (.bss)
+       ALIGNALL(0x8);
+       GROUP(ROOT)   (.common)
+       ALIGNALL(0x8);
+       GROUP(ROOT)   (COMMON)
+       .   = ALIGN(0x80);
+       ALIGNALL(0x8);
+       __bss_end   = .;
+       __bss_size   = __bss_end - __bss_start;
+ 
+    } > main
+ 
+    .heap:
+    {
+        # Also present in the symbol table
+        end = .;
+       _end   = .;
+    } > heap
+}

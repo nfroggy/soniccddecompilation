@@ -36,7 +36,7 @@ edit_data edit_tbl = {
     {  9, 1, k_daipat,           887 },
     { 27, 1, iwapat,             838 },
     { 15, 4, komapat,            879, 1, 0, 0, 0 },
-    { 33, 1, dai11a_pattbl,    17598 },
+    { 33, 1, dai11a_pattbl,    17598, 1, 0, 0, 0 },
     { 36, 3, pat_friend0,       1123 },
     { 36, 3, pat_friend1,       1123, 1, 0, 0, 3 },
     { 61, 4, e_ka_pat,          9168 },
@@ -72,8 +72,8 @@ edit_data edit_tbl = {
     { 32, 3, patbase_kuzure_a, 17598 },
     { 25, 4, itempat,           1448, 8, 0, 0, 10 },
     { 25, 4, itempat,           1448, 9, 0, 0, 12 },
-    { 50, 3, edapat,            1080, 2, 0, 0, 2 },
-    { 51, 3, kagepat,           1064, 1, 0, 0, 1 },
+    { 50, 4, edapat,            1080, 2, 0, 0, 2 },
+    { 51, 4, kagepat,           1064, 1, 0, 0, 1 },
     { 52, 3, bariapat,          1348, 0, 0, 0, 1 },
     { 52, 3, bariapat,          1348, 1, 0, 0, 2 }
   }

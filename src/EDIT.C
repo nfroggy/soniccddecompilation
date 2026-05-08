@@ -4,11 +4,7 @@
 #include "ACTSET.H"
 #include "FCOL.H"
 
-#ifdef R11A
 extern int CKeyTogle;
-#else
-static int CKeyTogle;
-#endif
 extern sprite_pattern* sncpat[];
 extern edit_data edit_tbl;
 

@@ -9,7 +9,7 @@ extern sprite_pattern* itempat[];
 extern sprite_pattern* egg1_pat[];
 extern sprite_pattern* bariapat[];
 
-edit_data edit_tbl = {
+edit_data edit_tbl __attribute__((aligned(8))) = {
   24,
   0,
   {

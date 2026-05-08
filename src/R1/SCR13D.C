@@ -393,8 +393,8 @@ void scroll(void) { /* Line 387, Address: 0x1024a00 */
   short sYline;
   short sYnum;
   short *psHscr, *psHscw;
-  static unsigned char z12d_cnttbl[4] = { 0, 4, 3, 3 };
   static int scaddtbl[4] = { 65536, 49152, 32768, 16384 };
+  static unsigned char z12d_cnttbl[4] = { 0, 4, 3, 3 };
 
   if (scroll_start.b.h) return; /* Line 399, Address: 0x1024a2c */
 

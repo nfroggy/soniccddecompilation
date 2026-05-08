@@ -299,8 +299,8 @@ void scroll(void) { /* Line 292, Address: 0x10258e0 */
 
   int_union lD0, lD2;
   int lD4, lD5;
-  unsigned char z12d_cnttbl[4] = { 0, 4, 3, 3 }; /* Line 302, Address: 0x1025904 */
   static int scaddtbl[4] = { 65536, 49152, 32768, 16384 };
+  unsigned char z12d_cnttbl[4] = { 0, 4, 3, 3 }; /* Line 302, Address: 0x1025904 */
 
 
   if (scroll_start.b.h) return; /* Line 306, Address: 0x1025930 */

@@ -300,8 +300,8 @@ void scroll(void) { /* Line 293, Address: 0x10258c0 */
   unsigned short temp;
   int_union lD0, lD2, lD3;
   int lD4, lD5;
-  unsigned char z12c_cnttbl[5] = { 1, 3, 3, 3, 1 }; /* Line 303, Address: 0x10258e8 */
   static int scaddtbl[5] = { 65536, 57344, 49152, 40960, 32768 };
+  unsigned char z12c_cnttbl[5] = { 1, 3, 3, 3, 1 }; /* Line 303, Address: 0x10258e8 */
 
 
   if (scroll_start.b.h) return; /* Line 307, Address: 0x1025914 */

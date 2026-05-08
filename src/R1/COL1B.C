@@ -110,7 +110,7 @@ unsigned char col1a0cnt[8] = { 49, 3, 8, 0, 8, 1, 8, 2 };
 PALETTEENTRY col1a0col[3] = {
   { 160, 224, 224, 1 },
   {  96, 224, 192, 1 },
-  {  10, 192,  50, 1 }
+  {  16, 192,  80, 1 }
 };
 unsigned char col1a1cnt[8] = { 50, 3, 8, 0, 8, 1, 8, 2 };
 PALETTEENTRY col1a1col[3] = {

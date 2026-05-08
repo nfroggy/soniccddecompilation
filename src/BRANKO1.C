@@ -11,17 +11,31 @@ static void branko1_move(sprite_status* pActwk);
 static void branko1_posiset(sprite_status* pActwk);
 static void branko1_ridechk(sprite_status* pActwk);
 
+#if defined(R12A) || defined(R12B)
+#define SPRITE_BRANKO1_BASE 524
+#define SPRITE_BRANKO1_MIDDLE_XOFF -24
+#define BRANKO1_INITBL_AREA1_2 -256
+#elif defined(R12C) || defined(R12D)
+#define SPRITE_BRANKO1_BASE 515
+#define SPRITE_BRANKO1_MIDDLE_XOFF -24
+#define BRANKO1_INITBL_AREA1_2 -256
+#else
+#define SPRITE_BRANKO1_BASE 515
+#define SPRITE_BRANKO1_MIDDLE_XOFF -8
+#define BRANKO1_INITBL_AREA1_2 -512
+#endif
+
 static sprite_pattern pat0 = {
   1,
-  { { -8, -8, 0, 515 } }
+  { { -8, -8, 0, SPRITE_BRANKO1_BASE } }
 };
 static sprite_pattern pat1 = {
   1,
-  { { -8, -8, 0, 516 } }
+  { { SPRITE_BRANKO1_MIDDLE_XOFF, -8, 0, SPRITE_BRANKO1_BASE + 1 } }
 };
 static sprite_pattern pat2 = {
   1,
-  { { -8, -8, 0, 517 } }
+  { { -8, -8, 0, SPRITE_BRANKO1_BASE + 2 } }
 };
 sprite_pattern* branko1pat[3] = {
   &pat0,
@@ -35,7 +49,7 @@ static void(*branko1_move_tbl[2])(sprite_status*) = {
 static brankodata branko1_initbl[8] = {
   { -16384,  8,  512, -512 },
   { -16384,  2,  256, -256 },
-  { -16384, -2, -512,  256 },
+  { -16384, -2, BRANKO1_INITBL_AREA1_2,  256 },
   { -24576,  3,  384, -384 },
   { -32768, -2, -256,  256 },
   { -32768,  2,  256, -256 },
