@@ -16,6 +16,10 @@ static void p_movie(sprite_status* pActwk);
 static void set_sproffset(sprite_status* pActwk);
 static void t_roll(sprite_status* pActwk, int xsft, int ysft);
 
+static sprite_pattern friend2_pat02;
+static sprite_pattern friend1_pat02;
+static sprite_pattern friend0_pat02;
+
 static unsigned char pchg0_00[4] = { 19, 0, 1, 255 };
 unsigned char pchg0_01[30] = {
   0, 0, 0, 2, 0, 0, 2, 1, 1, 2,
@@ -43,7 +47,6 @@ static sprite_pattern friend0_pat01 = {
   1,
   { { -8, -8, 0, 436 } }
 };
-static sprite_pattern friend0_pat02;
 sprite_pattern* pat_friend0[3] = {
   &friend0_pat00,
   &friend0_pat01,
@@ -57,7 +60,6 @@ static sprite_pattern friend1_pat01 = {
   1,
   { { -12, -8, 1, 438 } }
 };
-static sprite_pattern friend1_pat02;
 static sprite_pattern friend1_pat03 = {
   1,
   { { -12, -8, 1, 439 } }
@@ -81,7 +83,6 @@ static sprite_pattern friend2_pat01 = {
   1,
   { { -12, -8, 1, 442 } }
 };
-static sprite_pattern friend2_pat02;
 static sprite_pattern friend2_pat03 = {
   1,
   { { -12, -8, 1, 443 } }

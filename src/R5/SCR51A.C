@@ -61,6 +61,61 @@ static int_union* mapwrt_tbl[8] = {
   &scrz_v_posiw
 };
 extern unsigned char mapwkb[8][64];
+void enkeichg(void) { /* Line 172, Address: 0x101afa0 */
+  short tbl[9] = { /* Line 173, Address: 0x101afc0 */
+    3584, 8960, -1,
+    3584, 8960, -1,
+    3584, 8960, -1
+  };
+  char tbl0[3] = { /* Line 178, Address: 0x101afec */
+    2, 4, 2
+  };
+  int EnkeiNo, TileNo, BmpNo, i;
+  short *pTbl, poswk;
+
+  if (scrflaga.b.h) return; /* Line 184, Address: 0x101b010 */
+
+
+
+  EnkeiNo = 0; /* Line 188, Address: 0x101b020 */
+  pTbl = tbl; /* Line 189, Address: 0x101b024 */
+
+  while ((poswk = *pTbl++) >= 0) { /* Line 191, Address: 0x101b028 */
+    if (actwk[0].xposi.w.h <= poswk) break; /* Line 192, Address: 0x101b030 */
+
+
+    ++EnkeiNo; /* Line 195, Address: 0x101b054 */
+  } /* Line 196, Address: 0x101b058 */
+
+
+  if (enkeino == EnkeiNo) return; /* Line 199, Address: 0x101b07c */
+
+
+
+
+  enkeino = EnkeiNo; /* Line 204, Address: 0x101b090 */
+
+
+  TileNo = 603; /* Line 207, Address: 0x101b09c */
+  if (EnkeiNo == 1) { /* Line 208, Address: 0x101b0a0 */
+    i = 84; /* Line 209, Address: 0x101b0ac */
+    BmpNo = 114; /* Line 210, Address: 0x101b0b0 */
+  } else { /* Line 211, Address: 0x101b0b4 */
+    i = 113; /* Line 212, Address: 0x101b0bc */
+    BmpNo = 0; /* Line 213, Address: 0x101b0c0 */
+  }
+  for ( ; i > 0; --i) { /* Line 215, Address: 0x101b0c4 */
+    ChangeTileBmp(TileNo++, BmpNo++); /* Line 216, Address: 0x101b0cc */
+  } /* Line 217, Address: 0x101b0ec */
+
+  colorset2((tbl0[EnkeiNo] >> 2) + 4); /* Line 219, Address: 0x101b0f8 */
+  colorset((tbl0[EnkeiNo] >> 2) + 4); /* Line 220, Address: 0x101b118 */
+
+  mapset2((unsigned char*)mapwkb, tbl0[EnkeiNo] / 2); /* Line 222, Address: 0x101b138 */
+  scrbinit(scra_h_posit.w.h, scra_v_posit.w.h); /* Line 223, Address: 0x101b170 */
+
+  mapwrt_cnt = 1; /* Line 225, Address: 0x101b188 */
+} /* Line 226, Address: 0x101b194 */
 short scr_dir_tbl[6] = { 4, 0, 10903, 0, 784, 96 };
 short endplpositbl[8][2] = {
   {   80,  944 },
@@ -157,73 +212,6 @@ extern unsigned char* zonemaptbl[];
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-void enkeichg(void) { /* Line 172, Address: 0x101afa0 */
-  short tbl[9] = { /* Line 173, Address: 0x101afc0 */
-    3584, 8960, -1,
-    3584, 8960, -1,
-    3584, 8960, -1
-  };
-  char tbl0[3] = { /* Line 178, Address: 0x101afec */
-    2, 4, 2
-  };
-  int EnkeiNo, TileNo, BmpNo, i;
-  short *pTbl, poswk;
-
-  if (scrflaga.b.h) return; /* Line 184, Address: 0x101b010 */
-
-
-
-  EnkeiNo = 0; /* Line 188, Address: 0x101b020 */
-  pTbl = tbl; /* Line 189, Address: 0x101b024 */
-
-  while ((poswk = *pTbl++) >= 0) { /* Line 191, Address: 0x101b028 */
-    if (actwk[0].xposi.w.h <= poswk) break; /* Line 192, Address: 0x101b030 */
-
-
-    ++EnkeiNo; /* Line 195, Address: 0x101b054 */
-  } /* Line 196, Address: 0x101b058 */
-
-
-  if (enkeino == EnkeiNo) return; /* Line 199, Address: 0x101b07c */
-
-
-
-
-  enkeino = EnkeiNo; /* Line 204, Address: 0x101b090 */
-
-
-  TileNo = 603; /* Line 207, Address: 0x101b09c */
-  if (EnkeiNo == 1) { /* Line 208, Address: 0x101b0a0 */
-    i = 84; /* Line 209, Address: 0x101b0ac */
-    BmpNo = 114; /* Line 210, Address: 0x101b0b0 */
-  } else { /* Line 211, Address: 0x101b0b4 */
-    i = 113; /* Line 212, Address: 0x101b0bc */
-    BmpNo = 0; /* Line 213, Address: 0x101b0c0 */
-  }
-  for ( ; i > 0; --i) { /* Line 215, Address: 0x101b0c4 */
-    ChangeTileBmp(TileNo++, BmpNo++); /* Line 216, Address: 0x101b0cc */
-  } /* Line 217, Address: 0x101b0ec */
-
-  colorset2((tbl0[EnkeiNo] >> 2) + 4); /* Line 219, Address: 0x101b0f8 */
-  colorset((tbl0[EnkeiNo] >> 2) + 4); /* Line 220, Address: 0x101b118 */
-
-  mapset2((unsigned char*)mapwkb, tbl0[EnkeiNo] / 2); /* Line 222, Address: 0x101b138 */
-  scrbinit(scra_h_posit.w.h, scra_v_posit.w.h); /* Line 223, Address: 0x101b170 */
-
-  mapwrt_cnt = 1; /* Line 225, Address: 0x101b188 */
-} /* Line 226, Address: 0x101b194 */
 
 
 

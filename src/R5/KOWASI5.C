@@ -188,16 +188,16 @@ static void m_make(sprite_status* pActwk) { /* Line 184, Address: 0x1024a20 */
   int spdwk;
   int i;
   sprite_status* pNewact;
-  static int tbl0speed[6] = {
-    -194180, -84144,
-    -252434,      0,
-    -194180,  84144
+  static short tbl0dposiy[3] = {
+    -16, 0, 16
   };
   static unsigned char tbl0pat[6] = {
     2, 3, 4, 5, 5, 5
   };
-  static short tbl0dposiy[3] = {
-    -16, 0, 16
+  static int tbl0speed[6] = {
+    -194180, -84144,
+    -252434,      0,
+    -194180,  84144
   };
 
   soundset(176); /* Line 203, Address: 0x1024a40 */

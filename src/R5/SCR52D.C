@@ -50,9 +50,6 @@ static int_union* mapwrt_tbl[8] = {
   &scrz_v_posiw
 };
 extern unsigned char mapwkb[8][64];
-short scr_dir_tbl[6] = { 4, 0, 10903, 0, 784, 96 };
-short playpositbl[1][2] = { { 64, 364 } };
-unsigned char playmapnotbl[4] = { 127, 127, 127, 127 };
 extern unsigned char mapwka[8][64];
 extern map_init_data mapinittbl;
 extern unsigned char* zonemaptbl[];
@@ -202,6 +199,10 @@ void enkeichg(void) { /* Line 152, Address: 0x1028870 */
   scrbinit(scra_h_posit.w.h, scra_v_posit.w.h); /* Line 202, Address: 0x1028a48 */
   mapwrt_cnt = 1; /* Line 203, Address: 0x1028a60 */
 } /* Line 204, Address: 0x1028a6c */
+
+short scr_dir_tbl[6] = { 4, 0, 10903, 0, 784, 96 };
+short playpositbl[1][2] = { { 64, 364 } };
+unsigned char playmapnotbl[4] = { 127, 127, 127, 127 };
 
 
 

@@ -366,13 +366,6 @@ static sprite_pattern spr_egg5hari_pat0 =
 };
 sprite_pattern* egg5hari_pat[1] = { &spr_egg5hari_pat0 };
 extern short scr_dir_tbl[6];
-static int bomb2_tbl[24] =
-{
-   4, -12,  40960, -229376, 0, 12288,
-   4,  -8,  81920, -114688, 0,  6144,
-  -4, -12, -40960, -229376, 0, 12288,
-  -4,  -8, -81920, -114688, 0,  6144
-};
 extern sprite_pattern* bakupat[7];
 
 
@@ -1625,6 +1618,13 @@ void egg5bomb2(sprite_status* pActwk) { /* Line 1596, Address: 0x10261b0 */
 
 
 
+static int bomb2_tbl[24] =
+{
+   4, -12,  40960, -229376, 0, 12288,
+   4,  -8,  81920, -114688, 0,  6144,
+  -4, -12, -40960, -229376, 0, 12288,
+  -4,  -8, -81920, -114688, 0,  6144
+};
 
 static int egg5bomb2_ini(sprite_status* pActwk) { /* Line 1629, Address: 0x1026250 */
   int ret;

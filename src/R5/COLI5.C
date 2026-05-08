@@ -8,6 +8,7 @@
 extern short actwkchk(sprite_status** ppActwk);
 
 static unsigned char bCarry;
+unsigned short escoretbl[4] = { 10, 20, 50, 100 };
 unsigned char colitbl[64][2] = {
   {  20,  20 }, {  18,  12 },
   {  12,  16 }, {   4,  16 },
@@ -42,7 +43,6 @@ unsigned char colitbl[64][2] = {
   {   8,   8 }, {  32,  56 },
   {  30,  32 }, {   0,   0 }
 };
-unsigned short escoretbl[4] = { 10, 20, 50, 100 };
 
 
 
@@ -661,7 +661,7 @@ short pcolspecial(sprite_status* pActwk, sprite_status* pColliAct, short iXposi,
 
     case 1:
     default:
-      if (cColiNo >= 60 && cColiNo > 63) { /* Line 664, Address: 0x1017a24 */
+      if (cColiNo < 60 || cColiNo > 63) { /* Line 664, Address: 0x1017a24 */
         return -1; /* Line 665, Address: 0x1017a4c */
       }
 

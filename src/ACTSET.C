@@ -3,7 +3,7 @@
 #include "ACTION.H"
 #include "IMPFUNCS.H"
 
-#if !defined(R4)
+#if !defined(R4) && !defined(R5)
 int CKeyTogle;
 #endif
 aset_info* pAsetadr_dummy;

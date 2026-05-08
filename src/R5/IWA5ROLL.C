@@ -108,7 +108,7 @@ static void iwa5roll_init(sprite_status* pActwk) { /* Line 82, Address: 0x10265a
     wD3 = wD4; /* Line 108, Address: 0x1026694 */
 
     do {
-      if (actwkchk(&pNewactwk) != 0) break; /* Line 111, Address: 0x102669c */
+      if (actwkchk(&pNewactwk) != 0) goto label2; /* Line 111, Address: 0x102669c */
 
 
 label1:
@@ -134,7 +134,7 @@ label1:
     wD4 += 16384; /* Line 134, Address: 0x10267f4 */
   } while (--wD6 >= 0); /* Line 135, Address: 0x1026800 */
 
-
+label2:
   ((short*)pActwk)[23] = 0; /* Line 138, Address: 0x1026824 */
 } /* Line 139, Address: 0x102682c */
 

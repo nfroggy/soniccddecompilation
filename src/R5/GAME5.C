@@ -12,42 +12,28 @@
 static void back_to_cnt(void);
 static void bye_cnt(void);
 
-static short Interupt_Counter;
-static unsigned int PauseIcon;
 extern bmp_info SprBmp[700];
-void(*sMemCpy)(void*, void*, int);
 unsigned int* lpghWnd;
-void(*sCloseFile)(int);
-int(*sReadFile)(int, void*, int);
-int(*sOpenFile)(char*);
 void(*sOutputDebugString)(char*);
 void(*sPrintf)(char*, char*);
 int(*sRandom)(void);
 void(*sMemSet)(void*, unsigned char, int);
-void(*WaveAllStop)(void);
-void(*ChangeTileBmp)(int, int);
-void(*CDPause)(short);
-void(*CDPlay)(short);
-void(*WaveRequest)(short);
-void(*ClrSpriteDebug)(void);
-void(*EAsprset)(short, short, unsigned short, unsigned short, unsigned short);
-int(*SetGrid)(int, int, int, int);
-extern unsigned char zone1scd[1000];
-dlink_export ExportedFunctions = {
-  &game_init,
-  (void (*)(void))&game,
-  &DLL_meminit,
-  &DLL_memfree,
-  (void (*)(short, short))&SWdataSet,
-  &Get_vscroll,
-  &Get_scra_h_posiw,
-  &Get_scrb_h_posiw,
-  &FadeProc,
-  &SetDebugFlag,
-  &GetRoundStr,
-  0
-};
+void(*sMemCpy)(void*, void*, int);
+int(*sOpenFile)(char*);
+int(*sReadFile)(int, void*, int);
 int(*sGetFileSize)(int);
+void(*sCloseFile)(int);
+int(*SetGrid)(int, int, int, int);
+void(*EAsprset)(short, short, unsigned short, unsigned short, unsigned short);
+void(*ClrSpriteDebug)(void);
+void(*WaveRequest)(short);
+void(*CDPlay)(short);
+void(*CDPause)(short);
+void(*ChangeTileBmp)(int, int);
+void(*WaveAllStop)(void);
+static unsigned int PauseIcon;
+static short Interupt_Counter;
+extern unsigned char zone1scd[1000];
 
 
 
@@ -385,7 +371,7 @@ void game_init(void) { /* Line 373, Address: 0x10189f0 */
   init_flag = 0; /* Line 385, Address: 0x1018a50 */
   int_flg = 0; /* Line 386, Address: 0x1018a58 */
   main_play = 0; /* Line 387, Address: 0x1018a60 */
-  pauseflag.w = 0; /* Line 388, Address: 0x1018a68 */
+  pauseflag.b.h = 0; /* Line 388, Address: 0x1018a68 */
 
   if (!(play_start & 1)) { /* Line 390, Address: 0x1018a70 */
     play_start |= 1; /* Line 391, Address: 0x1018a88 */
@@ -835,3 +821,18 @@ void da_set(void) { /* Line 815, Address: 0x1019840 */
 
 
 } /* Line 837, Address: 0x10198d8 */
+
+dlink_export ExportedFunctions = {
+  &game_init,
+  (void (*)(void))&game,
+  &DLL_meminit,
+  &DLL_memfree,
+  (void (*)(short, short))&SWdataSet,
+  &Get_vscroll,
+  &Get_scra_h_posiw,
+  &Get_scrb_h_posiw,
+  &FadeProc,
+  &SetDebugFlag,
+  &GetRoundStr,
+  0
+};
