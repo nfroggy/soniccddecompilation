@@ -14,9 +14,9 @@
   #define SPRITE_TAGAMEB4_BASE 463
 #elif defined(R41D)
   #define SPRITE_TAGAMEB4_BASE 453
-#elif defined(R41A)
+#elif defined(R42A)
   #define SPRITE_TAGAMEB4_BASE 491
-#elif defined(R41B)
+#elif defined(R42B)
   #define SPRITE_TAGAMEB4_BASE 444
 #else
   #define SPRITE_TAGAMEB4_BASE 448

@@ -15,6 +15,9 @@ extern sprite_pattern* sncpat[];
 extern unsigned char mapwka[8][64];
 extern unsigned char* playchg[60];
 extern unsigned char plchg00[8], plchg01[8], plchg49[8], plchg53[8], plchg03[8], plchg02[8], plchg54[8], plchg35[6], plchg04[8], plchg39[7], plchg33[6], plchg34[6];
+#if defined(R4) && !defined(R42B)
+int CKeyTogle;
+#endif
 sprite_pattern** playpat;
 unsigned char* playcg;
 static unsigned char Brake_Req;

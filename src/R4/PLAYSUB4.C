@@ -10,6 +10,50 @@
 #include "..\PLAYER.H"
 
 extern sprite_pattern* markerpat[]; extern unsigned char* markerchg[]; extern sprite_pattern* bakupat[]; extern unsigned char* bakuchg[]; extern sprite_pattern* exit2pat[]; extern unsigned char* exit2chg[]; extern sprite_pattern* bariapat[]; extern unsigned char* bariachg[]; extern unsigned char awasintbl[];
+static unsigned char flowchg0[4] = { 3, 0, 1, 255 };
+static unsigned char flowchg1[6] = { 3, 2, 3, 2, 3, 252 };
+static unsigned char flowchg2[6] = { 1, 5, 5, 4, 6, 252 };
+static unsigned char flowchg3[4] = { 19, 6, 7, 255 };
+unsigned char* flowchg[4] = {
+  flowchg0,
+  flowchg1,
+  flowchg2,
+  flowchg3
+};
+static sprite_pattern flo00 = {
+  1, { { -4, -16, 0, 264 } }
+};
+static sprite_pattern flo01 = {
+  1, { { -4, -16, 0, 265 } }
+};
+static sprite_pattern flo02 = {
+  1, { { -8, -16, 0, 266 } }
+};
+static sprite_pattern flo03 = {
+  1, { { -8, -16, 0, 267 } }
+};
+static sprite_pattern flo04 = {
+  1, { { -12, -24, 0, 268 } }
+};
+static sprite_pattern flo05 = {
+  1, { { -8, -16, 0, 269 } }
+};
+static sprite_pattern flo06 = {
+  1, { { -12, -48, 0, 270 } }
+};
+static sprite_pattern flo07 = {
+  1, { { -12, -48, 0, 271 } }
+};
+sprite_pattern* flow_pat[8] = {
+  &flo00,
+  &flo01,
+  &flo02,
+  &flo03,
+  &flo04,
+  &flo05,
+  &flo06,
+  &flo07
+};
 sprite_pattern boupat0 = { 1, { { -4, -46, 0, 423 } } }, boupat1 = { 1, { { -4, -46, 0, 424 } } };
 sprite_pattern* boupat[2] = { &boupat0, &boupat1 };
 sprite_pattern wavepat0 = { 1, { { -96, -8, 0, 425 } } }, wavepat1 = { 1, { { -96, -8, 0, 426 } } }, wavepat2 = { 1, { { -96, -8, 0, 427 } } }, wavepat3 = { 1, { { -96, -8, 0, 428 } } };
@@ -358,52 +402,6 @@ void baku_die(sprite_status* bakuhawk) { /* Line 356, Address: 0x101ae60 */
   bakuhawk->actno = 31; /* Line 358, Address: 0x101ae94 */
   bakuhawk->r_no0 = 0; /* Line 359, Address: 0x101aea0 */
 } /* Line 360, Address: 0x101aea8 */
-
-
-static unsigned char flowchg0[4] = { 3, 0, 1, 255 };
-static unsigned char flowchg1[6] = { 3, 2, 3, 2, 3, 252 };
-static unsigned char flowchg2[6] = { 1, 5, 5, 4, 6, 252 };
-static unsigned char flowchg3[4] = { 19, 6, 7, 255 };
-unsigned char* flowchg[4] = {
-  flowchg0,
-  flowchg1,
-  flowchg2,
-  flowchg3
-};
-static sprite_pattern flo00 = {
-  1, { { -4, -16, 0, 264 } }
-};
-static sprite_pattern flo01 = {
-  1, { { -4, -16, 0, 265 } }
-};
-static sprite_pattern flo02 = {
-  1, { { -8, -16, 0, 266 } }
-};
-static sprite_pattern flo03 = {
-  1, { { -8, -16, 0, 267 } }
-};
-static sprite_pattern flo04 = {
-  1, { { -12, -24, 0, 268 } }
-};
-static sprite_pattern flo05 = {
-  1, { { -8, -16, 0, 269 } }
-};
-static sprite_pattern flo06 = {
-  1, { { -12, -48, 0, 270 } }
-};
-static sprite_pattern flo07 = {
-  1, { { -12, -48, 0, 271 } }
-};
-sprite_pattern* flow_pat[8] = {
-  &flo00,
-  &flo01,
-  &flo02,
-  &flo03,
-  &flo04,
-  &flo05,
-  &flo06,
-  &flo07
-};
 
 
 void flower(sprite_status* flowerwk) { /* Line 409, Address: 0x101aec0 */

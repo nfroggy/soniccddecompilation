@@ -11,7 +11,7 @@
 
 static sprite_pattern pat0 = {
   1,
-  { { -16, -16, 0, 532 } }
+  { { -16, -16, 0, SPRITE_TEKKYU1_BASE } }
 };
 static sprite_pattern* pat_tekkyu1[1] = { &pat0 };
 

@@ -3,7 +3,9 @@
 #include "ACTION.H"
 #include "IMPFUNCS.H"
 
+#if !defined(R4)
 int CKeyTogle;
+#endif
 aset_info* pAsetadr_dummy;
 aset_info* pAsetadr_w;
 asetz_info* pAsetadrz_w;

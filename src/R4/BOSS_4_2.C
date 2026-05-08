@@ -125,111 +125,6 @@ static unsigned int(*egg4_act_tbl[14])(sprite_status*) = {
   &egg4_movec3
 };
 extern unsigned short scr_dir_tbl[];
-static sprite_pattern egg4meca_pat0 = {
-  1,
-  { { -32, -28, 0, 459 } }
-};
-static sprite_pattern egg4meca_pat1 = {
-  1,
-  { { -32, -28, 0, 460 } }
-};
-sprite_pattern* egg4meca_pat[2] = {
-  &egg4meca_pat0,
-  &egg4meca_pat1
-};
-static void(*egg4meca_act_tbl[2])(sprite_status*) = {
-  &egg4meca_ini,
-  &egg4meca_01
-};
-static unsigned char egg4awa_pchg0[7] = { 9, 0, 1, 2, 3, 4, 255 };
-static unsigned char egg4awa_pchg1[3] = { 255, 4, 255 };
-static unsigned char egg4awa_pchg2[5] = { 19, 4, 5, 6, 255 };
-static unsigned char egg4awa_pchg3[3] = { 255, 6, 255 };
-static unsigned char egg4awa_pchg4[4] = { 19, 7, 8, 252 };
-static unsigned char* egg4awa_pchg[5] = {
-  egg4awa_pchg0,
-  egg4awa_pchg1,
-  egg4awa_pchg2,
-  egg4awa_pchg3,
-  egg4awa_pchg4
-};
-static sprite_pattern egg4awa_pat0 = {
-  1,
-  { { -4, -4, 0, 463 } }
-};
-static sprite_pattern egg4awa_pat1 = {
-  1,
-  { { -4, -4, 0, 464 } }
-};
-static sprite_pattern egg4awa_pat2 = {
-  1,
-  { { -4, -4, 0, 465 } }
-};
-static sprite_pattern egg4awa_pat3 = {
-  1,
-  { { -8, -8, 0, 466 } }
-};
-static sprite_pattern egg4awa_pat4 = {
-  1,
-  { { -8, -8, 0, 467 } }
-};
-static sprite_pattern egg4awa_pat5 = {
-  1,
-  { { -12, -12, 0, 468 } }
-};
-static sprite_pattern egg4awa_pat6 = {
-  1,
-  { { -16, -16, 0, 469 } }
-};
-static sprite_pattern egg4awa_pat7 = {
-  1,
-  { { -16, -16, 0, 470 } }
-};
-static sprite_pattern egg4awa_pat8 = {
-  1,
-  { { -16, -16, 0, 471 } }
-};
-sprite_pattern* egg4awa_pat[9] = {
-  &egg4awa_pat0,
-  &egg4awa_pat1,
-  &egg4awa_pat2,
-  &egg4awa_pat3,
-  &egg4awa_pat4,
-  &egg4awa_pat5,
-  &egg4awa_pat6,
-  &egg4awa_pat7,
-  &egg4awa_pat8
-};
-static unsigned int(*egg4awa_act_tbl[9])(sprite_status*) = {
-  &egg4awa_ini,
-  &egg4awa_deru,
-  &egg4awa_tuku,
-  &egg4awa_hiro,
-  &egg4awa_roll,
-  &egg4awa_ychg,
-  &egg4awa_del,
-  &egg4awa_out,
-  &egg4awa_chi
-};
-static sprite_pattern egg4tama_pat0 = {
-  1,
-  { { -4, -4, 0, 461 } }
-};
-static sprite_pattern egg4tama_pat1 = {
-  1,
-  { { -4, -4, 0, 462 } }
-};
-sprite_pattern* egg4tama_pat[2] = {
-  &egg4tama_pat0,
-  &egg4tama_pat1
-};
-static unsigned char egg4tama_pchg0[4] = { 1, 0, 1, 255 };
-static unsigned char* egg4tama_pchg[1] = { egg4tama_pchg0 };
-static unsigned int(*egg4tama_act_tbl[3])(sprite_status*) = {
-  &egg4tama_ini,
-  &egg4tama_01,
-  &egg4tama_02
-};
 
 
 
@@ -1032,6 +927,96 @@ static unsigned int egg4_movec3(sprite_status* pActwk) { /* Line 995, Address: 0
 
 
 
+static sprite_pattern egg4meca_pat0 = {
+  1,
+  { { -32, -28, 0, 459 } }
+};
+static sprite_pattern egg4meca_pat1 = {
+  1,
+  { { -32, -28, 0, 460 } }
+};
+sprite_pattern* egg4meca_pat[2] = {
+  &egg4meca_pat0,
+  &egg4meca_pat1
+};
+static void(*egg4meca_act_tbl[2])(sprite_status*) = {
+  &egg4meca_ini,
+  &egg4meca_01
+};
+static unsigned char egg4awa_pchg0[7] = { 9, 0, 1, 2, 3, 4, 255 };
+static unsigned char egg4awa_pchg1[3] = { 255, 4, 255 };
+static unsigned char egg4awa_pchg2[5] = { 19, 4, 5, 6, 255 };
+static unsigned char egg4awa_pchg3[3] = { 255, 6, 255 };
+static unsigned char egg4awa_pchg4[4] = { 19, 7, 8, 252 };
+static unsigned char* egg4awa_pchg[5] = {
+  egg4awa_pchg0,
+  egg4awa_pchg1,
+  egg4awa_pchg2,
+  egg4awa_pchg3,
+  egg4awa_pchg4
+};
+static sprite_pattern egg4awa_pat0 = {
+  1,
+  { { -4, -4, 0, 463 } }
+};
+static sprite_pattern egg4awa_pat1 = {
+  1,
+  { { -4, -4, 0, 464 } }
+};
+static sprite_pattern egg4awa_pat2 = {
+  1,
+  { { -4, -4, 0, 465 } }
+};
+static sprite_pattern egg4awa_pat3 = {
+  1,
+  { { -8, -8, 0, 466 } }
+};
+static sprite_pattern egg4awa_pat4 = {
+  1,
+  { { -8, -8, 0, 467 } }
+};
+static sprite_pattern egg4awa_pat5 = {
+  1,
+  { { -12, -12, 0, 468 } }
+};
+static sprite_pattern egg4awa_pat6 = {
+  1,
+  { { -16, -16, 0, 469 } }
+};
+static sprite_pattern egg4awa_pat7 = {
+  1,
+  { { -16, -16, 0, 470 } }
+};
+static sprite_pattern egg4awa_pat8 = {
+  1,
+  { { -16, -16, 0, 471 } }
+};
+sprite_pattern* egg4awa_pat[9] = {
+  &egg4awa_pat0,
+  &egg4awa_pat1,
+  &egg4awa_pat2,
+  &egg4awa_pat3,
+  &egg4awa_pat4,
+  &egg4awa_pat5,
+  &egg4awa_pat6,
+  &egg4awa_pat7,
+  &egg4awa_pat8
+};
+static unsigned int(*egg4awa_act_tbl[9])(sprite_status*) = {
+  &egg4awa_ini,
+  &egg4awa_deru,
+  &egg4awa_tuku,
+  &egg4awa_hiro,
+  &egg4awa_roll,
+  &egg4awa_ychg,
+  &egg4awa_del,
+  &egg4awa_out,
+  &egg4awa_chi
+};
+
+
+
+
 void egg4meca(sprite_status* pActwk) { /* Line 1035, Address: 0x10238a0 */
   egg4meca_act_tbl[pActwk->r_no0 / 2](pActwk); /* Line 1036, Address: 0x10238ac */
   actionsub(pActwk); /* Line 1037, Address: 0x10238f0 */
@@ -1703,6 +1688,29 @@ static unsigned int egg4awa_chi(sprite_status* pActwk) { /* Line 1602, Address: 
 
 
 
+
+
+
+
+static sprite_pattern egg4tama_pat0 = {
+  1,
+  { { -4, -4, 0, 461 } }
+};
+static sprite_pattern egg4tama_pat1 = {
+  1,
+  { { -4, -4, 0, 462 } }
+};
+sprite_pattern* egg4tama_pat[2] = {
+  &egg4tama_pat0,
+  &egg4tama_pat1
+};
+static unsigned char egg4tama_pchg0[4] = { 1, 0, 1, 255 };
+static unsigned char* egg4tama_pchg[1] = { egg4tama_pchg0 };
+static unsigned int(*egg4tama_act_tbl[3])(sprite_status*) = {
+  &egg4tama_ini,
+  &egg4tama_01,
+  &egg4tama_02
+};
 
 
 
