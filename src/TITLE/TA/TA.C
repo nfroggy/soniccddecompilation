@@ -6,72 +6,76 @@
 #include "TACOLOR.H"
 #include "TAEACTRL.H"
 
-int gMove;
-int gRankY;
-int gRankX;
-static int bExit;
-extern hmx_environment* g_env_module;
-extern hmx_environment* g_loader_module;
-ushort_union swdata2;
-ushort_union swdata1;
-score_data* lpScoreData;
-static unsigned short KeyRepTimer;
-int gNewMenu2;
-int gMenu2;
-int gMenu1;
-int gMenuZone;
-int gMenuRound;
-static int gRet;
-int gNewMenuZone;
-int gNewRankX;
-unsigned int(*WriteScoreData2)(int, char*, unsigned int);
-void(*SetScoreDate2)(score_data*);
-int(*ReadScoreIndx2)(unsigned int);
-int gNewMenuRound;
-int gNewMenu1;
-game_info* lpKeepWork;
-unsigned int gTimer;
-void(*CDPause)(short);
-void(*CDPlay)(short);
-char*(*sStrncpy)(char*, char*, int);
-int(*sStrncmp)(char*, char*, int);
-draw_context* s_ctx;
-draw_context*(*get_draw_context_module)(void);
-int* lpFadeFlag;
-int_union* lphscrollbuff;
-PALETTEENTRY* lpcolorwk4;
-PALETTEENTRY* lpcolorwk3;
-PALETTEENTRY* lpcolorwk2;
-PALETTEENTRY* lpcolorwk;
-unsigned short* pmapwk;
-void(*hmx_sprite_set_bitmap_module)(hmx_sprite*, hmx_bitmap*);
-void(*hmx_sprite_set_position_module)(hmx_sprite*, int, int);
-hmx_renderer_base*(*hmx_sprite_base_module)(hmx_sprite*);
-void(*hmx_renderer_context_draw_module)(hmx_renderer_context*, hmx_surface*);
-void(*hmx_renderer_context_clear_module)(hmx_renderer_context*);
-void(*hmx_renderer_context_add_module)(hmx_renderer_context*, int, hmx_renderer_base*);
-void(*hmx_grid_set_tile_module)(hmx_grid*, int, int, hmx_bitmap*, int);
-void(*hmx_grid_set_view_module)(hmx_grid*, int, int, int, int);
-void(*hmx_grid_set_position_module)(hmx_grid*, int, int);
-hmx_renderer_base*(*hmx_grid_base_module)(hmx_grid*);
-void(*hmx_grid_release_module)(hmx_environment*, hmx_grid*);
-hmx_grid*(*hmx_grid_create_module)(hmx_environment*, int, int, int, int);
-void(*hmx_free_module)(hmx_environment*, void*);
-void(*hmx_bitmap_set_transparency_module)(hmx_bitmap*, int);
-void*(*hmx_bitmap_get_scan0_module)(hmx_bitmap*);
-void(*hmx_bitmap_release_module)(hmx_environment*, hmx_bitmap*);
-hmx_bitmap*(*hmx_bitmap_create_module)(hmx_environment*, int, int);
-void(*hmx_background_set_background_module)(hmx_background*, int);
-void*(*ld_load_cmpfile_module)(hmx_environment*, char*);
-void(*ld_bitmap_4to8_module)(void*, void*, int, int, int, int, int);
-void(*FlipToScreen_module)(void);
-void(*sCloseFile)(int);
-int(*sReadFile)(int, void*, int);
-int(*sOpenFile)(char*);
-void(*sOutputDebugString)(char*);
-void(*sPrintf)(char*, const char*, ...);
-void(*sMemFree)(void*);
-void*(*sMemAlloc)(int);
+int gMove = 0;
+int gRankY = 0;
+int gRankX = 0;
+static int bExit = 0;
+hmx_environment* g_env_module = 0;
+hmx_environment* g_loader_module = 0;
+static unsigned short KeyRepTimer = 0;
+draw_context* s_ctx = 0;
+static int gRet = 0;
+score_data* lpScoreData = 0;
+int gNewRankX = 0;
+unsigned int gTimer = 0;
+int gNewMenuZone = 0;
+int gMenuZone = 0;
+int gNewMenuRound = 0;
+int gMenuRound = 0;
+int gNewMenu2 = 0;
+int gMenu2 = 0;
+int gNewMenu1 = 0;
+int gMenu1 = 0;
+ushort_union swdata2 = { 0 };
+ushort_union swdata1 = { 0 };
+unsigned int ghWnd = 0;
+unsigned int hSurf = 0;
+void(*hmx_sprite_set_bitmap_module)(hmx_sprite*, hmx_bitmap*) = 0;
+void(*hmx_sprite_set_position_module)(hmx_sprite*, int, int) = 0;
+hmx_renderer_base*(*hmx_sprite_base_module)(hmx_sprite*) = 0;
+void(*hmx_renderer_context_draw_module)(hmx_renderer_context*, hmx_surface*) = 0;
+void(*hmx_renderer_context_clear_module)(hmx_renderer_context*) = 0;
+void(*hmx_renderer_context_add_module)(hmx_renderer_context*, int, hmx_renderer_base*) = 0;
+void(*hmx_grid_set_tile_module)(hmx_grid*, int, int, hmx_bitmap*, int) = 0;
+void(*hmx_grid_set_view_module)(hmx_grid*, int, int, int, int) = 0;
+void(*hmx_grid_set_position_module)(hmx_grid*, int, int) = 0;
+hmx_renderer_base*(*hmx_grid_base_module)(hmx_grid*) = 0;
+void(*hmx_grid_release_module)(hmx_environment*, hmx_grid*) = 0;
+hmx_grid*(*hmx_grid_create_module)(hmx_environment*, int, int, int, int) = 0;
+void(*hmx_free_module)(hmx_environment*, void*) = 0;
+void(*hmx_bitmap_set_transparency_module)(hmx_bitmap*, int) = 0;
+void*(*hmx_bitmap_get_scan0_module)(hmx_bitmap*) = 0;
+void(*hmx_bitmap_release_module)(hmx_environment*, hmx_bitmap*) = 0;
+hmx_bitmap*(*hmx_bitmap_create_module)(hmx_environment*, int, int) = 0;
+void(*hmx_background_set_background_module)(hmx_background*, int) = 0;
+void(*ld_bitmap_4to8_module)(void*, void*, int, int, int, int, int) = 0;
+void*(*ld_load_cmpfile_module)(hmx_environment*, char*) = 0;
+void(*FlipToScreen_module)(void) = 0;
+draw_context*(*get_draw_context_module)(void) = 0;
+void(*sOutputDebugString)(char*) = 0;
+void(*sPrintf)(char*, const char*, ...) = 0;
+void(*sCloseFile)(int) = 0;
+int(*sReadFile)(int, void*, int) = 0;
+int(*sOpenFile)(char*) = 0;
+int(*sStrncmp)(char*, char*, int) = 0;
+char*(*sStrncpy)(char*, char*, int) = 0;
+void(*sMemFree)(void*) = 0;
+void*(*sMemAlloc)(int) = 0;
+void(*SetScoreDate2)(score_data*) = 0;
+unsigned int(*WriteScoreData2)(int, char*, unsigned int) = 0;
+int(*ReadScoreIndx2)(unsigned int) = 0;
+void(*CDPause)(short) = 0;
+void(*CDPlay)(short) = 0;
+extern game_info* lpKeepWork;
+extern int* lpFadeFlag;
+extern int_union* lphscrollbuff;
+extern unsigned short* pmapwk;
+extern PALETTEENTRY* lpcolorwk4;
+extern PALETTEENTRY* lpcolorwk3;
+extern PALETTEENTRY* lpcolorwk2;
+extern PALETTEENTRY* lpcolorwk;
+static char aNameDefault[4] = "AAA";
+static char aNamePlayer[4] = "YOU";
 dlink_export ExportedFunctions = {
   &game_init,
   (void (*)(void))&game,
@@ -86,8 +90,6 @@ dlink_export ExportedFunctions = {
   0,
   0
 };
-unsigned int ghWnd;
-unsigned int hSurf;
 
 
 
@@ -283,7 +285,7 @@ int game(void) { /* Line 196, Address: 0x10000e0 */
 
     else if (gMenu2 == 5) { /* Line 284, Address: 0x1000454 */
 
-      if (swdata1.b.h & 64) { /* Line 286, Address: 0x1000468 */
+      if (swdata1.b.l & 64) { /* Line 286, Address: 0x1000468 */
         if (gRankX == 2) { /* Line 287, Address: 0x1000480 */
           gNewMenu2 = 3; /* Line 288, Address: 0x1000494 */
           gMove = 12; /* Line 289, Address: 0x10004a0 */
@@ -517,8 +519,8 @@ void game_init(void) { /* Line 442, Address: 0x1000cf0 */
 
         if (gMenu1 == 0) { /* Line 518, Address: 0x10010fc */
           lpScoreData->timeattack[round][zone][i].time = lpKeepWork->ta_time; /* Line 519, Address: 0x100110c */
-          if (sStrncmp(lpScoreData->timeattack[round][zone][i].name, "AAA", 3) == 0) { /* Line 520, Address: 0x100114c */
-            sStrncpy(lpScoreData->timeattack[round][zone][i].name, "YOU", 3); /* Line 521, Address: 0x10011a4 */
+          if (sStrncmp(lpScoreData->timeattack[round][zone][i].name, aNameDefault, 3) == 0) { /* Line 520, Address: 0x100114c */
+            sStrncpy(lpScoreData->timeattack[round][zone][i].name, aNamePlayer, 3); /* Line 521, Address: 0x10011a4 */
           }
 
           Time = 0; /* Line 524, Address: 0x10011f4 */
@@ -534,8 +536,8 @@ void game_init(void) { /* Line 442, Address: 0x1000cf0 */
         } /* Line 534, Address: 0x1001278 */
         else {
           lpScoreData->special[round][i].time = lpKeepWork->ta_time; /* Line 536, Address: 0x1001280 */
-          if (sStrncmp(lpScoreData->special[round][i].name, "AAA", 3) == 0) { /* Line 537, Address: 0x10012b0 */
-            sStrncpy(lpScoreData->special[round][i].name, "YOU", 3); /* Line 538, Address: 0x10012f8 */
+          if (sStrncmp(lpScoreData->special[round][i].name, aNameDefault, 3) == 0) { /* Line 537, Address: 0x10012b0 */
+            sStrncpy(lpScoreData->special[round][i].name, aNamePlayer, 3); /* Line 538, Address: 0x10012f8 */
           }
         }
       }

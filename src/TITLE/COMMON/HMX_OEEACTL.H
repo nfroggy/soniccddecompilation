@@ -1,6 +1,6 @@
 #include "HMX_TYPES.H"
 
-void EAError(void);
+void EAError(int ret, int line, char* str);
 void srfDraw(void);
 void ld_bitmap_file(char* fname, void* dst, int wx, int wy, int palet, int unknown);
 void ld_bitmap_file2(char* fname, void* dst, int sx, int sy, int wx, int wy, int dx, int dy, int unk1, int unk2);

@@ -26,14 +26,19 @@ static unsigned char tblDA[34] = {
   20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
   30, 31, 32, 33
 };
-int bKakusi;
 extern unsigned short nSequenceNum;
 static unsigned short nMenuKind;
 static unsigned short nPCMNumberIndx;
 static unsigned short nDANumberIndx;
+static char ErrBuf[250];
+static int ErrRet;
+static unsigned int hmapwk;
+static unsigned int hBkg;
+static unsigned int* hBmpBkg;
+static unsigned int HorizInit;
+int bKakusi;
 extern unsigned short swData1;
 extern int nTimerCunt;
-static unsigned int HorizInit;
 PALETTEENTRY MIYAKEcolor[16] = {
   { 240, 240, 240, 1 }, {   0,   0,   0, 1 }, {   0,   0,  64, 1 }, {   0,   0, 128, 1 },
   {   0,   0, 192, 1 }, {  32,   0, 224, 1 }, {  32,  32, 224, 1 }, {  64, 192, 224, 1 },
@@ -78,11 +83,6 @@ extern void*(*hmx_bitmap_get_scan0_module)(hmx_bitmap*);
 extern hmx_bitmap*(*hmx_bitmap_create_module)(hmx_environment*, int, int);
 extern hmx_environment* g_env_module;
 extern void(*hmx_bitmap_release_module)(hmx_environment*, hmx_bitmap*);
-static unsigned int* hBmpBkg;
-static unsigned int hBkg;
-static unsigned int hmapwk;
-static int ErrRet;
-static char ErrBuf[250];
 
 
 

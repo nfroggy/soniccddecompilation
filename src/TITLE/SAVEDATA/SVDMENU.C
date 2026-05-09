@@ -10,14 +10,14 @@
 
 extern sprite_bmp infoSprtBmp[];
 extern unsigned short nMenuKind;
-unsigned int bMenuChosed;
+extern unsigned int bMenuChosed;
 extern unsigned short swData1;
 unsigned int bFileChosed;
-int nSelectFileNumber;
-extern int nFileNumber;
-extern score_data saveData[6];
-static int nSrcFileNumber;
 unsigned int bDestFileChosed;
+int nFileNumber;
+int nSelectFileNumber;
+score_data saveData[6];
+static int nSrcFileNumber;
 extern char editBuf[];
 extern int nTimerCunt;
 

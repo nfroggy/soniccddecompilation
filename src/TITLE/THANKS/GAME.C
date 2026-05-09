@@ -25,34 +25,27 @@ static PALETTEENTRY endingcol[64] = {
   {   0,   0,   0, 1 }, {   0,   0,   0, 1 }, {   0,   0,   0, 1 }, {   0,   0,   0, 1 },
   {   0,   0,   0, 1 }, {   0,   0,   0, 1 }, {   0,   0,   0, 1 }, {   0,   0,   0, 1 }
 };
-static unsigned short gEndingMesTimer;
-static game_info* lpKeepWork;
+static char MapFileA[] = "TITLE\\THANKS\\MAP\\VA_MAP.BIN";
+static char MapErrorA[] = "Map Load Error [va_map.bin]\n";
+static char MapFileB[] = "TITLE\\THANKS\\MAP\\VB_MAP.BIN";
+static char MapErrorB[] = "Map Load Error [vb_map.bin]\n";
+static unsigned char SeToWavTbl[80] = {
+   0,  1,  2,  3,  4,  5,  6,  7,  8,  9,
+  10, 11, 11, 12, 13, 14, 15, 16, 17, 18,
+  19, 20, 20, 21, 22, 22, 23, 23, 24, 25,
+  26, 27, 28, 29, 30, 31, 43, 44, 45, 46,
+  47, 48, 49, 50, 51, 52, 53, 54, 55, 56,
+  57, 58, 58, 59, 60, 61, 62, 63, 64, 65,
+  67, 68, 69, 70, 71, 71, 72, 73, 74, 32,
+  33, 34, 35, 36, 37, 38, 39, 40, 41, 42
+};
 extern bmp_info SprBmp[700];
-score_data* lpScorData;
-unsigned int* lpghWnd;
-unsigned int* lphSurf;
 extern int* lpFadeFlag;
 extern int_union* lphscrollbuff;
 extern PALETTEENTRY* lpcolorwk3;
 extern PALETTEENTRY* lpcolorwk2;
 extern PALETTEENTRY* lpcolorwk1;
 extern PALETTEENTRY* lpcolorwk0;
-void(*sCloseFile)(int);
-int(*sReadFile)(int, void*, int);
-int(*sOpenFile)(char*);
-void(*sOutputDebugString)(char*);
-void(*sPrintf)(char*, char*);
-char*(*sStrcpy)(char*, char*);
-int(*sRandom)(void);
-int(*sMemCmp)(void*, void*, int);
-void(*sMemCpy)(void*, void*, int);
-void(*sMemSet)(void*, unsigned char, int);
-void(*ChangeTileBmp)(int, int);
-void(*CDPlay)(short);
-void(*WaveRequest)(short);
-void(*ClrSpriteDebug)(void);
-void(*EAsprset)(short, short, unsigned short, unsigned short, unsigned short);
-int(*SetGrid)(int, int, int, int, int);
 extern short_union swdata2;
 extern short_union swdata1;
 extern short end_timer;
@@ -84,7 +77,28 @@ dlink_export ExportedFunctions = {
   0,
   0
 };
-int(*sGetFileSize)(int);
+static unsigned short gEndingMesTimer = 0;
+void(*ChangeTileBmp)(int, int) = 0;
+void(*CDPlay)(short) = 0;
+void(*WaveRequest)(short) = 0;
+void(*ClrSpriteDebug)(void) = 0;
+void(*EAsprset)(short, short, unsigned short, unsigned short, unsigned short) = 0;
+int(*SetGrid)(int, int, int, int, int) = 0;
+char*(*sStrcpy)(char*, char*) = 0;
+void(*sCloseFile)(int) = 0;
+int(*sGetFileSize)(int) = 0;
+int(*sReadFile)(int, void*, int) = 0;
+int(*sOpenFile)(char*) = 0;
+int(*sMemCmp)(void*, void*, int) = 0;
+void(*sMemCpy)(void*, void*, int) = 0;
+void(*sMemSet)(void*, unsigned char, int) = 0;
+int(*sRandom)(void) = 0;
+void(*sPrintf)(char*, char*) = 0;
+void(*sOutputDebugString)(char*) = 0;
+static game_info* lpKeepWork = 0;
+score_data* lpScorData = 0;
+unsigned int* lpghWnd = 0;
+unsigned int* lphSurf = 0;
 
 
 
@@ -241,9 +255,9 @@ void cgmwrt_a(void) { /* Line 238, Address: 0x1002260 */
   unsigned int hf;
 
   sMemSet(aMap, 0, sizeof(aMap)); /* Line 243, Address: 0x100227c */
-  if ((hf = sOpenFile("TITLE\\THANKS\\MAP\\VA_MAP.BIN")) == -1) { /* Line 244, Address: 0x1002298 */
+  if ((hf = sOpenFile(MapFileA)) == -1) { /* Line 244, Address: 0x1002298 */
 
-    sOutputDebugString("Map Load Error [va_map.bin]\n"); /* Line 246, Address: 0x10022c0 */
+    sOutputDebugString(MapErrorA); /* Line 246, Address: 0x10022c0 */
   } /* Line 247, Address: 0x10022d8 */
   else {
 
@@ -270,9 +284,9 @@ void cgmwrt_b(void) { /* Line 267, Address: 0x10023e0 */
   unsigned int hf;
 
   sMemSet(bMap, 0, sizeof(bMap)); /* Line 272, Address: 0x10023fc */
-  if ((hf = sOpenFile("TITLE\\THANKS\\MAP\\VB_MAP.BIN")) == -1) { /* Line 273, Address: 0x1002418 */
+  if ((hf = sOpenFile(MapFileB)) == -1) { /* Line 273, Address: 0x1002418 */
 
-    sOutputDebugString("Map Load Error [vb_map.bin]\n"); /* Line 275, Address: 0x1002440 */
+    sOutputDebugString(MapErrorB); /* Line 275, Address: 0x1002440 */
   } /* Line 276, Address: 0x1002458 */
   else {
 
@@ -396,17 +410,6 @@ void PutAscii(unsigned short c, unsigned short XPos, unsigned short YPos) { /* L
 
 
 void soundset(short ReqNo) { /* Line 398, Address: 0x1002a30 */
-  static unsigned char SeToWavTbl[80] = {
-     0,  1,  2,  3,  4,  5,  6,  7,  8,  9,
-    10, 11, 11, 12, 13, 14, 15, 16, 17, 18,
-    19, 20, 20, 21, 22, 22, 23, 23, 24, 25,
-    26, 27, 28, 29, 30, 31, 43, 44, 45, 46,
-    47, 48, 49, 50, 51, 52, 53, 54, 55, 56,
-    57, 58, 58, 59, 60, 61, 62, 63, 64, 65,
-    67, 68, 69, 70, 71, 71, 72, 73, 74, 32,
-    33, 34, 35, 36, 37, 38, 39, 40, 41, 42
-  };
-
   if (ReqNo == 171) return; /* Line 410, Address: 0x1002a3c */
 
 

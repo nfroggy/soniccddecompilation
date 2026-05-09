@@ -3,14 +3,15 @@
 
 char* SprCmpFileName = "TITLE\\BMP\\BESTTIME.CM_";
 char* TileCmpFileName = "TITLE\\BMP\\sndtestt.CM_";
-static unsigned int hGridBack;
-static unsigned int hTileBack[1];
-static unsigned int* hBmpBack[1];
-static unsigned int hSprBG[24];
-static unsigned int hSprTitle[22];
-static unsigned int hSprDummy;
-unsigned short NUM_BMP = 100;
-unsigned short NUM_GRIDBMP = 1;
+const unsigned short NUM_BMP = 100;
+const unsigned short NUM_GRIDBMP = 1;
+const int MENUITEMMAX = 32;
+static unsigned int hGridBack = 0;
+static unsigned int hTileBack[1] = { 0 };
+static unsigned int* hBmpBack[1] = { 0 };
+static unsigned int hSprBG[24] = { 0 };
+static unsigned int hSprTitle[22] = { 0 };
+static unsigned int hSprDummy = 0;
 sprite_bmp infoSprtBmp[100] = {
   {  8, 16, {   0,   0 }, 35, 16, 0, 0, &hSprDummy },
   {  8, 16, {   0,   0 }, 35, 16, 0, 0, &hSprDummy },
@@ -114,5 +115,5 @@ sprite_bmp infoSprtBmp[100] = {
   { 80, 28, { 240,   0 }, 30, 64, 0, 0, &hSprBG[23] }
 };
 grid_bmp infoGridBmp[1] = {
-  { 1, 8, 8, { 0, 0 }, 60, 16, 0, 0, 0 }
+  { 1, 8, 8, { 0, 0 }, 60, 16, hBmpBack, hTileBack, &hGridBack }
 };

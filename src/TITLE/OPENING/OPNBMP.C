@@ -10,12 +10,10 @@ static unsigned int hTileBack[1];
 static unsigned int hGridBack;
 static unsigned int* hBmpMizu[320];
 static unsigned int hTileMizu[320];
-static unsigned int hGridMizu;
 static unsigned int* hBmpKumo[512];
 static unsigned int hTileKumo[512];
+static unsigned int hGridMizu;
 static unsigned int hGridKumo;
-unsigned short NUM_BMP = 34;
-unsigned short NUM_GRIDBMP = 3;
 sprite_bmp infoSprtBmp[34] = {
   { 160,  72, {   0,  88 }, 42, 16, 0,  7, &hSpr[0] },
   { 160,  72, { 160,  88 }, 42, 16, 0,  7, &hSpr[1] },
@@ -57,3 +55,5 @@ grid_bmp infoGridBmp[3] = {
   { 320, 8, 8, { 0, 160 }, 52, 16, hBmpMizu, hTileMizu, &hGridMizu },
   { 512, 8, 8, { 0,   0 }, 45, 16, hBmpKumo, hTileKumo, &hGridKumo }
 };
+const unsigned short NUM_BMP = 34;
+const unsigned short NUM_GRIDBMP = 3;

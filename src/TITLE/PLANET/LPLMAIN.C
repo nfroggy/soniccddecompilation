@@ -31,31 +31,9 @@ static char* ScrAMapFileName[3] =
   "TITLE\\PLANET\\MAP\\LPG.MAP",
   "TITLE\\PLANET\\MAP\\LPB.MAP"
 };
-void(*sCloseFile)(int);
-int(*sReadFile)(int, void*, int);
-static game_info* lpKeepWork;
-int(*sOpenFile)(char*);
-void*(*sMemAlloc)(int);
-static int InitMode;
-static int MakeupMode;
-pad_status*(*sPeriPadGet)(unsigned int);
-void(*sOutputDebugString)(char*);
-void(*sPrintf)(char*, char*);
-int(*sRandom)(void);
-void(*sMemCpy)(void*, void*, int);
-void(*sMemSet)(void*, unsigned char, int);
-void(*sMemFree)(void*);
-void(*WaveAllStop)(void);
-void(*ChangeTileBmp)(int, int);
-void(*CDPlay)(short);
-void(*WaveRequest)(short);
-void(*ClrSpriteDebug)(void);
-void(*EAsprset)(short, short, unsigned short, unsigned short, unsigned short);
-int(*SetGrid)(int, int, int, int, int);
 static char ScrBMapFileName[26] = "TITLE\\PLANET\\MAP\\LPBS.MAP";
 static unsigned int bGameInit = 1;
 extern PALETTEENTRY init_col[];
-static short ScrBMap[704];
 extern short* funka_map_tbl[];
 extern short funka_timetbl[];
 extern PALETTEENTRY ascii_col[];
@@ -85,9 +63,31 @@ dlink_export ExportedFunctions =
   0,
   0
 };
-int(*sGetFileSize)(int);
-static unsigned int hSmAdr;
+static int MakeupMode;
+static int InitMode;
 static unsigned int hWordRAM;
+static game_info* lpKeepWork;
+static short ScrBMap[704];
+static unsigned int hSmAdr;
+void(*sOutputDebugString)(char*);
+void(*sPrintf)(char*, char*);
+int(*sRandom)(void);
+void*(*sMemAlloc)(int);
+void(*sMemFree)(void*);
+void(*sMemSet)(void*, unsigned char, int);
+void(*sMemCpy)(void*, void*, int);
+int(*sOpenFile)(char*);
+int(*sReadFile)(int, void*, int);
+int(*sGetFileSize)(int);
+void(*sCloseFile)(int);
+int(*SetGrid)(int, int, int, int, int);
+void(*EAsprset)(short, short, unsigned short, unsigned short, unsigned short);
+void(*ClrSpriteDebug)(void);
+void(*WaveRequest)(short);
+void(*CDPlay)(short);
+void(*ChangeTileBmp)(int, int);
+void(*WaveAllStop)(void);
+pad_status*(*sPeriPadGet)(unsigned int);
 
 
 

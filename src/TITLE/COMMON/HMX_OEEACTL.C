@@ -30,10 +30,10 @@ extern void(*hmx_sprite_set_flags_module)(hmx_sprite*, int);
 extern void(*hmx_sprite_set_bitmap_module)(hmx_sprite*, hmx_bitmap*);
 extern void(*hmx_sprite_set_position_module)(hmx_sprite*, int, int);
 extern void(*hmx_grid_release_module)(hmx_environment*, hmx_grid*);
-static int sprIdx[512];
 extern hmx_grid*(*hmx_grid_create_module)(hmx_environment*, int, int, int, int);
-static char ErrBuf[250];
-int ErrRet;
+static char ErrBuf[250] = { 0 };
+int ErrRet = 0;
+static int sprIdx[512] = { 0 };
 #if defined(SAVEDATA)
 extern int PRIO_MAX;
 #else
@@ -1085,3 +1085,79 @@ void sprDelete(int handle) { /* Line 1077, Address: 0x1003400 */
   if (sprIdx[handle] == 1) /* Line 1085, Address: 0x1003408 */
     sprIdx[handle] = 0; /* Line 1086, Address: 0x100342c */
 } /* Line 1087, Address: 0x1003444 */
+
+#ifdef SAVEDATA
+POINT nPosiXSprFile[56] __attribute__((aligned(128))) = {
+  { 128, 0 },
+  { 136, 0 },
+  { 144, 0 },
+  { 152, 0 },
+  { 160, 0 },
+  { 168, 0 },
+  { 176, 0 },
+  { 184, 0 },
+  { 192, 0 },
+  { 200, 0 },
+  { 208, 0 },
+  { 216, 0 },
+  { 144, 10 },
+  { 152, 10 },
+  { 160, 10 },
+  { 168, 10 },
+  { 176, 10 },
+  { 184, 10 },
+  { 192, 10 },
+  { 212, 4 },
+  { 220, 4 },
+  { 228, 4 },
+  { 236, 4 },
+  { 244, 4 },
+  { 252, 4 },
+  { 260, 4 },
+  { 268, 4 },
+  { 276, 4 },
+  { 284, 4 },
+  { 292, 4 },
+  { 228, 14 },
+  { 236, 14 },
+  { 244, 14 },
+  { 252, 14 },
+  { 260, 14 },
+  { 268, 14 },
+  { 276, 14 },
+  { 284, 14 },
+  { 292, 14 },
+  { 300, 14 },
+  { 308, 14 },
+  { 316, 14 },
+  { 324, 14 },
+  { 332, 14 },
+  { 160, 8 },
+  { 168, 8 },
+  { 176, 8 },
+  { 184, 8 },
+  { 192, 8 },
+  { 200, 8 },
+  { 208, 8 },
+  { 216, 8 },
+  { 224, 8 },
+  { 232, 8 },
+  { 240, 8 },
+  { 248, 8 }
+};
+int PRIO_MAX = 160;
+unsigned short NUM_BMP = 209;
+int PLAYERCHAR_W = 8;
+unsigned short NUM_GRIDBMP = 1;
+#endif
+
+#ifdef SOUNDTST
+unsigned short NUM_BMP __attribute__((aligned(128))) = 100;
+unsigned short NUM_GRIDBMP = 1;
+#endif
+
+#ifdef STAGETST
+unsigned short NUM_BMP __attribute__((aligned(128))) = 64;
+unsigned short NUM_GRIDBMP = 1;
+int MENUITEMMAX = 70;
+#endif

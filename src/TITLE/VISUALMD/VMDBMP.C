@@ -3,8 +3,11 @@
 
 char* SprCmpFileName = "TITLE\\BMP\\VISUALS.CM_";
 char* TileCmpFileName = "TITLE\\BMP\\VISUALT.CM_";
-static unsigned int hSprBG[16];
-static unsigned int hSprDummy;
+static unsigned int hGridBack = 0;
+static unsigned int hTileBack[1] = { 0 };
+static unsigned int* hBmpBack[1] = { 0 };
+static unsigned int hSprBG[16] = { 0 };
+static unsigned int hSprDummy = 0;
 sprite_bmp infoSprtBmp[68] = {
   {  8, 16,   0,   0, 35, 32, 0, 0, &hSprDummy },
   {  8, 16,   0,   0, 35, 32, 0, 0, &hSprDummy },
@@ -75,11 +78,6 @@ sprite_bmp infoSprtBmp[68] = {
   { 80, 56, 160,   0, 50, 64, 0, 0, &hSprBG[14] },
   { 80, 56, 240,   0, 50, 64, 0, 0, &hSprBG[15] }
 };
-static unsigned int hGridBack;
-static unsigned int hTileBack[1];
-static unsigned int* hBmpBack[1];
 grid_bmp infoGridBmp[1] = {
   { 1, 8, 8, { 0, 0 }, 60, 16, hBmpBack, hTileBack, &hGridBack }
 };
-unsigned short NUM_BMP = 68;
-unsigned short NUM_GRIDBMP = 1;

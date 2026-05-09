@@ -7,8 +7,6 @@
 #include "..\..\IMPFUNCS.H"
 #include "TACOLOR.H"
 
-static int TileCnt;
-static int SprBmpCnt;
 static grid_rect BkgRect = { 0, 0, 320, 224 };
 static grid_rect GridRectPic = { 0, 0, 128, 144 };
 static POINT ptSprLocPic[2] = {
@@ -226,14 +224,35 @@ static unsigned short MapRecRound[7][4][18] = {
     { 11, 11,  11, 215, 216, 219, 172, 227, 228, 229, 230, 231,  11, 11, 11, 30, 3, 4 }
   }
 };
-static char ErrBuf[250];
+static int TileCnt = 0;
+static int SprBmpCnt = 0;
+int gZure = 0;
+static int ErrRet = 0;
+static char ErrBuf[250] = { 0 };
+static char* lpPicBits8 = 0;
+static char* lpPicBits4[2][8] = { 0 };
+static grid_rect GridRect[8] = { 0 };
+static unsigned int* hBmpPic[2] = { 0 };
+static unsigned int* hBmpBkg = 0;
+static unsigned int* hGridBmp[768] = { 0 };
+static unsigned int hGrid[8] = { 0 };
+static unsigned int hBkg = 0;
+static unsigned int hSprPic[2] = { 0 };
+static unsigned int hTile[768] = { 0 };
+game_info* lpKeepWork = 0;
+int* lpFadeFlag = 0;
+int_union* lphscrollbuff = 0;
+unsigned short* pmapwk = 0;
+PALETTEENTRY* lpcolorwk4 = 0;
+PALETTEENTRY* lpcolorwk3 = 0;
+PALETTEENTRY* lpcolorwk2 = 0;
+PALETTEENTRY* lpcolorwk = 0;
 extern void(*FlipToScreen_module)(void);
 extern void(*hmx_renderer_context_draw_module)(hmx_renderer_context*, hmx_surface*);
 extern draw_context* s_ctx;
 extern void(*hmx_renderer_context_add_module)(hmx_renderer_context*, int, hmx_renderer_base*);
 extern hmx_renderer_base*(*hmx_sprite_base_module)(hmx_sprite*);
 extern hmx_renderer_base*(*hmx_grid_base_module)(hmx_grid*);
-static unsigned int hGrid[8];
 extern void(*hmx_renderer_context_clear_module)(hmx_renderer_context*);
 extern void(*hmx_free_module)(hmx_environment*, void*);
 extern void(*hmx_bitmap_set_transparency_module)(hmx_bitmap*, int);
@@ -241,30 +260,21 @@ extern void(*ld_bitmap_4to8_module)(void*, void*, int, int, int, int, int);
 extern void*(*hmx_bitmap_get_scan0_module)(hmx_bitmap*);
 extern hmx_bitmap*(*hmx_bitmap_create_module)(hmx_environment*, int, int);
 extern void*(*ld_load_cmpfile_module)(hmx_environment*, char*);
-hmx_environment* g_env_module;
-hmx_environment* g_loader_module;
+extern hmx_environment* g_env_module;
+extern hmx_environment* g_loader_module;
 extern void(*hmx_grid_set_view_module)(hmx_grid*, int, int, int, int);
-static grid_rect GridRect[8];
 extern void(*hmx_grid_set_position_module)(hmx_grid*, int, int);
 extern hmx_grid*(*hmx_grid_create_module)(hmx_environment*, int, int, int, int);
 extern void(*hmx_grid_release_module)(hmx_environment*, hmx_grid*);
 extern void(*hmx_grid_set_tile_module)(hmx_grid*, int, int, hmx_bitmap*, int);
 extern void(*hmx_background_set_background_module)(hmx_background*, int);
-static char* lpPicBits4[2][8];
 extern void(*hmx_sprite_set_bitmap_module)(hmx_sprite*, hmx_bitmap*);
 extern void(*hmx_sprite_set_position_module)(hmx_sprite*, int, int);
-static char* lpPicBits8;
 extern int gMenuRound;
 extern int gMenu1;
 extern int gNewMenu2;
 extern int gMenuZone;
 extern int gMenu2;
-static unsigned int* hBmpPic[2];
-static unsigned int* hBmpBkg;
-static unsigned int* hGridBmp[768];
-static unsigned int hBkg;
-static unsigned int hSprPic[2];
-static unsigned int hTile[768];
 extern void(*hmx_bitmap_release_module)(hmx_environment*, hmx_bitmap*);
 extern score_data* lpScoreData;
 extern int gRankY;
@@ -273,10 +283,8 @@ extern unsigned int gTimer;
 extern int gMove;
 extern int gNewRankX;
 extern int gNewMenuZone;
-int gZure;
 extern int gNewMenuRound;
 extern int gNewMenu1;
-static int ErrRet;
 
 
 
@@ -1038,7 +1046,7 @@ void DeleteEA(void) { /* Line 1035, Address: 0x1003a80 */
   BkgBmpDelete_TA(); /* Line 1038, Address: 0x1003a90 */
   BkgDelete_TA(); /* Line 1039, Address: 0x1003a98 */
 
-  lpPicBits4[4][0] = 0; /* Line 1041, Address: 0x1003aa0 */
+  lpPicBits4[1][0] = 0; /* Line 1041, Address: 0x1003aa0 */
   for (i = 0; i < 2; ++i) { /* Line 1042, Address: 0x1003aa8 */
     for (j = 0; j < 8; ++j) { /* Line 1043, Address: 0x1003ab4 */
       if (lpPicBits4[i][j] != 0) { /* Line 1044, Address: 0x1003ac0 */

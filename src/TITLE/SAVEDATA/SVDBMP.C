@@ -9,14 +9,19 @@ int nPosiXSprMes[27] = {
   168, 176, 184, 192, 200, 208, 216, 224, 232,
   240, 248, 256, 264, 272, 280, 288, 296, 304
 };
-static unsigned int hSprSonicRun[3];
-static unsigned int hSprSonicStop[3];
-static unsigned int hSprCursol;
-static unsigned int hSprFileMark[7];
-static unsigned int hSprBG[4];
-static unsigned int hSprFileBG;
-static unsigned int hSprDummy;
+unsigned int hSprFile[56][6];
+unsigned int hSprMes[27];
 static unsigned int hSprCmd[5];
+static unsigned int hSprDummy;
+static unsigned int hSprFileBG;
+static unsigned int hSprBG[4];
+static unsigned int hSprFileMark[7];
+static unsigned int hSprCursol;
+static unsigned int hSprSonicStop[3];
+static unsigned int hSprSonicRun[3];
+static unsigned int* hBmpBack[1];
+static unsigned int hTileBack[1];
+static unsigned int hGridBack;
 sprite_bmp infoSprtBmp[209] = {
   {  48,  16,  16,  48,  30, 32, 0, 0, &hSprCmd[0] },
   {  48,  16,  16,  48,  30, 32, 0, 0, &hSprCmd[0] },
@@ -239,74 +244,6 @@ mark_info markTable[10] = {
   { 39, 183, 184, 185, 186 },
   { 34, 187, 188, 189, 190 }
 };
-static unsigned int hGridBack;
-static unsigned int hTileBack[1];
-static unsigned int* hBmpBack[1];
 grid_bmp infoGridBmp[1] = {
   { 1, 8, 8, { 0, 0 }, 120, 32, hBmpBack, hTileBack, &hGridBack }
 };
-POINT nPosiXSprFile[56] = {
-  { 128, 0 },
-  { 136, 0 },
-  { 144, 0 },
-  { 152, 0 },
-  { 160, 0 },
-  { 168, 0 },
-  { 176, 0 },
-  { 184, 0 },
-  { 192, 0 },
-  { 200, 0 },
-  { 208, 0 },
-  { 216, 0 },
-  { 144, 10 },
-  { 152, 10 },
-  { 160, 10 },
-  { 168, 10 },
-  { 176, 10 },
-  { 184, 10 },
-  { 192, 10 },
-  { 212, 4 },
-  { 220, 4 },
-  { 228, 4 },
-  { 236, 4 },
-  { 244, 4 },
-  { 252, 4 },
-  { 260, 4 },
-  { 268, 4 },
-  { 276, 4 },
-  { 284, 4 },
-  { 292, 4 },
-  { 228, 14 },
-  { 236, 14 },
-  { 244, 14 },
-  { 252, 14 },
-  { 260, 14 },
-  { 268, 14 },
-  { 276, 14 },
-  { 284, 14 },
-  { 292, 14 },
-  { 300, 14 },
-  { 308, 14 },
-  { 316, 14 },
-  { 324, 14 },
-  { 332, 14 },
-  { 160, 8 },
-  { 168, 8 },
-  { 176, 8 },
-  { 184, 8 },
-  { 192, 8 },
-  { 200, 8 },
-  { 208, 8 },
-  { 216, 8 },
-  { 224, 8 },
-  { 232, 8 },
-  { 240, 8 },
-  { 248, 8 }
-};
-int PRIO_MAX = 160;
-unsigned short NUM_BMP = 209;
-int PLAYERCHAR_W = 8;
-unsigned short NUM_GRIDBMP = 1;
-unsigned short IDX_GDBMP_BACK = 0;
-unsigned int hSprMes[27];
-unsigned int hSprFile[56][6];

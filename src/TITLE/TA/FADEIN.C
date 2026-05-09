@@ -2,12 +2,12 @@
 #include "FADEIN.H"
 
 static unsigned short code_tbl[3] = { 1, 5, 9 };
-static unsigned short wColwk;
-static int FadeCount;
 extern int* lpFadeFlag;
 extern PALETTEENTRY* lpcolorwk;
-static PALETTEENTRY colorsave[64];
-static unsigned char byMskwk;
+static PALETTEENTRY colorsave[64] = { 0 };
+static unsigned char byMskwk = 0;
+static unsigned short wColwk = 0;
+static int FadeCount = 0;
 
 
 

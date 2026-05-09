@@ -25,15 +25,15 @@ extern int nFileNumber;
 extern int PLAYERCHAR_W;
 static int nSonicKind;
 extern unsigned int bMenuChosed;
-static int nStandStartTimerCunt;
 extern int nTimerCunt;
-static int nSonicMode;
 static POINT posiSonicCursol;
-static int fSonicIncX;
-static int_union posiStartYOld;
-static int_union posiStartXOld;
-static int fSonicIncY;
 static POINT posiTarget;
+static int nSonicMode;
+static int fSonicIncX;
+static int fSonicIncY;
+static int nStandStartTimerCunt;
+static int_union posiStartXOld;
+static int_union posiStartYOld;
 static unsigned int hFxh[120];
 
 

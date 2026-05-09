@@ -73,4 +73,3 @@ stgitem menuTbl[70] = {
   { 468, "8-3-C" },
   { 469, "8-3-D" },
 };
-int MENUITEMMAX = 70;

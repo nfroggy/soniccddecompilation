@@ -43,7 +43,7 @@ typedef struct {
 }
 time_pat;
 
-static time_point ptPlnt[8] = {
+static const time_point ptPlnt[8] = {
   {  16, { 240, -33 } },
   {  32, { 240, -34 } },
   {  48, { 240, -35 } },
@@ -54,27 +54,26 @@ static time_point ptPlnt[8] = {
   {  -1, {   0,   0 } }
 };
 static time_pat timeHand[16] = {
-  {       0, 11 },
-  { 1179648,  0 },
-  {      10, 19 },
-  {  589824,  0 },
-  {      20,  8 },
-  { 1376256,  0 },
-  {       8, 22 },
-  {  589824,  0 },
-  {      23, 10 },
-  { 1572864,  0 },
-  {      11, 25 },
-  {  720896,  0 },
-  {      26, 10 },
-  { 1769472,  0 },
-  {       9, 18 },
-  {  524288,  0 }
+  {  0, 11 },
+  { 18, 10 },
+  { 19,  9 },
+  { 20,  8 },
+  { 21,  8 },
+  { 22,  9 },
+  { 23, 10 },
+  { 24, 11 },
+  { 25, 11 },
+  { 26, 10 },
+  { 27,  9 },
+  { 28,  8 },
+  { 29,  8 },
+  { 30,  9 },
+  { 31, 10 },
+  { 32, 11 }
 };
 static int timeMayu[2] = { 18, 20 };
 static int posiLeftArrow[3] = { 90, 88, 86 };
 static int posiRightArrow[3] = { 210, 212, 214 };
-static unsigned int bDrawDisable;
 extern unsigned short nSequenceNum;
 extern int nTimerCunt;
 extern void(*hmx_sprite_set_position_module)(hmx_sprite*, int, int);
@@ -86,24 +85,25 @@ extern void(*hmx_ddagrid_set_scan_module)(hmx_ddagrid*, int, int, int, int, int)
 extern score_data crntScorData;
 extern unsigned int selectIndx;
 extern unsigned short swData1;
-static unsigned short nMenuKind;
-static int nFadoSeqNum;
-static int nFadoValu;
-static int nFadoTime;
 extern PALETTEENTRY tblPal2[];
 extern PALETTEENTRY tblPal2a[];
-static unsigned int bFadePaletDisable[4];
-static PALETTEENTRY workPalet[4][16];
 extern PALETTEENTRY tblPal4[];
 extern PALETTEENTRY tblPal3[];
 extern PALETTEENTRY tblPal1[];
 extern unsigned int bFirstTitle;
 extern PALETTEENTRY tblPal1a[];
-static unsigned int testSpr;
-static unsigned int* testBmp;
-unsigned int hFx1;
-unsigned int hFx0;
 static char KeyState[256];
+unsigned int hFx0;
+unsigned int hFx1;
+static int nFadoTime;
+static int nFadoValu;
+static unsigned int bFadePaletDisable[4];
+static int nFadoSeqNum;
+static unsigned short nMenuKind;
+static PALETTEENTRY workPalet[4][16];
+static unsigned int bDrawDisable;
+static unsigned int* testBmp;
+static unsigned int testSpr;
 
 
 
@@ -305,7 +305,6 @@ static void OEUpdateMizu(void) { /* Line 266, Address: 0x1000470 */
 
 static void OEUpdateKumo(void) { /* Line 306, Address: 0x1000640 */
   int i;
-  static unsigned short incY;
   static smorph_data RotateMorphValues[128];
   static unsigned char offsetY[92] = {
       0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,  14,  15,  16,  17,  18,  19,
@@ -315,6 +314,7 @@ static void OEUpdateKumo(void) { /* Line 306, Address: 0x1000640 */
     142, 148, 154, 160, 170, 180, 190, 200, 210, 220, 236, 255
   };
   static smorph RotateMorph;
+  static unsigned short incY;
 
 
 
@@ -506,16 +506,17 @@ static void OEUpdateMsg(void) { /* Line 504, Address: 0x1000ca0 */
   unsigned int kPosi;
   unsigned int lPosi;
   unsigned int rPosi;
-  static POINT point;
+  static unsigned int bDelete;
   static int kind;
   static int nSeqNo;
-  static unsigned int RArrow, LArrow;
   static int nSeqNoNext;
+  static POINT point;
   static int timeOld;
-  static unsigned int menuEnable[7];
   static int arrowKind;
-  static unsigned int bDelete;
+  static unsigned int menuEnable[7];
   static int testCheckMode;
+  static unsigned int LArrow;
+  static unsigned int RArrow;
 
   rPosi = lPosi = kPosi = 0; /* Line 520, Address: 0x1000cb8 */
 

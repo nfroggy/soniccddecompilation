@@ -11,11 +11,11 @@ static int STGMenuMaxCheck(int index);
 
 extern unsigned short nSequenceNum;
 extern bestitem menuTbl[];
-static int nMenuIndx;
 extern int MENUITEMMAX;
-int ScrollCount;
 extern unsigned short swData1;
 extern int nTimerCunt;
+int ScrollCount = 0;
+static int nMenuIndx = 0;
 
 
 

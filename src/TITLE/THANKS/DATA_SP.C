@@ -309,14 +309,14 @@ sprite_patterns_title m_era2_map = {
   }
 };
 sprite_pattern_mappings_title m_fly1_spr00 = {
-  1,
+  2,
   {
     { 46, 0, 0, 0, 0, 0 },
     { 47, 0, 4, -12, -12, 0 }
   }
 };
 sprite_pattern_mappings_title m_fly1_spr01 = {
-  1,
+  2,
   {
     { 48, 0, 0, 0, 0, 0 },
     { 49, 0, 12, -12, -8, 0 }
@@ -713,7 +713,7 @@ static unsigned short _M[6] = { 41, 42, 43, 44, 45, 46 };
 static unsigned short _N[6] = { 47, 2074, 48, 49, 50, 51 };
 static unsigned short _O[6] = { 18, 2066, 11, 2059, 20, 2068 };
 static unsigned short _P[6] = { 2080, 52, 2081, 53, 2081, 12 };
-static unsigned short _Q[8] = { 18, 2066, 11, 2059, 20, 54 };
+static unsigned short _Q[8] = { 18, 2066, 11, 2059, 20, 54, 12, 55 };
 static unsigned short _R[6] = { 13, 56, 57, 58, 11, 2059 };
 static unsigned short _S[6] = { 2104, 56, 59, 60, 61, 2109 };
 static unsigned short _T[6] = { 62, 63, 30, 31, 30, 31 };

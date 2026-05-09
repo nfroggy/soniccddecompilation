@@ -6,10 +6,10 @@
 #include "SVDENTRY.H"
 #include "SVDSPRT.H"
 
-static unsigned int bEditMode;
 extern unsigned short swData1;
 extern int nFileNumber;
 char editBuf[12];
+static unsigned int bEditMode;
 extern void(*WaveRequest)(short);
 extern void(*sPrintf)(char*, const char*, ...);
 extern score_data saveData[6];

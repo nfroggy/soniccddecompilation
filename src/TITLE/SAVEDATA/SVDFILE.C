@@ -3,9 +3,10 @@
 #include "SVDFILE.H"
 #include "..\..\IMPFUNCS.H"
 
-score_data saveData[6];
+extern score_data saveData[6];
 extern int nSelectFileNumber;
 extern score_data* lpCrntScorData;
+extern unsigned int(*CloseScore)(unsigned int);
 
 
 

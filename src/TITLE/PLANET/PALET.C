@@ -1,5 +1,111 @@
 #include "..\..\TYPES.H"
 
+extern PALETTEENTRY sprite_col1[];
+extern PALETTEENTRY sprite_col2[];
+extern PALETTEENTRY lpnowA[];
+extern PALETTEENTRY lpnowB[];
+extern PALETTEENTRY lpnowC[];
+extern PALETTEENTRY lpnowD[];
+extern PALETTEENTRY lpnowE[];
+extern PALETTEENTRY lpnowF[];
+extern PALETTEENTRY lpnowG[];
+extern PALETTEENTRY lpnowH[];
+extern PALETTEENTRY lpnowI[];
+extern PALETTEENTRY lpnowJ[];
+extern PALETTEENTRY lpnowK[];
+extern PALETTEENTRY lpnowL[];
+extern PALETTEENTRY lpnowM[];
+extern PALETTEENTRY lpnowN[];
+extern PALETTEENTRY lpnowO[];
+extern PALETTEENTRY lpnowP[];
+extern PALETTEENTRY lpnowQ[];
+extern PALETTEENTRY lpgoodA[];
+extern PALETTEENTRY lpgoodB[];
+extern PALETTEENTRY lpgoodC[];
+extern PALETTEENTRY lpgoodD[];
+extern PALETTEENTRY lpgoodE[];
+extern PALETTEENTRY lpgoodF[];
+extern PALETTEENTRY lpgoodG[];
+extern PALETTEENTRY lpgoodH[];
+extern PALETTEENTRY lpgoodI[];
+extern PALETTEENTRY lpgoodJ[];
+extern PALETTEENTRY lpgoodK[];
+extern PALETTEENTRY lpgoodL[];
+extern PALETTEENTRY lpgoodM[];
+extern PALETTEENTRY lpgoodN[];
+extern PALETTEENTRY lpgoodO[];
+extern PALETTEENTRY lpgoodP[];
+extern PALETTEENTRY lpgoodQ[];
+extern PALETTEENTRY lpbadA[];
+extern PALETTEENTRY lpbadB[];
+extern PALETTEENTRY lpbadC[];
+extern PALETTEENTRY lpbadD[];
+extern PALETTEENTRY lpbadE[];
+extern PALETTEENTRY lpbadF[];
+extern PALETTEENTRY lpbadG[];
+extern PALETTEENTRY lpbadH[];
+extern PALETTEENTRY lpbadI[];
+extern PALETTEENTRY lpbadJ[];
+extern PALETTEENTRY lpbadK[];
+extern PALETTEENTRY lpbadL[];
+extern PALETTEENTRY lpbadM[];
+extern PALETTEENTRY lpbadN[];
+extern PALETTEENTRY lpbadO[];
+extern PALETTEENTRY lpbadP[];
+extern PALETTEENTRY lpbadQ[];
+extern PALETTEENTRY lpbsgoodA[];
+extern PALETTEENTRY lpbsgoodB[];
+extern PALETTEENTRY lpbsgoodC[];
+extern PALETTEENTRY lpbsgoodD[];
+extern PALETTEENTRY lpbsgoodE[];
+extern PALETTEENTRY lpbsgoodF[];
+extern PALETTEENTRY lpbsgoodG[];
+extern PALETTEENTRY lpbsgoodH[];
+extern PALETTEENTRY lpbsgoodI[];
+extern PALETTEENTRY lpbsgoodJ[];
+extern PALETTEENTRY lpbsgoodK[];
+extern PALETTEENTRY lpbsgoodL[];
+extern PALETTEENTRY lpbsgoodM[];
+extern PALETTEENTRY lpbsgoodN[];
+extern PALETTEENTRY lpbsgoodO[];
+extern PALETTEENTRY lpbsgoodP[];
+extern PALETTEENTRY lpbsgoodQ[];
+extern PALETTEENTRY lpbsbadA[];
+extern PALETTEENTRY lpbsbadB[];
+extern PALETTEENTRY lpbsbadC[];
+extern PALETTEENTRY lpbsbadD[];
+extern PALETTEENTRY lpbsbadE[];
+extern PALETTEENTRY lpbsbadF[];
+extern PALETTEENTRY lpbsbadG[];
+extern PALETTEENTRY lpbsbadH[];
+extern PALETTEENTRY lpbsbadI[];
+extern PALETTEENTRY lpbsbadJ[];
+extern PALETTEENTRY lpbsbadK[];
+extern PALETTEENTRY lpbsbadL[];
+extern PALETTEENTRY lpbsbadM[];
+extern PALETTEENTRY lpbsbadN[];
+extern PALETTEENTRY lpbsbadO[];
+extern PALETTEENTRY lpbsbadP[];
+extern PALETTEENTRY lpbsbadQ[];
+extern PALETTEENTRY* lp_now[];
+extern PALETTEENTRY* lp_good[];
+extern PALETTEENTRY* lp_bad[];
+extern PALETTEENTRY* lpbs_good[];
+extern PALETTEENTRY* lpbs_bad[];
+
+PALETTEENTRY** lp_coltbl[6] = {
+  lp_now,
+  lpbs_good,
+  lp_good,
+  lpbs_good,
+  lp_bad,
+  lpbs_bad
+};
+PALETTEENTRY* sprite_color[2] = {
+  sprite_col1,
+  sprite_col2
+};
+
 PALETTEENTRY sprite_col1[16] = {
   {   0,   0,   0, 1 }, {   0,   0,   0, 1 }, {  64,  64,  64, 1 }, { 128, 128, 128, 1 },
   { 160, 160, 160, 1 }, { 224, 224, 224, 1 }, { 224,   0,   0, 1 }, { 128,   0,   0, 1 },
@@ -11,10 +117,6 @@ PALETTEENTRY sprite_col2[16] = {
   { 160, 160, 160, 1 }, { 224, 224, 224, 1 }, { 224,   0,   0, 1 }, { 128,   0,   0, 1 },
   { 224, 160,   0, 1 }, { 192,  96,   0, 1 }, {  64,  64, 224, 1 }, {   0,   0, 160, 1 },
   { 224, 224, 224, 1 }, { 224, 224,   0, 1 }, { 224, 192, 128, 1 }, { 128,  64,  32, 1 }
-};
-PALETTEENTRY* sprite_color[2] = {
-  sprite_col1,
-  sprite_col2
 };
 PALETTEENTRY ascii_col[16] = {
   {   0,   0,   0, 1 }, { 224, 224, 224, 1 }, { 160, 160, 160, 1 }, {   0,   0,  32, 1 },
@@ -39,6 +141,40 @@ PALETTEENTRY init_col[64] = {
   {   0,   0, 224, 1 }, { 160,   0,   0, 1 }, {   0,   0,   0, 1 }, {   0,   0,   0, 1 },
   {   0,   0,   0, 1 }, {   0,   0,   0, 1 }, {   0,   0,   0, 1 }, {   0,   0,   0, 1 },
   {   0,   0,   0, 1 }, {   0,   0,   0, 1 }, {   0,   0,   0, 1 }, {   0,   0,   0, 1 }
+};
+PALETTEENTRY* lp_now[32] = {
+  lpnowA,
+  lpnowB,
+  lpnowC,
+  lpnowD,
+  lpnowE,
+  lpnowF,
+  lpnowG,
+  lpnowH,
+  lpnowI,
+  lpnowJ,
+  lpnowK,
+  lpnowL,
+  lpnowM,
+  lpnowN,
+  lpnowO,
+  lpnowP,
+  lpnowQ,
+  lpnowP,
+  lpnowO,
+  lpnowN,
+  lpnowM,
+  lpnowL,
+  lpnowK,
+  lpnowJ,
+  lpnowI,
+  lpnowH,
+  lpnowG,
+  lpnowF,
+  lpnowE,
+  lpnowD,
+  lpnowC,
+  lpnowB
 };
 PALETTEENTRY lpnowA[16] = {
   {   0,   0,   0, 1 }, {   0, 224, 224, 1 }, { 224, 224,   0, 1 }, {  32,   0, 224, 1 },
@@ -142,39 +278,39 @@ PALETTEENTRY lpnowQ[16] = {
   {  96,   0,  96, 1 }, {   0,   0,  32, 1 }, { 128,   0, 224, 1 }, {  64,   0, 160, 1 },
   {   0,   0,  64, 1 }, {   0,   0,  32, 1 }, {  96,   0, 192, 1 }, {   0,   0,   0, 1 }
 };
-PALETTEENTRY* lp_now[32] = {
-  lpnowA,
-  lpnowB,
-  lpnowC,
-  lpnowD,
-  lpnowE,
-  lpnowF,
-  lpnowG,
-  lpnowH,
-  lpnowI,
-  lpnowJ,
-  lpnowK,
-  lpnowL,
-  lpnowM,
-  lpnowN,
-  lpnowO,
-  lpnowP,
-  lpnowQ,
-  lpnowP,
-  lpnowO,
-  lpnowN,
-  lpnowM,
-  lpnowL,
-  lpnowK,
-  lpnowJ,
-  lpnowI,
-  lpnowH,
-  lpnowG,
-  lpnowF,
-  lpnowE,
-  lpnowD,
-  lpnowC,
-  lpnowB
+PALETTEENTRY* lp_good[32] = {
+  lpgoodA,
+  lpgoodB,
+  lpgoodC,
+  lpgoodD,
+  lpgoodE,
+  lpgoodF,
+  lpgoodG,
+  lpgoodH,
+  lpgoodI,
+  lpgoodJ,
+  lpgoodK,
+  lpgoodL,
+  lpgoodM,
+  lpgoodN,
+  lpgoodO,
+  lpgoodP,
+  lpgoodQ,
+  lpgoodP,
+  lpgoodO,
+  lpgoodN,
+  lpgoodM,
+  lpgoodL,
+  lpgoodK,
+  lpgoodJ,
+  lpgoodI,
+  lpgoodH,
+  lpgoodG,
+  lpgoodF,
+  lpgoodE,
+  lpgoodD,
+  lpgoodC,
+  lpgoodB
 };
 PALETTEENTRY lpgoodA[16] = {
   {   0,   0,   0, 1 }, {   0, 224, 224, 1 }, { 224, 224,   0, 1 }, {   0,   0, 192, 1 },
@@ -278,39 +414,39 @@ PALETTEENTRY lpgoodQ[16] = {
   {  96,  32,   0, 1 }, {  32,   0,   0, 1 }, {  64,  96, 128, 1 }, {   0,  64, 128, 1 },
   {   0,  32,  96, 1 }, {   0,   0,  64, 1 }, {  32,   0,  32, 1 }, {   0,   0,   0, 1 }
 };
-PALETTEENTRY* lp_good[32] = {
-  lpgoodA,
-  lpgoodB,
-  lpgoodC,
-  lpgoodD,
-  lpgoodE,
-  lpgoodF,
-  lpgoodG,
-  lpgoodH,
-  lpgoodI,
-  lpgoodJ,
-  lpgoodK,
-  lpgoodL,
-  lpgoodM,
-  lpgoodN,
-  lpgoodO,
-  lpgoodP,
-  lpgoodQ,
-  lpgoodP,
-  lpgoodO,
-  lpgoodN,
-  lpgoodM,
-  lpgoodL,
-  lpgoodK,
-  lpgoodJ,
-  lpgoodI,
-  lpgoodH,
-  lpgoodG,
-  lpgoodF,
-  lpgoodE,
-  lpgoodD,
-  lpgoodC,
-  lpgoodB
+PALETTEENTRY* lp_bad[32] = {
+  lpbadA,
+  lpbadB,
+  lpbadC,
+  lpbadD,
+  lpbadE,
+  lpbadF,
+  lpbadG,
+  lpbadH,
+  lpbadI,
+  lpbadJ,
+  lpbadK,
+  lpbadL,
+  lpbadM,
+  lpbadN,
+  lpbadO,
+  lpbadP,
+  lpbadQ,
+  lpbadP,
+  lpbadO,
+  lpbadN,
+  lpbadM,
+  lpbadL,
+  lpbadK,
+  lpbadJ,
+  lpbadI,
+  lpbadH,
+  lpbadG,
+  lpbadF,
+  lpbadE,
+  lpbadD,
+  lpbadC,
+  lpbadB
 };
 PALETTEENTRY lpbadA[16] = {
   {   0,   0,   0, 1 }, { 160, 160,  64, 1 }, { 128, 128,  32, 1 }, {  64,  64,  32, 1 },
@@ -414,39 +550,39 @@ PALETTEENTRY lpbadQ[16] = {
   {  32,   0,  64, 1 }, {  32,  32,   0, 1 }, {   0,  64,   0, 1 }, {  32,   0,  32, 1 },
   {  32,   0,   0, 1 }, {   0,   0,   0, 1 }, { 160,  64,   0, 1 }, {   0,   0,   0, 1 }
 };
-PALETTEENTRY* lp_bad[32] = {
-  lpbadA,
-  lpbadB,
-  lpbadC,
-  lpbadD,
-  lpbadE,
-  lpbadF,
-  lpbadG,
-  lpbadH,
-  lpbadI,
-  lpbadJ,
-  lpbadK,
-  lpbadL,
-  lpbadM,
-  lpbadN,
-  lpbadO,
-  lpbadP,
-  lpbadQ,
-  lpbadP,
-  lpbadO,
-  lpbadN,
-  lpbadM,
-  lpbadL,
-  lpbadK,
-  lpbadJ,
-  lpbadI,
-  lpbadH,
-  lpbadG,
-  lpbadF,
-  lpbadE,
-  lpbadD,
-  lpbadC,
-  lpbadB
+PALETTEENTRY* lpbs_good[32] = {
+  lpbsgoodA,
+  lpbsgoodB,
+  lpbsgoodC,
+  lpbsgoodD,
+  lpbsgoodE,
+  lpbsgoodF,
+  lpbsgoodG,
+  lpbsgoodH,
+  lpbsgoodI,
+  lpbsgoodJ,
+  lpbsgoodK,
+  lpbsgoodL,
+  lpbsgoodM,
+  lpbsgoodN,
+  lpbsgoodO,
+  lpbsgoodP,
+  lpbsgoodQ,
+  lpbsgoodP,
+  lpbsgoodO,
+  lpbsgoodN,
+  lpbsgoodM,
+  lpbsgoodL,
+  lpbsgoodK,
+  lpbsgoodJ,
+  lpbsgoodI,
+  lpbsgoodH,
+  lpbsgoodG,
+  lpbsgoodF,
+  lpbsgoodE,
+  lpbsgoodD,
+  lpbsgoodC,
+  lpbsgoodB
 };
 PALETTEENTRY lpbsgoodA[16] = {
   {   0,   0,   0, 1 }, {  96, 128, 224, 1 }, { 128, 160, 224, 1 }, { 160, 192, 224, 1 },
@@ -550,39 +686,39 @@ PALETTEENTRY lpbsgoodQ[16] = {
   { 224, 224, 224, 1 }, {   0,   0, 128, 1 }, {   0,  64, 224, 1 }, {   0, 160, 224, 1 },
   { 224, 224, 224, 1 }, {   0,   0,   0, 1 }, { 240, 240, 240, 1 }, { 240, 240, 240, 1 }
 };
-PALETTEENTRY* lpbs_good[32] = {
-  lpbsgoodA,
-  lpbsgoodB,
-  lpbsgoodC,
-  lpbsgoodD,
-  lpbsgoodE,
-  lpbsgoodF,
-  lpbsgoodG,
-  lpbsgoodH,
-  lpbsgoodI,
-  lpbsgoodJ,
-  lpbsgoodK,
-  lpbsgoodL,
-  lpbsgoodM,
-  lpbsgoodN,
-  lpbsgoodO,
-  lpbsgoodP,
-  lpbsgoodQ,
-  lpbsgoodP,
-  lpbsgoodO,
-  lpbsgoodN,
-  lpbsgoodM,
-  lpbsgoodL,
-  lpbsgoodK,
-  lpbsgoodJ,
-  lpbsgoodI,
-  lpbsgoodH,
-  lpbsgoodG,
-  lpbsgoodF,
-  lpbsgoodE,
-  lpbsgoodD,
-  lpbsgoodC,
-  lpbsgoodB
+PALETTEENTRY* lpbs_bad[32] = {
+  lpbsbadA,
+  lpbsbadB,
+  lpbsbadC,
+  lpbsbadD,
+  lpbsbadE,
+  lpbsbadF,
+  lpbsbadG,
+  lpbsbadH,
+  lpbsbadI,
+  lpbsbadJ,
+  lpbsbadK,
+  lpbsbadL,
+  lpbsbadM,
+  lpbsbadN,
+  lpbsbadO,
+  lpbsbadP,
+  lpbsbadQ,
+  lpbsbadP,
+  lpbsbadO,
+  lpbsbadN,
+  lpbsbadM,
+  lpbsbadL,
+  lpbsbadK,
+  lpbsbadJ,
+  lpbsbadI,
+  lpbsbadH,
+  lpbsbadG,
+  lpbsbadF,
+  lpbsbadE,
+  lpbsbadD,
+  lpbsbadC,
+  lpbsbadB
 };
 PALETTEENTRY lpbsbadA[16] = {
   {   0,   0,   0, 1 }, { 192, 160,   0, 1 }, { 160, 128,   0, 1 }, { 128,  96,   0, 1 },
@@ -685,48 +821,6 @@ PALETTEENTRY lpbsbadQ[16] = {
   {   0,   0,   0, 1 }, {  96,   0,   0, 1 }, { 128,   0,   0, 1 }, { 224,  64,   0, 1 },
   { 224, 224,   0, 1 }, {  96,   0,   0, 1 }, { 128,   0,   0, 1 }, { 224,  64,   0, 1 },
   { 224, 224,   0, 1 }, {   0,   0,   0, 1 }, { 240, 240, 240, 1 }, { 240, 240, 240, 1 }
-};
-PALETTEENTRY* lpbs_bad[32] = {
-  lpbsbadA,
-  lpbsbadB,
-  lpbsbadC,
-  lpbsbadD,
-  lpbsbadE,
-  lpbsbadF,
-  lpbsbadG,
-  lpbsbadH,
-  lpbsbadI,
-  lpbsbadJ,
-  lpbsbadK,
-  lpbsbadL,
-  lpbsbadM,
-  lpbsbadN,
-  lpbsbadO,
-  lpbsbadP,
-  lpbsbadQ,
-  lpbsbadP,
-  lpbsbadO,
-  lpbsbadN,
-  lpbsbadM,
-  lpbsbadL,
-  lpbsbadK,
-  lpbsbadJ,
-  lpbsbadI,
-  lpbsbadH,
-  lpbsbadG,
-  lpbsbadF,
-  lpbsbadE,
-  lpbsbadD,
-  lpbsbadC,
-  lpbsbadB
-};
-PALETTEENTRY** lp_coltbl[6] = {
-  lp_now,
-  lpbs_good,
-  lp_good,
-  lpbs_good,
-  lp_bad,
-  lpbs_bad
 };
 short lpbs_timer[32] = {
   780, 4, 6, 8,

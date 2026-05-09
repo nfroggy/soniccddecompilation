@@ -3,9 +3,12 @@
 
 char* SprCmpFileName = "TITLE\\BMP\\STAGES.CM_";
 char* TileCmpFileName = "TITLE\\BMP\\sndtestt.CM_";
-static unsigned int hSprBG[16];
-static unsigned int hSprTitle[11];
-static unsigned int hSprDummy;
+static unsigned int hGridBack = 0;
+static unsigned int hTileBack[1] = { 0 };
+static unsigned int* hBmpBack[1] = { 0 };
+static unsigned int hSprBG[16] = { 0 };
+static unsigned int hSprTitle[11] = { 0 };
+static unsigned int hSprDummy = 0;
 sprite_bmp infoSprtBmp[64] = {
   {  8, 16, 120,  40, 35, 16, 0, 0, &hSprTitle[0] },
   {  8, 16, 128,  40, 35, 16, 0, 0, &hSprTitle[1] },
@@ -72,11 +75,6 @@ sprite_bmp infoSprtBmp[64] = {
   { 80, 56, 160,   0, 50, 64, 0, 0, &hSprBG[14] },
   { 80, 56, 240,   0, 50, 64, 0, 0, &hSprBG[15] }
 };
-static unsigned int hGridBack;
-static unsigned int hTileBack[1];
-static unsigned int* hBmpBack[1];
 grid_bmp infoGridBmp[1] = {
   { 1, 8, 8, { 0, 0 }, 60, 16, hBmpBack, hTileBack, &hGridBack }
 };
-unsigned short NUM_BMP = 64;
-unsigned short NUM_GRIDBMP = 1;

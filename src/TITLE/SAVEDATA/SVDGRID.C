@@ -9,7 +9,11 @@ extern void(*hmx_grid_set_position_module)(hmx_grid*, int, int);
 extern void(*hmx_grid_set_tile_module)(hmx_grid*, int, int, hmx_bitmap*, int);
 extern hmx_grid*(*hmx_grid_create_module)(hmx_environment*, int, int, int, int);
 extern hmx_environment* g_env_module;
+#ifdef SAVEDATA
+#define IDX_GDBMP_BACK (*(volatile unsigned short*)0x01009160)
+#else
 extern unsigned short IDX_GDBMP_BACK;
+#endif
 extern void(*hmx_grid_release_module)(hmx_environment*, hmx_grid*);
 
 

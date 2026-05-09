@@ -4,6 +4,8 @@
 #include "..\COMMON\HMX_OEEACTL.H"
 
 static int nMenuPosiY[5] = { 112, 128, 144, 160, 176 };
+unsigned short NUM_BMP __attribute__((aligned(16))) = 68;
+unsigned short NUM_GRIDBMP = 1;
 extern draw_context* s_ctx;
 unsigned int hSprMenu[5][11];
 extern sprite_bmp infoSprtBmp[];
