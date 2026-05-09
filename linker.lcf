@@ -24,10 +24,11 @@ SECTIONS
         GROUP(ROOT)(.text)
  
         # pad text section
+        .   = . + 8;
         .   = ALIGN(0x80);
  
         #   data sections
-       .   = ALIGN(256);
+       .   = ALIGN(0x80);
        __data_start   = .;
        ALIGNALL(0x8);
        GROUP(ROOT)   (.data)

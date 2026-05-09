@@ -1,87 +1,6 @@
 BUILD_DIR := build
 REFERENCE_DIR := references
 LINKER_SCRIPT ?= linker.lcf
-R11A_LINKER_SCRIPT := $(LINKER_SCRIPT)
-R11B_LINKER_SCRIPT := linker-r11b.lcf
-R11C_LINKER_SCRIPT := linker-r11b.lcf
-R11D_LINKER_SCRIPT := linker-r11b.lcf
-R12A_LINKER_SCRIPT := linker-r11b.lcf
-R12B_LINKER_SCRIPT := linker-r11b.lcf
-R12C_LINKER_SCRIPT := linker-r11b.lcf
-R12D_LINKER_SCRIPT := linker-r11b.lcf
-R13C_LINKER_SCRIPT := linker-r11b.lcf
-R13D_LINKER_SCRIPT := linker-r11b.lcf
-R31A_LINKER_SCRIPT := linker-r11b.lcf
-R31B_LINKER_SCRIPT := linker-r11b.lcf
-R31C_LINKER_SCRIPT := linker-r11b.lcf
-R31D_LINKER_SCRIPT := linker-r11b.lcf
-R32A_LINKER_SCRIPT := linker-r11b.lcf
-R32B_LINKER_SCRIPT := linker-r11b.lcf
-R32C_LINKER_SCRIPT := $(LINKER_SCRIPT)
-R32D_LINKER_SCRIPT := $(LINKER_SCRIPT)
-R33C_LINKER_SCRIPT := linker-r33c.lcf
-R33D_LINKER_SCRIPT := linker-r11b.lcf
-R41A_LINKER_SCRIPT := linker-r11b.lcf
-R41B_LINKER_SCRIPT := linker-r11b.lcf
-R41C_LINKER_SCRIPT := linker-r11b.lcf
-R41D_LINKER_SCRIPT := linker-r11b.lcf
-R42A_LINKER_SCRIPT := linker-r11b.lcf
-R42B_LINKER_SCRIPT := linker-r11b.lcf
-R42C_LINKER_SCRIPT := linker-r11b.lcf
-R42D_LINKER_SCRIPT := linker-r11b.lcf
-R43C_LINKER_SCRIPT := linker-r11b.lcf
-R43D_LINKER_SCRIPT := linker-r11b.lcf
-R51A_LINKER_SCRIPT := linker-r11b.lcf
-R51B_LINKER_SCRIPT := $(LINKER_SCRIPT)
-R51C_LINKER_SCRIPT := $(LINKER_SCRIPT)
-R51D_LINKER_SCRIPT := linker-r11b.lcf
-R52A_LINKER_SCRIPT := linker-r11b.lcf
-R52B_LINKER_SCRIPT := linker-r11b.lcf
-R52C_LINKER_SCRIPT := $(LINKER_SCRIPT)
-R52D_LINKER_SCRIPT := linker-r11b.lcf
-R53C_LINKER_SCRIPT := linker-r11b.lcf
-R53D_LINKER_SCRIPT := linker-r11b.lcf
-R61A_LINKER_SCRIPT := linker-r11b.lcf
-R61B_LINKER_SCRIPT := linker-r11b.lcf
-R61C_LINKER_SCRIPT := linker-r11b.lcf
-R61D_LINKER_SCRIPT := linker-r11b.lcf
-R62A_LINKER_SCRIPT := linker-r11b.lcf
-R62B_LINKER_SCRIPT := linker-r11b.lcf
-R62C_LINKER_SCRIPT := linker-r11b.lcf
-R62D_LINKER_SCRIPT := linker-r11b.lcf
-R63C_LINKER_SCRIPT := linker-r11b.lcf
-R63D_LINKER_SCRIPT := linker-r11b.lcf
-R71A_LINKER_SCRIPT := linker-r11b.lcf
-R71B_LINKER_SCRIPT := linker-r11b.lcf
-R71C_LINKER_SCRIPT := linker-r11b.lcf
-R71D_LINKER_SCRIPT := linker-r11b.lcf
-R72A_LINKER_SCRIPT := linker-r11b.lcf
-R72B_LINKER_SCRIPT := linker-r11b.lcf
-R72C_LINKER_SCRIPT := linker-r11b.lcf
-R72D_LINKER_SCRIPT := linker-r11b.lcf
-R73C_LINKER_SCRIPT := linker-r11b.lcf
-R73D_LINKER_SCRIPT := linker-r11b.lcf
-R81A_LINKER_SCRIPT := linker-r11b.lcf
-R81B_LINKER_SCRIPT := linker-r11b.lcf
-R81C_LINKER_SCRIPT := linker-r11b.lcf
-R81D_LINKER_SCRIPT := linker-r11b.lcf
-R82A_LINKER_SCRIPT := linker-r11b.lcf
-R82B_LINKER_SCRIPT := linker-r11b.lcf
-R82C_LINKER_SCRIPT := linker-r11b.lcf
-R82D_LINKER_SCRIPT := linker-r11b.lcf
-R83C_LINKER_SCRIPT := linker-r11b.lcf
-R83D_LINKER_SCRIPT := linker-r11b.lcf
-SPECIAL_LINKER_SCRIPT := linker-r11b.lcf
-WARP_LINKER_SCRIPT := linker-r11b.lcf
-BESTTIME_LINKER_SCRIPT := linker-r11b.lcf
-OPENING_LINKER_SCRIPT := linker-r11b.lcf
-PLANET_LINKER_SCRIPT := linker-r11b.lcf
-SAVEDATA_LINKER_SCRIPT := linker-r11b.lcf
-SOUNDTST_LINKER_SCRIPT := linker-r11b.lcf
-STAGETST_LINKER_SCRIPT := linker-r11b.lcf
-TA_LINKER_SCRIPT := linker-r11b.lcf
-THANKS_LINKER_SCRIPT := linker-r11b.lcf
-VISUALMD_LINKER_SCRIPT := linker-r11b.lcf
 MSYS2_ROOT ?= C:/msys64
 SHELL := $(MSYS2_ROOT)/usr/bin/sh.exe
 MKDIR_P := $(MSYS2_ROOT)/usr/bin/mkdir.exe -p
@@ -180,16 +99,11 @@ TA_DEFINES :=
 THANKS_DEFINES :=
 VISUALMD_DEFINES :=
 
-MSL_DIR ?= C:/Program Files (x86)/Metrowerks/CodeWarrior/PS2 Support/Msl/MSL_C
-RUNTIME_LIB_DIR ?= C:/Program Files (x86)/Metrowerks/CodeWarrior/PS2 Support/Runtime/Libraries
 PROJECT_INCLUDES := -i "main" -i "src/R1"
-MSL_INCLUDES := -i "$(MSL_DIR)"
-INCLUDES := $(PROJECT_INCLUDES) $(MSL_INCLUDES)
-export MWCIncludes := $(MSL_INCLUDES)
-export MWLibraries := "$(RUNTIME_LIB_DIR)"
-CFLAGS := -cwd include -fl divbyzerocheck -g -nodead -sdatathreshold 0
+INCLUDES := $(PROJECT_INCLUDES)
+CFLAGS := -cwd include -nostdinc -fl divbyzerocheck -g -nodead -sdatathreshold 0
 COMPILE_ONLY := -c
-LDFLAGS := -nodead -g -main ""
+LDFLAGS := -nostdlib -nodead -g -main ""
 
 R11_PREFIX_SOURCES := \
 	src/DLLMAIN.C \
@@ -4196,9 +4110,9 @@ compare: $(VARIANTS:%=compare-%)
 define BUILD_VARIANT
 $(1)_OBJECTS := $$($(1)_SOURCES:%.C=$$(BUILD_DIR)/obj/$(1)/%.o)
 
-$$(BUILD_DIR)/$(1).ELF: $$($(1)_OBJECTS) $$($(1)_LINKER_SCRIPT) Makefile
+$$(BUILD_DIR)/$(1).ELF: $$($(1)_OBJECTS) $$(LINKER_SCRIPT) Makefile
 	@$$(MKDIR_P) $$(dir $$@)
-	"$$(LD)" $$(LDFLAGS) -o $$@ $$($(1)_LINKER_SCRIPT) $$($(1)_OBJECTS)
+	"$$(LD)" $$(LDFLAGS) -o $$@ $$(LINKER_SCRIPT) $$($(1)_OBJECTS)
 
 $$(BUILD_DIR)/obj/$(1)/%.o: %.C
 	@$$(MKDIR_P) $$(dir $$@)
