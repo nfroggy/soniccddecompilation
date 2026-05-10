@@ -1,18 +1,9 @@
 BUILD_DIR := build
 REFERENCE_DIR := references
 LINKER_SCRIPT ?= linker.lcf
-MSYS2_ROOT ?= C:/msys64
-SHELL := $(MSYS2_ROOT)/usr/bin/sh.exe
-MKDIR_P := $(MSYS2_ROOT)/usr/bin/mkdir.exe -p
-RM_RF := $(MSYS2_ROOT)/usr/bin/rm.exe -rf
 
-COMPILER_DIR ?= $(firstword $(wildcard compiler compilers))
-ifeq ($(COMPILER_DIR),)
-COMPILER_DIR := compiler
-endif
-
-CC := $(COMPILER_DIR)/mwccps2.exe
-LD := $(COMPILER_DIR)/mwldps2.exe
+CC := compiler/mwccps2.exe
+LD := compiler/mwldps2.exe
 
 VARIANTS := R11A R11B R11C R11D R12A R12B R12C R12D R13C R13D R31A R31B R31C R31D R32A R32B R32C R32D R33C R33D R41A R41B R41C R41D R42A R42B R42C R42D R43C R43D R51A R51B R51C R51D R52A R52B R52C R52D R53C R53D R61A R61B R61C R61D R62A R62B R62C R62D R63C R63D R71A R71B R71C R71D R72A R72B R72C R72D R73C R73D R81A R81B R81C R81D R82A R82B R82C R82D R83C R83D SPECIAL WARP BESTTIME OPENING PLANET SAVEDATA SOUNDTST STAGETST TA THANKS VISUALMD
 TARGETS := $(VARIANTS:%=$(BUILD_DIR)/%.ELF)
@@ -4111,11 +4102,11 @@ define BUILD_VARIANT
 $(1)_OBJECTS := $$($(1)_SOURCES:%.C=$$(BUILD_DIR)/obj/$(1)/%.o)
 
 $$(BUILD_DIR)/$(1).ELF: $$($(1)_OBJECTS) $$(LINKER_SCRIPT) Makefile
-	@$$(MKDIR_P) $$(dir $$@)
+	mkdir -p $$(dir $$@)
 	"$$(LD)" $$(LDFLAGS) -o $$@ $$(LINKER_SCRIPT) $$($(1)_OBJECTS)
 
 $$(BUILD_DIR)/obj/$(1)/%.o: %.C
-	@$$(MKDIR_P) $$(dir $$@)
+	mkdir -p $$(dir $$@)
 	"$$(CC)" $$(COMPILE_ONLY) $$(CFLAGS) $$($(1)_DEFINES) $$(INCLUDES) -o $$@ $$<
 
 compare-$(1): $$(BUILD_DIR)/$(1).ELF
@@ -4125,4 +4116,4 @@ endef
 $(foreach variant,$(VARIANTS),$(eval $(call BUILD_VARIANT,$(variant))))
 
 clean:
-	$(RM_RF) $(BUILD_DIR)/obj $(TARGETS) $(TARGETS:.ELF=.map) $(BUILD_DIR)/probe.o
+	rm -rf $(BUILD_DIR)/obj $(TARGETS) $(TARGETS:.ELF=.map) $(BUILD_DIR)/probe.o
