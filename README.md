@@ -1,6 +1,6 @@
 # soniccddecompilation
 
-This is a version of BenoitRen's [Sonic CD decompilation](https://git.sr.ht/~benoitren/soniccddecompilation), edited to be buildable and to match the assembly code and data from the original PS2 version. BenoitRen's original version was largely accurate but had issues with missing or mistyped data that caused glitches in projects such as source ports that used it as a basis.
+This is a version of BenoitRen's [Sonic CD decompilation](https://git.sr.ht/~benoitren/soniccddecompilation), edited to be buildable and to match the assembly code and data from the original PS2 version. BenoitRen's original version was largely accurate but had some issues with missing or mistyped data that caused glitches in projects such as source ports that used it as a basis. My aim with this project was to audit the decompilation to sniff out all of these issues.
 
 Currently, the source files compile to code/data that's identical to the PS2 ELF files, but the debug information does not match so the ELF files are not byte-for-byte identical.
 
