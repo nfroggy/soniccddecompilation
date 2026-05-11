@@ -384,8 +384,8 @@ static void colchg(sprite_status* roomwk, Uint8* chgtbl) {
   roomwk->actfree[16] += 2;
 }
 
-Uint8 clrchgtbl1[16] = { 168, 64, 144, 4, 120, 5, 96, 6, 72, 7, 48, 8, 24, 9, 0, 0 };
-PALETTEENTRY clrtblD[108] = {
+static Uint8 clrchgtbl1[16] = { 168, 64, 144, 4, 120, 5, 96, 6, 72, 7, 48, 8, 24, 9, 0, 0 };
+static PALETTEENTRY clrtblD[108] = {
   {   0,   0,   0, 1 }, {   0,   0,   0, 1 }, {   0,   0,   0, 1 }, {   0,   0,   0, 1 },
   {   0,   0,   0, 1 }, {   0,   0,   0, 1 }, {   0,   0,   0, 1 }, {   0,   0,   0, 1 },
   {   0,   0,   0, 1 }, {   0,   0,   0, 1 }, {   0,   0,   0, 1 }, {   0,   0,   0, 1 },
@@ -414,5 +414,5 @@ PALETTEENTRY clrtblD[108] = {
   {  32,   0,   0, 1 }, {   0,   0,   0, 1 }, {   0,  32,  96, 1 }, {   0,  32,  64, 1 },
   {  32,   0,  32, 1 }, {  64,  32,  64, 1 }, {  96,  64, 128, 1 }, {  96, 128, 192, 1 }
 };
-PALETTEENTRY clrtblC1[48];
-Uint8 clrchgtbl2[16];
+static PALETTEENTRY clrtblC1[48];
+static Uint8 clrchgtbl2[16];

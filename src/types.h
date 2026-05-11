@@ -85,14 +85,7 @@ sprite_data;
 
 typedef struct {
   Uint8 cnt;
-#ifdef _MSC_VER
   sprite_data spra[20];
-#else
-  union {
-    sprite_data spra[20];
-    sprite_data spr[];
-  };
-#endif
 }
 sprite_pattern;
 

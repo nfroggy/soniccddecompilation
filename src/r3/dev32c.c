@@ -2,8 +2,6 @@
 #include "dev32a.h"
 #include "../impfuncs.h"
 
-static Uint32 cg_chg1(tile_changes* pTbl, Sint32 iNum, Uint8** ppChgTim, Uint8** ppChgCnt, Sint32* BmpNo, Sint32* TileStart);
-
 map_init_data mapinittbl = { 0, 0, 0, 3, 2, 0, 0, 7, 7, 129 };
 static Sint32 drum_re0cg[10] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 static Sint32 drum_re1cg[8] = { 10, 11, 12, 13, 14, 15, 16, 17 };
@@ -58,7 +56,7 @@ void cg_change(void) {
   }
 }
 
-static Uint32 cg_chg1(tile_changes* pTbl, Sint32 iNum, Uint8** ppChgTim, Uint8** ppChgCnt, Sint32* BmpNo, Sint32* TileStart) {
+Uint32 cg_chg1(tile_changes* pTbl, Sint32 iNum, Uint8** ppChgTim, Uint8** ppChgCnt, Sint32* BmpNo, Sint32* TileStart) {
   Sint32 tblidx, *pNoTbl;
   char Timwk;
 

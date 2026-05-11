@@ -13,9 +13,9 @@ static void emie1_tobii(sprite_status* pActwk);
 static void emie1_tobim(sprite_status* pActwk);
 static void emie_play(sprite_status* pEmiewk, sprite_status* pSonicwk);
 static void setdirect(sprite_status* pEmiewk, sprite_status* pSonicwk);
-static void speedset(sprite_status* pActwk);
-static void speedsetx(sprite_status* pActwk);
-static void speedsety(sprite_status* pActwk);
+static void emie1_speedset(sprite_status* pActwk);
+static void emie1_speedsetx(sprite_status* pActwk);
+static void emie1_speedsety(sprite_status* pActwk);
 static void jumpchk_d(void);
 static void pljumpset(void);
 static void dakicheck(sprite_status* pActwk);
@@ -155,7 +155,7 @@ lenwk = emycol_d(pActwk);
 
         if (lenwk < 7 && lenwk >= -7) {
           pActwk->yposi.w.h += lenwk;
-          speedsetx(pActwk);
+          emie1_speedsetx(pActwk);
           dakicheck(pActwk);
 
           pActwk->mstno.b.h = 2;
@@ -171,7 +171,7 @@ lenwk = emycol_d(pActwk);
 
         if (lenwk < 7 && lenwk >= -7) {
           pActwk->yposi.w.h += lenwk;
-          speedsetx(pActwk);
+          emie1_speedsetx(pActwk);
           dakicheck(pActwk);
 
           pActwk->mstno.b.h = 2;
@@ -213,7 +213,7 @@ pActwk->yspeed.w = -768;
       pActwk->actfree[20] |= 64;
     }
 
-speedsety(pActwk);
+emie1_speedsety(pActwk);
     pActwk->yspeed.w += 64;
 
     if (pActwk->yspeed.w < 0) {
@@ -298,7 +298,7 @@ static void emie1_tobii(sprite_status* pActwk) {
 }
 
 static void emie1_tobim(sprite_status* pActwk) {
-  speedset(pActwk);
+  emie1_speedset(pActwk);
   if ((pActwk->yspeed.w += 64) >= 0) {
     pActwk->patno = 7;
   }
@@ -320,7 +320,7 @@ static void emie1_tobim(sprite_status* pActwk) {
 
 static void emie_play(sprite_status* pEmiewk, sprite_status* pSonicwk) {
   if (pEmiewk->xspeed.w) {
-    speedsetx(pSonicwk);
+    emie1_speedsetx(pSonicwk);
     pSonicwk->yposi.w.h += emycol_d(pSonicwk);
 
     if (pSonicwk->xspeed.w < 0) {
@@ -353,16 +353,16 @@ static void setdirect(sprite_status* pEmiewk, sprite_status* pSonicwk) {
   }
 }
 
-static void speedset(sprite_status* pActwk) {
-  speedsetx(pActwk);
-  speedsety(pActwk);
+static void emie1_speedset(sprite_status* pActwk) {
+  emie1_speedsetx(pActwk);
+  emie1_speedsety(pActwk);
 }
 
-static void speedsetx(sprite_status* pActwk) {
+static void emie1_speedsetx(sprite_status* pActwk) {
   pActwk->xposi.l += pActwk->xspeed.w << 8;
 }
 
-static void speedsety(sprite_status* pActwk) {
+static void emie1_speedsety(sprite_status* pActwk) {
   pActwk->yposi.l += pActwk->yspeed.w << 8;
 }
 
@@ -563,7 +563,7 @@ static void heart1_move(sprite_status* pActwk) {
     pActwk->xspeed.w = sinwk >> 2;
   }
 
-speedset(pActwk);
+emie1_speedset(pActwk);
   if (++pActwk->actfree[16] == 20) {
     ++pActwk->patno;
   } else if (pActwk->actfree[16] == 110) {

@@ -1,0 +1,4764 @@
+cmake_minimum_required(VERSION 3.20)
+
+project(soniccd LANGUAGES C)
+
+set(SONICCD_VARIANTS "all" CACHE STRING "Semicolon-separated variants to build, or all")
+
+set(SONICCD_INCLUDE_DIRS
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/r1
+)
+
+if(MSVC)
+  set(SONICCD_MSVC_COMPAT_HEADER "${CMAKE_CURRENT_BINARY_DIR}/soniccd_msvc_compat.h")
+  file(WRITE "${SONICCD_MSVC_COMPAT_HEADER}" "#ifndef SONICCD_MSVC_COMPAT_H\n#define SONICCD_MSVC_COMPAT_H\n#define __attribute__(x)\n#endif\n")
+endif()
+
+set(SONICCD_ALL_VARIANTS
+  R11A
+  R11B
+  R11C
+  R11D
+  R12A
+  R12B
+  R12C
+  R12D
+  R13C
+  R13D
+  R31A
+  R31B
+  R31C
+  R31D
+  R32A
+  R32B
+  R32C
+  R32D
+  R33C
+  R33D
+  R41A
+  R41B
+  R41C
+  R41D
+  R42A
+  R42B
+  R42C
+  R42D
+  R43C
+  R43D
+  R51A
+  R51B
+  R51C
+  R51D
+  R52A
+  R52B
+  R52C
+  R52D
+  R53C
+  R53D
+  R61A
+  R61B
+  R61C
+  R61D
+  R62A
+  R62B
+  R62C
+  R62D
+  R63C
+  R63D
+  R71A
+  R71B
+  R71C
+  R71D
+  R72A
+  R72B
+  R72C
+  R72D
+  R73C
+  R73D
+  R81A
+  R81B
+  R81C
+  R81D
+  R82A
+  R82B
+  R82C
+  R82D
+  R83C
+  R83D
+  SPECIAL
+  WARP
+  BESTTIME
+  OPENING
+  PLANET
+  SAVEDATA
+  SOUNDTST
+  STAGETST
+  TA
+  THANKS
+  VISUALMD
+)
+
+set(R11A_DEFINES
+  R1
+  R11A
+  EDIT_DATA_ENTRY_COUNT=52
+)
+
+set(R11B_DEFINES
+  R1
+  R11B
+  EDIT_DATA_ENTRY_COUNT=58
+)
+
+set(R11C_DEFINES
+  R1
+  R11C
+  EDIT_DATA_ENTRY_COUNT=48
+)
+
+set(R11D_DEFINES
+  R1
+  R11D
+  EDIT_DATA_ENTRY_COUNT=45
+)
+
+set(R12A_DEFINES
+  R1
+  R12A
+  EDIT_DATA_ENTRY_COUNT=47
+)
+
+set(R12B_DEFINES
+  R1
+  R12B
+  EDIT_DATA_ENTRY_COUNT=49
+)
+
+set(R12C_DEFINES
+  R1
+  R12C
+  EDIT_DATA_ENTRY_COUNT=48
+)
+
+set(R12D_DEFINES
+  R1
+  R12D
+  EDIT_DATA_ENTRY_COUNT=46
+)
+
+set(R13C_DEFINES
+  R1
+  R13C
+  EDIT_DATA_ENTRY_COUNT=24
+)
+
+set(R13D_DEFINES
+  R1
+  R13D
+  EDIT_DATA_ENTRY_COUNT=24
+)
+
+set(R31A_DEFINES
+  R3
+  R31
+  R31A
+  EDIT_DATA_ENTRY_COUNT=30
+)
+
+set(R31B_DEFINES
+  R3
+  R31
+  R31B
+  EDIT_DATA_ENTRY_COUNT=26
+)
+
+set(R31C_DEFINES
+  R3
+  R31
+  R31C
+  EDIT_DATA_ENTRY_COUNT=23
+)
+
+set(R31D_DEFINES
+  R3
+  R31
+  R31D
+  EDIT_DATA_ENTRY_COUNT=23
+)
+
+set(R32A_DEFINES
+  R3
+  R32
+  R32A
+  CG_CHANGE
+  EDIT_DATA_ENTRY_COUNT=36
+)
+
+set(R32B_DEFINES
+  R3
+  R32
+  R32B
+  EDIT_DATA_ENTRY_COUNT=25
+)
+
+set(R32C_DEFINES
+  R3
+  R32
+  R32C
+  CG_CHANGE
+  EDIT_DATA_ENTRY_COUNT=23
+)
+
+set(R32D_DEFINES
+  R3
+  R32
+  R32D
+  CG_CHANGE
+  EDIT_DATA_ENTRY_COUNT=23
+)
+
+set(R33C_DEFINES
+  R3
+  R33
+  R33C
+  EDIT_DATA_ENTRY_COUNT=8
+)
+
+set(R33D_DEFINES
+  R3
+  R33
+  R33D
+  EDIT_DATA_ENTRY_COUNT=8
+)
+
+set(R41A_DEFINES
+  R4
+  R41A
+  CG_CHANGE
+  EDIT_DATA_ENTRY_COUNT=53
+)
+
+set(R41B_DEFINES
+  R4
+  R41B
+  EDIT_DATA_ENTRY_COUNT=34
+)
+
+set(R41C_DEFINES
+  R4
+  R41C
+  EDIT_DATA_ENTRY_COUNT=25
+)
+
+set(R41D_DEFINES
+  R4
+  R41D
+  EDIT_DATA_ENTRY_COUNT=25
+)
+
+set(R42A_DEFINES
+  R4
+  R42A
+  EDIT_DATA_ENTRY_COUNT=55
+)
+
+set(R42B_DEFINES
+  R4
+  R42B
+  EDIT_DATA_ENTRY_COUNT=62
+)
+
+set(R42C_DEFINES
+  R4
+  R42C
+  EDIT_DATA_ENTRY_COUNT=66
+)
+
+set(R42D_DEFINES
+  R4
+  R42D
+  EDIT_DATA_ENTRY_COUNT=66
+)
+
+set(R43C_DEFINES
+  R4
+  R43C
+  EDIT_DATA_ENTRY_COUNT=11
+)
+
+set(R43D_DEFINES
+  R4
+  R43D
+  EDIT_DATA_ENTRY_COUNT=11
+)
+
+set(R51A_DEFINES
+  R5
+  R51
+  R51A
+  EDIT_DATA_ENTRY_COUNT=91
+)
+
+set(R51B_DEFINES
+  R5
+  R51
+  R51B
+  EDIT_DATA_ENTRY_COUNT=91
+)
+
+set(R51C_DEFINES
+  R5
+  R51
+  R51C
+  EDIT_DATA_ENTRY_COUNT=91
+)
+
+set(R51D_DEFINES
+  R5
+  R51
+  R51D
+  EDIT_DATA_ENTRY_COUNT=91
+)
+
+set(R52A_DEFINES
+  R5
+  R52
+  R52A
+  EDIT_DATA_ENTRY_COUNT=91
+)
+
+set(R52B_DEFINES
+  R5
+  R52
+  R52B
+  EDIT_DATA_ENTRY_COUNT=91
+)
+
+set(R52C_DEFINES
+  R5
+  R52
+  R52C
+  EDIT_DATA_ENTRY_COUNT=91
+)
+
+set(R52D_DEFINES
+  R5
+  R52
+  R52D
+  EDIT_DATA_ENTRY_COUNT=91
+)
+
+set(R53C_DEFINES
+  R5
+  R53
+  R53C
+  EDIT_DATA_ENTRY_COUNT=57
+)
+
+set(R53D_DEFINES
+  R5
+  R53
+  R53D
+  EDIT_DATA_ENTRY_COUNT=57
+)
+
+set(R61A_DEFINES
+  R6
+  R61
+  R61A
+  CG_CHANGE
+  EDIT_DATA_ENTRY_COUNT=55
+)
+
+set(R61B_DEFINES
+  R6
+  R61
+  R61B
+  CG_CHANGE
+  EDIT_DATA_ENTRY_COUNT=54
+)
+
+set(R61C_DEFINES
+  R6
+  R61
+  R61C
+  CG_CHANGE
+  EDIT_DATA_ENTRY_COUNT=53
+)
+
+set(R61D_DEFINES
+  R6
+  R61
+  R61D
+  CG_CHANGE
+  EDIT_DATA_ENTRY_COUNT=53
+)
+
+set(R62A_DEFINES
+  R6
+  R62
+  R62A
+  CG_CHANGE
+  EDIT_DATA_ENTRY_COUNT=56
+)
+
+set(R62B_DEFINES
+  R6
+  R62
+  R62B
+  CG_CHANGE
+  EDIT_DATA_ENTRY_COUNT=56
+)
+
+set(R62C_DEFINES
+  R6
+  R62
+  R62C
+  CG_CHANGE
+  EDIT_DATA_ENTRY_COUNT=53
+)
+
+set(R62D_DEFINES
+  R6
+  R62
+  R62D
+  CG_CHANGE
+  EDIT_DATA_ENTRY_COUNT=53
+)
+
+set(R63C_DEFINES
+  R6
+  R63
+  R63C
+  CG_CHANGE
+  EDIT_DATA_ENTRY_COUNT=38
+)
+
+set(R63D_DEFINES
+  R6
+  R63
+  R63D
+  CG_CHANGE
+  EDIT_DATA_ENTRY_COUNT=38
+)
+
+set(R71A_DEFINES
+  R7
+  R71
+  R71A
+  EDIT_DATA_ENTRY_COUNT=79
+)
+
+set(R71B_DEFINES
+  R7
+  R71
+  R71B
+  EDIT_DATA_ENTRY_COUNT=79
+)
+
+set(R71C_DEFINES
+  R7
+  R71
+  R71C
+  EDIT_DATA_ENTRY_COUNT=79
+)
+
+set(R71D_DEFINES
+  R7
+  R71
+  R71D
+  EDIT_DATA_ENTRY_COUNT=79
+)
+
+set(R72A_DEFINES
+  R7
+  R72
+  R72A
+  EDIT_DATA_ENTRY_COUNT=79
+)
+
+set(R72B_DEFINES
+  R7
+  R72
+  R72B
+  EDIT_DATA_ENTRY_COUNT=79
+)
+
+set(R72C_DEFINES
+  R7
+  R72
+  R72C
+  EDIT_DATA_ENTRY_COUNT=79
+)
+
+set(R72D_DEFINES
+  R7
+  R72
+  R72D
+  EDIT_DATA_ENTRY_COUNT=79
+)
+
+set(R73C_DEFINES
+  R7
+  R73
+  R73C
+  EDIT_DATA_ENTRY_COUNT=52
+)
+
+set(R73D_DEFINES
+  R7
+  R73
+  R73D
+  EDIT_DATA_ENTRY_COUNT=52
+)
+
+set(R81A_DEFINES
+  R8
+  R81
+  R81A
+  CG_CHANGE
+  EDIT_DATA_ENTRY_COUNT=38
+)
+
+set(R81B_DEFINES
+  R8
+  R81
+  R81B
+  EDIT_DATA_ENTRY_COUNT=38
+)
+
+set(R81C_DEFINES
+  R8
+  R81
+  R81C
+  CG_CHANGE
+  EDIT_DATA_ENTRY_COUNT=38
+)
+
+set(R81D_DEFINES
+  R8
+  R81
+  R81D
+  CG_CHANGE
+  EDIT_DATA_ENTRY_COUNT=38
+)
+
+set(R82A_DEFINES
+  R8
+  R82
+  R82A
+  CG_CHANGE
+  EDIT_DATA_ENTRY_COUNT=10
+)
+
+set(R82B_DEFINES
+  R8
+  R82
+  R82B
+  CG_CHANGE
+  EDIT_DATA_ENTRY_COUNT=10
+)
+
+set(R82C_DEFINES
+  R8
+  R82
+  R82C
+  CG_CHANGE
+  EDIT_DATA_ENTRY_COUNT=10
+)
+
+set(R82D_DEFINES
+  R8
+  R82
+  R82D
+  CG_CHANGE
+  EDIT_DATA_ENTRY_COUNT=10
+)
+
+set(R83C_DEFINES
+  R8
+  R83
+  R83C
+  CG_CHANGE
+  EDIT_DATA_ENTRY_COUNT=45
+)
+
+set(R83D_DEFINES
+  R8
+  R83
+  R83D
+  CG_CHANGE
+  EDIT_DATA_ENTRY_COUNT=45
+)
+
+set(SPECIAL_DEFINES
+)
+
+set(WARP_DEFINES
+)
+
+set(BESTTIME_DEFINES
+)
+
+set(OPENING_DEFINES
+  OPENING
+)
+
+set(PLANET_DEFINES
+)
+
+set(SAVEDATA_DEFINES
+  SAVEDATA
+)
+
+set(SOUNDTST_DEFINES
+  SOUNDTST
+)
+
+set(STAGETST_DEFINES
+  STAGETST
+)
+
+set(TA_DEFINES
+)
+
+set(THANKS_DEFINES
+)
+
+set(VISUALMD_DEFINES
+)
+
+set(R11_PREFIX_SOURCES
+  src/dllmain.c
+  src/action.c
+  src/actset.c
+  src/equ.c
+  src/dai_k.c
+  src/dai_rd1.c
+  src/dircol.c
+  src/dummy.c
+  src/edit.c
+)
+
+set(R11_POST_EDIT_SOURCES
+  src/enemy.c
+  src/et1.c
+  src/etc.c
+  src/fcol.c
+  src/game.c
+  src/goal.c
+  src/io.c
+  src/item.c
+  src/player.c
+  src/playpat1.c
+  src/playsp.c
+  src/playsub.c
+  src/plchg.c
+  src/ridechk.c
+  src/ring.c
+  src/score.c
+  src/scrchk.c
+  src/spring.c
+  src/suicide.c
+  src/taki.c
+  src/tbl0.c
+  src/tbl1.c
+  src/tree.c
+  src/zone.c
+  src/zonetbl1.c
+)
+
+set(R11C_POST_EDIT_SOURCES
+  src/enemy.c
+  src/et1.c
+  src/etc.c
+  src/fcol.c
+  src/game.c
+  src/goal.c
+  src/io.c
+  src/item.c
+  src/player.c
+  src/playpat1.c
+  src/playsp.c
+  src/playsub.c
+  src/plchg.c
+  src/ridechk.c
+  src/ring.c
+  src/score.c
+  src/scrchk.c
+  src/spring.c
+  src/suicide.c
+  src/taki.c
+  src/tbl0.c
+  src/tbl1.c
+  src/zone.c
+  src/zonetbl1.c
+)
+
+set(R11_TAIL_SOURCES
+  src/block.c
+  src/loader2.c
+  src/r1/coli1.c
+  src/save.c
+  src/r1/friend1.c
+  src/r1/movie1.c
+  src/bmp.c
+)
+
+set(R11A_SOURCES
+  ${R11_PREFIX_SOURCES}
+  src/emie1.c
+  src/emie1cg.c
+  ${R11_POST_EDIT_SOURCES}
+  src/r1/act11a.c
+  src/r1/col1a.c
+  src/r1/dev11a.c
+  src/r1/edtbl11a.c
+  src/r1/kowasi1.c
+  src/r1/kuzur11a.c
+  src/r1/kuzure.c
+  src/r1/scr11a.c
+  src/r1/shoot1.c
+  src/r1/sikake.c
+  src/r1/z11act.c
+  src/block.c
+  src/loader2.c
+  src/r1/coli1.c
+  src/save.c
+  src/r1/z11atbl.c
+  src/r1/friend1.c
+  src/r1/movie1.c
+  src/bmp.c
+)
+
+set(R11B_SOURCES
+  ${R11_PREFIX_SOURCES}
+  ${R11_POST_EDIT_SOURCES}
+  src/r1/kowasi1.c
+  src/r1/kuzure.c
+  src/r1/shoot1.c
+  src/r1/sikake.c
+  src/r1/z11act.c
+  src/block.c
+  src/loader2.c
+  src/bmp.c
+  src/r1/coli1.c
+  src/r1/act11b.c
+  src/r1/col1b.c
+  src/r1/dev11b.c
+  src/r1/edtbl11b.c
+  src/r1/kuzur11b.c
+  src/r1/scr11b.c
+  src/r1/z11btbl.c
+  src/r1/friend1.c
+  src/r1/movie1.c
+  src/save.c
+)
+
+set(R11C_SOURCES
+  ${R11_PREFIX_SOURCES}
+  ${R11C_POST_EDIT_SOURCES}
+  src/r1/kowasi1.c
+  src/r1/kuzure.c
+  src/r1/shoot1.c
+  src/r1/sikake.c
+  src/block.c
+  src/loader2.c
+  src/bmp.c
+  src/r1/coli1.c
+  src/r1/dev11c.c
+  src/r1/scr11c.c
+  src/r1/z11act.c
+  src/r1/z11ctbl.c
+  src/r1/act11b.c
+  src/r1/edtbl11c.c
+  src/r1/kuzur11c.c
+  src/r1/col1c.c
+  src/r1/friend1.c
+  src/r1/movie1.c
+  src/save.c
+)
+
+set(R11D_SOURCES
+  ${R11_PREFIX_SOURCES}
+  ${R11C_POST_EDIT_SOURCES}
+  src/r1/kowasi1.c
+  src/r1/kuzure.c
+  src/r1/shoot1.c
+  src/r1/sikake.c
+  src/block.c
+  src/loader2.c
+  src/bmp.c
+  src/r1/coli1.c
+  src/r1/z11act.c
+  src/r1/act11b.c
+  src/r1/dev11d.c
+  src/r1/edtbl11d.c
+  src/r1/kuzur11d.c
+  src/r1/z11dtbl.c
+  src/r1/col1d.c
+  src/r1/scr11d.c
+  src/r1/friend1.c
+  src/r1/movie1.c
+  src/save.c
+)
+
+set(R12A_SOURCES
+  ${R11_PREFIX_SOURCES}
+  ${R11_POST_EDIT_SOURCES}
+  src/r1/col1a.c
+  src/r1/kowasi1.c
+  src/r1/kuzure.c
+  src/r1/shoot1.c
+  src/r1/sikake.c
+  src/block.c
+  src/loader2.c
+  src/bmp.c
+  src/r1/coli1.c
+  src/r1/act12a.c
+  src/r1/dev12a.c
+  src/r1/edtbl12a.c
+  src/r1/kuzur12a.c
+  src/branko1.c
+  src/r1/scr12a.c
+  src/r1/z12act.c
+  src/r1/z12atbl.c
+  src/r1/friend1.c
+  src/r1/movie1.c
+  src/save.c
+)
+
+set(R12B_SOURCES
+  ${R11_PREFIX_SOURCES}
+  ${R11_POST_EDIT_SOURCES}
+  src/r1/kowasi1.c
+  src/r1/kuzure.c
+  src/r1/shoot1.c
+  src/r1/sikake.c
+  src/block.c
+  src/loader2.c
+  src/bmp.c
+  src/r1/coli1.c
+  src/r1/act12a.c
+  src/r1/col1b.c
+  src/r1/dev12b.c
+  src/r1/edtbl12b.c
+  src/r1/kuzur12b.c
+  src/r1/scr12b.c
+  src/r1/z12act.c
+  src/r1/z12btbl.c
+  src/branko1.c
+  src/r1/friend1.c
+  src/r1/movie1.c
+  src/save.c
+)
+
+set(R12C_SOURCES
+  ${R11_PREFIX_SOURCES}
+  ${R11C_POST_EDIT_SOURCES}
+  src/r1/kowasi1.c
+  src/r1/kuzure.c
+  src/r1/shoot1.c
+  src/r1/sikake.c
+  src/block.c
+  src/loader2.c
+  src/bmp.c
+  src/r1/coli1.c
+  src/r1/col1c.c
+  src/r1/act12a.c
+  src/r1/dev12c.c
+  src/r1/edtbl12c.c
+  src/r1/kuzur12c.c
+  src/r1/scr12c.c
+  src/r1/z12act.c
+  src/r1/z12ctbl.c
+  src/branko1.c
+  src/r1/friend1.c
+  src/r1/movie1.c
+  src/save.c
+)
+
+set(R12D_SOURCES
+  ${R11_PREFIX_SOURCES}
+  ${R11C_POST_EDIT_SOURCES}
+  src/r1/kowasi1.c
+  src/r1/kuzure.c
+  src/r1/shoot1.c
+  src/r1/sikake.c
+  src/block.c
+  src/loader2.c
+  src/bmp.c
+  src/r1/coli1.c
+  src/r1/act12a.c
+  src/r1/col1d.c
+  src/r1/dev12d.c
+  src/r1/edtbl12d.c
+  src/r1/kuzur12d.c
+  src/r1/scr12d.c
+  src/r1/z12act.c
+  src/r1/z12dtbl.c
+  src/branko1.c
+  src/r1/friend1.c
+  src/r1/movie1.c
+  src/save.c
+)
+
+set(R13C_SOURCES
+  src/dllmain.c
+  src/action.c
+  src/actset.c
+  src/dai_rd1.c
+  src/dircol.c
+  src/dummy.c
+  src/edit.c
+  src/enemy.c
+  src/equ.c
+  src/etc.c
+  src/fcol.c
+  src/game.c
+  src/io.c
+  src/item.c
+  src/player.c
+  src/playpat1.c
+  src/playsp.c
+  src/playsub.c
+  src/plchg.c
+  src/ridechk.c
+  src/ring.c
+  src/score.c
+  src/scrchk.c
+  src/spring.c
+  src/suicide.c
+  src/tbl0.c
+  src/tbl1.c
+  src/tree.c
+  src/zone.c
+  src/zonetbl1.c
+  src/r1/shoot1.c
+  src/r1/sikake.c
+  src/block.c
+  src/loader2.c
+  src/bmp.c
+  src/r1/coli1.c
+  src/r1/act13c.c
+  src/r1/col1c.c
+  src/r1/dev13c.c
+  src/r1/edtbl13c.c
+  src/r1/scr13c.c
+  src/r1/z13act.c
+  src/r1/z13ctbl.c
+  src/et1.c
+  src/goal.c
+  src/r1/boss_1.c
+  src/r1/friend1.c
+  src/save.c
+)
+
+set(R13D_SOURCES
+  src/dllmain.c
+  src/action.c
+  src/actset.c
+  src/dai_rd1.c
+  src/dircol.c
+  src/dummy.c
+  src/edit.c
+  src/enemy.c
+  src/equ.c
+  src/etc.c
+  src/fcol.c
+  src/game.c
+  src/io.c
+  src/item.c
+  src/player.c
+  src/playpat1.c
+  src/playsp.c
+  src/playsub.c
+  src/plchg.c
+  src/ridechk.c
+  src/ring.c
+  src/score.c
+  src/scrchk.c
+  src/spring.c
+  src/suicide.c
+  src/tbl0.c
+  src/tbl1.c
+  src/tree.c
+  src/zone.c
+  src/zonetbl1.c
+  src/r1/shoot1.c
+  src/r1/sikake.c
+  src/block.c
+  src/loader2.c
+  src/bmp.c
+  src/r1/coli1.c
+  src/et1.c
+  src/goal.c
+  src/r1/act13c.c
+  src/r1/col1d.c
+  src/r1/dev13d.c
+  src/r1/edtbl13c.c
+  src/r1/scr13d.c
+  src/r1/z13dtbl.c
+  src/r1/z13act.c
+  src/r1/boss_1.c
+  src/r1/friend1.c
+  src/save.c
+)
+
+set(R31A_SOURCES
+  src/actset.c
+  src/dircol.c
+  src/dummy.c
+  src/edit.c
+  src/equ.c
+  src/etc.c
+  src/fcol.c
+  src/game.c
+  src/goal.c
+  src/io.c
+  src/item.c
+  src/player.c
+  src/playsub.c
+  src/ridechk.c
+  src/ring.c
+  src/score.c
+  src/scrchk.c
+  src/spring.c
+  src/suicide.c
+  src/zone.c
+  src/loader2.c
+  src/r3/banpa.c
+  src/r3/bobin.c
+  src/r3/bobinb.c
+  src/r3/coli3.c
+  src/r3/edtbl31a.c
+  src/r3/et3.c
+  src/r3/friend3.c
+  src/r3/ga3.c
+  src/r3/playsp3.c
+  src/r3/pocket.c
+  src/r3/togebl3a.c
+  src/r3/trap_r3.c
+  src/r3/z31atbl.c
+  src/dllmain.c
+  src/bmp.c
+  src/block.c
+  src/r3/miracle.c
+  src/tbl0.c
+  src/tbl1.c
+  src/r3/col3a.c
+  src/r3/scr31a.c
+  src/r3/z31act.c
+  src/plchg.c
+  src/r3/dev31a.c
+  src/r3/act31a.c
+  src/r3/mecasnc.c
+  src/r3/msnccg.c
+  src/r3/tentou.c
+  src/r3/kama.c
+  src/plpat6.c
+  src/r3/movie3.c
+  src/r3/zonetbl3.c
+  src/save.c
+  src/action.c
+)
+
+set(R31B_SOURCES
+  src/actset.c
+  src/dircol.c
+  src/dummy.c
+  src/edit.c
+  src/equ.c
+  src/etc.c
+  src/fcol.c
+  src/game.c
+  src/goal.c
+  src/io.c
+  src/item.c
+  src/player.c
+  src/playsub.c
+  src/ridechk.c
+  src/ring.c
+  src/score.c
+  src/scrchk.c
+  src/spring.c
+  src/suicide.c
+  src/zone.c
+  src/loader2.c
+  src/r3/banpa.c
+  src/r3/bobin.c
+  src/r3/bobinb.c
+  src/r3/coli3.c
+  src/r3/et3.c
+  src/r3/friend3.c
+  src/r3/ga3.c
+  src/r3/playsp3.c
+  src/r3/pocket.c
+  src/r3/trap_r3.c
+  src/dllmain.c
+  src/bmp.c
+  src/block.c
+  src/r3/miracle.c
+  src/tbl0.c
+  src/tbl1.c
+  src/r3/z31act.c
+  src/plchg.c
+  src/r3/msnccg.c
+  src/r3/tentou.c
+  src/r3/kama.c
+  src/plpat6.c
+  src/r3/act31b.c
+  src/r3/col3b.c
+  src/r3/dev31b.c
+  src/r3/edtbl31b.c
+  src/r3/z31btbl.c
+  src/r3/zonetbl3.c
+  src/r3/scr31b.c
+  src/r3/movie3.c
+  src/save.c
+  src/r3/togebl3b.c
+  src/action.c
+)
+
+set(R31C_SOURCES
+  src/actset.c
+  src/dircol.c
+  src/dummy.c
+  src/edit.c
+  src/equ.c
+  src/etc.c
+  src/fcol.c
+  src/game.c
+  src/goal.c
+  src/io.c
+  src/item.c
+  src/player.c
+  src/playsub.c
+  src/ridechk.c
+  src/ring.c
+  src/score.c
+  src/scrchk.c
+  src/spring.c
+  src/suicide.c
+  src/zone.c
+  src/loader2.c
+  src/r3/banpa.c
+  src/r3/bobin.c
+  src/r3/bobinb.c
+  src/r3/coli3.c
+  src/r3/et3.c
+  src/r3/friend3.c
+  src/r3/ga3.c
+  src/r3/playsp3.c
+  src/r3/pocket.c
+  src/r3/trap_r3.c
+  src/dllmain.c
+  src/bmp.c
+  src/block.c
+  src/r3/miracle.c
+  src/tbl0.c
+  src/tbl1.c
+  src/r3/z31act.c
+  src/plchg.c
+  src/r3/tentou.c
+  src/r3/kama.c
+  src/plpat6.c
+  src/r3/act31b.c
+  src/r3/col3c.c
+  src/r3/dev31c.c
+  src/r3/edtbl31c.c
+  src/r3/z31ctbl.c
+  src/r3/movie3.c
+  src/r3/zonetbl3.c
+  src/r3/scr31c.c
+  src/save.c
+  src/r3/togebl3d.c
+  src/action.c
+)
+
+set(R31D_SOURCES
+  src/actset.c
+  src/dircol.c
+  src/dummy.c
+  src/edit.c
+  src/equ.c
+  src/etc.c
+  src/fcol.c
+  src/game.c
+  src/goal.c
+  src/io.c
+  src/item.c
+  src/player.c
+  src/playsub.c
+  src/ridechk.c
+  src/ring.c
+  src/score.c
+  src/scrchk.c
+  src/spring.c
+  src/suicide.c
+  src/zone.c
+  src/loader2.c
+  src/r3/banpa.c
+  src/r3/bobin.c
+  src/r3/bobinb.c
+  src/r3/coli3.c
+  src/r3/et3.c
+  src/r3/friend3.c
+  src/r3/ga3.c
+  src/r3/playsp3.c
+  src/r3/pocket.c
+  src/r3/trap_r3.c
+  src/dllmain.c
+  src/bmp.c
+  src/block.c
+  src/r3/miracle.c
+  src/tbl0.c
+  src/tbl1.c
+  src/r3/z31act.c
+  src/plchg.c
+  src/r3/tentou.c
+  src/r3/kama.c
+  src/plpat6.c
+  src/r3/act31b.c
+  src/r3/col3d.c
+  src/r3/dev31d.c
+  src/r3/edtbl31d.c
+  src/r3/z31dtbl.c
+  src/r3/zonetbl3.c
+  src/r3/scr31d.c
+  src/r3/movie3.c
+  src/save.c
+  src/r3/togebl3d.c
+  src/action.c
+)
+
+set(R32A_SOURCES
+  src/actset.c
+  src/dircol.c
+  src/dummy.c
+  src/edit.c
+  src/equ.c
+  src/etc.c
+  src/fcol.c
+  src/game.c
+  src/goal.c
+  src/io.c
+  src/item.c
+  src/player.c
+  src/playsub.c
+  src/ridechk.c
+  src/ring.c
+  src/score.c
+  src/scrchk.c
+  src/spring.c
+  src/suicide.c
+  src/zone.c
+  src/loader2.c
+  src/r3/banpa.c
+  src/r3/bobin.c
+  src/r3/bobinb.c
+  src/r3/coli3.c
+  src/r3/et3.c
+  src/r3/friend3.c
+  src/r3/ga3.c
+  src/r3/playsp3.c
+  src/r3/pocket.c
+  src/r3/togebl3a.c
+  src/r3/trap_r3.c
+  src/dllmain.c
+  src/bmp.c
+  src/block.c
+  src/r3/miracle.c
+  src/tbl0.c
+  src/tbl1.c
+  src/r3/col3a.c
+  src/plchg.c
+  src/r3/mecasnc.c
+  src/r3/msnccg.c
+  src/r3/tentou.c
+  src/r3/kama.c
+  src/plpat6.c
+  src/r3/dev32a.c
+  src/r3/edtbl32a.c
+  src/r3/z32act.c
+  src/r3/z32atbl.c
+  src/r3/zonetbl3.c
+  src/r3/scr32a.c
+  src/r3/act32a.c
+  src/r3/movie3.c
+  src/save.c
+  src/action.c
+)
+
+set(R32B_SOURCES
+  src/actset.c
+  src/dircol.c
+  src/dummy.c
+  src/edit.c
+  src/equ.c
+  src/etc.c
+  src/fcol.c
+  src/game.c
+  src/goal.c
+  src/io.c
+  src/item.c
+  src/player.c
+  src/playsub.c
+  src/ridechk.c
+  src/ring.c
+  src/score.c
+  src/scrchk.c
+  src/spring.c
+  src/suicide.c
+  src/zone.c
+  src/loader2.c
+  src/r3/banpa.c
+  src/r3/bobin.c
+  src/r3/bobinb.c
+  src/r3/coli3.c
+  src/r3/et3.c
+  src/r3/friend3.c
+  src/r3/ga3.c
+  src/r3/playsp3.c
+  src/r3/pocket.c
+  src/r3/trap_r3.c
+  src/dllmain.c
+  src/bmp.c
+  src/block.c
+  src/r3/miracle.c
+  src/tbl0.c
+  src/tbl1.c
+  src/plchg.c
+  src/r3/tentou.c
+  src/r3/kama.c
+  src/plpat6.c
+  src/r3/act32a.c
+  src/r3/z32act.c
+  src/r3/col3b.c
+  src/r3/dev32b.c
+  src/r3/edtbl32b.c
+  src/r3/z32btbl.c
+  src/r3/zonetbl3.c
+  src/r3/scr32b.c
+  src/save.c
+  src/r3/movie3.c
+  src/r3/togebl3b.c
+  src/action.c
+)
+
+set(R32C_SOURCES
+  src/actset.c
+  src/dircol.c
+  src/dummy.c
+  src/edit.c
+  src/equ.c
+  src/etc.c
+  src/fcol.c
+  src/game.c
+  src/goal.c
+  src/io.c
+  src/item.c
+  src/player.c
+  src/playsub.c
+  src/ridechk.c
+  src/ring.c
+  src/score.c
+  src/scrchk.c
+  src/spring.c
+  src/suicide.c
+  src/zone.c
+  src/loader2.c
+  src/r3/banpa.c
+  src/r3/bobin.c
+  src/r3/bobinb.c
+  src/r3/coli3.c
+  src/r3/et3.c
+  src/r3/friend3.c
+  src/r3/ga3.c
+  src/r3/playsp3.c
+  src/r3/pocket.c
+  src/r3/trap_r3.c
+  src/dllmain.c
+  src/bmp.c
+  src/block.c
+  src/r3/miracle.c
+  src/tbl0.c
+  src/tbl1.c
+  src/plchg.c
+  src/r3/tentou.c
+  src/r3/kama.c
+  src/plpat6.c
+  src/r3/act32a.c
+  src/r3/z32act.c
+  src/r3/col3c.c
+  src/r3/dev32c.c
+  src/r3/edtbl32c.c
+  src/r3/z32ctbl.c
+  src/r3/zonetbl3.c
+  src/r3/scr32c.c
+  src/save.c
+  src/r3/movie3.c
+  src/r3/togebl3d.c
+  src/action.c
+)
+
+set(R32D_SOURCES
+  src/actset.c
+  src/dircol.c
+  src/dummy.c
+  src/edit.c
+  src/equ.c
+  src/etc.c
+  src/fcol.c
+  src/game.c
+  src/goal.c
+  src/io.c
+  src/item.c
+  src/player.c
+  src/playsub.c
+  src/ridechk.c
+  src/ring.c
+  src/score.c
+  src/scrchk.c
+  src/spring.c
+  src/suicide.c
+  src/zone.c
+  src/loader2.c
+  src/r3/banpa.c
+  src/r3/bobin.c
+  src/r3/bobinb.c
+  src/r3/coli3.c
+  src/r3/et3.c
+  src/r3/friend3.c
+  src/r3/ga3.c
+  src/r3/playsp3.c
+  src/r3/pocket.c
+  src/r3/trap_r3.c
+  src/dllmain.c
+  src/bmp.c
+  src/block.c
+  src/r3/miracle.c
+  src/tbl0.c
+  src/tbl1.c
+  src/plchg.c
+  src/r3/tentou.c
+  src/r3/kama.c
+  src/plpat6.c
+  src/r3/act32a.c
+  src/r3/z32act.c
+  src/r3/col3d.c
+  src/r3/dev32d.c
+  src/r3/edtbl32d.c
+  src/r3/z32dtbl.c
+  src/r3/zonetbl3.c
+  src/r3/scr32d.c
+  src/r3/movie3.c
+  src/save.c
+  src/r3/togebl3d.c
+  src/action.c
+)
+
+set(R33C_SOURCES
+  src/actset.c
+  src/dircol.c
+  src/dummy.c
+  src/edit.c
+  src/equ.c
+  src/etc.c
+  src/fcol.c
+  src/game.c
+  src/goal.c
+  src/io.c
+  src/item.c
+  src/player.c
+  src/playsub.c
+  src/ridechk.c
+  src/ring.c
+  src/score.c
+  src/scrchk.c
+  src/spring.c
+  src/suicide.c
+  src/zone.c
+  src/loader2.c
+  src/r3/banpa.c
+  src/r3/bobin.c
+  src/r3/bobinb.c
+  src/r3/coli3.c
+  src/r3/et3.c
+  src/r3/friend3.c
+  src/r3/ga3.c
+  src/r3/playsp3.c
+  src/r3/pocket.c
+  src/r3/trap_r3.c
+  src/dllmain.c
+  src/bmp.c
+  src/block.c
+  src/r3/miracle.c
+  src/tbl0.c
+  src/tbl1.c
+  src/plchg.c
+  src/r3/tentou.c
+  src/r3/kama.c
+  src/plpat6.c
+  src/r3/act33c.c
+  src/r3/col3c.c
+  src/r3/dev33c.c
+  src/r3/edtbl33c.c
+  src/r3/z33ctbl.c
+  src/r3/z33act.c
+  src/r3/sikake33.c
+  src/r3/light.c
+  src/r3/stopper.c
+  src/r3/boss_3.c
+  src/r3/gate.c
+  src/r3/movie3.c
+  src/r3/rollplat.c
+  src/r3/scr33c.c
+  src/r3/zonetbl3.c
+  src/save.c
+  src/r3/togebl3d.c
+  src/action.c
+)
+
+set(R33D_SOURCES
+  src/actset.c
+  src/dircol.c
+  src/dummy.c
+  src/edit.c
+  src/equ.c
+  src/etc.c
+  src/fcol.c
+  src/game.c
+  src/goal.c
+  src/io.c
+  src/item.c
+  src/player.c
+  src/playsub.c
+  src/ridechk.c
+  src/ring.c
+  src/score.c
+  src/scrchk.c
+  src/spring.c
+  src/suicide.c
+  src/zone.c
+  src/loader2.c
+  src/r3/banpa.c
+  src/r3/bobin.c
+  src/r3/bobinb.c
+  src/r3/coli3.c
+  src/r3/et3.c
+  src/r3/friend3.c
+  src/r3/ga3.c
+  src/r3/playsp3.c
+  src/r3/pocket.c
+  src/r3/trap_r3.c
+  src/dllmain.c
+  src/bmp.c
+  src/block.c
+  src/r3/miracle.c
+  src/tbl0.c
+  src/tbl1.c
+  src/plchg.c
+  src/r3/tentou.c
+  src/plpat6.c
+  src/r3/act33c.c
+  src/r3/z33act.c
+  src/r3/col3d.c
+  src/r3/dev33d.c
+  src/r3/kama.c
+  src/r3/z33dtbl.c
+  src/r3/zonetbl3.c
+  src/r3/scr33d.c
+  src/save.c
+  src/r3/togebl3d.c
+  src/r3/boss_3.c
+  src/r3/gate.c
+  src/r3/movie3.c
+  src/r3/sikake33.c
+  src/r3/stopper.c
+  src/r3/light.c
+  src/r3/rollplat.c
+  src/r3/edtbl33c.c
+  src/action.c
+)
+
+set(R41A_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/ridechk.c
+  src/player.c
+  src/playsp.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/r4/act41a.c
+  src/r4/col4a.c
+  src/r4/coli4.c
+  src/r4/dev41a.c
+  src/r4/edtbl41a.c
+  src/r4/et4.c
+  src/r4/scr41a.c
+  src/r4/scrchk4.c
+  src/r4/sw4.c
+  src/r4/swblk4.c
+  src/r4/z41act.c
+  src/r4/z41atbl.c
+  src/r4/zonetbl4.c
+  src/suicide.c
+  src/r4/game4.c
+  src/r4/playsub4.c
+  src/r4/awa.c
+  src/r4/harid4.c
+  src/r4/tobira4.c
+  src/r4/harir4.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/r4/walls.c
+  src/r4/wtbl41a.c
+  src/r4/funsui4.c
+  src/r4/wall1.c
+  src/r4/screw_a.c
+  src/r4/escal4.c
+  src/r4/brunko4.c
+  src/r4/tonbo.c
+  src/r4/amenbo.c
+  src/r4/tagameb4.c
+  src/r4/yago.c
+  src/r4/friend4.c
+  src/r4/tekkyu.c
+  src/r4/playpat4.c
+  src/r4/kuzure4.c
+)
+
+set(R41B_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/ridechk.c
+  src/player.c
+  src/playsp.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/r4/coli4.c
+  src/r4/et4.c
+  src/r4/sw4.c
+  src/r4/z41act.c
+  src/r4/zonetbl4.c
+  src/suicide.c
+  src/r4/game4.c
+  src/r4/playsub4.c
+  src/r4/awa.c
+  src/r4/harir4.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/r4/walls.c
+  src/r4/wall1.c
+  src/r4/escal4.c
+  src/r4/tonbo.c
+  src/r4/amenbo.c
+  src/r4/tagameb4.c
+  src/r4/yago.c
+  src/r4/friend4.c
+  src/r4/lrblk4.c
+  src/r4/col4b.c
+  src/r4/scr41b.c
+  src/scrchk.c
+  src/r4/act41b.c
+  src/r4/edtbl41b.c
+  src/r4/dev41b.c
+  src/r4/screw_a.c
+  src/r4/movie4.c
+  src/r4/rblk4.c
+  src/r4/z41btbl.c
+  src/r4/playpat4.c
+  src/r4/udblk4.c
+  src/r4/wtbl41b.c
+)
+
+set(R41C_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/ridechk.c
+  src/player.c
+  src/playsp.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/r4/coli4.c
+  src/r4/sw4.c
+  src/r4/z41act.c
+  src/r4/zonetbl4.c
+  src/suicide.c
+  src/r4/game4.c
+  src/r4/playsub4.c
+  src/r4/awa.c
+  src/r4/harid4.c
+  src/r4/harir4.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/r4/wall1.c
+  src/r4/escal4.c
+  src/scrchk.c
+  src/r4/act41c.c
+  src/r4/col4c.c
+  src/r4/dev41c.c
+  src/r4/edtbl41c.c
+  src/r4/screw_c.c
+  src/r4/tekkyu4.c
+  src/r4/wtbl41c.c
+  src/r4/renketu4.c
+  src/r4/amenbo.c
+  src/r4/friend4.c
+  src/r4/tagameb4.c
+  src/r4/tonbo.c
+  src/r4/yago.c
+  src/r4/scr41c.c
+  src/r4/lrblk4.c
+  src/r4/z41ctbl.c
+  src/r4/playpat4.c
+  src/r4/udblk4.c
+  src/r4/swgun4.c
+)
+
+set(R41D_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/ridechk.c
+  src/player.c
+  src/playsp.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/r4/coli4.c
+  src/r4/sw4.c
+  src/r4/z41act.c
+  src/r4/zonetbl4.c
+  src/suicide.c
+  src/r4/game4.c
+  src/r4/playsub4.c
+  src/r4/awa.c
+  src/r4/harid4.c
+  src/r4/harir4.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/r4/wall1.c
+  src/r4/escal4.c
+  src/scrchk.c
+  src/r4/act41c.c
+  src/r4/edtbl41c.c
+  src/r4/screw_c.c
+  src/r4/tekkyu4.c
+  src/r4/wtbl41c.c
+  src/r4/renketu4.c
+  src/r4/amenbo.c
+  src/r4/friend4.c
+  src/r4/tagameb4.c
+  src/r4/tonbo.c
+  src/r4/yago.c
+  src/r4/col4d.c
+  src/r4/scr41d.c
+  src/r4/dev41d.c
+  src/r4/z41dtbl.c
+  src/r4/playpat4.c
+  src/r4/udblk4.c
+  src/r4/swgun4.c
+)
+
+set(R42A_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/ridechk.c
+  src/player.c
+  src/playsp.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/r4/col4a.c
+  src/r4/coli4.c
+  src/r4/et4.c
+  src/r4/sw4.c
+  src/r4/swblk4.c
+  src/r4/zonetbl4.c
+  src/suicide.c
+  src/r4/game4.c
+  src/r4/playsub4.c
+  src/r4/awa.c
+  src/r4/tobira4.c
+  src/r4/harir4.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/r4/walls.c
+  src/r4/wall1.c
+  src/r4/screw_a.c
+  src/r4/escal4.c
+  src/r4/brunko4.c
+  src/r4/tonbo.c
+  src/r4/amenbo.c
+  src/r4/tagameb4.c
+  src/r4/yago.c
+  src/r4/friend4.c
+  src/r4/lrblk4.c
+  src/scrchk.c
+  src/r4/scr42a.c
+  src/r4/dev42a.c
+  src/r4/edtbl42a.c
+  src/r4/z42atbl.c
+  src/r4/wtbl42a.c
+  src/r4/tobiras4.c
+  src/r4/tekkyu.c
+  src/r4/tekkyu4.c
+  src/r4/osumizu.c
+  src/r4/wall4.c
+  src/r4/act42a.c
+  src/r4/ukidai.c
+  src/r4/playpat4.c
+  src/r4/z42act.c
+  src/r4/kuzure4.c
+  src/r4/tekkyu1.c
+  src/r4/wall42.c
+)
+
+set(R42B_SOURCES
+  src/dircol.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/r4/col4b.c
+  src/etc.c
+  src/fcol.c
+  src/r4/game4.c
+  src/io.c
+  src/scrchk.c
+  src/r4/act42b.c
+  src/player.c
+  src/r4/playsub4.c
+  src/playsp.c
+  src/save.c
+  src/r4/coli4.c
+  src/edit.c
+  src/r4/edtbl42b.c
+  src/actset.c
+  src/r4/z42act.c
+  src/ridechk.c
+  src/spring.c
+  src/ring.c
+  src/item.c
+  src/score.c
+  src/r4/awa.c
+  src/goal.c
+  src/zone.c
+  src/r4/zonetbl4.c
+  src/r4/wtbl42b.c
+  src/r4/harir4.c
+  src/r4/sw4.c
+  src/r4/tonbo.c
+  src/r4/amenbo.c
+  src/r4/yago.c
+  src/r4/friend4.c
+  src/r4/walls.c
+  src/r4/wall1.c
+  src/r4/et4.c
+  src/suicide.c
+  src/r4/dev42b.c
+  src/r4/movie4.c
+  src/r4/z42btbl.c
+  src/r4/playpat4.c
+  src/r4/kuzure4.c
+  src/action.c
+  src/r4/rblk4.c
+  src/r4/udblk4.c
+  src/r4/scr42a.c
+  src/tbl0.c
+  src/tbl1.c
+  src/r4/screw_a.c
+  src/r4/tagameb4.c
+  src/r4/lrblk4.c
+  src/plchg.c
+)
+
+set(R42C_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/ridechk.c
+  src/player.c
+  src/playsp.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/r4/coli4.c
+  src/r4/sw4.c
+  src/r4/zonetbl4.c
+  src/suicide.c
+  src/r4/game4.c
+  src/r4/playsub4.c
+  src/r4/awa.c
+  src/r4/harir4.c
+  src/plchg.c
+  src/r4/walls.c
+  src/r4/wall1.c
+  src/r4/tonbo.c
+  src/r4/amenbo.c
+  src/r4/tagameb4.c
+  src/r4/yago.c
+  src/r4/friend4.c
+  src/r4/lrblk4.c
+  src/r4/tekkyu.c
+  src/r4/act42c.c
+  src/r4/col4c.c
+  src/r4/dev42c.c
+  src/r4/edtbl42c.c
+  src/r4/screw_c.c
+  src/r4/wtbl42c.c
+  src/r4/z42act.c
+  src/r4/z42ctbl.c
+  src/r4/playpat4.c
+  src/r4/kuzure4.c
+  src/r4/baneiwa.c
+  src/r4/daid4.c
+  src/r4/tekkyu1.c
+  src/action.c
+  src/r4/scr42c.c
+  src/r4/tobiras4.c
+  src/r4/tobira4.c
+  src/r4/tekkyu4.c
+  src/tbl0.c
+  src/tbl1.c
+  src/r4/kowasi4.c
+  src/r4/renketu4.c
+  src/r4/udblk4.c
+  src/scrchk.c
+)
+
+set(R42D_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/ridechk.c
+  src/player.c
+  src/playsp.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/r4/coli4.c
+  src/r4/sw4.c
+  src/r4/zonetbl4.c
+  src/suicide.c
+  src/r4/game4.c
+  src/r4/playsub4.c
+  src/r4/awa.c
+  src/r4/tobira4.c
+  src/r4/harir4.c
+  src/r4/walls.c
+  src/r4/wall1.c
+  src/r4/tonbo.c
+  src/r4/amenbo.c
+  src/r4/tagameb4.c
+  src/r4/yago.c
+  src/r4/friend4.c
+  src/r4/lrblk4.c
+  src/r4/tekkyu.c
+  src/r4/col4d.c
+  src/r4/dev42d.c
+  src/r4/tekkyu4.c
+  src/r4/tobiras4.c
+  src/r4/z42dtbl.c
+  src/r4/playpat4.c
+  src/action.c
+  src/plchg.c
+  src/tbl0.c
+  src/tbl1.c
+  src/r4/act42c.c
+  src/r4/edtbl42c.c
+  src/r4/scr42c.c
+  src/r4/baneiwa.c
+  src/r4/kuzure4.c
+  src/r4/kowasi4.c
+  src/r4/daid4.c
+  src/r4/screw_c.c
+  src/r4/tekkyu1.c
+  src/r4/z42act.c
+  src/r4/wtbl42c.c
+  src/scrchk.c
+  src/r4/renketu4.c
+  src/r4/udblk4.c
+)
+
+set(R43C_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/ridechk.c
+  src/player.c
+  src/playsp.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/r4/coli4.c
+  src/r4/sw4.c
+  src/r4/swblk4.c
+  src/r4/zonetbl4.c
+  src/suicide.c
+  src/r4/game4.c
+  src/r4/playsub4.c
+  src/r4/awa.c
+  src/r4/walls.c
+  src/r4/wall1.c
+  src/r4/screw_a.c
+  src/r4/tonbo.c
+  src/r4/friend4.c
+  src/r4/tekkyu.c
+  src/r4/act43c.c
+  src/r4/col4c.c
+  src/r4/dev43c.c
+  src/r4/edtbl43c.c
+  src/r4/scr43c.c
+  src/scrchk.c
+  src/r4/z43act.c
+  src/r4/wall4.c
+  src/r4/boss_4.c
+  src/r4/boss_4_2.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/plchg.c
+  src/r4/renketu4.c
+  src/r4/z43ctbl.c
+  src/r4/wtbl43.c
+  src/r4/playpat4.c
+)
+
+set(R43D_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/ridechk.c
+  src/player.c
+  src/playsp.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/r4/coli4.c
+  src/r4/sw4.c
+  src/r4/swblk4.c
+  src/r4/zonetbl4.c
+  src/suicide.c
+  src/r4/game4.c
+  src/r4/playsub4.c
+  src/r4/awa.c
+  src/r4/walls.c
+  src/r4/wall1.c
+  src/r4/screw_a.c
+  src/r4/tonbo.c
+  src/r4/friend4.c
+  src/r4/tekkyu.c
+  src/r4/act43c.c
+  src/r4/edtbl43c.c
+  src/scrchk.c
+  src/r4/z43act.c
+  src/r4/wall4.c
+  src/r4/boss_4.c
+  src/r4/boss_4_2.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/plchg.c
+  src/r4/renketu4.c
+  src/r4/wtbl43.c
+  src/r4/playpat4.c
+  src/r4/col4d.c
+  src/r4/dev43d.c
+  src/r4/scr43d.c
+  src/r4/z43dtbl.c
+)
+
+set(R51A_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/ridechk.c
+  src/player.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/suicide.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/r5/act51a.c
+  src/r5/col5a.c
+  src/r5/coli5.c
+  src/r5/dev51a.c
+  src/r5/edtbl5.c
+  src/r5/game5.c
+  src/r5/playsp5.c
+  src/r5/scr51a.c
+  src/r5/z51act.c
+  src/r5/z51atbl.c
+  src/playsub.c
+  src/plpat6.c
+  src/scrchk.c
+  src/r5/zonetbl5.c
+  src/r5/beltsw5.c
+  src/r5/movie5.c
+  src/r5/friend5.c
+  src/r5/kemusi.c
+  src/r5/shoot5.c
+  src/r5/kumo.c
+  src/r5/iwa5.c
+  src/r5/iwa5wave.c
+  src/r5/denden.c
+  src/r5/hashi5.c
+  src/r5/hari5f.c
+  src/r5/harir5.c
+  src/r5/iwa5roll.c
+  src/r5/kowasi5.c
+  src/r5/kuzure5.c
+  src/r5/sasori.c
+  src/r5/hasira5.c
+  src/r5/et5.c
+  src/r5/buranko5.c
+  src/r5/dai_rd5.c
+)
+
+set(R51B_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/ridechk.c
+  src/player.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/suicide.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/r5/coli5.c
+  src/r5/edtbl5.c
+  src/r5/game5.c
+  src/r5/playsp5.c
+  src/r5/z51act.c
+  src/playsub.c
+  src/plpat6.c
+  src/scrchk.c
+  src/r5/zonetbl5.c
+  src/r5/beltsw5.c
+  src/r5/movie5.c
+  src/r5/friend5.c
+  src/r5/kemusi.c
+  src/r5/shoot5.c
+  src/r5/kumo.c
+  src/r5/iwa5.c
+  src/r5/iwa5wave.c
+  src/r5/denden.c
+  src/r5/hashi5.c
+  src/r5/act51a.c
+  src/r5/col5b.c
+  src/r5/dev51b.c
+  src/r5/scr51b.c
+  src/r5/z51btbl.c
+  src/r5/hari5f.c
+  src/r5/harir5.c
+  src/r5/kuzure5.c
+  src/r5/kowasi5.c
+  src/r5/hasira5.c
+  src/r5/sasori.c
+  src/r5/dai_rd5.c
+  src/r5/iwa5roll.c
+  src/r5/buranko5.c
+  src/r5/et5.c
+)
+
+set(R51C_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/ridechk.c
+  src/player.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/suicide.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/r5/act51a.c
+  src/r5/coli5.c
+  src/r5/edtbl5.c
+  src/r5/game5.c
+  src/r5/playsp5.c
+  src/r5/z51act.c
+  src/playsub.c
+  src/plpat6.c
+  src/scrchk.c
+  src/r5/zonetbl5.c
+  src/r5/beltsw5.c
+  src/r5/movie5.c
+  src/r5/friend5.c
+  src/r5/kemusi.c
+  src/r5/shoot5.c
+  src/r5/kumo.c
+  src/r5/iwa5.c
+  src/r5/iwa5wave.c
+  src/r5/denden.c
+  src/r5/hashi5.c
+  src/r5/col5c.c
+  src/r5/dev51c.c
+  src/r5/scr51c.c
+  src/r5/z51ctbl.c
+  src/r5/hari5f.c
+  src/r5/harir5.c
+  src/r5/kowasi5.c
+  src/r5/kuzure5.c
+  src/r5/hasira5.c
+  src/r5/sasori.c
+  src/r5/iwa5roll.c
+  src/r5/buranko5.c
+  src/r5/dai_rd5.c
+  src/r5/et5.c
+)
+
+set(R51D_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/ridechk.c
+  src/player.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/suicide.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/r5/act51a.c
+  src/r5/coli5.c
+  src/r5/edtbl5.c
+  src/r5/game5.c
+  src/r5/playsp5.c
+  src/r5/z51act.c
+  src/playsub.c
+  src/plpat6.c
+  src/scrchk.c
+  src/r5/zonetbl5.c
+  src/r5/beltsw5.c
+  src/r5/movie5.c
+  src/r5/friend5.c
+  src/r5/kemusi.c
+  src/r5/shoot5.c
+  src/r5/kumo.c
+  src/r5/iwa5.c
+  src/r5/iwa5wave.c
+  src/r5/denden.c
+  src/r5/hashi5.c
+  src/r5/col5d.c
+  src/r5/dev51d.c
+  src/r5/scr51d.c
+  src/r5/z51dtbl.c
+  src/r5/hari5f.c
+  src/r5/harir5.c
+  src/r5/kowasi5.c
+  src/r5/kuzure5.c
+  src/r5/hasira5.c
+  src/r5/sasori.c
+  src/r5/iwa5roll.c
+  src/r5/buranko5.c
+  src/r5/dai_rd5.c
+  src/r5/et5.c
+)
+
+set(R52A_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/ridechk.c
+  src/player.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/suicide.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/r5/act51a.c
+  src/r5/col5a.c
+  src/r5/coli5.c
+  src/r5/edtbl5.c
+  src/r5/game5.c
+  src/r5/playsp5.c
+  src/playsub.c
+  src/plpat6.c
+  src/scrchk.c
+  src/r5/zonetbl5.c
+  src/r5/beltsw5.c
+  src/r5/movie5.c
+  src/r5/friend5.c
+  src/r5/kemusi.c
+  src/r5/shoot5.c
+  src/r5/kumo.c
+  src/r5/iwa5.c
+  src/r5/iwa5wave.c
+  src/r5/denden.c
+  src/r5/hashi5.c
+  src/r5/hari5f.c
+  src/r5/harir5.c
+  src/r5/iwa5roll.c
+  src/r5/kowasi5.c
+  src/r5/kuzure5.c
+  src/r5/sasori.c
+  src/r5/hasira5.c
+  src/r5/et5.c
+  src/r5/buranko5.c
+  src/r5/dai_rd5.c
+  src/r5/dev52a.c
+  src/r5/scr52a.c
+  src/r5/z52act.c
+  src/r5/z52atbl.c
+)
+
+set(R52B_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/ridechk.c
+  src/player.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/suicide.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/r5/coli5.c
+  src/r5/edtbl5.c
+  src/r5/game5.c
+  src/r5/playsp5.c
+  src/playsub.c
+  src/plpat6.c
+  src/scrchk.c
+  src/r5/zonetbl5.c
+  src/r5/beltsw5.c
+  src/r5/movie5.c
+  src/r5/friend5.c
+  src/r5/kemusi.c
+  src/r5/shoot5.c
+  src/r5/kumo.c
+  src/r5/iwa5.c
+  src/r5/iwa5wave.c
+  src/r5/denden.c
+  src/r5/hashi5.c
+  src/r5/act51a.c
+  src/r5/col5b.c
+  src/r5/hari5f.c
+  src/r5/harir5.c
+  src/r5/kuzure5.c
+  src/r5/kowasi5.c
+  src/r5/hasira5.c
+  src/r5/sasori.c
+  src/r5/dai_rd5.c
+  src/r5/iwa5roll.c
+  src/r5/buranko5.c
+  src/r5/et5.c
+  src/r5/dev52b.c
+  src/r5/scr52b.c
+  src/r5/z52act.c
+  src/r5/z52btbl.c
+)
+
+set(R52C_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/ridechk.c
+  src/player.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/suicide.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/r5/act51a.c
+  src/r5/coli5.c
+  src/r5/edtbl5.c
+  src/r5/game5.c
+  src/r5/playsp5.c
+  src/playsub.c
+  src/plpat6.c
+  src/scrchk.c
+  src/r5/zonetbl5.c
+  src/r5/beltsw5.c
+  src/r5/movie5.c
+  src/r5/friend5.c
+  src/r5/kemusi.c
+  src/r5/shoot5.c
+  src/r5/kumo.c
+  src/r5/iwa5.c
+  src/r5/iwa5wave.c
+  src/r5/denden.c
+  src/r5/hashi5.c
+  src/r5/col5c.c
+  src/r5/hari5f.c
+  src/r5/harir5.c
+  src/r5/kowasi5.c
+  src/r5/kuzure5.c
+  src/r5/hasira5.c
+  src/r5/sasori.c
+  src/r5/iwa5roll.c
+  src/r5/buranko5.c
+  src/r5/dai_rd5.c
+  src/r5/et5.c
+  src/r5/dev52c.c
+  src/r5/scr52c.c
+  src/r5/z52act.c
+  src/r5/z52ctbl.c
+)
+
+set(R52D_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/ridechk.c
+  src/player.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/suicide.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/r5/act51a.c
+  src/r5/coli5.c
+  src/r5/edtbl5.c
+  src/r5/game5.c
+  src/r5/playsp5.c
+  src/playsub.c
+  src/plpat6.c
+  src/scrchk.c
+  src/r5/zonetbl5.c
+  src/r5/beltsw5.c
+  src/r5/movie5.c
+  src/r5/friend5.c
+  src/r5/kemusi.c
+  src/r5/shoot5.c
+  src/r5/kumo.c
+  src/r5/iwa5.c
+  src/r5/iwa5wave.c
+  src/r5/denden.c
+  src/r5/hashi5.c
+  src/r5/col5d.c
+  src/r5/hari5f.c
+  src/r5/harir5.c
+  src/r5/kowasi5.c
+  src/r5/kuzure5.c
+  src/r5/hasira5.c
+  src/r5/sasori.c
+  src/r5/iwa5roll.c
+  src/r5/buranko5.c
+  src/r5/dai_rd5.c
+  src/r5/et5.c
+  src/r5/dev52d.c
+  src/r5/scr52d.c
+  src/r5/z52act.c
+  src/r5/z52dtbl.c
+)
+
+set(R53C_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/ridechk.c
+  src/player.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/suicide.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/r5/coli5.c
+  src/r5/playsp5.c
+  src/playsub.c
+  src/plpat6.c
+  src/scrchk.c
+  src/r5/zonetbl5.c
+  src/r5/act53.c
+  src/r5/col5c.c
+  src/r5/dev53c.c
+  src/r5/scr53c.c
+  src/r5/z53act.c
+  src/r5/z53ctbl.c
+  src/r5/kuzure5.c
+  src/r5/shoot5.c
+  src/game.c
+  src/r5/dai_rd5.c
+  src/r5/boss_5.c
+  src/r5/edtbl53.c
+)
+
+set(R53D_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/ridechk.c
+  src/player.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/suicide.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/r5/coli5.c
+  src/r5/playsp5.c
+  src/playsub.c
+  src/plpat6.c
+  src/scrchk.c
+  src/r5/zonetbl5.c
+  src/r5/act53.c
+  src/r5/z53act.c
+  src/r5/kuzure5.c
+  src/r5/shoot5.c
+  src/game.c
+  src/r5/dai_rd5.c
+  src/r5/col5d.c
+  src/r5/dev53d.c
+  src/r5/scr53d.c
+  src/r5/z53dtbl.c
+  src/r5/boss_5.c
+  src/r5/edtbl53.c
+)
+
+set(R61A_SOURCES
+  src/action.c
+  src/actset.c
+  src/dircol.c
+  src/dummy.c
+  src/edit.c
+  src/equ.c
+  src/etc.c
+  src/fcol.c
+  src/game.c
+  src/goal.c
+  src/io.c
+  src/item.c
+  src/playsub.c
+  src/ridechk.c
+  src/ring.c
+  src/score.c
+  src/scrchk.c
+  src/spring.c
+  src/suicide.c
+  src/zone.c
+  src/loader2.c
+  src/dllmain.c
+  src/bmp.c
+  src/block.c
+  src/tbl0.c
+  src/tbl1.c
+  src/plpat6.c
+  src/save.c
+  src/r6/act61a.c
+  src/r6/coli6.c
+  src/r6/edtbl61a.c
+  src/r6/sw6.c
+  src/r6/tobira6.c
+  src/r6/trap_r6.c
+  src/r6/kdai6.c
+  src/r6/beem6.c
+  src/r6/block6.c
+  src/r6/col6a.c
+  src/r6/dair6.c
+  src/r6/egg6.c
+  src/r6/et6.c
+  src/r6/friend6.c
+  src/r6/hachi6.c
+  src/r6/minomusi.c
+  src/r6/movie6.c
+  src/r6/piston6.c
+  src/r6/scr61a.c
+  src/r6/semi.c
+  src/r6/shoot6.c
+  src/r6/tobidai6.c
+  src/r6/udblk6.c
+  src/r6/z61act.c
+  src/r6/z61atbl.c
+  src/r6/dev61a.c
+  src/r6/batta.c
+  src/r6/seesaw6.c
+  src/playsp.c
+  src/player6.c
+  src/plchg6.c
+  src/r6/zonetbl6.c
+)
+
+set(R61B_SOURCES
+  src/action.c
+  src/actset.c
+  src/dircol.c
+  src/dummy.c
+  src/edit.c
+  src/equ.c
+  src/etc.c
+  src/fcol.c
+  src/game.c
+  src/goal.c
+  src/io.c
+  src/item.c
+  src/playsub.c
+  src/ridechk.c
+  src/ring.c
+  src/score.c
+  src/scrchk.c
+  src/spring.c
+  src/suicide.c
+  src/zone.c
+  src/loader2.c
+  src/dllmain.c
+  src/bmp.c
+  src/block.c
+  src/tbl0.c
+  src/tbl1.c
+  src/plpat6.c
+  src/save.c
+  src/r6/coli6.c
+  src/r6/sw6.c
+  src/r6/tobira6.c
+  src/r6/trap_r6.c
+  src/r6/kdai6.c
+  src/r6/beem6.c
+  src/r6/block6.c
+  src/r6/dair6.c
+  src/r6/egg6.c
+  src/r6/et6.c
+  src/r6/friend6.c
+  src/r6/hachi6.c
+  src/r6/minomusi.c
+  src/r6/movie6.c
+  src/r6/piston6.c
+  src/r6/semi.c
+  src/r6/shoot6.c
+  src/r6/tobidai6.c
+  src/r6/udblk6.c
+  src/r6/batta.c
+  src/r6/seesaw6.c
+  src/playsp.c
+  src/player6.c
+  src/r6/col6b.c
+  src/r6/scr61b.c
+  src/r6/dev61b.c
+  src/r6/act61a.c
+  src/r6/edtbl61b.c
+  src/r6/z61btbl.c
+  src/r6/z61act.c
+  src/plchg6.c
+  src/r6/zonetbl6.c
+)
+
+set(R61C_SOURCES
+  src/action.c
+  src/actset.c
+  src/dircol.c
+  src/dummy.c
+  src/edit.c
+  src/equ.c
+  src/etc.c
+  src/fcol.c
+  src/game.c
+  src/goal.c
+  src/io.c
+  src/item.c
+  src/playsub.c
+  src/ridechk.c
+  src/ring.c
+  src/score.c
+  src/scrchk.c
+  src/spring.c
+  src/suicide.c
+  src/zone.c
+  src/loader2.c
+  src/dllmain.c
+  src/bmp.c
+  src/block.c
+  src/tbl0.c
+  src/tbl1.c
+  src/plpat6.c
+  src/save.c
+  src/r6/act61a.c
+  src/r6/coli6.c
+  src/r6/sw6.c
+  src/r6/tobira6.c
+  src/r6/trap_r6.c
+  src/r6/kdai6.c
+  src/r6/beem6.c
+  src/r6/block6.c
+  src/r6/dair6.c
+  src/r6/egg6.c
+  src/r6/et6.c
+  src/r6/friend6.c
+  src/r6/hachi6.c
+  src/r6/minomusi.c
+  src/r6/movie6.c
+  src/r6/piston6.c
+  src/r6/semi.c
+  src/r6/shoot6.c
+  src/r6/tobidai6.c
+  src/r6/udblk6.c
+  src/r6/z61act.c
+  src/r6/batta.c
+  src/r6/seesaw6.c
+  src/playsp.c
+  src/player6.c
+  src/r6/col6c.c
+  src/r6/dev61c.c
+  src/r6/scr61c.c
+  src/r6/z61ctbl.c
+  src/plchg6.c
+  src/r6/edtbl61c.c
+  src/r6/zonetbl6.c
+)
+
+set(R61D_SOURCES
+  src/action.c
+  src/actset.c
+  src/dircol.c
+  src/dummy.c
+  src/edit.c
+  src/equ.c
+  src/etc.c
+  src/fcol.c
+  src/game.c
+  src/goal.c
+  src/io.c
+  src/item.c
+  src/playsub.c
+  src/ridechk.c
+  src/ring.c
+  src/score.c
+  src/scrchk.c
+  src/spring.c
+  src/suicide.c
+  src/zone.c
+  src/loader2.c
+  src/dllmain.c
+  src/bmp.c
+  src/block.c
+  src/tbl0.c
+  src/tbl1.c
+  src/plpat6.c
+  src/save.c
+  src/r6/act61a.c
+  src/r6/coli6.c
+  src/r6/sw6.c
+  src/r6/tobira6.c
+  src/r6/trap_r6.c
+  src/r6/kdai6.c
+  src/r6/beem6.c
+  src/r6/block6.c
+  src/r6/dair6.c
+  src/r6/egg6.c
+  src/r6/et6.c
+  src/r6/friend6.c
+  src/r6/hachi6.c
+  src/r6/minomusi.c
+  src/r6/movie6.c
+  src/r6/piston6.c
+  src/r6/semi.c
+  src/r6/shoot6.c
+  src/r6/tobidai6.c
+  src/r6/udblk6.c
+  src/r6/z61act.c
+  src/r6/batta.c
+  src/r6/seesaw6.c
+  src/playsp.c
+  src/player6.c
+  src/r6/col6d.c
+  src/r6/dev61d.c
+  src/r6/scr61d.c
+  src/r6/z61dtbl.c
+  src/plchg6.c
+  src/r6/edtbl61c.c
+  src/r6/zonetbl6.c
+)
+
+set(R62A_SOURCES
+  src/action.c
+  src/actset.c
+  src/dircol.c
+  src/dummy.c
+  src/edit.c
+  src/equ.c
+  src/etc.c
+  src/fcol.c
+  src/game.c
+  src/goal.c
+  src/io.c
+  src/item.c
+  src/playsub.c
+  src/ridechk.c
+  src/ring.c
+  src/score.c
+  src/scrchk.c
+  src/spring.c
+  src/suicide.c
+  src/zone.c
+  src/loader2.c
+  src/dllmain.c
+  src/bmp.c
+  src/block.c
+  src/tbl0.c
+  src/tbl1.c
+  src/plpat6.c
+  src/save.c
+  src/r6/coli6.c
+  src/r6/sw6.c
+  src/r6/tobira6.c
+  src/r6/trap_r6.c
+  src/r6/kdai6.c
+  src/r6/beem6.c
+  src/r6/block6.c
+  src/r6/dair6.c
+  src/r6/egg6.c
+  src/r6/et6.c
+  src/r6/friend6.c
+  src/r6/hachi6.c
+  src/r6/minomusi.c
+  src/r6/movie6.c
+  src/r6/piston6.c
+  src/r6/semi.c
+  src/r6/shoot6.c
+  src/r6/tobidai6.c
+  src/r6/udblk6.c
+  src/r6/batta.c
+  src/r6/seesaw6.c
+  src/playsp.c
+  src/player6.c
+  src/r6/edtbl62a.c
+  src/r6/z62act.c
+  src/r6/z62atbl.c
+  src/r6/col6a.c
+  src/r6/togebl6a.c
+  src/r6/dev62a.c
+  src/r6/scr62a.c
+  src/plchg6.c
+  src/r6/act62a.c
+  src/r6/zonetbl6.c
+)
+
+set(R62B_SOURCES
+  src/action.c
+  src/actset.c
+  src/dircol.c
+  src/dummy.c
+  src/edit.c
+  src/equ.c
+  src/etc.c
+  src/fcol.c
+  src/game.c
+  src/goal.c
+  src/io.c
+  src/item.c
+  src/playsub.c
+  src/ridechk.c
+  src/ring.c
+  src/score.c
+  src/scrchk.c
+  src/spring.c
+  src/suicide.c
+  src/zone.c
+  src/loader2.c
+  src/dllmain.c
+  src/bmp.c
+  src/block.c
+  src/tbl0.c
+  src/tbl1.c
+  src/plpat6.c
+  src/save.c
+  src/r6/coli6.c
+  src/r6/sw6.c
+  src/r6/tobira6.c
+  src/r6/trap_r6.c
+  src/r6/kdai6.c
+  src/r6/beem6.c
+  src/r6/block6.c
+  src/r6/dair6.c
+  src/r6/egg6.c
+  src/r6/et6.c
+  src/r6/friend6.c
+  src/r6/hachi6.c
+  src/r6/minomusi.c
+  src/r6/movie6.c
+  src/r6/piston6.c
+  src/r6/semi.c
+  src/r6/shoot6.c
+  src/r6/tobidai6.c
+  src/r6/udblk6.c
+  src/r6/batta.c
+  src/r6/seesaw6.c
+  src/playsp.c
+  src/player6.c
+  src/r6/act62a.c
+  src/r6/col6b.c
+  src/r6/dev62b.c
+  src/r6/edtbl62b.c
+  src/r6/scr62b.c
+  src/r6/z62btbl.c
+  src/r6/z62act.c
+  src/r6/togebl6b.c
+  src/plchg6.c
+  src/r6/zonetbl6.c
+)
+
+set(R62C_SOURCES
+  src/action.c
+  src/actset.c
+  src/dircol.c
+  src/dummy.c
+  src/edit.c
+  src/equ.c
+  src/etc.c
+  src/fcol.c
+  src/game.c
+  src/goal.c
+  src/io.c
+  src/item.c
+  src/playsub.c
+  src/ridechk.c
+  src/ring.c
+  src/score.c
+  src/scrchk.c
+  src/spring.c
+  src/suicide.c
+  src/zone.c
+  src/loader2.c
+  src/dllmain.c
+  src/bmp.c
+  src/block.c
+  src/tbl0.c
+  src/tbl1.c
+  src/plpat6.c
+  src/save.c
+  src/r6/coli6.c
+  src/r6/sw6.c
+  src/r6/tobira6.c
+  src/r6/trap_r6.c
+  src/r6/kdai6.c
+  src/r6/beem6.c
+  src/r6/block6.c
+  src/r6/dair6.c
+  src/r6/egg6.c
+  src/r6/et6.c
+  src/r6/friend6.c
+  src/r6/hachi6.c
+  src/r6/minomusi.c
+  src/r6/movie6.c
+  src/r6/piston6.c
+  src/r6/semi.c
+  src/r6/shoot6.c
+  src/r6/tobidai6.c
+  src/r6/udblk6.c
+  src/r6/batta.c
+  src/r6/seesaw6.c
+  src/playsp.c
+  src/player6.c
+  src/r6/act62a.c
+  src/r6/col6c.c
+  src/r6/dev62c.c
+  src/r6/edtbl62c.c
+  src/r6/z62act.c
+  src/r6/z62ctbl.c
+  src/r6/togebl6d.c
+  src/r6/scr62c.c
+  src/plchg6.c
+  src/r6/zonetbl6.c
+)
+
+set(R62D_SOURCES
+  src/action.c
+  src/actset.c
+  src/dircol.c
+  src/dummy.c
+  src/edit.c
+  src/equ.c
+  src/etc.c
+  src/fcol.c
+  src/game.c
+  src/goal.c
+  src/io.c
+  src/item.c
+  src/playsub.c
+  src/ridechk.c
+  src/ring.c
+  src/score.c
+  src/scrchk.c
+  src/spring.c
+  src/suicide.c
+  src/zone.c
+  src/loader2.c
+  src/dllmain.c
+  src/bmp.c
+  src/block.c
+  src/tbl0.c
+  src/tbl1.c
+  src/plpat6.c
+  src/save.c
+  src/r6/coli6.c
+  src/r6/sw6.c
+  src/r6/tobira6.c
+  src/r6/trap_r6.c
+  src/r6/kdai6.c
+  src/r6/beem6.c
+  src/r6/block6.c
+  src/r6/dair6.c
+  src/r6/egg6.c
+  src/r6/et6.c
+  src/r6/friend6.c
+  src/r6/hachi6.c
+  src/r6/minomusi.c
+  src/r6/movie6.c
+  src/r6/piston6.c
+  src/r6/semi.c
+  src/r6/shoot6.c
+  src/r6/tobidai6.c
+  src/r6/udblk6.c
+  src/r6/batta.c
+  src/r6/seesaw6.c
+  src/playsp.c
+  src/player6.c
+  src/r6/col6d.c
+  src/r6/act62a.c
+  src/r6/dev62d.c
+  src/r6/edtbl62d.c
+  src/r6/scr62d.c
+  src/r6/togebl6d.c
+  src/r6/z62act.c
+  src/r6/z62dtbl.c
+  src/plchg6.c
+  src/r6/zonetbl6.c
+)
+
+set(R63C_SOURCES
+  src/action.c
+  src/actset.c
+  src/dircol.c
+  src/dummy.c
+  src/edit.c
+  src/equ.c
+  src/etc.c
+  src/fcol.c
+  src/game.c
+  src/goal.c
+  src/io.c
+  src/item.c
+  src/playsub.c
+  src/ridechk.c
+  src/ring.c
+  src/score.c
+  src/scrchk.c
+  src/spring.c
+  src/suicide.c
+  src/zone.c
+  src/loader2.c
+  src/dllmain.c
+  src/bmp.c
+  src/block.c
+  src/tbl0.c
+  src/tbl1.c
+  src/plpat6.c
+  src/save.c
+  src/r6/coli6.c
+  src/r6/sw6.c
+  src/r6/tobira6.c
+  src/r6/trap_r6.c
+  src/r6/kdai6.c
+  src/r6/beem6.c
+  src/r6/block6.c
+  src/r6/dair6.c
+  src/r6/egg6.c
+  src/r6/et6.c
+  src/r6/friend6.c
+  src/r6/movie6.c
+  src/r6/piston6.c
+  src/r6/shoot6.c
+  src/r6/tobidai6.c
+  src/r6/udblk6.c
+  src/r6/seesaw6.c
+  src/playsp.c
+  src/player6.c
+  src/r6/col6c.c
+  src/r6/togebl6d.c
+  src/plchg6.c
+  src/r6/act63.c
+  src/r6/dev63c.c
+  src/r6/edtbl63c.c
+  src/r6/scr63c.c
+  src/r6/z63ctbl.c
+  src/r6/z63act.c
+  src/r6/boss_6.c
+  src/r6/zonetbl6.c
+)
+
+set(R63D_SOURCES
+  src/action.c
+  src/actset.c
+  src/dircol.c
+  src/dummy.c
+  src/edit.c
+  src/equ.c
+  src/etc.c
+  src/fcol.c
+  src/game.c
+  src/goal.c
+  src/io.c
+  src/item.c
+  src/playsub.c
+  src/ridechk.c
+  src/ring.c
+  src/score.c
+  src/scrchk.c
+  src/spring.c
+  src/suicide.c
+  src/zone.c
+  src/loader2.c
+  src/dllmain.c
+  src/bmp.c
+  src/block.c
+  src/tbl0.c
+  src/tbl1.c
+  src/plpat6.c
+  src/save.c
+  src/r6/coli6.c
+  src/r6/sw6.c
+  src/r6/tobira6.c
+  src/r6/trap_r6.c
+  src/r6/kdai6.c
+  src/r6/beem6.c
+  src/r6/block6.c
+  src/r6/dair6.c
+  src/r6/egg6.c
+  src/r6/et6.c
+  src/r6/friend6.c
+  src/r6/movie6.c
+  src/r6/piston6.c
+  src/r6/shoot6.c
+  src/r6/tobidai6.c
+  src/r6/udblk6.c
+  src/r6/seesaw6.c
+  src/playsp.c
+  src/player6.c
+  src/r6/togebl6d.c
+  src/plchg6.c
+  src/r6/act63.c
+  src/r6/z63act.c
+  src/r6/boss_6.c
+  src/r6/col6d.c
+  src/r6/dev63d.c
+  src/r6/scr63d.c
+  src/r6/edtbl63c.c
+  src/r6/z63dtbl.c
+  src/r6/zonetbl6.c
+)
+
+set(R71A_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/player.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/suicide.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/playsub.c
+  src/plpat6.c
+  src/scrchk.c
+  src/game.c
+  src/r7/act71a.c
+  src/r7/chgban.c
+  src/r7/chgwall7.c
+  src/r7/col7a.c
+  src/r7/coli7.c
+  src/r7/dev71a.c
+  src/r7/edtbl7.c
+  src/r7/playsp7.c
+  src/r7/scr71a.c
+  src/r7/z71act.c
+  src/r7/z71atbl.c
+  src/r7/zonetbl7.c
+  src/ridechk.c
+  src/r7/wall7.c
+  src/r7/tekkyu7.c
+  src/r7/tekkyu7j.c
+  src/r7/slight7.c
+  src/r7/friend7.c
+  src/r7/branko7.c
+  src/r7/et7.c
+  src/r7/kanabun.c
+  src/r7/dango7.c
+  src/r7/movie7.c
+  src/r7/kabasira.c
+  src/r7/hotaru7.c
+)
+
+set(R71B_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/player.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/suicide.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/playsub.c
+  src/plpat6.c
+  src/scrchk.c
+  src/game.c
+  src/r7/act71a.c
+  src/r7/chgban.c
+  src/r7/chgwall7.c
+  src/r7/coli7.c
+  src/r7/edtbl7.c
+  src/r7/playsp7.c
+  src/r7/z71act.c
+  src/r7/zonetbl7.c
+  src/ridechk.c
+  src/r7/wall7.c
+  src/r7/tekkyu7.c
+  src/r7/tekkyu7j.c
+  src/r7/slight7.c
+  src/r7/friend7.c
+  src/r7/branko7.c
+  src/r7/et7.c
+  src/r7/kanabun.c
+  src/r7/dango7.c
+  src/r7/movie7.c
+  src/r7/col7b.c
+  src/r7/scr71b.c
+  src/r7/dev71b.c
+  src/r7/z71btbl.c
+  src/r7/hotaru7.c
+  src/r7/kabasira.c
+)
+
+set(R71C_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/player.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/suicide.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/playsub.c
+  src/plpat6.c
+  src/scrchk.c
+  src/game.c
+  src/r7/act71a.c
+  src/r7/chgban.c
+  src/r7/chgwall7.c
+  src/r7/coli7.c
+  src/r7/edtbl7.c
+  src/r7/playsp7.c
+  src/r7/z71act.c
+  src/r7/zonetbl7.c
+  src/ridechk.c
+  src/r7/wall7.c
+  src/r7/tekkyu7.c
+  src/r7/tekkyu7j.c
+  src/r7/slight7.c
+  src/r7/friend7.c
+  src/r7/branko7.c
+  src/r7/et7.c
+  src/r7/kanabun.c
+  src/r7/dango7.c
+  src/r7/movie7.c
+  src/r7/col7c.c
+  src/r7/z71ctbl.c
+  src/r7/scr71c.c
+  src/r7/dev71c.c
+  src/r7/kabasira.c
+  src/r7/hotaru7.c
+)
+
+set(R71D_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/player.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/suicide.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/playsub.c
+  src/plpat6.c
+  src/scrchk.c
+  src/game.c
+  src/r7/act71a.c
+  src/r7/chgban.c
+  src/r7/chgwall7.c
+  src/r7/coli7.c
+  src/r7/edtbl7.c
+  src/r7/playsp7.c
+  src/r7/z71act.c
+  src/r7/zonetbl7.c
+  src/ridechk.c
+  src/r7/wall7.c
+  src/r7/tekkyu7.c
+  src/r7/tekkyu7j.c
+  src/r7/slight7.c
+  src/r7/friend7.c
+  src/r7/branko7.c
+  src/r7/et7.c
+  src/r7/kanabun.c
+  src/r7/dango7.c
+  src/r7/movie7.c
+  src/r7/col7d.c
+  src/r7/dev71d.c
+  src/r7/scr71d.c
+  src/r7/z71dtbl.c
+  src/r7/hotaru7.c
+  src/r7/kabasira.c
+)
+
+set(R72A_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/player.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/suicide.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/playsub.c
+  src/plpat6.c
+  src/scrchk.c
+  src/game.c
+  src/r7/act71a.c
+  src/r7/chgban.c
+  src/r7/chgwall7.c
+  src/r7/col7a.c
+  src/r7/coli7.c
+  src/r7/edtbl7.c
+  src/r7/playsp7.c
+  src/r7/zonetbl7.c
+  src/ridechk.c
+  src/r7/wall7.c
+  src/r7/tekkyu7.c
+  src/r7/tekkyu7j.c
+  src/r7/slight7.c
+  src/r7/friend7.c
+  src/r7/branko7.c
+  src/r7/et7.c
+  src/r7/kanabun.c
+  src/r7/dango7.c
+  src/r7/movie7.c
+  src/r7/scr72a.c
+  src/r7/z72act.c
+  src/r7/dev72a.c
+  src/r7/z72atbl.c
+  src/r7/hotaru7.c
+  src/r7/kabasira.c
+)
+
+set(R72B_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/player.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/suicide.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/playsub.c
+  src/plpat6.c
+  src/scrchk.c
+  src/game.c
+  src/r7/act71a.c
+  src/r7/chgban.c
+  src/r7/chgwall7.c
+  src/r7/coli7.c
+  src/r7/edtbl7.c
+  src/r7/playsp7.c
+  src/r7/zonetbl7.c
+  src/ridechk.c
+  src/r7/wall7.c
+  src/r7/tekkyu7.c
+  src/r7/tekkyu7j.c
+  src/r7/slight7.c
+  src/r7/friend7.c
+  src/r7/branko7.c
+  src/r7/et7.c
+  src/r7/kanabun.c
+  src/r7/dango7.c
+  src/r7/movie7.c
+  src/r7/z72act.c
+  src/r7/col7b.c
+  src/r7/dev72b.c
+  src/r7/scr72b.c
+  src/r7/z72btbl.c
+  src/r7/hotaru7.c
+  src/r7/kabasira.c
+)
+
+set(R72C_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/player.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/suicide.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/playsub.c
+  src/plpat6.c
+  src/scrchk.c
+  src/game.c
+  src/r7/act71a.c
+  src/r7/chgban.c
+  src/r7/chgwall7.c
+  src/r7/coli7.c
+  src/r7/edtbl7.c
+  src/r7/playsp7.c
+  src/r7/zonetbl7.c
+  src/ridechk.c
+  src/r7/wall7.c
+  src/r7/tekkyu7.c
+  src/r7/tekkyu7j.c
+  src/r7/slight7.c
+  src/r7/friend7.c
+  src/r7/branko7.c
+  src/r7/et7.c
+  src/r7/kanabun.c
+  src/r7/dango7.c
+  src/r7/movie7.c
+  src/r7/z72act.c
+  src/r7/col7c.c
+  src/r7/dev72c.c
+  src/r7/scr72c.c
+  src/r7/z72ctbl.c
+  src/r7/hotaru7.c
+  src/r7/kabasira.c
+)
+
+set(R72D_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/player.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/suicide.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/playsub.c
+  src/plpat6.c
+  src/scrchk.c
+  src/game.c
+  src/r7/act71a.c
+  src/r7/chgban.c
+  src/r7/chgwall7.c
+  src/r7/coli7.c
+  src/r7/edtbl7.c
+  src/r7/playsp7.c
+  src/r7/zonetbl7.c
+  src/ridechk.c
+  src/r7/wall7.c
+  src/r7/tekkyu7.c
+  src/r7/tekkyu7j.c
+  src/r7/slight7.c
+  src/r7/friend7.c
+  src/r7/branko7.c
+  src/r7/et7.c
+  src/r7/kanabun.c
+  src/r7/dango7.c
+  src/r7/movie7.c
+  src/r7/z72act.c
+  src/r7/col7d.c
+  src/r7/dev72d.c
+  src/r7/scr72d.c
+  src/r7/z72dtbl.c
+  src/r7/hotaru7.c
+  src/r7/kabasira.c
+)
+
+set(R73C_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/player.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/suicide.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/playsub.c
+  src/plpat6.c
+  src/scrchk.c
+  src/game.c
+  src/r7/chgban.c
+  src/r7/chgwall7.c
+  src/r7/coli7.c
+  src/r7/playsp7.c
+  src/r7/zonetbl7.c
+  src/ridechk.c
+  src/r7/wall7.c
+  src/r7/tekkyu7.c
+  src/r7/tekkyu7j.c
+  src/r7/friend7.c
+  src/r7/branko7.c
+  src/r7/movie7.c
+  src/r7/scr73c.c
+  src/r7/act73.c
+  src/r7/edtbl73.c
+  src/r7/z73act.c
+  src/r7/gaitou73.c
+  src/r7/wall73.c
+  src/r7/emie7.c
+  src/r7/col7c.c
+  src/r7/z73ctbl.c
+  src/r7/dev73c.c
+  src/r7/hari73.c
+  src/r7/emie7cg.c
+  src/r7/boss_7.c
+)
+
+set(R73D_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/player.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/suicide.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/playsub.c
+  src/plpat6.c
+  src/scrchk.c
+  src/game.c
+  src/r7/chgban.c
+  src/r7/chgwall7.c
+  src/r7/coli7.c
+  src/r7/playsp7.c
+  src/r7/zonetbl7.c
+  src/ridechk.c
+  src/r7/wall7.c
+  src/r7/tekkyu7.c
+  src/r7/tekkyu7j.c
+  src/r7/friend7.c
+  src/r7/branko7.c
+  src/r7/movie7.c
+  src/r7/act73.c
+  src/r7/edtbl73.c
+  src/r7/z73act.c
+  src/r7/gaitou73.c
+  src/r7/wall73.c
+  src/r7/emie7.c
+  src/r7/col7d.c
+  src/r7/scr73d.c
+  src/r7/dev73d.c
+  src/r7/z73dtbl.c
+  src/r7/hari73.c
+  src/r7/emie7cg.c
+  src/r7/boss_7.c
+)
+
+set(R81A_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/player.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/suicide.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/playsub.c
+  src/game.c
+  src/ridechk.c
+  src/plpat8.c
+  src/r8/act81a.c
+  src/r8/col8a.c
+  src/r8/coli8.c
+  src/r8/dev81a.c
+  src/r8/edtbl81.c
+  src/playsp.c
+  src/r8/scr81a.c
+  src/r8/z81act.c
+  src/r8/z81atbl.c
+  src/r8/zonetbl8.c
+  src/r8/trap_r81.c
+  src/r8/kabuto8.c
+  src/r8/koma8.c
+  src/r8/sw8.c
+  src/r8/okusieso.c
+  src/r8/tobira.c
+  src/r8/konbea.c
+  src/r8/scarab.c
+  src/r8/kuzure8.c
+  src/r8/nokogiri.c
+  src/r8/propera8.c
+  src/r8/dai8.c
+  src/r8/hachi8.c
+  src/r8/et8.c
+  src/r8/friend8.c
+  src/r8/piston.c
+  src/r8/haguruma.c
+  src/r8/scrchk8.c
+)
+
+set(R81B_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/player.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/suicide.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/playsub.c
+  src/game.c
+  src/ridechk.c
+  src/plpat8.c
+  src/r8/act81a.c
+  src/r8/coli8.c
+  src/r8/edtbl81.c
+  src/playsp.c
+  src/r8/z81act.c
+  src/r8/zonetbl8.c
+  src/r8/trap_r81.c
+  src/r8/kabuto8.c
+  src/r8/koma8.c
+  src/r8/sw8.c
+  src/r8/okusieso.c
+  src/r8/tobira.c
+  src/r8/konbea.c
+  src/r8/scarab.c
+  src/r8/kuzure8.c
+  src/r8/nokogiri.c
+  src/r8/propera8.c
+  src/r8/dai8.c
+  src/r8/hachi8.c
+  src/r8/et8.c
+  src/r8/friend8.c
+  src/r8/piston.c
+  src/r8/haguruma.c
+  src/r8/col8b.c
+  src/r8/scr81b.c
+  src/r8/z81btbl.c
+  src/r8/dev81b.c
+  src/r8/scrchk8.c
+)
+
+set(R81C_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/player.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/suicide.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/playsub.c
+  src/game.c
+  src/ridechk.c
+  src/plpat8.c
+  src/r8/act81a.c
+  src/r8/coli8.c
+  src/r8/edtbl81.c
+  src/playsp.c
+  src/r8/z81act.c
+  src/r8/zonetbl8.c
+  src/r8/trap_r81.c
+  src/r8/kabuto8.c
+  src/r8/koma8.c
+  src/r8/sw8.c
+  src/r8/okusieso.c
+  src/r8/tobira.c
+  src/r8/konbea.c
+  src/r8/scarab.c
+  src/r8/kuzure8.c
+  src/r8/nokogiri.c
+  src/r8/propera8.c
+  src/r8/dai8.c
+  src/r8/hachi8.c
+  src/r8/et8.c
+  src/r8/friend8.c
+  src/r8/piston.c
+  src/r8/haguruma.c
+  src/r8/col8c.c
+  src/r8/scr81c.c
+  src/r8/z81ctbl.c
+  src/r8/dev81c.c
+  src/r8/scrchk8.c
+)
+
+set(R81D_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/player.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/suicide.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/playsub.c
+  src/game.c
+  src/ridechk.c
+  src/plpat8.c
+  src/r8/act81a.c
+  src/r8/coli8.c
+  src/r8/edtbl81.c
+  src/playsp.c
+  src/r8/z81act.c
+  src/r8/zonetbl8.c
+  src/r8/trap_r81.c
+  src/r8/kabuto8.c
+  src/r8/koma8.c
+  src/r8/sw8.c
+  src/r8/okusieso.c
+  src/r8/tobira.c
+  src/r8/konbea.c
+  src/r8/scarab.c
+  src/r8/kuzure8.c
+  src/r8/nokogiri.c
+  src/r8/propera8.c
+  src/r8/dai8.c
+  src/r8/hachi8.c
+  src/r8/et8.c
+  src/r8/friend8.c
+  src/r8/piston.c
+  src/r8/haguruma.c
+  src/r8/col8d.c
+  src/r8/scr81d.c
+  src/r8/z81dtbl.c
+  src/r8/dev81d.c
+  src/r8/scrchk8.c
+)
+
+set(R82A_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/player.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/suicide.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/playsub.c
+  src/game.c
+  src/ridechk.c
+  src/plpat8.c
+  src/r8/col8a.c
+  src/r8/coli8.c
+  src/r8/zonetbl8.c
+  src/r8/kabuto8.c
+  src/r8/koma8.c
+  src/r8/sw8.c
+  src/r8/okusieso.c
+  src/r8/tobira.c
+  src/r8/kuzure8.c
+  src/r8/dai8.c
+  src/r8/et8.c
+  src/r8/friend8.c
+  src/r8/piston.c
+  src/r8/haguruma.c
+  src/r8/playsp8.c
+  src/r8/act82a.c
+  src/r8/edtbl82.c
+  src/r8/trap_r82.c
+  src/r8/z82act.c
+  src/r8/z82atbl.c
+  src/r8/beam.c
+  src/r8/shut.c
+  src/r8/dev82a.c
+  src/r8/shoot.c
+  src/r8/dango8.c
+  src/r8/legmeca8.c
+  src/r8/bigbom8.c
+  src/r8/scr82a.c
+  src/r8/scrchk8.c
+  src/r8/jettoge8.c
+  src/r8/pipe8.c
+)
+
+set(R82B_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/player.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/suicide.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/playsub.c
+  src/game.c
+  src/ridechk.c
+  src/plpat8.c
+  src/r8/coli8.c
+  src/r8/zonetbl8.c
+  src/r8/kabuto8.c
+  src/r8/koma8.c
+  src/r8/sw8.c
+  src/r8/okusieso.c
+  src/r8/tobira.c
+  src/r8/kuzure8.c
+  src/r8/dai8.c
+  src/r8/et8.c
+  src/r8/friend8.c
+  src/r8/piston.c
+  src/r8/haguruma.c
+  src/r8/playsp8.c
+  src/r8/act82a.c
+  src/r8/edtbl82.c
+  src/r8/trap_r82.c
+  src/r8/z82act.c
+  src/r8/beam.c
+  src/r8/shut.c
+  src/r8/shoot.c
+  src/r8/dango8.c
+  src/r8/legmeca8.c
+  src/r8/bigbom8.c
+  src/r8/scrchk8.c
+  src/r8/jettoge8.c
+  src/r8/pipe8.c
+  src/r8/col8b.c
+  src/r8/dev82b.c
+  src/r8/scr82b.c
+  src/r8/z82btbl.c
+)
+
+set(R82C_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/player.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/suicide.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/playsub.c
+  src/game.c
+  src/ridechk.c
+  src/plpat8.c
+  src/r8/coli8.c
+  src/r8/zonetbl8.c
+  src/r8/kabuto8.c
+  src/r8/koma8.c
+  src/r8/sw8.c
+  src/r8/okusieso.c
+  src/r8/tobira.c
+  src/r8/kuzure8.c
+  src/r8/dai8.c
+  src/r8/et8.c
+  src/r8/friend8.c
+  src/r8/piston.c
+  src/r8/haguruma.c
+  src/r8/playsp8.c
+  src/r8/act82a.c
+  src/r8/edtbl82.c
+  src/r8/trap_r82.c
+  src/r8/z82act.c
+  src/r8/beam.c
+  src/r8/shut.c
+  src/r8/shoot.c
+  src/r8/dango8.c
+  src/r8/legmeca8.c
+  src/r8/bigbom8.c
+  src/r8/scrchk8.c
+  src/r8/jettoge8.c
+  src/r8/pipe8.c
+  src/r8/col8c.c
+  src/r8/dev82c.c
+  src/r8/scr82c.c
+  src/r8/z82ctbl.c
+)
+
+set(R82D_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/player.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/suicide.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/playsub.c
+  src/game.c
+  src/ridechk.c
+  src/plpat8.c
+  src/r8/coli8.c
+  src/r8/zonetbl8.c
+  src/r8/kabuto8.c
+  src/r8/koma8.c
+  src/r8/sw8.c
+  src/r8/okusieso.c
+  src/r8/tobira.c
+  src/r8/kuzure8.c
+  src/r8/dai8.c
+  src/r8/et8.c
+  src/r8/friend8.c
+  src/r8/piston.c
+  src/r8/haguruma.c
+  src/r8/playsp8.c
+  src/r8/act82a.c
+  src/r8/edtbl82.c
+  src/r8/trap_r82.c
+  src/r8/z82act.c
+  src/r8/beam.c
+  src/r8/shut.c
+  src/r8/shoot.c
+  src/r8/dango8.c
+  src/r8/legmeca8.c
+  src/r8/bigbom8.c
+  src/r8/scrchk8.c
+  src/r8/jettoge8.c
+  src/r8/pipe8.c
+  src/r8/col8d.c
+  src/r8/dev82d.c
+  src/r8/scr82d.c
+  src/r8/z82dtbl.c
+)
+
+set(R83C_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/player.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/suicide.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/playsub.c
+  src/game.c
+  src/ridechk.c
+  src/plpat8.c
+  src/r8/coli8.c
+  src/r8/zonetbl8.c
+  src/r8/col8c.c
+  src/r8/edtbl83.c
+  src/r8/scr83c.c
+  src/r8/scrchk8.c
+  src/r8/z83act.c
+  src/r8/z83ctbl.c
+  src/r8/haguruma.c
+  src/r8/boss_8.c
+  src/r8/piston.c
+  src/r8/kabuto8.c
+  src/r8/kuzure8.c
+  src/r8/nokogiri.c
+  src/r8/tobira.c
+  src/r8/jettoge8.c
+  src/r8/dai8.c
+  src/r8/friend8.c
+  src/r8/sw8.c
+  src/r8/koma8.c
+  src/r8/dev83c.c
+  src/r8/act83.c
+  src/r8/playsp8.c
+  src/r3/bobin.c
+  src/r8/shut.c
+  src/r8/emie8.c
+  src/r8/konbea83.c
+  src/r8/trap_r83.c
+  src/r8/hota8c.c
+)
+
+set(R83D_SOURCES
+  src/actset.c
+  src/etc.c
+  src/fcol.c
+  src/io.c
+  src/spring.c
+  src/score.c
+  src/save.c
+  src/ring.c
+  src/player.c
+  src/dircol.c
+  src/edit.c
+  src/goal.c
+  src/item.c
+  src/zone.c
+  src/equ.c
+  src/loader2.c
+  src/bmp.c
+  src/dummy.c
+  src/dllmain.c
+  src/suicide.c
+  src/plchg.c
+  src/action.c
+  src/tbl0.c
+  src/tbl1.c
+  src/playsub.c
+  src/game.c
+  src/ridechk.c
+  src/plpat8.c
+  src/r8/coli8.c
+  src/r8/zonetbl8.c
+  src/r8/edtbl83.c
+  src/r8/scrchk8.c
+  src/r8/z83act.c
+  src/r8/haguruma.c
+  src/r8/boss_8.c
+  src/r8/piston.c
+  src/r8/kabuto8.c
+  src/r8/kuzure8.c
+  src/r8/nokogiri.c
+  src/r8/tobira.c
+  src/r8/jettoge8.c
+  src/r8/dai8.c
+  src/r8/friend8.c
+  src/r8/sw8.c
+  src/r8/koma8.c
+  src/r8/act83.c
+  src/r8/playsp8.c
+  src/r3/bobin.c
+  src/r8/shut.c
+  src/r8/trap_r83.c
+  src/r8/konbea83.c
+  src/r8/emie8.c
+  src/r8/col8d.c
+  src/r8/dev83d.c
+  src/r8/scr83d.c
+  src/r8/z83dtbl.c
+  src/r8/hota8d.c
+)
+
+set(SPECIAL_SOURCES
+  src/special/act_s.c
+  src/special/bact.c
+  src/special/bmp.c
+  src/special/coli_s.c
+  src/special/common.c
+  src/special/data_s1.c
+  src/special/ens.c
+  src/special/etc_m.c
+  src/special/etc_s.c
+  src/special/fadein.c
+  src/special/game.c
+  src/special/kaiten.c
+  src/special/pls.c
+  src/special/spm_equ.c
+  src/special/sps_equ.c
+  src/dllmain.c
+  src/special/sin.c
+)
+
+set(WARP_SOURCES
+  src/warp/warp.c
+  src/action.c
+  src/dllmain.c
+  src/equ.c
+  src/bmp.c
+  src/io.c
+)
+
+set(BESTTIME_SOURCES
+  src/title/besttime/besentry.c
+  src/title/besttime/bestbmp.c
+  src/title/besttime/bestdo.c
+  src/title/besttime/bestgrid.c
+  src/title/besttime/bestitem.c
+  src/title/besttime/bestpalt.c
+  src/title/besttime/bestsprt.c
+  src/title/common/hmx_oeeactl.c
+)
+
+set(OPENING_SOURCES
+  src/title/opening/opnbmp.c
+  src/title/opening/opndo.c
+  src/title/opening/opnentry.c
+  src/title/opening/opngrid.c
+  src/title/common/hmx_oeeactl.c
+  src/title/opening/opnpalt.c
+)
+
+set(PLANET_SOURCES
+  src/title/planet/actm.c
+  src/title/planet/asciiset.c
+  src/title/planet/ascmap.c
+  src/title/planet/chamov.c
+  src/title/planet/data_m.c
+  src/title/planet/etc.c
+  src/title/planet/flash.c
+  src/title/planet/kaiten.c
+  src/title/planet/lplmain.c
+  src/title/planet/palet.c
+  src/title/planet/plm.c
+  src/title/planet/pls.c
+  src/title/planet/spm_equ.c
+  src/title/planet/sps_equ.c
+)
+
+set(SAVEDATA_SOURCES
+  src/title/savedata/svdbmp.c
+  src/title/savedata/svddo.c
+  src/title/savedata/svdedit.c
+  src/title/savedata/svdentry.c
+  src/title/savedata/svdfile.c
+  src/title/savedata/svdgrid.c
+  src/title/savedata/svdmenu.c
+  src/title/savedata/svdpalt.c
+  src/title/savedata/svdsprt.c
+  src/title/common/hmx_oeeactl.c
+)
+
+set(SOUNDTST_SOURCES
+  src/title/soundtst/sndentry.c
+  src/title/soundtst/sndbmp.c
+  src/title/soundtst/snddo.c
+  src/title/soundtst/sndgrid.c
+  src/title/soundtst/sndpalt.c
+  src/title/soundtst/sndsprt.c
+  src/title/common/hmx_oeeactl.c
+)
+
+set(STAGETST_SOURCES
+  src/title/stagetst/stgentry.c
+  src/title/stagetst/stgbmp.c
+  src/title/stagetst/stgdo.c
+  src/title/stagetst/stggrid.c
+  src/title/stagetst/stgitem.c
+  src/title/stagetst/stgpalt.c
+  src/title/stagetst/stgsprt.c
+  src/title/common/hmx_oeeactl.c
+)
+
+set(TA_SOURCES
+  src/title/ta/ta.c
+  src/title/ta/fadein.c
+  src/title/ta/tacolor.c
+  src/title/ta/taeactrl.c
+)
+
+set(THANKS_SOURCES
+  src/title/thanks/act.c
+  src/title/thanks/bm_m.c
+  src/title/thanks/chrset.c
+  src/title/thanks/data_sp.c
+  src/title/thanks/etc_m.c
+  src/title/thanks/fade.c
+  src/title/thanks/game.c
+  src/title/thanks/io.c
+  src/title/thanks/spm.c
+  src/title/thanks/sprmove.c
+)
+
+set(VISUALMD_SOURCES
+  src/title/visualmd/vmdbmp.c
+  src/title/visualmd/vmddo.c
+  src/title/visualmd/vmdentry.c
+  src/title/visualmd/vmdgrid.c
+  src/title/common/hmx_oeeactl.c
+  src/title/visualmd/vmdpalt.c
+  src/title/visualmd/vmdsprt.c
+)
+
+function(soniccd_add_variant variant)
+  string(TOLOWER "${variant}" target_name)
+  set(target "${target_name}")
+
+  set(target_sources ${${variant}_SOURCES})
+  if(NOT target_sources)
+    message(FATAL_ERROR "No source list defined for variant ${variant}")
+  endif()
+
+  add_library(${target} SHARED ${target_sources})
+  set_target_properties(${target} PROPERTIES
+    WINDOWS_EXPORT_ALL_SYMBOLS ON
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+  )
+
+  target_include_directories(${target} PRIVATE ${SONICCD_INCLUDE_DIRS})
+  target_compile_definitions(${target} PRIVATE ${${variant}_DEFINES})
+
+  if(MSVC)
+    target_compile_definitions(${target} PRIVATE _CRT_SECURE_NO_WARNINGS WIN32 _WINDOWS)
+    target_compile_options(${target} PRIVATE
+      /W3
+      "/FI${SONICCD_MSVC_COMPAT_HEADER}"
+    )
+  else()
+    target_compile_options(${target} PRIVATE
+      -Wall
+    )
+    if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+      target_compile_options(${target} PRIVATE -fcommon)
+    endif()
+  endif()
+endfunction()
+
+if(SONICCD_VARIANTS STREQUAL "all")
+  set(SONICCD_SELECTED_VARIANTS ${SONICCD_ALL_VARIANTS})
+else()
+  set(SONICCD_SELECTED_VARIANTS ${SONICCD_VARIANTS})
+endif()
+
+foreach(variant IN LISTS SONICCD_SELECTED_VARIANTS)
+  list(FIND SONICCD_ALL_VARIANTS "${variant}" variant_index)
+  if(variant_index EQUAL -1)
+    message(FATAL_ERROR "Unknown SONICCD variant: ${variant}")
+  endif()
+  soniccd_add_variant(${variant})
+  string(TOLOWER "${variant}" target_name)
+  list(APPEND SONICCD_SELECTED_TARGETS ${target_name})
+endforeach()
+
+add_custom_target(variants DEPENDS ${SONICCD_SELECTED_TARGETS})
