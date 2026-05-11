@@ -1,0 +1,25 @@
+#include "../types.h"
+extern int_union overint;
+extern Uint8* demoadr;
+extern Sint32 hsdata5;
+extern Sint32 hsdata4;
+extern Sint32 hsdata3;
+extern Sint32 hsdata2;
+extern Sint32 hsdata1;
+extern Sint32 hsdata0;
+extern Uint16 sonicup_no;
+extern Sint16 gmtime1;
+extern Sint16 gmtime0;
+extern Uint16 intmode;
+extern Uint8 spgmmode_tmp;
+extern Uint8 clfflg;
+extern Uint8 demoflg;
+extern Uint8 pauseflg;
+extern PALETTEENTRY colorsave[64];
+extern Uint8 demowk[4096];
+extern Uint16 dummy100[128];
+extern Uint16 dummy000[128];
+extern Uint32 hdatabuf_l[128];
+extern Uint32* hdatabuf;
+extern Uint16 mpopenwk[1024];
+extern Uint8 rlscrflg_save;

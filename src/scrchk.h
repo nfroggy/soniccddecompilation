@@ -1,0 +1,26 @@
+#include "types.h"
+void scrchk(void);
+void zone1chk(void);
+void zone11chk(void);
+void zone12chk(void);
+void zone13chk(void);
+void zone3chk(void);
+void zone31chk(void);
+void zone33chk(void);
+void zone6chk(void);
+void zone5chk(void);
+void zone51chk(void);
+void zone53chk(void);
+void zone8chk(void);
+void zone81chk(void);
+void zone83chk(void);
+void zone4chk(void);
+void zone41chk(void);
+void zone42chk(void);
+void zone43chk(void);
+void zone7chk(void);
+void zone71chk(void);
+void zone72chk(void);
+void zone73chk(void);
+Sint32 bossclr_scr(Uint16 wD0, Uint16 wD1);
+Sint32 bossclr_scrset(Uint16 wD1);

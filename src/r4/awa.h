@@ -1,0 +1,10 @@
+#include "../types.h"
+void awa(sprite_status* pActwk);
+void awainit(sprite_status* pActwk);
+void awamove(sprite_status* pActwk);
+void awamove2(sprite_status* pActwk);
+void awamove3(sprite_status* pActwk);
+void awamove4(sprite_status* pActwk);
+void awamaster(sprite_status* pActwk);
+void awafoutchk(sprite_status* pActwk);
+Sint32 awacoli(sprite_status* pActwk);

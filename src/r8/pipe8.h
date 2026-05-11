@@ -1,0 +1,21 @@
+#include "../types.h"
+void pipe8(sprite_status* actionwk);
+void act0wait(sprite_status* actionwk);
+void act0wait1(sprite_status* actionwk);
+void act0init(sprite_status* actionwk);
+void act0init_sub(sprite_status* actionwk, sprite_status* a6);
+void act0move(sprite_status* actionwk);
+void shatter(sprite_status* actionwk);
+void act1init(sprite_status* actionwk);
+void act1closed(sprite_status* actionwk);
+void act1closed1(sprite_status* actionwk);
+void to_act1open_a(sprite_status* actionwk);
+void to_act1opend_b(sprite_status* actionwk);
+void act1open_a(sprite_status* actionwk);
+void act1opend_a(sprite_status* actionwk);
+void to_act1closed_a(sprite_status* actionwk);
+void act1opend_b(sprite_status* actionwk);
+void to_act1close_b(sprite_status* actionwk);
+void act1close_b(sprite_status* actionwk);
+Sint16 act1check2(sprite_status* actionwk, sprite_status* a6, Sint16 d0, Sint16 d1, Sint16 d2, Sint16 d3);
+Sint16 act1check1(sprite_status* actionwk, sprite_status* a6, Sint16 d0, Sint16 d1, Sint16 d2, Sint16 d3);

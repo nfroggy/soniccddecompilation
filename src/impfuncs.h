@@ -1,0 +1,27 @@
+#include "types.h"
+extern void(*CDPause)(Sint16);
+extern void(*CDPlay)(Sint16);
+extern void(*ChangeTileBmp)(Sint32, Sint32);
+extern void(*sCloseFile)(Sint32);
+extern void(*ClrSpriteDebug)(void);
+extern void(*EAsprset)(Sint16, Sint16, Uint16, Uint16, Uint16);
+extern Sint32(*sGetFileSize)(Sint32);
+extern void*(*sMemAlloc)(Sint32);
+extern Sint32(*sMemCmp)(void*, void*, Sint32);
+extern void(*sMemCpy)(void*, void*, Sint32);
+extern void(*sMemFree)(void*);
+extern void(*sMemSet)(void*, Uint8, Sint32);
+extern Sint32(*sReadFile)(Sint32, void*, Sint32);
+extern Sint32(*ReadIndx)(Uint32);
+extern Uint32(*ReadScore)(Sint32, char*, Uint32);
+extern Sint32(*sOpenFile)(char*);
+extern Uint32(*OpenScore)(Sint32);
+extern void(*sOutputDebugString)(char*);
+extern void(*sPrintf)(char*, const char*, ...);
+extern Sint32(*sRandom)(void);
+extern Sint32(*SetGrid)(Sint32, Sint32, Sint32, Sint32, Sint32);
+extern char*(*sStrcpy)(char*, char*);
+extern void(*WaveAllStop)(void);
+extern void(*WaveRequest)(Sint16);
+extern Uint32(*WriteIndx)(Sint32, Uint32);
+extern Uint32(*WriteScore)(Sint32, char*, Uint32);

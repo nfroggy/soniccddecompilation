@@ -1,0 +1,12 @@
+#include "../../types.h"
+void OEDraw(void);
+Uint32 ChkNewSlot(void);
+void OETitleSta(void);
+void OETitle(void);
+void OEFadeOut(void);
+void OEFadeIn(void);
+void OEOpenSta(void);
+void OESegaLogo(void);
+void OEDark(void);
+void OESonic(void);
+Sint32 OEEnd(void);

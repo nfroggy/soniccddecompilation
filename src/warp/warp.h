@@ -1,0 +1,28 @@
+#include "../types.h"
+void DLL_meminit(char*** pBufTbl, void** pFuncTbl);
+void DLL_memfree(void);
+Sint32 Get_vscroll(void);
+Sint32 Get_scra_h_posiw(void);
+Sint32 Get_scrb_h_posiw(void);
+void SetDebugFlag(Uint32 NewVal);
+void game_init(void);
+sprite_status* atomwk_search(void);
+Sint32 game(void);
+void sonic0(sprite_status* pActwk);
+void sonic1(sprite_status* pActwk);
+void sonic2(sprite_status* pActwk);
+void sonic3(sprite_status* pActwk);
+void sonic_act(sprite_status* pActwk);
+void atom1(sprite_status* pActwk);
+void atom0(sprite_status* pActwk);
+void atom(sprite_status* pActwk);
+void clchg(void);
+void clwout(void);
+void clwout_new(void);
+void woutcolor(Uint16 wD1);
+void clwin_init(void);
+void clwin(void);
+void clwin_new(void);
+void wincolor(Uint8 byD0, Uint16 wD1);
+Sint32 FadeProc(void);
+void soundset(Sint16 ReqNo);

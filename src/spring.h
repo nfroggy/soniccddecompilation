@@ -1,0 +1,28 @@
+#include "types.h"
+void iwa(sprite_status* actionwk);
+void iwa_init(sprite_status* actionwk);
+void iwa_move(sprite_status* actionwk);
+void koma(sprite_status* actionwk);
+void koma_init(sprite_status* actionwk);
+void koma_move(sprite_status* actionwk);
+void koma_move2(sprite_status* actionwk);
+void spring_d(sprite_status* actionwk);
+void spr_d_init(sprite_status* actionwk);
+void spr_d_move(sprite_status* actionwk);
+void spring(sprite_status* actionwk);
+void sjumpinit(sprite_status* actionwk);
+Sint32 ride_on_chk_s(sprite_status* actionwk, sprite_status* a1);
+void sjumpmove(sprite_status* actionwk);
+void sjumpmove2(sprite_status* actionwk);
+void sjumpmove3(sprite_status* actionwk);
+Sint32 ride_on_chk_s1(sprite_status* actionwk, sprite_status* a1);
+void sdushmove(sprite_status* actionwk);
+void sdushmove2(sprite_status* actionwk);
+void sdushmove3(sprite_status* actionwk);
+Sint32 ride_on_chk_s2(sprite_status* actionwk, sprite_status* a1);
+void sjump2move(sprite_status* actionwk);
+void sjump2move2(sprite_status* actionwk);
+void sjump2move3(sprite_status* actionwk);
+void sjump3move(sprite_status* actionwk);
+void sjump3move2(sprite_status* actionwk);
+void sjump3move3(sprite_status* actionwk);
