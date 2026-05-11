@@ -448,7 +448,7 @@ static Uint32 egg4_wait(sprite_status* pActwk) {
   egg4_hitchk(pActwk);
   ++pActwk->actfree[0];
 
-  if ((long int)(Sint32)pActwk->actfree[0] == 48) {
+  if ((Sint32)pActwk->actfree[0] == 48) {
 
     pChildact = &actwk[((Sint16*)pActwk)[26]];
     pChildact->actflg ^= 1;
@@ -864,7 +864,7 @@ flg = 0;
   pActwk->xposi.l = pEggact->xposi.l;
   pActwk->yposi.l = pEggact->yposi.l;
 
-  if ((long int)(Sint32)((Sint16*)pActwk)[33] < 48) {
+  if ((Sint32)((Sint16*)pActwk)[33] < 48) {
     ((Sint32*)pActwk)[16] += 16384;
   }
   else {
@@ -872,7 +872,7 @@ flg = 0;
     ++flg;
   }
 
-if ((long int)(Sint32)pActwk->yspeed.w < 48) {
+if ((Sint32)pActwk->yspeed.w < 48) {
     ((Sint32*)pActwk)[4] += 16384;
   }
   else {
@@ -980,7 +980,7 @@ static Uint32 egg4awa_ychg(sprite_status* pActwk) {
   if (pActwk->r_no1) {
 
     ((Sint32*)pActwk)[16] -= 65536;
-    if ((long int)((Sint32*)pActwk)[16] > -3145728) {
+    if (((Sint32*)pActwk)[16] > -3145728) {
       ychg_ret(pActwk, pEggact);
     }
     else {
@@ -1090,7 +1090,7 @@ static Uint32 egg4awa_chi(sprite_status* pActwk) {
   ((Sint32*)pActwk)[16] -= 65536;
   ((Sint32*)pActwk)[4] -= 65536;
 
-  if ((long int)((Sint32*)pActwk)[16] <= 0x100000) {
+  if (((Sint32*)pActwk)[16] <= 0x100000) {
 
     cntwk = pEggact->actfree[3];
     radwk = rad_tbl[cntwk];

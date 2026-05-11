@@ -543,18 +543,18 @@ xwk.l *= xwk.l;
 
   if (pActwk->actfree[4] & 32) {
 
-    if ((long int)xwk.l >= 20736) {
+    if (xwk.l >= 20736) {
       e4a_03_far(pActwk);
       return 1;
     }
     pActwk->actfree[4] &= 223;
   }
 
-if ((long int)xwk.l >= 69696) {
+if (xwk.l >= 69696) {
     e4a_03_far(pActwk);
-  } else if ((long int)xwk.l < 7744) {
+  } else if (xwk.l < 7744) {
     e4a_03_most_near(pActwk);
-  } else if ((long int)xwk.l < 18496) {
+  } else if (xwk.l < 18496) {
     e4a_03_near(pActwk);
   } else {
     e4a_03_normal(pActwk);
@@ -588,7 +588,7 @@ static void e4a_03_far(sprite_status* pActwk) {
 }
 
 static void e4a_03_most_near(sprite_status* pActwk) {
-  if ((long int)(Sint32)pActwk->yspeed.w > 2048 || (long int)(Sint32)pActwk->xspeed.w > 2048) {
+  if ((Sint32)pActwk->yspeed.w > 2048 || (Sint32)pActwk->xspeed.w > 2048) {
 
 ((Sint32*)pActwk)[16] = 0x100000;
     ((Sint32*)pActwk)[4] = 741000;

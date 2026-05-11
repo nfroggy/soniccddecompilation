@@ -361,7 +361,7 @@ void b_fly(sprite_status* pActwk) {
     xPos *= -1;
   }
 
-if ((long int)(Sint32)xPos >= 80) {
+if ((Sint32)xPos >= 80) {
     pActwk->xposi.l -= *(Sint32*)&pActwk->actfree[4];
     *(Sint32*)&pActwk->actfree[4] *= -1;
     pActwk->actflg ^= 1;
@@ -568,7 +568,7 @@ void b_up(sprite_status* pActwk) {
 void b_up1(sprite_status* pActwk) {
   pActwk->yposi.w.h -= 2;
   if (!(pActwk->actflg & 128)) {
-    if ((long int)(actwk[0].yposi.w.h - pActwk->yposi.w.h) > 160) {
+    if ((actwk[0].yposi.w.h - pActwk->yposi.w.h) > 160) {
       b_kill_v(pActwk);
       return;
     }

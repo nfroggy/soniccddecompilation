@@ -335,7 +335,7 @@ void mosug_init(sprite_status* pActwk, sprite_status* pPlaywk) {
       return;
     }
 
-    if ((unsigned long int)divdevwk[0] != 0) return;
+    if (divdevwk[0] != 0) return;
   }
 
 pActwk->r_no0 += 2;

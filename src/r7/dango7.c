@@ -296,17 +296,17 @@ static void a_roll1(sprite_status* pActwk) {
     sinset(wD0 & 255, &sin, &cos);
     lD1 = cos * -1792;
     lD1 >>= 8;
-    actwk[0].xspeed.w = (Uint16)(long int)lD1;
+    actwk[0].xspeed.w = (Uint16)lD1;
     lD0 = sin * -1792;
     lD0 >>= 8;
-    actwk[0].yspeed.w = (Uint16)(long int)lD0;
+    actwk[0].yspeed.w = (Uint16)lD0;
     actwk[0].cddat |= 2;
     actwk[0].cddat &= 239;
     actwk[0].cddat &= 223;
     actwk[0].actfree[18] = 0;
 
     pActwk->colicnt = 0;
-    wD1 = (Uint16)((long int)lD1 & 65535);
+    wD1 = (Uint16)(lD1 & 65535);
     wD1 *= -1;
     lD1 = wD1;
 
@@ -348,7 +348,7 @@ static Sint16 a_move(sprite_status* pActwk) {
   Sint16 ret;
 
   pActwk->xposi.l += *(Sint32*)&pActwk->actfree[0];
-  if ((long int)*(Sint32*)&pActwk->actfree[0] >= 0)
+  if (*(Sint32*)&pActwk->actfree[0] >= 0)
     temp1 = emycol_r(pActwk, pActwk->sprhs);
   else
   {

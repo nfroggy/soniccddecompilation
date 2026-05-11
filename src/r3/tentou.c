@@ -128,7 +128,7 @@ void ten_a_fall(sprite_status* pActwk) {
     *(Sint32*)&pActwk->actfree[4] = 12288;
     ((Sint16*)pActwk)[29] = 8;
     pActwk->r_no0 += 2;
-    if ((long int)*(Sint32*)&pActwk->actfree[0] != 0)
+    if (*(Sint32*)&pActwk->actfree[0] != 0)
       pActwk->r_no0 += 2;
   }
 }
@@ -163,7 +163,7 @@ pActwk->r_no0 += 2;
       {
         pActwk->actflg ^= 1;
         pActwk->cddat ^= 1;
-        *(Sint32*)&pActwk->actfree[0] = -(long int)*(Sint32*)&pActwk->actfree[0];
+        *(Sint32*)&pActwk->actfree[0] = -(*(Sint32*)&pActwk->actfree[0]);
       }
     }
   }
@@ -233,7 +233,7 @@ void ten_a_gake(sprite_status* pActwk) {
   iD3 = pActwk->xposi.w.h;
   iD4 = pActwk->sprhsize;
   iD3 -= iD4;
-  if ((long int)*(Sint32*)&pActwk->actfree[0] > 0)
+  if (*(Sint32*)&pActwk->actfree[0] > 0)
     iD3 += iD4 + iD4;
   iD1 = emycol_d2(pActwk, iD3);
   if (iD1 >= 16)
@@ -255,7 +255,7 @@ void ten_a_hover(sprite_status* pActwk) {
   wD0 = ((Uint16*)pActwk)[29];
   wD0 &= 15;
   if (wD0 != 0) return;
-  *(Sint32*)&pActwk->actfree[4] = -(long int)*(Sint32*)&pActwk->actfree[4];
+  *(Sint32*)&pActwk->actfree[4] = -(*(Sint32*)&pActwk->actfree[4]);
 }
 
 void ten_a_range(sprite_status* pActwk) {

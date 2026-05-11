@@ -602,12 +602,12 @@ clrspflg_save = clrspflg;
 }
 
 Sint32 disp_main(void) {
-  if ((long int)ring_bonus != 0) {
+  if (ring_bonus != 0) {
 
     gsc_up20();
     ring_bonus -= 20;
   } else {
-    if ((long int)time_bonus != 0) {
+    if (time_bonus != 0) {
 
 time_bonus -= 20;
       gsc_up20();
@@ -615,7 +615,7 @@ time_bonus -= 20;
   }
   if (seregiflg == 0) {
 
-    if ((long int)(time_bonus + ring_bonus) == 0) {
+    if ((time_bonus + ring_bonus) == 0) {
 
       if (time_bonus == 0) WaveAllStop();
       seregiflg = 1;
@@ -731,7 +731,7 @@ void bwrtset(Uint32 tblno4) {
   Uint16 col, tblno;
 
   do {
-    tblno = (long int)tblno4 & 255;
+    tblno = tblno4 & 255;
     if (!tblno) break;
     --tblno;
     xbase = (bwrtTbl[tblno].vadr & 127) / 2;

@@ -190,7 +190,7 @@ lpKeepWork->plring = plring;
 
     if (gameflag.w == 2) {
 
-      lpKeepWork->ta_time = (unsigned long int)(Uint32)pltime.b.b3 * 60 + (unsigned long int)(Uint32)pltime.b.b2 * 60 * 60 + (unsigned long int)(Uint32)pltime.b.b4;
+      lpKeepWork->ta_time = (Uint32)pltime.b.b3 * 60 + (Uint32)pltime.b.b2 * 60 * 60 + (Uint32)pltime.b.b4;
     }
     else if (gameflag.w == 1) {
       lpKeepWork->ta_time = -1;

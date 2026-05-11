@@ -2531,8 +2531,8 @@ static void bom_set(sprite_status* pActwk) {
       pNewact->userflag.b.l = -1;
 
 rnd = random();
-      wk2.l = (Sint16)((long int)rnd & 65535);
-      wk1.l = (Sint16)(((long int)rnd & 4294901760) >> 16);
+      wk2.l = (Sint16)(rnd & 65535);
+      wk1.l = (Sint16)((rnd & 4294901760) >> 16);
       pNewact->xposi.w.h = wk1.l % 128 + 3840;
       pNewact->yposi.w.h = wk2.l % 80 + 384;
 

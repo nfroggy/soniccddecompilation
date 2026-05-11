@@ -267,7 +267,7 @@ static void body_move(sprite_status* pActwk) {
     pActwk->r_no0 += 2;
     if (d0 < 0) bd0 = 255;
     else bd0 = 0;
-    if ((long int)((Sint32*)pActwk)[12] < 0) bd1 = 255;
+    if (((Sint32*)pActwk)[12] < 0) bd1 = 255;
     else bd1 = 0;
     bd0 ^= bd1;
     if (bd0) goto label1;
@@ -309,7 +309,7 @@ static void body_waita1(sprite_status* pActwk) {
     pTailwk = &actwk[((Sint16*)pActwk)[26]];
     pTailwk->yposi.w.h -= 5;
     d0 = 5;
-    if ((long int)((Sint32*)pActwk)[12] >= 0)
+    if (((Sint32*)pActwk)[12] >= 0)
     {
       d0 *= -1;
     }
@@ -347,7 +347,7 @@ static void body_waitb1(sprite_status* pActwk) {
         pNewActwk->yposi.w.h -= 24;
         d0 = -4;
         d1 = -196608;
-        if ((long int)((Sint32*)pActwk)[12] >= 0)
+        if (((Sint32*)pActwk)[12] >= 0)
         {
           d0 *= -1;
           d1 *= -1;
@@ -381,7 +381,7 @@ static void body_waitc1(sprite_status* pActwk) {
     pTailwk = &actwk[((Sint16*)pActwk)[26]];
     pTailwk->yposi.w.h += 5;
     d0 = 5;
-    if ((long int)((Sint32*)pActwk)[12] >= 0)
+    if (((Sint32*)pActwk)[12] >= 0)
     {
       d0 *= -1;
     }

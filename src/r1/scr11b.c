@@ -471,7 +471,7 @@ void scrollc_h(Sint32 lD4, Sint32 flagc) {
 
 scrc_h_count ^= 16;
     lD0.l -= lD2.l;
-    if ((long int)lD0.l < 0) scrflagc.b.h |= flagc;
+    if (lD0.l < 0) scrflagc.b.h |= flagc;
     else scrflagc.b.h |= flagc * 2;
   }
 }
@@ -494,7 +494,7 @@ void scrollz_h(Sint32 lD4, Sint32 flagz) {
 
 scrz_h_count ^= 16;
     lD0.l -= lD2.l;
-    if ((long int)lD0.l < 0) scrflagz.b.h |= flagz;
+    if (lD0.l < 0) scrflagz.b.h |= flagz;
     else scrflagz.b.h |= flagz * 2;
   }
 }

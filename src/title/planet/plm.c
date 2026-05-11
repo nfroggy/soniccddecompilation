@@ -187,7 +187,7 @@ label1:
     pActwk->SPR_FLG |= 128;
     pActwk->SPR_FLG &= 247;
     iD0 = -iD0;
-    pActwk->X_SPEED.l = -(long int)pActwk->X_SPEED.l;
+    pActwk->X_SPEED.l = -pActwk->X_SPEED.l;
   }
   pActwk->XPOSI.w.h += iD0;
   pActwk->YPOSI.w.h += pFoffset->inipat[iNormal * 2 + 1];
@@ -344,8 +344,8 @@ if (iD7 < 0)
       pActwk->SPR_FLG |= 128;
       pActwk->SPR_FLG &= 247;
       lD0.w.l = -lD0.w.l;
-      pActwk->X_SPEED.l = -(long int)pActwk->X_SPEED.l;
-      pActwk->Y_SPEED.l = -(long int)pActwk->Y_SPEED.l;
+      pActwk->X_SPEED.l = -pActwk->X_SPEED.l;
+      pActwk->Y_SPEED.l = -pActwk->Y_SPEED.l;
     }
 
     pActwk->XPOSI.w.h += lD0.w.l;
@@ -432,13 +432,13 @@ if (get_actwk(&pActwk) == 0)
     if (pActwk->XPOSI.w.h >= 128)
     {
       pActwk->SPR_FLG |= 128;
-      pActwk->X_SPEED.l = -(long int)pActwk->X_SPEED.l;
+      pActwk->X_SPEED.l = -pActwk->X_SPEED.l;
     }
 
     if (pActwk->YPOSI.w.h >= 100)
     {
       pActwk->SPR_FLG &= 247;
-      pActwk->Y_SPEED.l = -(long int)pActwk->Y_SPEED.l;
+      pActwk->Y_SPEED.l = -pActwk->Y_SPEED.l;
     }
   }
   actset_wk = 0;
@@ -480,8 +480,8 @@ if (get_actwk(&pActwk) == 0)
     if (iD7 < 0)
     {
       pActwk->SPR_FLG |= 128;
-      pActwk->X_SPEED.l = -(long int)pActwk->X_SPEED.l;
-      pActwk->Y_SPEED.l = -(long int)pActwk->Y_SPEED.l;
+      pActwk->X_SPEED.l = -pActwk->X_SPEED.l;
+      pActwk->Y_SPEED.l = -pActwk->Y_SPEED.l;
     }
   }
   actset_wk = 0;

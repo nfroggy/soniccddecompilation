@@ -137,7 +137,7 @@ static void act_lr(sprite_status* pActwk) {
   Sint16 temp;
 
   *(Sint32*)&pActwk->actfree[0] += -16384;
-  if ((long int)*(Sint32*)&pActwk->actfree[0] >= 0)
+  if (*(Sint32*)&pActwk->actfree[0] >= 0)
   {
     pActwk->xposi.l += *(Sint32*)&pActwk->actfree[4];
     pActwk->yposi.w.h += emycol_d(pActwk) - 5;

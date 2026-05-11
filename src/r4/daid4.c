@@ -88,7 +88,7 @@ static void a_off1(sprite_status* pActwk) {
 
   pActwk->yposi.l += ((Sint32*)pActwk)[12];
   ((Sint32*)pActwk)[12] += 1024;
-  if ((long int)((Sint32*)pActwk)[12] > 65536)
+  if (((Sint32*)pActwk)[12] > 65536)
   {
     ((Sint32*)pActwk)[12] = 65536;
   }

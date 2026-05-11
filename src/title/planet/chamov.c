@@ -392,7 +392,7 @@ void umset2(sprite_status_lpl* pActwk) {
   pActwk->X_SPEED.l = lD0.l;
 
   if (!(pActwk->SPR_FLG & 8))
-    pActwk->X_SPEED.l = -(long int)pActwk->X_SPEED.l;
+    pActwk->X_SPEED.l = -pActwk->X_SPEED.l;
 
   lD7.l = pActwk->Y_SPEED.l;
   lD1.w.h = lD1.l % 96;
@@ -407,7 +407,7 @@ void umset2(sprite_status_lpl* pActwk) {
   if (lD7.l > 0)
   {
 
-    pActwk->Y_SPEED.l = -(long int)pActwk->Y_SPEED.l;
+    pActwk->Y_SPEED.l = -pActwk->Y_SPEED.l;
     pActwk->END_YPOSI = lD0.w.l + 32;
 
     pActwk->PAT_ADR = &ufo_tbl2;
@@ -466,7 +466,7 @@ lD1.w.l = pActwk->YPOSI.w.h;
 }
 
 void ufomove1(sprite_status_lpl* pActwk) {
-  if ((long int)pActwk->X_SPEED.l == 0)
+  if (pActwk->X_SPEED.l == 0)
     pActwk->X_WIDE = 72;
   else
     pActwk->X_WIDE = 40;
@@ -547,7 +547,7 @@ void msncstart(sprite_status_lpl* pActwk) {
     pActwk->X_SPEED.l = 1572864;
     pActwk->Y_SPEED.l = 0;
     if (pActwk->SPR_FLG & 128)
-      pActwk->X_SPEED.l = -(long int)pActwk->X_SPEED.l;
+      pActwk->X_SPEED.l = -pActwk->X_SPEED.l;
     pActwk->EXE_NO = 4;
     return;
   }
@@ -609,7 +609,7 @@ void msncfloat(sprite_status_lpl* pActwk) {
     if ((char)pActwk->timer2 == 0)
     {
       pActwk->timer2 = 24;
-      lD0.l = ((long int)random() & 1);
+      lD0.l = (random() & 1);
       if (lD0.l == 0) pActwk->SPR_FLG &= 127;
       else pActwk->SPR_FLG |= 128;
     }
@@ -628,7 +628,7 @@ void msncfloat(sprite_status_lpl* pActwk) {
   pActwk->PAT_NO = 0;
   pActwk->X_SPEED.l = -65536;
   if (pActwk->SPR_FLG & 128)
-    pActwk->X_SPEED.l = -(long int)pActwk->X_SPEED.l;
+    pActwk->X_SPEED.l = -pActwk->X_SPEED.l;
 
   pActwk->EXE_NO = 3;
 }
@@ -647,7 +647,7 @@ void msncdush(sprite_status_lpl* pActwk) {
   pActwk->Y_WIDE = 0;
   pActwk->X_SPEED.l = 1572864;
   if (pActwk->SPR_FLG & 128)
-    pActwk->X_SPEED.l = -(long int)pActwk->X_SPEED.l;
+    pActwk->X_SPEED.l = -pActwk->X_SPEED.l;
   pActwk->EXE_NO = 4;
 }
 
@@ -708,8 +708,8 @@ void tsset1(sprite_status_lpl* pActwk) {
   pActwk->PAT_ADR = &tails_tbl;
   if (pActwk->SPR_FLG & 128)
   {
-    pActwk->X_SPEED.l = -(long int)pActwk->X_SPEED.l;
-    pActwk->Y_SPEED.l = -(long int)pActwk->Y_SPEED.l;
+    pActwk->X_SPEED.l = -pActwk->X_SPEED.l;
+    pActwk->Y_SPEED.l = -pActwk->Y_SPEED.l;
   }
 
   pActwk->timer2 = 24;
@@ -728,7 +728,7 @@ void tsset2(sprite_status_lpl* pActwk) {
   lD0.l += 0x20000;
   pActwk->X_SPEED.l = lD0.l;
   if (pActwk->SPR_FLG & 128)
-    pActwk->X_SPEED.l = -(long int)pActwk->X_SPEED.l;
+    pActwk->X_SPEED.l = -pActwk->X_SPEED.l;
 
   lD7.l = pActwk->Y_SPEED.l;
   lD1.w.h = lD1.l % 40;
@@ -748,7 +748,7 @@ void tsset2(sprite_status_lpl* pActwk) {
   if (lD7.l > 0)
   {
 label1:
-    pActwk->Y_SPEED.l = -(long int)pActwk->Y_SPEED.l;
+    pActwk->Y_SPEED.l = -pActwk->Y_SPEED.l;
     pActwk->END_YPOSI = lD0.w.l + 32;
     pActwk->PAT_ADR = &tails_down_tbl;
     pActwk->PAT_NO = 0;

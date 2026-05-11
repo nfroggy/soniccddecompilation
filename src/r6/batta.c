@@ -220,7 +220,7 @@ void batta_wall(sprite_status* pActwk) {
   pActwk->actfree[8] = pActwk->actfree[9];
   pActwk->actflg ^= 1;
   pActwk->cddat ^= 1;
-  *(Sint32*)&pActwk->actfree[0] = -(long int)*(Sint32*)&pActwk->actfree[0];
+  *(Sint32*)&pActwk->actfree[0] = -(*(Sint32*)&pActwk->actfree[0]);
   ((Sint16*)pActwk)[28] = -((Sint16*)pActwk)[28];
   if (pActwk->actfree[12] == 255)
     pActwk->actfree[12] = 1;

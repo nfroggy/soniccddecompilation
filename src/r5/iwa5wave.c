@@ -101,7 +101,7 @@ static void a_move(sprite_status* pActwk) {
   pActwk->xposi.l = d1;
   d1 -= d0;
   d1 >>= 8;
-  pActwk->xspeed.w = (Uint16)(long int)d1;
+  pActwk->xspeed.w = (Uint16)d1;
 
 ((Sint16*)pActwk)[30] += 256;
   sd0 = ((Sint16*)pActwk)[30];

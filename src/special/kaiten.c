@@ -30,7 +30,7 @@ void scal(sprite_status_sp* pActwk) {
   lD3.l = lD1.w.l * zoomwk.cz;
   lD3.l >>= 8;
   lD2.l += lD3.l;
-  if ((long int)lD2.l == 0) {
+  if (lD2.l == 0) {
     lD2.l = 1;
   }
   lD3.l = zoomwk.hcz.w.h * lD0.w.l;
@@ -113,7 +113,7 @@ for (i = 0; i < 93; ++i, --lD2.w.l) {
     lD3.l = zoomwk.sx * lD2.w.l;
     lD3.l += zoomwk.hcx;
     lD3.l >>= 5;
-    if ((long int)lD3.l == 0) {
+    if (lD3.l == 0) {
       lD3.l = 1;
     }
     lD5.l = zoomwk.cxsz.w.h * lD2.w.l;

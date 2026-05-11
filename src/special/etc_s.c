@@ -67,7 +67,7 @@ void dec(void) {
   }
 
   tufo_initial();
-  if ((long int)spe_time.l >= 15) return;
+  if (spe_time.l >= 15) return;
   se_no.b.b1 = 223;
 }
 
@@ -165,9 +165,9 @@ void speedget(Uint8 bAngle, Uint8 bDirflg, Sint16 iBaseSpd, Sint32* lXspeed, Sin
     lD1.w.l = sincostbl[lD1.w.l];
 
     lD0.l = iBaseSpd * lD0.w.l;
-    lD0.l = (long int)((Uint32)lD0.l >> 16) & 65535 | (long int)((Uint32)lD0.l << 16) & (Uint32)65535 << 16;
+    lD0.l = ((Uint32)lD0.l >> 16) & 65535 | ((Uint32)lD0.l << 16) & (Uint32)65535 << 16;
     lD1.l = iBaseSpd * lD1.w.l;
-    lD1.l = (long int)((Uint32)lD1.l >> 16) & 65535 | (long int)((Uint32)lD1.l << 16) & (Uint32)65535 << 16;
+    lD1.l = ((Uint32)lD1.l >> 16) & 65535 | ((Uint32)lD1.l << 16) & (Uint32)65535 << 16;
   }
 
   if (bDirflg & 4)
@@ -178,15 +178,15 @@ void speedget(Uint8 bAngle, Uint8 bDirflg, Sint16 iBaseSpd, Sint32* lXspeed, Sin
   }
 
   if (bDirflg & 2)
-    lD0.l = -(long int)lD0.l;
+    lD0.l = -lD0.l;
 
-  lD0.l = (long int)((Uint32)lD0.l >> 16) & 65535 | (long int)((Uint32)lD0.l << 16) & (Uint32)65535 << 16;
+  lD0.l = ((Uint32)lD0.l >> 16) & 65535 | ((Uint32)lD0.l << 16) & (Uint32)65535 << 16;
   lD0.w.l = 0;
   lD0.l >>= 8;
   if (bDirflg & 1)
     lD1.w.l = -lD1.w.l;
 
-  lD1.l = (long int)((Uint32)lD1.l >> 16) & 65535 | (long int)((Uint32)lD1.l << 16) & (Uint32)65535 << 16;
+  lD1.l = ((Uint32)lD1.l >> 16) & 65535 | ((Uint32)lD1.l << 16) & (Uint32)65535 << 16;
   lD1.w.l = 0;
   lD1.l >>= 8;
 
@@ -226,19 +226,19 @@ Sint32 random(void) {
   int_union lD0, lD1;
 
   lD1.l = ranum;
-  if ((long int)lD1.l == 0)
+  if (lD1.l == 0)
     lD1.l = 711800410;
 
   lD0.l = lD1.l;
-  if ((long int)lD1.l & (long int)32768 << 16) lD1.l *= 4, lD1.l |= 0x80000000; else lD1.l *= 4;
+  if (lD1.l & 32768 << 16) lD1.l *= 4, lD1.l |= 0x80000000; else lD1.l *= 4;
   lD1.l += lD0.l;
-  if ((long int)lD1.l & (long int)32768 << 16) lD1.l *= 8, lD1.l |= 0x80000000; else lD1.l *= 8;
+  if (lD1.l & 32768 << 16) lD1.l *= 8, lD1.l |= 0x80000000; else lD1.l *= 8;
   lD1.l += lD0.l;
   lD0.w.l = lD1.w.l;
-  lD1.l = (long int)((Uint32)lD1.l >> 16) & 65535 | (long int)((Uint32)lD1.l << 16) & (Uint32)65535 << 16;
+  lD1.l = ((Uint32)lD1.l >> 16) & 65535 | ((Uint32)lD1.l << 16) & (Uint32)65535 << 16;
   lD0.w.l += lD1.w.l;
   lD1.w.l = lD0.w.l;
-  lD1.l = (long int)((Uint32)lD1.l >> 16) & 65535 | (long int)((Uint32)lD1.l << 16) & (Uint32)65535 << 16;
+  lD1.l = ((Uint32)lD1.l >> 16) & 65535 | ((Uint32)lD1.l << 16) & (Uint32)65535 << 16;
   ranum = lD1.l;
   return lD0.l;
 }

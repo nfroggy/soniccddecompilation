@@ -19,10 +19,10 @@ Sint32 random(void) {
   lD1.l <<= 3;
   lD1.l += lD0.l;
   lD0.w.l = lD1.w.l;
-  lD1.l = ((long int)lD1.l & 65535) << 16 | ((long int)lD1.l & (Uint32)65535 << 16) >> 16;
+  lD1.l = (lD1.l & 65535) << 16 | (lD1.l & (Uint32)65535 << 16) >> 16;
   lD0.w.l += lD1.w.l;
   lD1.w.l = lD0.w.l;
-  lD1.l = ((long int)lD1.l & 65535) << 16 | ((long int)lD1.l & (Uint32)65535 << 16) >> 16;
+  lD1.l = (lD1.l & 65535) << 16 | (lD1.l & (Uint32)65535 << 16) >> 16;
   ranum = lD1.l;
   return lD0.l;
 }

@@ -139,13 +139,13 @@ static void a_move1(sprite_status* pActwk) {
       a6 = *(Sint32*)&pActwk->actfree[0];
       d3 = pActwk->xposi.w.h;
       d3 += ((Sint16*)pActwk)[26];
-      if ((long int)a6 != 2)
+      if (a6 != 2)
       {
         d3 ^= 15;
       }
       d2 = ((Sint16*)pActwk)[28];
 
-      if ((long int)a6 == 1) d1 = emycol_l3(pActwk, d3, d2);
+      if (a6 == 1) d1 = emycol_l3(pActwk, d3, d2);
       else d1 = emycol_r3(pActwk, d3, d2);
       if (d1 < 0) break;
       if (((Sint16*)pActwk)[27] < 2)

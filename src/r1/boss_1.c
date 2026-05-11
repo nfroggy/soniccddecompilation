@@ -2323,13 +2323,13 @@ Sint32 egg1leg1_12(sprite_status* pActwk) {
 
     if (pActwk->actfree[2] & 16)
     {
-      ((Sint32*)pActwk)[16] = (long int)((Sint32*)pActwk)[16] - 1536;
-      ((Sint32*)pActwk)[4] = (long int)((Sint32*)pActwk)[4] + 6240;
+      ((Sint32*)pActwk)[16] = ((Sint32*)pActwk)[16] - 1536;
+      ((Sint32*)pActwk)[4] = ((Sint32*)pActwk)[4] + 6240;
     }
     else
     {
-      ((Sint32*)pActwk)[16] = (long int)((Sint32*)pActwk)[16] + 1536;
-      ((Sint32*)pActwk)[4] = (long int)((Sint32*)pActwk)[4] + 6240;
+      ((Sint32*)pActwk)[16] = ((Sint32*)pActwk)[16] + 1536;
+      ((Sint32*)pActwk)[4] = ((Sint32*)pActwk)[4] + 6240;
     }
   }
 
@@ -2769,13 +2769,13 @@ Sint32 egg1leg3_06(sprite_status* pActwk) {
 
     if (!(pActwk->actfree[2] & 16))
     {
-      ((Sint32*)pActwk)[16] = (long int)((Sint32*)pActwk)[16] - 1632;
-      ((Sint32*)pActwk)[4] = (long int)((Sint32*)pActwk)[4] + 5728;
+      ((Sint32*)pActwk)[16] = ((Sint32*)pActwk)[16] - 1632;
+      ((Sint32*)pActwk)[4] = ((Sint32*)pActwk)[4] + 5728;
     }
     else
     {
-      ((Sint32*)pActwk)[16] = (long int)((Sint32*)pActwk)[16] + 1632;
-      ((Sint32*)pActwk)[4] = (long int)((Sint32*)pActwk)[4] + 5728;
+      ((Sint32*)pActwk)[16] = ((Sint32*)pActwk)[16] + 1632;
+      ((Sint32*)pActwk)[4] = ((Sint32*)pActwk)[4] + 5728;
     }
   }
 

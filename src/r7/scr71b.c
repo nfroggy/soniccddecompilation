@@ -168,7 +168,7 @@ scrflaga.w = scrflagb.w = scrflagc.w = scrflagz.w = 0;
 
 scrollz_h((scra_hz << 6) + (scra_hz << 5), 64);
   scrollc_h(scra_hz << 7, 16);
-  scrollb_h((long int)(scra_hz << 4) * 3, 4);
+  scrollb_h((scra_hz << 4) * 3, 4);
 
   data.l = 0;
   data.w.l = scra_v_posit.w.h;
@@ -622,7 +622,7 @@ void scrollb_hv(int_union lD4, int_union lD5) {
 
     scrb_h_count ^= 16;
     lD0.l -= lD2.l;
-    if ((long int)lD0.l < 0) {
+    if (lD0.l < 0) {
       scrflagb.b.h |= 4;
     }
     else {
@@ -633,14 +633,14 @@ void scrollb_hv(int_union lD4, int_union lD5) {
 
 lD0.l = lD3.l = scrb_v_posit.l;
   lD0.l += lD5.l;
-  if ((long int)lD0.l < 0) lD0.l = 0;
+  if (lD0.l < 0) lD0.l = 0;
   scrb_v_posit.l = lD0.l;
 
   if (((Uint8)(scrb_v_posit.w.h & 16) ^ scrb_v_count) == 0) {
 
     scrb_v_count ^= 16;
     lD0.l -= lD3.l;
-    if ((long int)lD0.l < 0) {
+    if (lD0.l < 0) {
       scrflagb.b.h |= 1;
     }
     else {
@@ -687,7 +687,7 @@ void scrollb_h(Sint32 lD4, Sint32 flagb) {
   if (!lD1.b.b4) {
     scrb_h_count ^= 16;
     lD0.l -= lD2.l;
-    if ((long int)lD0.l < 0) {
+    if (lD0.l < 0) {
       scrflagb.b.h |= flagb;
     }
     else {
@@ -715,7 +715,7 @@ void scrollc_h(Sint32 lD4, Sint32 flagc) {
   if (!lD1.b.b4) {
     scrc_h_count ^= 16;
     lD0.l -= lD2.l;
-    if ((long int)lD0.l < 0) {
+    if (lD0.l < 0) {
       scrflagc.b.h |= flagc;
     }
     else {
@@ -743,7 +743,7 @@ void scrollz_h(Sint32 lD4, Sint32 flagz) {
   if (!lD1.b.b4) {
     scrz_h_count ^= 16;
     lD0.l -= lD2.l;
-    if ((long int)lD0.l < 0) {
+    if (lD0.l < 0) {
       scrflagz.b.h |= flagz;
     }
     else {

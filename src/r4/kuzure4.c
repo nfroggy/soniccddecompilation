@@ -221,8 +221,8 @@ static void parts_fall(sprite_status* pActwk) {
   if (!(pActwk->actflg & 128)) {
     frameout(pActwk);
   } else {
-    spdwk = (long int)((Sint32*)pActwk)[12] + 16384;
-    if ((long int)spdwk > 1441792) {
+    spdwk = ((Sint32*)pActwk)[12] + 16384;
+    if (spdwk > 1441792) {
       spdwk = 1441792;
     }
     ((Sint32*)pActwk)[12] = spdwk;

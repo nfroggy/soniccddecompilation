@@ -1567,7 +1567,7 @@ void make_bakuha2(sprite_status* pActwk) {
   lD0.l = lD0.w.l;
 
   lD1.l = lD1.w.h & 32767;
-  lD1.l = -(long int)lD1.l;
+  lD1.l = -lD1.l;
 
 pActfree->xspeed.w = lD0.l % 1024;
   pActfree->yspeed.w = lD1.l % 1024;

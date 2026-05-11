@@ -145,7 +145,7 @@ void scrbinit(Sint16 d1, Sint16 d0) {
 ld0.w.h = d0;
   ld0.w.l = 0;
 
-  ld0.l = (long int)(ld0.l >> 4) * 3;
+  ld0.l = (ld0.l >> 4) * 3;
   scrb_v_posit.l = ld0.l;
   scrc_v_posit.w.h = (Uint16)(d0 / 16) * 2;
   scrz_v_posit.w.h = (Uint16)(d0 / 16) * 2;
@@ -186,10 +186,10 @@ void scroll(void) {
   vscroll.w.l = scrb_v_posit.w.h;
 
   scrollz_h(scra_hz << 5, 64);
-  scrollc_h((long int)(scra_hz << 4) * 3, 16);
+  scrollc_h((scra_hz << 4) * 3, 16);
 
   l4 = scra_hz << 7;
-  l5 = (long int)(scra_vz << 4) * 3;
+  l5 = (scra_vz << 4) * 3;
   scrollb_hv(l4, l5);
 
   vscroll.w.l = scrb_v_posit.w.h;
@@ -275,7 +275,7 @@ d2.w.l &= 7;
   d2.w.l -= d0.w.l;
   d2.l = d2.w.l;
   d2.l *= 256;
-  d2.w.l = (long int)d2.l / 256;
+  d2.w.l = d2.l / 256;
   d2.l = d2.w.l;
   d2.l *= 256;
   d3.l = 0;
@@ -562,7 +562,7 @@ void scrollb_h(Sint32 lD4, Sint32 flagb) {
 
 scrb_h_count ^= 16;
     lD0.l -= lD2.l;
-    if ((long int)lD0.l < 0) scrflagb.b.h |= flagb;
+    if (lD0.l < 0) scrflagb.b.h |= flagb;
     else scrflagb.b.h |= flagb * 2;
   }
 }
@@ -585,7 +585,7 @@ void scrollc_h(Sint32 lD4, Sint32 flagc) {
 
 scrc_h_count ^= 16;
     lD0.l -= lD2.l;
-    if ((long int)lD0.l < 0) scrflagc.b.h |= flagc;
+    if (lD0.l < 0) scrflagc.b.h |= flagc;
     else scrflagc.b.h |= flagc * 2;
   }
 }
@@ -608,7 +608,7 @@ void scrollz_h(Sint32 lD4, Sint32 flagz) {
 
 scrz_h_count ^= 16;
     lD0.l -= lD2.l;
-    if ((long int)lD0.l < 0) scrflagz.b.h |= flagz;
+    if (lD0.l < 0) scrflagz.b.h |= flagz;
     else scrflagz.b.h |= flagz * 2;
   }
 }
