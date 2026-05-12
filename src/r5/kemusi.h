@@ -1,1 +1,1 @@
-void kemusi(sprite_status* pActwk);
+void kemusi(sprite_status *pActwk);

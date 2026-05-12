@@ -1,5 +1,5 @@
 #include "../types.h"
-void DLL_meminit(char*** pBufTbl, void** pFuncTbl);
+void DLL_meminit(char ***pBufTbl, void **pFuncTbl);
 void DLL_memfree(void);
 Sint32 Get_vscroll(void);
 Sint32 Get_scra_h_posiw(void);

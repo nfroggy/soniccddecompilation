@@ -7,24 +7,25 @@
 /* 004331dc */ BOOL gbWaveOpen = FALSE;
 
 void __stdcall WaveRequest(short ReqNo) {
-  int index;
-  int cnt;
-  int i;
-  if (!gbWaveOpen) return;
-  index = getFreeWaveInfoIndex();
-  if (index >= 0) {
-    DAT_004331d8 = index;
-    FUN_0040dac4(DAT_004331d8, ReqNo, ghWnd, FALSE);
-  }
-  else {
-    cnt = collectWaveInfoUnknown44(gWaveInfoUnknown44Array);
+    int index;
+    int cnt;
+    int i;
+    if (!gbWaveOpen)
+        return;
+    index = getFreeWaveInfoIndex();
+    if (index >= 0) {
+        DAT_004331d8 = index;
+        FUN_0040dac4(DAT_004331d8, ReqNo, ghWnd, FALSE);
+    } else {
+        cnt = collectWaveInfoUnknown44(gWaveInfoUnknown44Array);
 
-    for (i = 0; i < cnt; ++i) {
-      if (gWaveInfoUnknown44Array[i] >= 0 && gWaveInfoUnknown44Array[i] < gWaveDeviceCnt2) {
-        DAT_004331d8 = gWaveInfoUnknown44Array[i];
-        FUN_0040dac4(DAT_004331d8, ReqNo, ghWnd, TRUE);
-        break;
-      }
+        for (i = 0; i < cnt; ++i) {
+            if (gWaveInfoUnknown44Array[i] >= 0 &&
+                gWaveInfoUnknown44Array[i] < gWaveDeviceCnt2) {
+                DAT_004331d8 = gWaveInfoUnknown44Array[i];
+                FUN_0040dac4(DAT_004331d8, ReqNo, ghWnd, TRUE);
+                break;
+            }
+        }
     }
-  }
 }

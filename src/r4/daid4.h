@@ -1,1 +1,1 @@
-void daid4(sprite_status* pActwk);
+void daid4(sprite_status *pActwk);

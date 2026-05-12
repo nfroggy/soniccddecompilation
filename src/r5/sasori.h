@@ -1,1 +1,1 @@
-void sasori(sprite_status* pActwk);
+void sasori(sprite_status *pActwk);

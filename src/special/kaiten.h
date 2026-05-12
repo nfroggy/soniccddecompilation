@@ -1,6 +1,6 @@
 #include "../types.h"
 void scalinit(void);
-void scal(sprite_status_sp* pActwk);
+void scal(sprite_status_sp *pActwk);
 void cal_kaiten(void);
 void kaiten_init(void);
 void init_3dpara(void);

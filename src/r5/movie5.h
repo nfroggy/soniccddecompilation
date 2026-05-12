@@ -1,1 +1,1 @@
-void movie(sprite_status* pActwk);
+void movie(sprite_status *pActwk);

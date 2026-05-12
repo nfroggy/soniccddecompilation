@@ -3,7 +3,4 @@
 
 void fadeout_s(void) {}
 
-void bgmset(Sint16 wD0) {
-  wD0 = 0;
-
-}
+void bgmset(Sint16 wD0) { wD0 = 0; }

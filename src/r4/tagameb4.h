@@ -1,1 +1,1 @@
-void tagameb(sprite_status* pActwk);
+void tagameb(sprite_status *pActwk);

@@ -1,1 +1,1 @@
-void beam(sprite_status* beamwk);
+void beam(sprite_status *beamwk);

@@ -1,5 +1,5 @@
 #include "../../types.h"
-void ReadDIB(char* fileName);
+void ReadDIB(char *fileName);
 void FreeDIB(void);
 void AVIOpeningMove(void);
 void AVIEnd(void);

@@ -1,1 +1,1 @@
-void denden(sprite_status* pActwk);
+void denden(sprite_status *pActwk);

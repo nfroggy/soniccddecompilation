@@ -1,1 +1,1 @@
-void hari73(sprite_status* pActwk);
+void hari73(sprite_status *pActwk);

@@ -1,1 +1,1 @@
-void kowasi(sprite_status* pActwk);
+void kowasi(sprite_status *pActwk);

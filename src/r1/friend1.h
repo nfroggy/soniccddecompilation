@@ -1,1 +1,1 @@
-void friend(sprite_status* pActwk);
+void friend(sprite_status *pActwk);

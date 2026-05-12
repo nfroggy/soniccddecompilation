@@ -1,1 +1,1 @@
-void koma8(sprite_status* komawk);
+void koma8(sprite_status *komawk);

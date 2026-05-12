@@ -1,1 +1,1 @@
-void banpa(sprite_status* bumperwk);
+void banpa(sprite_status *bumperwk);

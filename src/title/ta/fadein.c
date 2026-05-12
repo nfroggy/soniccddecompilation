@@ -1,157 +1,156 @@
 #include "../../types.h"
 #include "fadein.h"
 
-static Uint16 code_tbl[3] = { 1, 5, 9 };
-extern Sint32* lpFadeFlag;
-extern PALETTEENTRY* lpcolorwk;
-static PALETTEENTRY colorsave[64] = { 0 };
+static Uint16 code_tbl[3] = {1, 5, 9};
+extern Sint32 *lpFadeFlag;
+extern PALETTEENTRY *lpcolorwk;
+static PALETTEENTRY colorsave[64] = {0};
 static Uint8 byMskwk = 0;
 static Uint16 wColwk = 0;
 static Sint32 FadeCount = 0;
 
 void clwout(void) {
-  *lpFadeFlag = 2;
-  FadeCount = 8;
-  wColwk = 0;
+    *lpFadeFlag = 2;
+    FadeCount = 8;
+    wColwk = 0;
 }
 
 void clwout_new(void) {
-  Sint16 i;
-  PALETTEENTRY* lpColwk;
+    Sint16 i;
+    PALETTEENTRY *lpColwk;
 
-if (wColwk >= 3) {
-    *lpFadeFlag = 0;
-    lpColwk = lpcolorwk;
-    for (i = 0; i < 64; ++i, ++lpColwk) {
-      lpColwk->peRed = 255;
-      lpColwk->peGreen = 255;
-      lpColwk->peBlue = 255;
+    if (wColwk >= 3) {
+        *lpFadeFlag = 0;
+        lpColwk = lpcolorwk;
+        for (i = 0; i < 64; ++i, ++lpColwk) {
+            lpColwk->peRed = 255;
+            lpColwk->peGreen = 255;
+            lpColwk->peBlue = 255;
+        }
+        return;
     }
-    return;
-  }
-  if (--FadeCount >= 0) {
+    if (--FadeCount >= 0) {
 
-    woutcolor(code_tbl[wColwk]);
-  }
-  else {
+        woutcolor(code_tbl[wColwk]);
+    } else {
 
-    FadeCount = 8;
-    ++wColwk;
-  }
+        FadeCount = 8;
+        ++wColwk;
+    }
 }
 
 void woutcolor(Uint16 wD1) {
-  Sint16 i;
-  PALETTEENTRY* lpColwk;
+    Sint16 i;
+    PALETTEENTRY *lpColwk;
 
-lpColwk = lpcolorwk;
-  for (i = 0; i < 64; ++i, ++lpColwk) {
+    lpColwk = lpcolorwk;
+    for (i = 0; i < 64; ++i, ++lpColwk) {
 
-    switch (wD1) {
+        switch (wD1) {
 
-      case 1:
-        if (lpColwk->peRed < 224) {
-          lpColwk->peRed += 32;
+        case 1:
+            if (lpColwk->peRed < 224) {
+                lpColwk->peRed += 32;
+            }
+            break;
+        case 5:
+            if (lpColwk->peGreen < 224) {
+                lpColwk->peGreen += 32;
+            }
+            break;
+        case 9:
+            if (lpColwk->peBlue < 224) {
+                lpColwk->peBlue += 32;
+            }
+            break;
         }
-        break;
-      case 5:
-        if (lpColwk->peGreen < 224) {
-          lpColwk->peGreen += 32;
-        }
-        break;
-      case 9:
-        if (lpColwk->peBlue < 224) {
-          lpColwk->peBlue += 32;
-        }
-        break;
     }
-  }
-
 }
 
 void clwin_init(void) {
-  Sint16 i;
-  PALETTEENTRY* lpColwk;
-  PALETTEENTRY* lpSavewk;
-  PALETTEENTRY tmp = { 224, 224, 224, 1 };
+    Sint16 i;
+    PALETTEENTRY *lpColwk;
+    PALETTEENTRY *lpSavewk;
+    PALETTEENTRY tmp = {224, 224, 224, 1};
 
-  lpColwk = lpcolorwk;
-  lpSavewk = colorsave;
-  for (i = 0; i < 64; ++i) {
+    lpColwk = lpcolorwk;
+    lpSavewk = colorsave;
+    for (i = 0; i < 64; ++i) {
 
-    *lpSavewk++ = *lpColwk;
-    *lpColwk++ = tmp;
-  }
+        *lpSavewk++ = *lpColwk;
+        *lpColwk++ = tmp;
+    }
 }
 
 void clwin(void) {
-  *lpFadeFlag = 1;
-  FadeCount = 8;
-  wColwk = 0;
-  byMskwk = 224;
+    *lpFadeFlag = 1;
+    FadeCount = 8;
+    wColwk = 0;
+    byMskwk = 224;
 }
 
 void clwin_new(void) {
-  if (wColwk >= 3) {
+    if (wColwk >= 3) {
 
-    *lpFadeFlag = 0;
-    return;
-  }
-  if (--FadeCount >= 0) {
+        *lpFadeFlag = 0;
+        return;
+    }
+    if (--FadeCount >= 0) {
 
-    wincolor(byMskwk, code_tbl[wColwk]);
-    byMskwk -= 32;
-  }
-  else {
+        wincolor(byMskwk, code_tbl[wColwk]);
+        byMskwk -= 32;
+    } else {
 
-    FadeCount = 8;
-    byMskwk = 224;
-    ++wColwk;
-  }
+        FadeCount = 8;
+        byMskwk = 224;
+        ++wColwk;
+    }
 }
 
 void wincolor(Uint8 byD0, Uint16 wD1) {
-  Sint16 i;
-  Uint8 byColwk;
-  PALETTEENTRY *lpColwk, *lpSavewk;
+    Sint16 i;
+    Uint8 byColwk;
+    PALETTEENTRY *lpColwk, *lpSavewk;
 
-  lpColwk = lpcolorwk;
-  lpSavewk = colorsave;
-  for (i = 0; i < 64; ++i) {
+    lpColwk = lpcolorwk;
+    lpSavewk = colorsave;
+    for (i = 0; i < 64; ++i) {
 
-    switch (wD1) {
+        switch (wD1) {
 
-      case 1:
-        byColwk = lpSavewk->peRed;
-        if (byColwk < byD0) byColwk = byD0;
-        lpColwk->peRed = byColwk;
-        break;
-      case 5:
-        byColwk = lpSavewk->peGreen;
-        if (byColwk < byD0) byColwk = byD0;
-        lpColwk->peGreen = byColwk;
-        break;
-      case 9:
-        byColwk = lpSavewk->peBlue;
-        if (byColwk < byD0) byColwk = byD0;
-        lpColwk->peBlue = byColwk;
-        break;
+        case 1:
+            byColwk = lpSavewk->peRed;
+            if (byColwk < byD0)
+                byColwk = byD0;
+            lpColwk->peRed = byColwk;
+            break;
+        case 5:
+            byColwk = lpSavewk->peGreen;
+            if (byColwk < byD0)
+                byColwk = byD0;
+            lpColwk->peGreen = byColwk;
+            break;
+        case 9:
+            byColwk = lpSavewk->peBlue;
+            if (byColwk < byD0)
+                byColwk = byD0;
+            lpColwk->peBlue = byColwk;
+            break;
+        }
+        ++lpSavewk;
+        ++lpColwk;
     }
-    ++lpSavewk;
-    ++lpColwk;
-  }
-
 }
 
 Sint32 FadeProc(void) {
-  switch (*lpFadeFlag) {
+    switch (*lpFadeFlag) {
 
     case 1:
-      clwin_new();
-      break;
+        clwin_new();
+        break;
     case 2:
-      clwout_new();
-      break;
-  }
-  return 0;
+        clwout_new();
+        break;
+    }
+    return 0;
 }

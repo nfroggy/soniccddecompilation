@@ -1,1 +1,1 @@
-void et(sprite_status* pActwk);
+void et(sprite_status *pActwk);

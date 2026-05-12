@@ -1,7 +1,8 @@
 #include "../types.h"
 void clchgctr(void);
 void colchg6b(void);
-void clchg_sub0(Uint8* pChgTime, Uint8* pChgCnt, Uint8* pCntTbl, PALETTEENTRY* pColTbl);
+void clchg_sub0(Uint8 *pChgTime, Uint8 *pChgCnt, Uint8 *pCntTbl,
+                PALETTEENTRY *pColTbl);
 void fadein0(void);
 Sint32 fadein0_new(void);
 void fadeout(void);

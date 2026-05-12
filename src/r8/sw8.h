@@ -1,1 +1,1 @@
-void sw(sprite_status* swwk);
+void sw(sprite_status *swwk);

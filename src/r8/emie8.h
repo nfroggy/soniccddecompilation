@@ -1,1 +1,1 @@
-void emie8(sprite_status* pActwk);
+void emie8(sprite_status *pActwk);

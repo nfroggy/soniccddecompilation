@@ -1,1 +1,1 @@
-void tekkyu7j(sprite_status* pActwk);
+void tekkyu7j(sprite_status *pActwk);

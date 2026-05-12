@@ -1,1 +1,1 @@
-void miracle(sprite_status* actionwk);
+void miracle(sprite_status *actionwk);

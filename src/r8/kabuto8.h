@@ -1,1 +1,1 @@
-void kabuto(sprite_status* kabutowk);
+void kabuto(sprite_status *kabutowk);

@@ -1,1 +1,1 @@
-void iwa5(sprite_status* pActwk);
+void iwa5(sprite_status *pActwk);

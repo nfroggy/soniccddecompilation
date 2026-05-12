@@ -1,1 +1,1 @@
-void piston(sprite_status* pistonwk);
+void piston(sprite_status *pistonwk);

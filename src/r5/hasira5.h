@@ -1,1 +1,1 @@
-void hasira5(sprite_status* pActwk);
+void hasira5(sprite_status *pActwk);

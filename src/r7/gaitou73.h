@@ -1,1 +1,1 @@
-void gaitou73(sprite_status* pActwk);
+void gaitou73(sprite_status *pActwk);

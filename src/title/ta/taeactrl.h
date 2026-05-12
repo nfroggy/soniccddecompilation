@@ -1,11 +1,13 @@
 #include "ta_types.h"
 
-void EAError(Sint32 ret, Sint32 line, char* str);
+void EAError(Sint32 ret, Sint32 line, char *str);
 void srfDraw(void);
-Sint32 ld_load_grid_module(hmx_environment* buffer, char* file, hmx_environment* env, hmx_bitmap** bitmaps, Sint32 size);
+Sint32 ld_load_grid_module(hmx_environment *buffer, char *file,
+                           hmx_environment *env, hmx_bitmap **bitmaps,
+                           Sint32 size);
 Sint32 TAGridBmpCreate(void);
 Sint32 TAGridCreate(void);
-Sint32 GridInitSub(char* path, map_info* pInfo);
+Sint32 GridInitSub(char *path, map_info *pInfo);
 Sint32 TAGridInit(void);
 Sint32 BkgBmpCreate_TA(void);
 Sint32 BkgBmpDelete_TA(void);
@@ -19,8 +21,8 @@ void DeleteEA(void);
 void DrawTA(void);
 Uint16 GetLFont(char c);
 Uint16 GetSFont(char c);
-void TimeToAsc8(Uint32 Time, char* p);
-void TimeToAsc9(Uint32 Time, char* p);
+void TimeToAsc8(Uint32 Time, char *p);
+void TimeToAsc9(Uint32 Time, char *p);
 void PrintTotalTime(Sint32 mode, Uint32 b);
 void PrintRoundName(Sint32 mode, Sint32 round, Uint32 b, Sint32 grid);
 void PrintZoneNo(Sint32 mode, Sint32 zone);

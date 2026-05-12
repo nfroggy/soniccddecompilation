@@ -1,1 +1,1 @@
-void scarab(sprite_status* pActwk);
+void scarab(sprite_status *pActwk);

@@ -1,1 +1,1 @@
-void movie(sprite_status* moviewk);
+void movie(sprite_status *moviewk);

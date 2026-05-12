@@ -1,1 +1,1 @@
-void buranko5(sprite_status* pActwk);
+void buranko5(sprite_status *pActwk);

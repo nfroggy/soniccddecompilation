@@ -1,2 +1,2 @@
 void DeleteAllCharSprt(void);
-void StrMenu(char* lpStr);
+void StrMenu(char *lpStr);

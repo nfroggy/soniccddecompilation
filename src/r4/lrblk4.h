@@ -1,1 +1,1 @@
-void lrblk4(sprite_status* pActwk);
+void lrblk4(sprite_status *pActwk);

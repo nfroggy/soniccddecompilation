@@ -1,1 +1,1 @@
-void kaitenban(sprite_status* banwk);
+void kaitenban(sprite_status *banwk);

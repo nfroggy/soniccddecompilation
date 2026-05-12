@@ -1,1 +1,1 @@
-void block6(sprite_status* blockwk);
+void block6(sprite_status *blockwk);

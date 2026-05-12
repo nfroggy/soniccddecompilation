@@ -1,1 +1,1 @@
-void kuzure5(sprite_status* pActwk);
+void kuzure5(sprite_status *pActwk);

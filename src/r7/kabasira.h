@@ -1,1 +1,1 @@
-void kabasira(sprite_status* pActwk);
+void kabasira(sprite_status *pActwk);

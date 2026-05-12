@@ -1,1 +1,1 @@
-void hotaru8(sprite_status* hotaru);
+void hotaru8(sprite_status *hotaru);

@@ -1,1 +1,1 @@
-void screw(sprite_status* pActwk);
+void screw(sprite_status *pActwk);

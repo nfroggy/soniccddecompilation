@@ -1,1 +1,1 @@
-void okusieso(sprite_status* pActwk);
+void okusieso(sprite_status *pActwk);

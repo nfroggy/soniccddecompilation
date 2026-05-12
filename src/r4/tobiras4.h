@@ -1,1 +1,1 @@
-void tobiras4(sprite_status* pActwk);
+void tobiras4(sprite_status *pActwk);

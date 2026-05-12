@@ -1,1 +1,1 @@
-void baneiwa(sprite_status* pActwk);
+void baneiwa(sprite_status *pActwk);

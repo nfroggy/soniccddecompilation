@@ -2,6 +2,4 @@
 #include "miracle.h"
 #include "../action.h"
 
-void miracle(sprite_status* actionwk) {
-  frameout(actionwk);
-}
+void miracle(sprite_status *actionwk) { frameout(actionwk); }

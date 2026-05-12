@@ -1,1 +1,1 @@
-void edit(sprite_status* pActwk);
+void edit(sprite_status *pActwk);

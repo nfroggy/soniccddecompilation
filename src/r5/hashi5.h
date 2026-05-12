@@ -1,1 +1,1 @@
-void hashi5(sprite_status* pActwk);
+void hashi5(sprite_status *pActwk);

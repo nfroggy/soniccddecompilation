@@ -1,1 +1,1 @@
-void osumizu(sprite_status* pActwk);
+void osumizu(sprite_status *pActwk);

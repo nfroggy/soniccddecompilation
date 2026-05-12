@@ -1,1 +1,1 @@
-void wall42(sprite_status* pActwk);
+void wall42(sprite_status *pActwk);

@@ -1,1 +1,1 @@
-void yago(sprite_status* pActwk);
+void yago(sprite_status *pActwk);

@@ -24,78 +24,24 @@
 #include "tekkyu7j.h"
 #include "wall7.h"
 
-void(*act_tbl[60])(sprite_status*) = {
-  &play00,
-  &play00,
-  &baria,
-  &ami,
-  &noact,
-  &test_act,
-  &noact,
-  &gun7,
-  &hibana,
-  &spring,
-  &exit2,
-  &exit2_set,
-  &futa,
-  &mizukiri,
-  &koma,
-  &ring,
-  &flyring,
-  &noact,
-  &marker,
-  &bigring,
-  &gene,
-  &mosugu,
-  &goal,
-  &bakuha,
-  &item,
-  &item2,
-  &iwa,
-  &score,
-  &chgban,
-  &spring_r,
-  &flower,
-  &branko7,
-  &kanabun,
-  &kabasira,
-  &hotaru7,
-  &wall7,
-  &tekkyu7,
-  &tekkyu7j,
-  &movie,
-  &friend,
-  &et,
-  &dango,
-  &ball,
-  &noact,
-  &noact,
-  &noact,
-  &noact,
-  &noact,
-  &noact,
-  &noact,
-  &noact,
-  &noact,
-  &chgwall7,
-  &noact,
-  &noact,
-  &slight7,
-  &noact,
-  &clear,
-  &over,
-  &title
-};
+void (*act_tbl[60])(sprite_status *) = {
+    &play00, &play00,   &baria,    &ami,      &noact,     &test_act, &noact,
+    &gun7,   &hibana,   &spring,   &exit2,    &exit2_set, &futa,     &mizukiri,
+    &koma,   &ring,     &flyring,  &noact,    &marker,    &bigring,  &gene,
+    &mosugu, &goal,     &bakuha,   &item,     &item2,     &iwa,      &score,
+    &chgban, &spring_r, &flower,   &branko7,  &kanabun,   &kabasira, &hotaru7,
+    &wall7,  &tekkyu7,  &tekkyu7j, &movie,    &friend,    &et,       &dango,
+    &ball,   &noact,    &noact,    &noact,    &noact,     &noact,    &noact,
+    &noact,  &noact,    &noact,    &chgwall7, &noact,     &noact,    &slight7,
+    &noact,  &clear,    &over,     &title};
 
-void debugact(sprite_status* pActwk) {
-  if (pActwk->xposi.w.h++ >= 300)
-    pActwk->xposi.w.h = 0;
-  if (pActwk->yposi.w.h++ >= 200)
-    pActwk->yposi.w.h = 0;
+void debugact(sprite_status *pActwk) {
+    if (pActwk->xposi.w.h++ >= 300)
+        pActwk->xposi.w.h = 0;
+    if (pActwk->yposi.w.h++ >= 200)
+        pActwk->yposi.w.h = 0;
 
-  actionsub(pActwk);
+    actionsub(pActwk);
 }
 
-void noact(sprite_status* pActwk) {
-  frameout(pActwk);
-}
+void noact(sprite_status *pActwk) { frameout(pActwk); }

@@ -1,1 +1,1 @@
-void haguruma(sprite_status* wheelwk);
+void haguruma(sprite_status *wheelwk);

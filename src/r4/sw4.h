@@ -1,1 +1,1 @@
-void sw4(sprite_status* pActwk);
+void sw4(sprite_status *pActwk);

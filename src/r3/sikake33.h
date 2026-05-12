@@ -1,1 +1,1 @@
-void sikake33(sprite_status* actionwk);
+void sikake33(sprite_status *actionwk);

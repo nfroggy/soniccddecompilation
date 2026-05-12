@@ -1,1 +1,1 @@
-void kanabun(sprite_status* pActwk);
+void kanabun(sprite_status *pActwk);

@@ -1,1 +1,1 @@
-void amenbo(sprite_status* pActwk);
+void amenbo(sprite_status *pActwk);

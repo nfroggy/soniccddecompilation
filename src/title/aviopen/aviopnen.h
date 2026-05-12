@@ -1,6 +1,6 @@
 #include "../../types.h"
 void OESetSequenceNum(Uint16 num);
-void DLLInit(engine_dll* lpDllIn, char*** pBufTbl, void** pFuncTbl);
+void DLLInit(engine_dll *lpDllIn, char ***pBufTbl, void **pFuncTbl);
 void DLLEnd(void);
 void DLLPaint(Uint32 hdc);
 Sint32 DLLNotify(Uint32 WPARAM, long LPARAM);

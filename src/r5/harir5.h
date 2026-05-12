@@ -1,1 +1,1 @@
-void harir5(sprite_status* pActwk);
+void harir5(sprite_status *pActwk);

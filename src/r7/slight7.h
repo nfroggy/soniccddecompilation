@@ -1,1 +1,1 @@
-void slight7(sprite_status* pActwk);
+void slight7(sprite_status *pActwk);

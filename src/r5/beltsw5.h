@@ -1,1 +1,1 @@
-void beltsw5(sprite_status* pActwk);
+void beltsw5(sprite_status *pActwk);

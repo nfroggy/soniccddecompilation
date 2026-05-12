@@ -1,1 +1,1 @@
-void bobinbreak(sprite_status* bobinwk);
+void bobinbreak(sprite_status *bobinwk);

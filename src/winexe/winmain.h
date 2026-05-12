@@ -46,19 +46,20 @@ BOOL loadTimeAttack(BOOL param_1);
 BOOL loadStageByMenu(UINT stageMenuId);
 void toggleController(void);
 BOOL setupJoystick(void);
-void updateSwdata(UCHAR buttonsPressed, ushort_union* pSwdata);
+void updateSwdata(UCHAR buttonsPressed, ushort_union *pSwdata);
 void readController(int param_1);
 void resetInput(void);
 void __stdcall CDPlay(short trackNumber);
 void CDPause(void);
 void changeMusic(void);
-void readStageString(char* str);
-void log(char* msg);
-void showCustomError(int id, char* pMsg);
+void readStageString(char *str);
+void log(char *msg);
+void showCustomError(int id, char *pMsg);
 void readRecording(void);
 void writeRecording(void);
 short FUN_0040c00c(HWND hWnd);
-int showSonicDlg(HWND hWnd, LPCSTR resourceId, LPCSTR dialogId, LPARAM initValue);
+int showSonicDlg(HWND hWnd, LPCSTR resourceId, LPCSTR dialogId,
+                 LPARAM initValue);
 void loadIni(void);
 BOOL isDisplay256Colors(void);
 

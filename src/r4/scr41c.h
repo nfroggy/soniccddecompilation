@@ -1,7 +1,7 @@
 #include "../types.h"
 void enecginit(void);
 void divdevset();
-sprite_status* main_chk(void);
+sprite_status *main_chk(void);
 void scr_set(void);
 void playposiset(void);
 void scrbinit(Sint16 yWk);
@@ -21,33 +21,49 @@ void scrv_up_ch(int_union lD1);
 void sv_move_plus(Uint16 wD1);
 void scrv_down_ch(int_union lD1);
 void scrv_move(int_union lD1);
-void scrollb_hv(int_union* lD4, int_union* lD5);
+void scrollb_hv(int_union *lD4, int_union *lD5);
 void scrollb_v(Uint16 wD0);
 void scrollb_h(Sint32 lD4, Sint32 flagb);
 void scrollc_h(Sint32 lD4, Sint32 flagc);
 void scrollz_h(Sint32 lD4, Sint32 flagz);
 void scrollwrtadva(void);
 void scrollwrt(void);
-void scrollwrtb(Uint8* pScrFlag, Uint8* pMapWk, Sint32 VramBase, Uint16 wH_posiw, Uint16 wV_posiw);
+void scrollwrtb(Uint8 *pScrFlag, Uint8 *pMapWk, Sint32 VramBase,
+                Uint16 wH_posiw, Uint16 wV_posiw);
 void scrollwrtc(void);
 void scrollwrtz(void);
-void hblockwrt(POINT* pTilePoint, Sint32 VramBase, Uint16 wH_posiw, Uint16 wV_posiw, Uint16 xOffs, Uint16 yOffs, Uint8* pMapWk, Sint32 lpcnt);
-void hblockwrt1(POINT* pTilePoint, Sint32 VramBase, Uint16 wH_posiw, Uint16 wV_posiw, Uint16 xOffs, Uint16 yOffs, Uint8* pMapWk, Sint32 lpcnt);
-void vblockwrt(POINT* pTilePoint, Sint32 VramBase, Uint16 wH_posiw, Uint16 wV_posiw, Uint16 xOffs, Uint16 yOffs, Uint8* pMapWk, Sint32 lpcnt);
-void blockwrt(Sint32 VramBase, POINT* pTilePoint, Sint32 BlkIndex);
-Sint32 mapadrset(Uint16 wH_posiw, Uint16 wV_posiw, Uint16 xOffs, Uint16 yOffs, Uint8* pMapWk, Sint32* pIndex);
-Sint32 mapadrset1(Uint16 wH_posiw, Uint16 wV_posiw, Uint16 xOffs, Uint16 yOffs, Uint8* pMapWk, Sint32* pIndex);
-Sint32 mapadrset99(Uint16 wH_posiw, Uint16 wV_posiw, Uint16 xOffs, Uint16 yOffs, Uint8* pMapWk, Sint32* pIndex);
-Sint32 mapadrset2(Uint16 xOffs, Uint16 yOffs, Uint8* pMapWk, Sint32* pIndex, Uint16** ppBlockNo);
+void hblockwrt(POINT *pTilePoint, Sint32 VramBase, Uint16 wH_posiw,
+               Uint16 wV_posiw, Uint16 xOffs, Uint16 yOffs, Uint8 *pMapWk,
+               Sint32 lpcnt);
+void hblockwrt1(POINT *pTilePoint, Sint32 VramBase, Uint16 wH_posiw,
+                Uint16 wV_posiw, Uint16 xOffs, Uint16 yOffs, Uint8 *pMapWk,
+                Sint32 lpcnt);
+void vblockwrt(POINT *pTilePoint, Sint32 VramBase, Uint16 wH_posiw,
+               Uint16 wV_posiw, Uint16 xOffs, Uint16 yOffs, Uint8 *pMapWk,
+               Sint32 lpcnt);
+void blockwrt(Sint32 VramBase, POINT *pTilePoint, Sint32 BlkIndex);
+Sint32 mapadrset(Uint16 wH_posiw, Uint16 wV_posiw, Uint16 xOffs, Uint16 yOffs,
+                 Uint8 *pMapWk, Sint32 *pIndex);
+Sint32 mapadrset1(Uint16 wH_posiw, Uint16 wV_posiw, Uint16 xOffs, Uint16 yOffs,
+                  Uint8 *pMapWk, Sint32 *pIndex);
+Sint32 mapadrset99(Uint16 wH_posiw, Uint16 wV_posiw, Uint16 xOffs, Uint16 yOffs,
+                   Uint8 *pMapWk, Sint32 *pIndex);
+Sint32 mapadrset2(Uint16 xOffs, Uint16 yOffs, Uint8 *pMapWk, Sint32 *pIndex,
+                  Uint16 **ppBlockNo);
 void block_wrt(Uint16 BlockNo, Uint16 xOffs, Uint16 yOffs);
 Sint32 block_chk(Uint16 xOffs, Uint16 yOffs);
-void vramadrset(Uint16 wH_posiw, Uint16 wV_posiw, Uint16 xOffs, Uint16 yOffs, POINT* lpTilePoint);
-void vramadrset1(Uint16 wH_posiw, Uint16 wV_posiw, Uint16 xOffs, Uint16 yOffs, POINT* lpTilePoint);
-void vramadrset0(Uint16 xOffs, Uint16 yOffs, POINT* lpTilePoint);
-void vramadrset2(Uint16 wH_posiw, Uint16 wV_posiw, Uint16 xOffs, Uint16 yOffs, POINT* lpTilePoint);
-void vramadrset99(Uint16 wH_posiw, Uint16 wV_posiw, Uint16 xOffs, Uint16 yOffs, POINT* lpTilePoint);
+void vramadrset(Uint16 wH_posiw, Uint16 wV_posiw, Uint16 xOffs, Uint16 yOffs,
+                POINT *lpTilePoint);
+void vramadrset1(Uint16 wH_posiw, Uint16 wV_posiw, Uint16 xOffs, Uint16 yOffs,
+                 POINT *lpTilePoint);
+void vramadrset0(Uint16 xOffs, Uint16 yOffs, POINT *lpTilePoint);
+void vramadrset2(Uint16 wH_posiw, Uint16 wV_posiw, Uint16 xOffs, Uint16 yOffs,
+                 POINT *lpTilePoint);
+void vramadrset99(Uint16 wH_posiw, Uint16 wV_posiw, Uint16 xOffs, Uint16 yOffs,
+                  POINT *lpTilePoint);
 void mapwrt(void);
-void mapwrt2(Uint16 wH_posiw, Uint16 wV_posiw, Uint8* pMapWk, Sint32 VramBase);
-void mapwrt3(Uint16 wH_posiw, Uint16 wV_posiw, Uint8* pMapWk, Sint32 VramBase, Uint16 wD4, Uint16 wD6);
+void mapwrt2(Uint16 wH_posiw, Uint16 wV_posiw, Uint8 *pMapWk, Sint32 VramBase);
+void mapwrt3(Uint16 wH_posiw, Uint16 wV_posiw, Uint8 *pMapWk, Sint32 VramBase,
+             Uint16 wD4, Uint16 wD6);
 void mapinit(void);
 void mapset(void);

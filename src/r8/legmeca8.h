@@ -1,1 +1,1 @@
-void legmeca(sprite_status* pActwk);
+void legmeca(sprite_status *pActwk);

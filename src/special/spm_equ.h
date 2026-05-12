@@ -1,6 +1,6 @@
 #include "../types.h"
 extern int_union overint;
-extern Uint8* demoadr;
+extern Uint8 *demoadr;
 extern Sint32 hsdata5;
 extern Sint32 hsdata4;
 extern Sint32 hsdata3;
@@ -20,6 +20,6 @@ extern Uint8 demowk[4096];
 extern Uint16 dummy100[128];
 extern Uint16 dummy000[128];
 extern Uint32 hdatabuf_l[128];
-extern Uint32* hdatabuf;
+extern Uint32 *hdatabuf;
 extern Uint16 mpopenwk[1024];
 extern Uint8 rlscrflg_save;

@@ -1,1 +1,1 @@
-void tonbo(sprite_status* pActwk);
+void tonbo(sprite_status *pActwk);

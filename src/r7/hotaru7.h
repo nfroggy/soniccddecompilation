@@ -1,1 +1,1 @@
-void hotaru7(sprite_status* pActwk);
+void hotaru7(sprite_status *pActwk);

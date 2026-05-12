@@ -3,8 +3,8 @@
 
 #include <windows.h>
 
-BOOL switchGameMenuDll(HWND hWnd, char* path, USHORT type);
-BOOL loadOpening(HWND hWnd, void* hSurf);
+BOOL switchGameMenuDll(HWND hWnd, char *path, USHORT type);
+BOOL loadOpening(HWND hWnd, void *hSurf);
 void unloadGameMenuDll(void);
 void unloadOpening(void);
 BOOL loadAviOpen(HWND hWnd);
@@ -20,12 +20,12 @@ void callDllPaint(HDC hDc);
 void changeMovieSize(void);
 BOOL FUN_0040e6fe(WPARAM wParam, LPARAM lParam);
 void realizeMovie(void);
-BOOL loadSavedata(HWND hWnd, void* hSurf);
+BOOL loadSavedata(HWND hWnd, void *hSurf);
 void unloadSavedata(void);
-BOOL loadVisualmd(HWND hWnd, void* hSurf);
-BOOL loadSoundtst(HWND hWnd, void* hSurf);
-BOOL loadStagetst(HWND hWnd, void* hSurf);
-BOOL loadBesttime(HWND hWnd, void* hSurf);
+BOOL loadVisualmd(HWND hWnd, void *hSurf);
+BOOL loadSoundtst(HWND hWnd, void *hSurf);
+BOOL loadStagetst(HWND hWnd, void *hSurf);
+BOOL loadBesttime(HWND hWnd, void *hSurf);
 void unloadBesttime(void);
 void unloadVisualmd(void);
 void unloadSoundtst(void);

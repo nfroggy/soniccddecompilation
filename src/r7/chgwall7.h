@@ -1,1 +1,1 @@
-void chgwall7(sprite_status* pActwk);
+void chgwall7(sprite_status *pActwk);

@@ -1,1 +1,1 @@
-void kumo(sprite_status* pActwk);
+void kumo(sprite_status *pActwk);

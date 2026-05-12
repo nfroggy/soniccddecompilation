@@ -1,1 +1,1 @@
-void branko7(sprite_status* pActwk);
+void branko7(sprite_status *pActwk);

@@ -1,1 +1,1 @@
-void ukidai(sprite_status* pActwk);
+void ukidai(sprite_status *pActwk);

@@ -1,1 +1,1 @@
-void harid4(sprite_status* pActwk);
+void harid4(sprite_status *pActwk);

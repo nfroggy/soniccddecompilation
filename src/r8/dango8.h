@@ -1,1 +1,1 @@
-void dango(sprite_status* pActwk);
+void dango(sprite_status *pActwk);

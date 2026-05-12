@@ -1,6 +1,6 @@
 #include "types.h"
 void bye_chk(void);
-void play00(sprite_status* actionwk);
+void play00(sprite_status *actionwk);
 void muteki_set(void);
 void test_mapwrt(void);
 void play00init(void);
@@ -47,7 +47,7 @@ void play00erase(void);
 void loopchk(void);
 void st7_x(void);
 void patchgmain(void);
-void patchgmain2(Uint8* pat_pointer);
+void patchgmain2(Uint8 *pat_pointer);
 void playrunchg(Uint8 pat_no);
 void playrunchg2(Uint8 pat_no);
 void playrunchg3(Uint8 pat_no);
@@ -55,4 +55,4 @@ void playetc_chg(void);
 void little_runchg(void);
 char little_patchg(char pat_index);
 void playwrt(void);
-Uint8 frip_spd(Sint32* cal_jump, Uint8* cal_direc);
+Uint8 frip_spd(Sint32 *cal_jump, Uint8 *cal_direc);

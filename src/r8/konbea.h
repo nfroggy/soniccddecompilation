@@ -1,1 +1,1 @@
-void konbea(sprite_status* pActwk);
+void konbea(sprite_status *pActwk);

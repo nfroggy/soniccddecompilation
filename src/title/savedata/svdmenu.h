@@ -1,5 +1,5 @@
 #include "../../types.h"
-Uint32 SDFileSelect(Sint32* pFileNumber);
+Uint32 SDFileSelect(Sint32 *pFileNumber);
 void SDMenuSelect(void);
 void SDMenuCopy(void);
 void SDMenuRename(void);
