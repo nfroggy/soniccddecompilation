@@ -60,7 +60,6 @@ void movie(sprite_status* moviewk) {
   actionsub(moviewk);
   if (moviewk->r_no0 > 2) return;
   frameout_s(moviewk);
-  if (moviewk->actno == 0) divdevset(4);
 }
 
 static void die(sprite_status* moviewk) {
@@ -71,7 +70,6 @@ static void m_init(sprite_status* moviewk) {
   sprite_status* new_actwk;
 
   if (projector_flag != 0) { die(moviewk); return; }
-  divdevset(5);
 
   moviewk->r_no0 += 2;
   moviewk->actflg |= 4;
@@ -123,7 +121,6 @@ static void m_die(sprite_status* moviewk) {
   moviewk->r_no0 += 2;
   moviewk->patno = 1;
   moviewk->actfree[21] = 255;
-  divdevset(4);
 
   if (hitchk(moviewk, &actwk[0]) != 0) ride_on_clr(moviewk, &actwk[0]);
   m_baku(moviewk);

@@ -431,7 +431,6 @@ void ari_init(sprite_status* pActwk) {
   pActwk->sprvsize = 19;
   pActwk->colino = 41;
   ((Sint16*)pActwk)[25] = pActwk->xposi.w.h;
-  pa_set(pActwk, 2);
 
   if (pActwk->userflag.b.h == 0)
   {
@@ -514,7 +513,6 @@ void chou_init(sprite_status* pActwk) {
   ((Sint16*)pActwk)[23] = pActwk->xposi.w.h;
   ((Sint16*)pActwk)[25] = pActwk->yposi.w.h;
   ((Sint16*)pActwk)[24] = -32768;
-  pa_set(pActwk, 1);
   if (pActwk->userflag.b.h == 0)
   {
     ((Sint32*)pActwk)[13] = -32768;
@@ -590,7 +588,6 @@ void ka_init(sprite_status* pActwk) {
   pActwk->sprvsize = 16;
   pActwk->colino = 43;
   ((Sint16*)pActwk)[23] = pActwk->xposi.w.h;
-  pa_set(pActwk, 0);
 
   if (pActwk->userflag.b.h == 0)
   {
@@ -701,7 +698,6 @@ void kamemusi_init(sprite_status* pActwk) {
   pActwk->sprhsize = 16;
   pActwk->sprvsize = 15;
   ((Sint16*)pActwk)[23] = pActwk->xposi.w.h;
-  pa_set(pActwk, 4);
 
   if (pActwk->userflag.b.h == 0)
   {
@@ -929,7 +925,6 @@ void tagame_init(sprite_status* pActwk) {
   pActwk->sprvsize = 22;
   ((Sint16*)pActwk)[23] = pActwk->xposi.w.h;
   ((Sint16*)pActwk)[24] = pActwk->yposi.w.h;
-  pa_set(pActwk, 3);
 
   if (pActwk->userflag.b.h == 0)
   {

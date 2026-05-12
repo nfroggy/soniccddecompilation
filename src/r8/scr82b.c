@@ -1,5 +1,8 @@
 #include "../equ.h"
 #include "scr81a.h"
+#include "col8b.h"
+#include "../save.h"
+#include "../scrchk.h"
 #include "../impfuncs.h"
 
 static void playposiset(void);

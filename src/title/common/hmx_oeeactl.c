@@ -1,4 +1,5 @@
 #include "../../types.h"
+#include "grid.h"
 #include "hmx_types.h"
 #include "ld_types.h"
 #include "hmx_oeeactl.h"

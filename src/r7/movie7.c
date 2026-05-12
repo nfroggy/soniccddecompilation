@@ -109,7 +109,6 @@ void m_init(sprite_status* pActwk) {
     die(pActwk);
     return;
   }
-  divdevset(5);
 
   pActwk->r_no0 += 2;
   pActwk->actflg |= 4;
@@ -181,7 +180,6 @@ void m_die(sprite_status* pActwk) {
   pActwk->r_no0 += 2;
   pActwk->patno = 1;
   pActwk->actfree[21] = 255;
-  divdevset(4);
   if (hitchk(pActwk, &actwk[0])) ride_on_clr(pActwk, &actwk[0]);
 }
 

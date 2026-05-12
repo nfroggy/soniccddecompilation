@@ -49,7 +49,7 @@ static void koma_init(sprite_status* komawk) {
   komawk->sprvsize = 6;
   ((Sint16*)komawk)[29] = komawk->xposi.w.h;
   komawk->xspeed.w = 256;
-  pa_set();
+ 
   if (actwkchk2(komawk, &sprwk) != 0) { frameout(komawk); return; };
   sprwk->actno = 10;
   sprwk->xposi.w.h = komawk->xposi.w.h;

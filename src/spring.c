@@ -196,7 +196,6 @@ void iwa_init(sprite_status* actionwk) {
   actionwk->sprvsize = 16;
   actionwk->patno = 0;
   d0 = 11;
-  pa_set();
 }
 
 void iwa_move(sprite_status* actionwk) {
@@ -242,7 +241,6 @@ actionwk->r_no0 += 2;
   ((Sint16*)actionwk)[29] = actionwk->xposi.w.h;
   actionwk->xspeed.w = 384;
 
-  pa_set();
   patchg(actionwk, (Uint8**)&komachg);
 
   if (actwkchk(&a1) != 0) {
@@ -389,7 +387,6 @@ actionwk->r_no0 += 2;
       actionwk->patbase = spring45pat;
     else
       actionwk->patbase = spring45pat2;
-    pa_set();
   }
   else
   if (actionwk->actflg & 2) {

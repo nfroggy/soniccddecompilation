@@ -188,8 +188,6 @@ void tobita_init(sprite_status* pActwk) {
   pActwk->sprhs = 24;
   pActwk->sprvsize = 4;
 
-  pa_set(pActwk, 7);
-
   d0 = 3;
   d1 = 2;
 
@@ -412,7 +410,6 @@ void hari_init(sprite_status* pActwk) {
   pActwk->patbase = hari12pat;
   pActwk->actflg |= 4;
   pActwk->sprpri = 3;
-  pa_set(pActwk, 10);
   pActwk->sprhsize = 16;
   pActwk->sprvsize = 8;
 

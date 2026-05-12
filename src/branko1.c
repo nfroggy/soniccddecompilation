@@ -73,8 +73,6 @@ static void branko1_init(sprite_status* pActwk) {
   pActwk->sprpri = 3;
   pActwk->patbase = branko1pat;
 
-  pa_set();
-
   pActwk->sprhsize = 24;
   pActwk->sprvsize = 8;
 

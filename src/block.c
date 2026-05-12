@@ -54,8 +54,6 @@ void block_init(sprite_status* pActwk) {
   pActwk->actflg |= 4;
   pActwk->patbase = blockpat;
 
-  pa_set(pActwk, 5);
-
   pActwk->sprpri = 1;
   pActwk->sprhsize = 12;
   pActwk->sprvsize = 12;

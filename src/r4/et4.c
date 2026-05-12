@@ -4,9 +4,8 @@
 #include "../actset.h"
 #include "../loader2.h"
 #include "../score.h"
+#include "../ridechk.h"
 #include "playsub4.h"
-
-extern Sint32 hitchk(sprite_status* pActwk, sprite_status* pPlayerwk);
 
 #if defined(R41B)
   #define SPRITE_ET4_BASE 459

@@ -432,7 +432,6 @@ static void vfuta_init(sprite_status* pActwk) {
   pActwk->sprhsize = 4;
   pActwk->sprvsize = 24;
 
-  pa_set();
   vfuta_move1(pActwk);
 }
 

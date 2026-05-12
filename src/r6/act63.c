@@ -1,5 +1,6 @@
 #include "../equ.h"
 #include "act61a.h"
+#include "../action.h"
 #include "../goal.h"
 #include "../item.h"
 #include "../player6.h"

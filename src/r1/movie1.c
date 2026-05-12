@@ -96,6 +96,7 @@ char tbl0[37] =
   -1
 };
 
+
 void movie1(sprite_status* pActwk) {
   void(*tbl_m[5])(sprite_status*) =
   {
@@ -115,7 +116,6 @@ void movie1(sprite_status* pActwk) {
     if (pActwk->r_no0 <= 2)
     {
       if (frameout_s(pActwk) != 0) return;
-      divdevset(4);
     }
   }
 }
@@ -132,7 +132,6 @@ void mm_init(sprite_status* pActwk) {
     die(pActwk);
     return;
   }
-  divdevset(5);
 
   pActwk->r_no0 += 2;
   pActwk->actflg |= 4;
@@ -207,7 +206,6 @@ void mm_die(sprite_status* pActwk) {
   pActwk->r_no0 += 2;
   pActwk->patno = 1;
   pActwk->actfree[21] = 255;
-  divdevset(4);
   if (hitchk(pActwk, &actwk[0])) ride_on_clr(pActwk, &actwk[0]);
 }
 

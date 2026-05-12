@@ -489,7 +489,6 @@ void egg1coli_set(sprite_status* pActwk) {
 }
 
 Sint32 egg1_ini(sprite_status* pActwk) {
-  divdevset(4);
   bossstart = 1;
 
   pActwk->cddat = 0;

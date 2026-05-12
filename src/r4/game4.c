@@ -14,6 +14,7 @@ extern void scroll(void);
 extern void scrollwrt(void);
 extern void mapwrt(void);
 extern void mapinit(void);
+extern void cg_change(void);
 
 static void back_to_cnt(void);
 static void bye_cnt(void);

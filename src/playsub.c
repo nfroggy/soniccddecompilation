@@ -481,7 +481,6 @@ void futa_init(sprite_status* futawk) {
   futawk->sprhsize = 44;
   if (futawk->userflag.b.h == 2) futawk->sprhsize = 24;
   futawk->sprvsize = 8;
-  pa_set(futawk, 12);
   futa_move(futawk);
 }
 
@@ -539,7 +538,6 @@ void exit2_init(sprite_status* exitwk) {
   exitwk->sprpri = 1;
   exitwk->patbase = exit2pat;
   exitwk->mstno.b.h = exitwk->userflag.b.h;
-  pa_set(exitwk, 13);
   if (exitwk->userflag.b.h < 2) soundset(162);
   else soundset(161);
   exit2_move(exitwk);

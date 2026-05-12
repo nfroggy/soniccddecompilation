@@ -1377,8 +1377,6 @@ static void egg7_goal0(sprite_status* pActwk) {
     ((Sint16*)pActwk)[23] = 30;
     pActwk->xspeed.w = 0;
     pActwk->yspeed.w = 512;
-
-    divdevset();
   }
 }
 
