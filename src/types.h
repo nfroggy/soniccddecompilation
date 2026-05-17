@@ -241,7 +241,7 @@ typedef struct {
     Sint8 num;
     Sint8 dummy;
     edit_data_entry dat[EDIT_DATA_ENTRY_COUNT];
-} edit_data __attribute__((aligned(8)));
+} edit_data /* __attribute__((aligned(8))) */;
 
 typedef struct {
     Uint8 *CGdata;

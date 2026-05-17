@@ -4728,6 +4728,7 @@ function(soniccd_add_variant variant)
 
   target_include_directories(${target} PRIVATE ${SONICCD_INCLUDE_DIRS})
   target_compile_definitions(${target} PRIVATE ${${variant}_DEFINES})
+  source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${target_sources})
 
   if(MSVC)
     target_compile_definitions(${target} PRIVATE _CRT_SECURE_NO_WARNINGS WIN32 _WINDOWS)
@@ -4762,3 +4763,51 @@ foreach(variant IN LISTS SONICCD_SELECTED_VARIANTS)
 endforeach()
 
 add_custom_target(variants DEPENDS ${SONICCD_SELECTED_TARGETS})
+
+add_executable(frontend
+  src/frontend/main.c
+  src/frontend/dll.c
+  src/frontend/dll.h
+  src/frontend/file.c
+  src/frontend/file.h
+  src/frontend/graphics.c
+  src/frontend/graphics.h
+  src/frontend/score.c
+  src/frontend/score.h
+  src/frontend/sound.c
+  src/frontend/sound.h
+  src/frontend/szdd.c
+  src/frontend/szdd.h
+  src/frontend/utilities.c
+  src/frontend/utilities.h
+)
+
+if(MSVC)
+  target_compile_definitions(frontend PRIVATE _CRT_SECURE_NO_WARNINGS WIN32 _WINDOWS)
+  target_compile_options(frontend PRIVATE /W3)
+  # use "main" instead of "WinMain"
+  set_target_properties(frontend PROPERTIES LINK_FLAGS "/ENTRY:mainCRTStartup")
+else()
+  target_compile_options(frontend PRIVATE -Wall)
+endif()
+
+# use vendored sdl3 lib on msvc
+if(MSVC)
+  target_include_directories(frontend PRIVATE "libs/SDL3/include")
+  if(CMAKE_CL_64)
+	target_link_libraries(frontend PRIVATE "${PROJECT_SOURCE_DIR}/libs/SDL3/lib/x64/SDL3.lib")
+	set(MSVC_PLATFORM_DLL_PATH ${PROJECT_SOURCE_DIR}/libs/SDL3/lib/x64)
+  else()
+    target_link_libraries(frontend PRIVATE "${PROJECT_SOURCE_DIR}/libs/SDL3/lib/x86/SDL3.lib")
+	set(MSVC_PLATFORM_DLL_PATH ${PROJECT_SOURCE_DIR}/libs/SDL3/lib/x86)
+  endif()
+  # make sure the debugger can find the sdl dll file
+  set(FRONTEND_PATH "PATH=%PATH%" ${MSVC_PLATFORM_DLL_PATH})
+  set_target_properties(frontend PROPERTIES VS_DEBUGGER_ENVIRONMENT "${FRONTEND_PATH}")
+  # set the debugger working directory
+  set_target_properties(frontend PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+# otherwise use system sdl3
+else()
+  find_package(SDL3 REQUIRED CONFIG REQUIRED COMPONENTS SDL3)
+  target_link_libraries(frontend PRIVATE SDL3::SDL3)
+endif()
