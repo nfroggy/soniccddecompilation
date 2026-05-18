@@ -4766,6 +4766,7 @@ add_custom_target(variants DEPENDS ${SONICCD_SELECTED_TARGETS})
 
 add_executable(frontend
   src/frontend/main.c
+  src/frontend/constants.h
   src/frontend/dll.c
   src/frontend/dll.h
   src/frontend/file.c

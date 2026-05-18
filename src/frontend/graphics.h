@@ -15,5 +15,7 @@ void EAsprset(Sint16 x, Sint16 y, Uint16 index, Uint16 linkdata, Uint16 reverse)
 void ClrSpriteDebug(void);
 void ChangeTileBmp(Sint32 tile_start, Sint32 bmp_no);
 
-int Graphics_LoadSprites(const char *path);
+int Graphics_Init(SDL_Window **window, SDL_Renderer **renderer);
+int Graphics_LoadSprites(const char *path, bmp_info *spriteInfo, int spriteInfoCount);
 void Graphics_Draw(SDL_Renderer *renderer);
+void Graphics_Shutdown(void);

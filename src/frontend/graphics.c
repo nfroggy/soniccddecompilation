@@ -1,5 +1,6 @@
 #include <SDL3/SDL.h>
 #include <string.h>
+#include "constants.h"
 #include "graphics.h"
 #include "szdd.h"
 
@@ -33,12 +34,15 @@ typedef struct {
 typedef struct {
 	Sint16 width;
 	Sint16 height;
-	Uint8 *data;
-	SDL_Texture *texture;
+	SDL_Surface *surfaces[4];
 } BitmapData;
 
 static int numSpriteBitmaps;
 static BitmapData *spriteBitmaps;
+static SDL_Palette *sharedPalette;
+static SDL_Surface *framebuffer;
+static SDL_Surface *presentSurface;
+static SDL_Texture *presentTexture;
 
 typedef struct {
 	Sint16 x;
@@ -102,11 +106,50 @@ static Uint8 *Convert4bpp(Uint8 *data, Sint32 width, Sint32 paddedWidth, Sint32 
 	return out;
 }
 
+static SDL_Surface *CreateIndexedSurface(Sint32 width, Sint32 height, Uint8 *pixels, SDL_FlipMode flip) {
+	SDL_Surface *surface;
+	surface = SDL_CreateSurface(width, height, SDL_PIXELFORMAT_INDEX8);
+	if (!surface) {
+		SDL_Log("Couldn't create sprite surface: %s", SDL_GetError());
+		return NULL;
+	}
+	SDL_SetSurfacePalette(surface, sharedPalette);
+	SDL_SetSurfaceColorKey(surface, true, 0);
+	SDL_SetSurfaceBlendMode(surface, SDL_BLENDMODE_NONE);
+	SDL_SetSurfaceRLE(surface, true);
+	SDL_LockSurface(surface);
+	for (int y = 0; y < height; y++) {
+		memcpy((Uint8 *)surface->pixels + (y * surface->pitch), pixels + (y * width), width);
+	}
+	SDL_UnlockSurface(surface);
+	if (flip != SDL_FLIP_NONE) {
+		SDL_FlipSurface(surface, flip);
+	}
+	return surface;
+}
+
+static void DestroySpriteBitmaps(void) {
+	if (!spriteBitmaps) {
+		return;
+	}
+	for (int i = 0; i < numSpriteBitmaps; i++) {
+		for (int j = 0; j < SDL_arraysize(spriteBitmaps[i].surfaces); j++) {
+			SDL_DestroySurface(spriteBitmaps[i].surfaces[j]);
+		}
+	}
+	free(spriteBitmaps);
+	spriteBitmaps = NULL;
+	numSpriteBitmaps = 0;
+}
+
 Sint32 SetGrid(Sint32 base, Sint32 x, Sint32 y, Sint32 block, Sint32 frip) {
 	return 0;
 }
 
 void EAsprset(Sint16 x, Sint16 y, Uint16 index, Uint16 linkdata, Uint16 reverse) {
+	if (linkdata >= SDL_arraysize(sprites)) {
+		return;
+	}
 	sprites[linkdata].x = x;
 	sprites[linkdata].y = y;
 	sprites[linkdata].index = index;
@@ -121,7 +164,44 @@ void ChangeTileBmp(Sint32 tile_start, Sint32 bmp_no) {
 
 }
 
-int Graphics_LoadSprites(const char *path) {
+int Graphics_Init(SDL_Window **window, SDL_Renderer **renderer) {
+	if (!SDL_CreateWindowAndRenderer("Sonic CD", SCREEN_WIDTH * 3, SCREEN_HEIGHT * 3, 0, window, renderer)) {
+		SDL_Log("Failed to create window and renderer: %s", SDL_GetError());
+		return 0;
+	}
+	SDL_SetRenderLogicalPresentation(*renderer, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_LOGICAL_PRESENTATION_LETTERBOX);
+	SDL_SetRenderVSync(*renderer, 1);
+
+	sharedPalette = SDL_CreatePalette(256);
+	if (!sharedPalette) {
+		SDL_Log("Couldn't create shared palette: %s", SDL_GetError());
+		return 0;
+	}
+
+	framebuffer = SDL_CreateSurface(SCREEN_WIDTH, SCREEN_HEIGHT, SDL_PIXELFORMAT_INDEX8);
+	if (!framebuffer) {
+		SDL_Log("Couldn't create framebuffer surface: %s", SDL_GetError());
+		return 0;
+	}
+	SDL_SetSurfacePalette(framebuffer, sharedPalette);
+
+	presentSurface = SDL_CreateSurface(SCREEN_WIDTH, SCREEN_HEIGHT, SDL_PIXELFORMAT_ARGB8888);
+	if (!presentSurface) {
+		SDL_Log("Couldn't create presentation surface: %s", SDL_GetError());
+		return 0;
+	}
+	SDL_SetSurfaceBlendMode(presentSurface, SDL_BLENDMODE_NONE);
+
+	presentTexture = SDL_CreateTexture(*renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
+	if (!presentTexture) {
+		SDL_Log("Couldn't create presentation texture: %s", SDL_GetError());
+		return;
+	}
+	SDL_SetTextureScaleMode(presentTexture, SDL_SCALEMODE_PIXELART);
+	return 1;
+}
+
+int Graphics_LoadSprites(const char *path, bmp_info *spriteInfo, int spriteInfoCount) {
 	AssetHeader ah;
 	SpriteHeader sh;
 	Uint8 *data = SZDD_Decompress(path);
@@ -129,89 +209,108 @@ int Graphics_LoadSprites(const char *path) {
 		return 0;
 	}
 	LoadAssetHeader(data, &ah);
-	if (spriteBitmaps) {
-		free(spriteBitmaps);
-	}
+	DestroySpriteBitmaps();
 	spriteBitmaps = malloc(ah.count * sizeof(BitmapData));
+	if (spriteInfo) {
+		memset(spriteInfo, 0, spriteInfoCount * sizeof(*spriteInfo));
+	}
 	Uint8 *spriteHeaders = data + ASSET_HEADER_ENCODED_LEN;
 	Uint8 *spriteGraphics = data + ah.dataOffset;
 	for (int i = 0; i < ah.count; i++) {
+		Uint8 *pixels;
 		LoadSpriteHeader(spriteHeaders, &sh);
 		spriteBitmaps[i].width = sh.width;
 		spriteBitmaps[i].height = sh.height;
-		spriteBitmaps[i].data = Convert4bpp(spriteGraphics, sh.width, sh.paddedWidth, sh.height, sh.palette);
-		spriteBitmaps[i].texture = NULL;
+		if (spriteInfo && i < spriteInfoCount) {
+			spriteInfo[i].xs = (Uint8)sh.width;
+			spriteInfo[i].ys = (Uint8)sh.height;
+			spriteInfo[i].ofs = 0;
+		}
+		pixels = Convert4bpp(spriteGraphics, sh.width, sh.paddedWidth, sh.height, sh.palette);
+		spriteBitmaps[i].surfaces[SDL_FLIP_NONE] = CreateIndexedSurface(sh.width, sh.height, pixels, SDL_FLIP_NONE);
+		spriteBitmaps[i].surfaces[SDL_FLIP_HORIZONTAL] = CreateIndexedSurface(sh.width, sh.height, pixels, SDL_FLIP_HORIZONTAL);
+		spriteBitmaps[i].surfaces[SDL_FLIP_VERTICAL] = CreateIndexedSurface(sh.width, sh.height, pixels, SDL_FLIP_VERTICAL);
+		spriteBitmaps[i].surfaces[SDL_FLIP_HORIZONTAL_AND_VERTICAL] = CreateIndexedSurface(sh.width, sh.height, pixels, SDL_FLIP_HORIZONTAL_AND_VERTICAL);
+		free(pixels);
 		spriteHeaders += SPRITE_HEADER_ENCODED_LEN;
 		spriteGraphics += ((sh.paddedWidth / 2) * sh.height);
 	}
+	free(data);
 	numSpriteBitmaps = ah.count;
 	return 0;
 }
 
-static void UpdatePalettes(SDL_Renderer *renderer) {
+void Graphics_Shutdown(void) {
+	DestroySpriteBitmaps();
+	SDL_DestroySurface(framebuffer);
+	framebuffer = NULL;
+	SDL_DestroySurface(presentSurface);
+	presentSurface = NULL;
+	SDL_DestroyTexture(presentTexture);
+	presentTexture = NULL;
+	SDL_DestroyPalette(sharedPalette);
+	sharedPalette = NULL;
+}
+
+static void UpdatePalette(void) {
 	static PALETTEENTRY lastColorwk[64];
-	if (memcmp(colorwk, lastColorwk, sizeof(colorwk)) == 0) {
+	static int paletteInitialized;
+	SDL_Color colors[256];
+	if (paletteInitialized && memcmp(colorwk, lastColorwk, sizeof(colorwk)) == 0) {
 		return;
 	}
 	memcpy(lastColorwk, colorwk, sizeof(colorwk));
-	static int count = 0;
-	SDL_Log("reload %d", count++);
-	for (int i = 0; i < numSpriteBitmaps; i++) {
-		BitmapData *sb = &spriteBitmaps[i];
-		if (!sb->texture) {
-			sb->texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, sb->width, sb->height);
-			SDL_SetTextureScaleMode(sb->texture, SDL_SCALEMODE_PIXELART);
-		}
-		Uint8 *indices = sb->data;
-		Uint32 *pixels;
-		int pitch;
-		SDL_LockTexture(sb->texture, NULL, &pixels, &pitch);
-		for (int y = 0; y < sb->height; y++) {
-			for (int x = 0; x < sb->width; x++) {
-				Uint8 index = *indices++;
-				if (!index) {
-					pixels[x] = 0;
-				}
-				else {
-					PALETTEENTRY *color = &colorwk[index];
-					pixels[x] = (0xff << 24) | (color->peRed << 16) | (color->peGreen << 8) | (color->peBlue);
-				}
-			}
-			pixels += (pitch / sizeof(Uint32));
-		}
-		SDL_UnlockTexture(sb->texture);
+	for (int i = 0; i < SDL_arraysize(colors); i++) {
+		colors[i].r = 0;
+		colors[i].g = 0;
+		colors[i].b = 0;
+		colors[i].a = 255;
 	}
+	for (int i = 0; i < SDL_arraysize(colorwk); i++) {
+		colors[i].r = colorwk[i].peRed;
+		colors[i].g = colorwk[i].peGreen;
+		colors[i].b = colorwk[i].peBlue;
+		colors[i].a = 255;
+	}
+	SDL_SetPaletteColors(sharedPalette, colors, 0, SDL_arraysize(colors));
+	paletteInitialized = 1;
 }
 
-static void DrawSprites(SDL_Renderer *renderer, int priority) {
+static void DrawSprites(SDL_Surface *target, bool highPriority) {
 	for (int i = MAX_SPRITES - 1; i >= 0; --i) {
 		Sprite *sprite = &sprites[i];
 		BitmapData *bitmap;
-		SDL_FRect rect;
+		SDL_Surface *surface;
+		SDL_Rect rect;
 		if (!sprite->index) {
 			continue;
 		}
-		if (((sprite->reverse & 0x8000) != 0) != priority) {
+		if ((!!(sprite->reverse & 0x8000)) != highPriority) {
+			continue;
+		}
+		if (sprite->index >= numSpriteBitmaps) {
 			continue;
 		}
 		bitmap = &spriteBitmaps[sprite->index];
-		if (!bitmap->texture) {
+		surface = bitmap->surfaces[sprite->reverse & 3];
+		if (!surface) {
 			continue;
 		}
 		rect.x = sprite->x - 128;
 		rect.y = sprite->y - 128;
 		rect.w = bitmap->width;
 		rect.h = bitmap->height;
-		SDL_RenderTextureRotated(renderer, bitmap->texture, NULL, &rect, 0, 0, (SDL_FlipMode)(sprite->reverse & 3));
+		SDL_BlitSurface(surface, NULL, target, &rect);
 	}
 }
 
 void Graphics_Draw(SDL_Renderer *renderer) {
-	UpdatePalettes(renderer);
-	PALETTEENTRY *bgColor = &colorwk[0];
-	SDL_SetRenderDrawColor(renderer, bgColor->peRed, bgColor->peGreen, bgColor->peBlue, 0xff);
-	SDL_RenderClear(renderer);
-	DrawSprites(renderer, 0);
-	DrawSprites(renderer, 1);
+	UpdatePalette();
+	SDL_FillSurfaceRect(framebuffer, NULL, 0);
+	DrawSprites(framebuffer, false);
+	DrawSprites(framebuffer, true);
+	SDL_BlitSurface(framebuffer, NULL, presentSurface, NULL);
+	SDL_UpdateTexture(presentTexture, NULL, presentSurface->pixels, presentSurface->pitch);
+	SDL_RenderTexture(renderer, presentTexture, NULL, NULL);
 	SDL_RenderPresent(renderer);
 }

@@ -11,13 +11,6 @@
 #include "szdd.h"
 #include "utilities.h"
 
-#define SCREEN_WIDTH 320
-#define SCREEN_HEIGHT 224
-#define TILE_SIZE 8
-#define GRID_W 128
-#define GRID_H 64
-#define STAGE_GRID_W 64
-#define STAGE_GRID_H 32
 #define MAX_SPRITES 256
 #define FUNC_TABLE_SIZE 64
 
@@ -84,12 +77,9 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    if (!SDL_CreateWindowAndRenderer("Sonic CD", SCREEN_WIDTH * 3, SCREEN_HEIGHT * 3, 0, &window, &renderer)) {
-        SDL_Log("Couldn't create window/renderer: %s", SDL_GetError());
+    if (!Graphics_Init(&window, &renderer)) {
         return -1;
     }
-    SDL_SetRenderLogicalPresentation(renderer, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_LOGICAL_PRESENTATION_LETTERBOX);
-    SDL_SetRenderVSync(renderer, 1);
 
     if (!DLL_Load("build/bin/Debug/r11a.dll")) {
         SDL_Log("Couldn't load DLL");
@@ -101,7 +91,7 @@ int main(int argc, char **argv) {
     SetDebugFlag(0);
     game_init();
 
-    Graphics_LoadSprites("R1/11A/SCMP11A.CM_");
+    Graphics_LoadSprites("R1/11A/SCMP11A.CM_", (bmp_info *)gameInfo.pSprBmp, 700);
 
     int running = 1;
     while (running) {
@@ -142,6 +132,7 @@ int main(int argc, char **argv) {
 
     DLL_memfree();
     DLL_Unload();
+    Graphics_Shutdown();
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
