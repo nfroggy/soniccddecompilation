@@ -16,6 +16,8 @@ void ClrSpriteDebug(void);
 void ChangeTileBmp(Sint32 tile_start, Sint32 bmp_no);
 
 int Graphics_Init(SDL_Window **window, SDL_Renderer **renderer);
+int Graphics_LoadTiles(const char *path);
+int Graphics_LoadChangeTiles(const char *path);
 int Graphics_LoadSprites(const char *path, bmp_info *spriteInfo, int spriteInfoCount);
-void Graphics_Draw(SDL_Renderer *renderer);
+void Graphics_Draw(SDL_Renderer *renderer, Sint32 scraHPosiw, Sint32 scrbHPosiw, Sint32 vscroll);
 void Graphics_Shutdown(void);

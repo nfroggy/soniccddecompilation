@@ -39,10 +39,16 @@ typedef struct {
 
 static int numSpriteBitmaps;
 static BitmapData *spriteBitmaps;
+static int numTileBitmaps;
+static BitmapData *tileBitmaps;
+static int numChangeTileBitmaps;
+static BitmapData *changeTileBitmaps;
+static BitmapData **tiles;
 static SDL_Palette *sharedPalette;
 static SDL_Surface *framebuffer;
 static SDL_Surface *presentSurface;
 static SDL_Texture *presentTexture;
+static Uint16 tileGrids[3][STAGE_GRID_H][STAGE_GRID_W];
 
 typedef struct {
 	Sint16 x;
@@ -128,28 +134,80 @@ static SDL_Surface *CreateIndexedSurface(Sint32 width, Sint32 height, Uint8 *pix
 	return surface;
 }
 
-static void DestroySpriteBitmaps(void) {
-	if (!spriteBitmaps) {
-		return;
-	}
-	for (int i = 0; i < numSpriteBitmaps; i++) {
-		for (int j = 0; j < SDL_arraysize(spriteBitmaps[i].surfaces); j++) {
-			SDL_DestroySurface(spriteBitmaps[i].surfaces[j]);
+static void DestroyBitmaps(BitmapData **bitmaps, int count) {
+	for (int i = 0; i < count; i++) {
+		for (int j = 0; j < SDL_arraysize((*bitmaps)[i].surfaces); j++) {
+			SDL_DestroySurface((*bitmaps)[i].surfaces[j]);
 		}
 	}
-	free(spriteBitmaps);
-	spriteBitmaps = NULL;
+	free(*bitmaps);
+	*bitmaps = NULL;
+}
+
+static void DestroySpriteBitmaps(void) {
+	DestroyBitmaps(&spriteBitmaps, numSpriteBitmaps);
 	numSpriteBitmaps = 0;
 }
 
+static void DestroyTileBitmaps(void) {
+	DestroyBitmaps(&tileBitmaps, numTileBitmaps);
+	numTileBitmaps = 0;
+	if (tiles) {
+		free(tiles);
+	}
+}
+
+static void DestroyChangeTileBitmaps(void) {
+	DestroyBitmaps(&changeTileBitmaps, numChangeTileBitmaps);
+	numChangeTileBitmaps = 0;
+}
+
+static int PositiveMod(int value, int divisor) {
+	value %= divisor;
+	if (value < 0) {
+		value += divisor;
+	}
+	return value;
+}
+
+static Uint16 GetTileVariant(Uint16 block, Uint16 frip) {
+	Uint16 index = block & 0x7ff;
+	if (!index) {
+		return 0;
+	}
+	frip = (frip ^ block) & 0x1800;
+	if (frip == 0) {
+		return index * 4;
+	}
+	if (frip == 0x1800) {
+		return index * 4 + 3;
+	}
+	if (frip & 0x1000) {
+		return index * 4 + 2;
+	}
+	return index * 4 + 1;
+}
+
 Sint32 SetGrid(Sint32 base, Sint32 x, Sint32 y, Sint32 block, Sint32 frip) {
+	Uint16 tile = GetTileVariant((Uint16)block, (Uint16)frip);
+	x = PositiveMod(x, STAGE_GRID_W);
+	y = PositiveMod(y, STAGE_GRID_H);
+	if (base != 0) {
+		tileGrids[2][y][x] = tile;
+	} else if (!tile) {
+		tileGrids[0][y][x] = 0;
+		tileGrids[1][y][x] = 0;
+	} else if (block & 0x8000) {
+		tileGrids[0][y][x] = tile;
+		tileGrids[1][y][x] = 0;
+	} else {
+		tileGrids[0][y][x] = 0;
+		tileGrids[1][y][x] = tile;
+	}
 	return 0;
 }
 
 void EAsprset(Sint16 x, Sint16 y, Uint16 index, Uint16 linkdata, Uint16 reverse) {
-	if (linkdata >= SDL_arraysize(sprites)) {
-		return;
-	}
 	sprites[linkdata].x = x;
 	sprites[linkdata].y = y;
 	sprites[linkdata].index = index;
@@ -161,7 +219,7 @@ void ClrSpriteDebug(void) {
 }
 
 void ChangeTileBmp(Sint32 tile_start, Sint32 bmp_no) {
-
+	tiles[tile_start] = &changeTileBitmaps[bmp_no];
 }
 
 int Graphics_Init(SDL_Window **window, SDL_Renderer **renderer) {
@@ -195,7 +253,7 @@ int Graphics_Init(SDL_Window **window, SDL_Renderer **renderer) {
 	presentTexture = SDL_CreateTexture(*renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
 	if (!presentTexture) {
 		SDL_Log("Couldn't create presentation texture: %s", SDL_GetError());
-		return;
+		return 0;
 	}
 	SDL_SetTextureScaleMode(presentTexture, SDL_SCALEMODE_PIXELART);
 	return 1;
@@ -211,9 +269,7 @@ int Graphics_LoadSprites(const char *path, bmp_info *spriteInfo, int spriteInfoC
 	LoadAssetHeader(data, &ah);
 	DestroySpriteBitmaps();
 	spriteBitmaps = malloc(ah.count * sizeof(BitmapData));
-	if (spriteInfo) {
-		memset(spriteInfo, 0, spriteInfoCount * sizeof(*spriteInfo));
-	}
+	memset(spriteInfo, 0, spriteInfoCount * sizeof(*spriteInfo));
 	Uint8 *spriteHeaders = data + ASSET_HEADER_ENCODED_LEN;
 	Uint8 *spriteGraphics = data + ah.dataOffset;
 	for (int i = 0; i < ah.count; i++) {
@@ -221,7 +277,7 @@ int Graphics_LoadSprites(const char *path, bmp_info *spriteInfo, int spriteInfoC
 		LoadSpriteHeader(spriteHeaders, &sh);
 		spriteBitmaps[i].width = sh.width;
 		spriteBitmaps[i].height = sh.height;
-		if (spriteInfo && i < spriteInfoCount) {
+		if (i < spriteInfoCount) {
 			spriteInfo[i].xs = (Uint8)sh.width;
 			spriteInfo[i].ys = (Uint8)sh.height;
 			spriteInfo[i].ofs = 0;
@@ -237,11 +293,73 @@ int Graphics_LoadSprites(const char *path, bmp_info *spriteInfo, int spriteInfoC
 	}
 	free(data);
 	numSpriteBitmaps = ah.count;
-	return 0;
+	return 1;
+}
+
+static int LoadTileSet(const char *path, BitmapData **outBitmaps) {
+	AssetHeader ah;
+	Uint8 *data = SZDD_Decompress(path);
+	if (!data) {
+		return 0;
+	}
+	LoadAssetHeader(data, &ah);
+	*outBitmaps = malloc(ah.count * sizeof(BitmapData));
+
+	Uint8 *metadata = data + ASSET_HEADER_ENCODED_LEN;
+	int paletteCounts[4];
+	for (int i = 0; i < 4; i++) {
+		paletteCounts[i] = LoadSint16LE(metadata);
+		metadata += sizeof(Sint16);
+	}
+	int palette = 0;
+	Uint8 *dimensions = metadata;
+	Uint8 *graphics = data + ah.dataOffset;
+	for (int i = 0; i < ah.count; i++) {
+		while (paletteCounts[palette] == 0) {
+			palette++;
+			if (palette >= 4) {
+				palette = 3;
+				break;
+			}
+		}
+		paletteCounts[palette]--;
+
+		Sint16 width = LoadSint16LE(dimensions); dimensions += sizeof(Sint16);
+		Sint16 height = LoadSint16LE(dimensions); dimensions += sizeof(Sint16);
+		(*outBitmaps)[i].width = width;
+		(*outBitmaps)[i].height = height;
+		Uint8 *pixels = Convert4bpp(graphics, width, width, height, palette * 16);
+		(*outBitmaps)[i].surfaces[SDL_FLIP_NONE] = CreateIndexedSurface(width, height, pixels, SDL_FLIP_NONE);
+		(*outBitmaps)[i].surfaces[SDL_FLIP_HORIZONTAL] = CreateIndexedSurface(width, height, pixels, SDL_FLIP_HORIZONTAL);
+		(*outBitmaps)[i].surfaces[SDL_FLIP_VERTICAL] = CreateIndexedSurface(width, height, pixels, SDL_FLIP_VERTICAL);
+		(*outBitmaps)[i].surfaces[SDL_FLIP_HORIZONTAL_AND_VERTICAL] = CreateIndexedSurface(width, height, pixels, SDL_FLIP_HORIZONTAL_AND_VERTICAL);
+		free(pixels);
+		graphics += width * height / 2;
+	}
+
+	free(data);
+	return ah.count;
+}
+
+int Graphics_LoadTiles(const char *path) {
+	memset(tileGrids, 0, sizeof(tileGrids));
+	numTileBitmaps = LoadTileSet(path, &tileBitmaps);
+	tiles = malloc(numTileBitmaps * sizeof(BitmapData **));
+	for (int i = 0; i < numTileBitmaps; i++) {
+		tiles[i] = &tileBitmaps[i];
+	}
+	return numTileBitmaps;
+}
+
+int Graphics_LoadChangeTiles(const char *path) {
+	numChangeTileBitmaps = LoadTileSet(path, &changeTileBitmaps);
+	return numChangeTileBitmaps;
 }
 
 void Graphics_Shutdown(void) {
 	DestroySpriteBitmaps();
+	DestroyTileBitmaps();
+	DestroyChangeTileBitmaps();
 	SDL_DestroySurface(framebuffer);
 	framebuffer = NULL;
 	SDL_DestroySurface(presentSurface);
@@ -288,9 +406,6 @@ static void DrawSprites(SDL_Surface *target, bool highPriority) {
 		if ((!!(sprite->reverse & 0x8000)) != highPriority) {
 			continue;
 		}
-		if (sprite->index >= numSpriteBitmaps) {
-			continue;
-		}
 		bitmap = &spriteBitmaps[sprite->index];
 		surface = bitmap->surfaces[sprite->reverse & 3];
 		if (!surface) {
@@ -304,10 +419,70 @@ static void DrawSprites(SDL_Surface *target, bool highPriority) {
 	}
 }
 
-void Graphics_Draw(SDL_Renderer *renderer) {
+static void BlitTile(SDL_Surface *target, Uint16 tile, const SDL_Rect *src, const SDL_Rect *dst) {
+	BitmapData *bitmap;
+	SDL_Surface *surface;
+	int tileIndex = tile / 4;
+	int flip = tile & 3;
+	if (!tile || tileIndex < 0 || tileIndex >= numTileBitmaps) {
+		return;
+	}
+	bitmap = tiles[tileIndex];
+	surface = bitmap->surfaces[flip];
+	if (!surface) {
+		return;
+	}
+	SDL_BlitSurface(surface, src, target, dst);
+}
+
+static void DrawGridPlane(SDL_Surface *target, int plane, int viewX, int viewY) {
+	int firstTileX = viewX / TILE_SIZE;
+	int firstTileY = viewY / TILE_SIZE;
+	int offsetX = viewX % TILE_SIZE;
+	int offsetY = viewY % TILE_SIZE;
+	for (int screenY = -offsetY, tileY = 0; screenY < SCREEN_HEIGHT; screenY += TILE_SIZE, tileY++) {
+		int gridY = PositiveMod(firstTileY + tileY, STAGE_GRID_H);
+		for (int screenX = -offsetX, tileX = 0; screenX < SCREEN_WIDTH; screenX += TILE_SIZE, tileX++) {
+			int gridX = PositiveMod(firstTileX + tileX, STAGE_GRID_W);
+			SDL_Rect dst = {screenX, screenY, TILE_SIZE, TILE_SIZE};
+			BlitTile(target, tileGrids[plane][gridY][gridX], NULL, &dst);
+		}
+	}
+}
+
+static void DrawGridPlaneSheared(SDL_Surface *target, int plane, int viewY) {
+	for (int screenY = 0; screenY < SCREEN_HEIGHT; screenY++) {
+		int viewX = (-hscrollbuff[screenY].w.l) % (STAGE_GRID_W * TILE_SIZE);
+		int worldY = viewY + screenY;
+		int gridY = PositiveMod(worldY / TILE_SIZE, STAGE_GRID_H);
+		int srcY = PositiveMod(worldY, TILE_SIZE);
+		int firstTileX = viewX / TILE_SIZE;
+		int offsetX = viewX % TILE_SIZE;
+		for (int screenX = -offsetX, tileX = 0; screenX < SCREEN_WIDTH; screenX += TILE_SIZE, tileX++) {
+			int gridX = PositiveMod(firstTileX + tileX, STAGE_GRID_W);
+			SDL_Rect src = {0, srcY, TILE_SIZE, 1};
+			SDL_Rect dst = {screenX, screenY, TILE_SIZE, 1};
+			BlitTile(target, tileGrids[plane][gridY][gridX], &src, &dst);
+		}
+	}
+}
+
+void Graphics_Draw(SDL_Renderer *renderer, Sint32 scraHPosiw, Sint32 scrbHPosiw, Sint32 vscroll) {
+	int fgViewX = (scraHPosiw >> 16) & 0x1ff;
+	int bgViewX = (scrbHPosiw >> 16) & 0x1ff;
+	int fgViewY = (vscroll >> 16) & 0xff;
+	int bgViewY = vscroll & 0xff;
 	UpdatePalette();
-	SDL_FillSurfaceRect(framebuffer, NULL, 0);
+	SDL_FillSurfaceRect(framebuffer, NULL, 48);
+	if (hscrollbuff[0].w.l || hscrollbuff[1].w.l || hscrollbuff[32].w.l || hscrollbuff[96].w.l) {
+		DrawGridPlaneSheared(framebuffer, 2, bgViewY);
+	}
+	else {
+		DrawGridPlane(framebuffer, 2, bgViewX, bgViewY);
+	}
+	DrawGridPlane(framebuffer, 1, fgViewX, fgViewY);
 	DrawSprites(framebuffer, false);
+	DrawGridPlane(framebuffer, 0, fgViewX, fgViewY);
 	DrawSprites(framebuffer, true);
 	SDL_BlitSurface(framebuffer, NULL, presentSurface, NULL);
 	SDL_UpdateTexture(presentTexture, NULL, presentSurface->pixels, presentSurface->pitch);

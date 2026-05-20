@@ -81,17 +81,25 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    if (!DLL_Load("build/bin/Debug/r11a.dll")) {
+    if (!Sound_Init()) {
+        return -1;
+    }
+
+    if (!DLL_Load("build/bin/Debug/r53c.dll")) {
         SDL_Log("Couldn't load DLL");
         return -1;
     }
-    gameInfo.time_flag = 1;
+    gameInfo.time_flag = 2;
+    gameInfo.generate_flag = 1;
+    gameInfo.stageno.b.l = 2;
+    gameInfo.stageno.b.h = 3;
 
     DLL_meminit(memoryTbl, functionTbl);
+    Graphics_LoadTiles("R5/53C/TCMP53C.CM_");
+    Graphics_LoadChangeTiles("R5/53C/TCHG53C.CM_");
+    Graphics_LoadSprites("R5/53C/SCMP53C.CM_", (bmp_info *)gameInfo.pSprBmp, 700);
     SetDebugFlag(0);
     game_init();
-
-    Graphics_LoadSprites("R1/11A/SCMP11A.CM_", (bmp_info *)gameInfo.pSprBmp, 700);
 
     int running = 1;
     while (running) {
@@ -127,7 +135,9 @@ int main(int argc, char **argv) {
             running = 0;
         }
 
-        Graphics_Draw(renderer);
+        Graphics_Draw(renderer, Get_scra_h_posiw ? Get_scra_h_posiw() : 0,
+                      Get_scrb_h_posiw ? Get_scrb_h_posiw() : 0,
+                      Get_vscroll ? Get_vscroll() : 0);
     }
 
     DLL_memfree();
