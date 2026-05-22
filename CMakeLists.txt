@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.20)
 project(soniccd LANGUAGES C CXX)
 
 set(SONICCD_VARIANTS "all" CACHE STRING "Semicolon-separated variants to build, or all")
+option(SONICCD_BUILD_TESTS "Build backend unit tests" OFF)
 
 set(SONICCD_INCLUDE_DIRS
   ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -4822,4 +4823,13 @@ if(MSVC)
 else()
   find_package(SDL3 REQUIRED CONFIG REQUIRED COMPONENTS SDL3)
   target_link_libraries(frontend PRIVATE SDL3::SDL3)
+endif()
+
+if(SONICCD_BUILD_TESTS)
+  if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    message(FATAL_ERROR "SONICCD_BUILD_TESTS requires a 32-bit build. Configure MSVC with the Win32 platform, not x64.")
+  endif()
+
+  enable_testing()
+  add_subdirectory(tests/backend)
 endif()
