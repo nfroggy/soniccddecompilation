@@ -8,7 +8,6 @@
 #include "graphics.h"
 #include "score.h"
 #include "sound.h"
-#include "szdd.h"
 #include "utilities.h"
 
 #define MAX_SPRITES 256
@@ -72,6 +71,9 @@ void *functionTbl[64] = {
 };
 
 int main(int argc, char **argv) {
+    const int specialStage = 0;
+    int clearGraphicsLoaded = 0;
+
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         fprintf(stderr, "Couldn't init SDL: %s\n", SDL_GetError());
         return -1;
@@ -85,20 +87,22 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    if (!DLL_Load("build/bin/Debug/r53c.dll")) {
+    if (!DLL_Load("build/bin/Debug/special.dll")) {
         SDL_Log("Couldn't load DLL");
         return -1;
     }
-    gameInfo.time_flag = 2;
-    gameInfo.generate_flag = 1;
-    gameInfo.stageno.b.l = 2;
-    gameInfo.stageno.b.h = 3;
+    gameInfo.stagenm = specialStage;
+    gameInfo.pl_suu = 3;
+    gameInfo.SPEMode = 0;
 
     DLL_meminit(memoryTbl, functionTbl);
-    Graphics_LoadTiles("R5/53C/TCMP53C.CM_");
-    Graphics_LoadChangeTiles("R5/53C/TCHG53C.CM_");
-    Graphics_LoadSprites("R5/53C/SCMP53C.CM_", (bmp_info *)gameInfo.pSprBmp, 700);
-    SetDebugFlag(0);
+    if (!Graphics_LoadSpecialStage(gameInfo.stagenm, gameInfo.sm_adr0, (bmp_info *)gameInfo.pSprBmp, 700)) {
+        SDL_Log("Couldn't load special stage graphics");
+        return -1;
+    }
+    if (SetDebugFlag) {
+        SetDebugFlag(0);
+    }
     game_init();
 
     int running = 1;
@@ -130,14 +134,33 @@ int main(int argc, char **argv) {
                 fade_flag = 0;
             }
         }
-        else if (game && game()) {
-            SDL_Log("game requested exit");
-            running = 0;
+        else {
+            if (gameInfo.SPEMode == 1 && !clearGraphicsLoaded) {
+                CDPause(0);
+                if (!Graphics_LoadSpecialClearScreen()) {
+                    SDL_Log("Couldn't load special stage clear graphics");
+                    running = 0;
+                    continue;
+                }
+                clearGraphicsLoaded = 1;
+            }
+            if (game) {
+                Sint32 gameResult = game();
+                if (gameResult && gameInfo.SPEMode != 2 && gameInfo.SPEMode != 3) {
+                    SDL_Log("special stage mode result %d", gameResult);
+                }
+            }
         }
 
-        Graphics_Draw(renderer, Get_scra_h_posiw ? Get_scra_h_posiw() : 0,
-                      Get_scrb_h_posiw ? Get_scrb_h_posiw() : 0,
-                      Get_vscroll ? Get_vscroll() : 0);
+        if (Special_block_chg && gameInfo.SPEMode == 0) {
+            Uint16 hane1;
+            Uint16 hane2;
+            Uint16 dmg1;
+            Uint16 dmg2;
+            Special_block_chg(&hane1, &hane2, &dmg1, &dmg2);
+            Graphics_UpdateSpecialGroundTiles(hane1, hane2, dmg1, dmg2);
+        }
+        Graphics_DrawSpecial(renderer, &gameInfo);
     }
 
     DLL_memfree();

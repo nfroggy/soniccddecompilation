@@ -1,5 +1,8 @@
 #ifndef TYPES_H
 #define TYPES_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include <stdint.h>
 
 typedef int8_t Sint8;
@@ -383,4 +386,7 @@ typedef struct {
     Uint16 ysize;
 } bwrt_info;
 
+#ifdef __cplusplus
+}
+#endif
 #endif

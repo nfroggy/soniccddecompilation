@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(soniccd LANGUAGES C)
+project(soniccd LANGUAGES C CXX)
 
 set(SONICCD_VARIANTS "all" CACHE STRING "Semicolon-separated variants to build, or all")
 
@@ -4771,16 +4771,24 @@ add_executable(frontend
   src/frontend/dll.h
   src/frontend/file.c
   src/frontend/file.h
-  src/frontend/graphics.c
+  src/frontend/graphics.cpp
   src/frontend/graphics.h
   src/frontend/score.c
   src/frontend/score.h
   src/frontend/sound.c
   src/frontend/sound.h
-  src/frontend/szdd.c
-  src/frontend/szdd.h
+  src/frontend/szdd.cpp
+  src/frontend/szdd.hpp
   src/frontend/utilities.c
   src/frontend/utilities.h
+)
+
+# language versions
+set_target_properties(frontend PROPERTIES
+    C_STANDARD 17
+    C_STANDARD_REQUIRED ON
+    CXX_STANDARD 20
+    CXX_STANDARD_REQUIRED ON
 )
 
 if(MSVC)

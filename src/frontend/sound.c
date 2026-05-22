@@ -62,11 +62,17 @@ static MIX_Audio *soundEffects[NUM_SOUND_EFFECTS];
 
 void WaveRequest(Sint16 req_no) {
 	SDL_Log("WaveRequest(%d)", req_no);
+	if (req_no < 0 || req_no >= NUM_SOUND_EFFECTS || !soundEffects[req_no]) {
+		return;
+	}
 	MIX_PlayAudio(mixer, soundEffects[req_no]);
 }
 
 void CDPlay(Sint16 track_number) {
 	SDL_Log("CDPlay(%d)", track_number);
+	if (track_number < 2 || track_number - 2 >= SDL_arraysize(musicTbl)) {
+		return;
+	}
 	MusicInfo *mi = &musicTbl[track_number - 2];
 	MIX_StopTrack(musicTrack, 0);
 	if (mi->filename) {

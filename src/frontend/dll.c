@@ -12,6 +12,7 @@ Sint32(*Get_scrb_h_posiw)(void);
 Sint32(*FadeProc)(void);
 void (*SetDebugFlag)(Uint32 newVal);
 void (*GetRoundStr)(Uint16 StageNo, Uint8 Time_Flag, char *buf);
+void (*Special_block_chg)(Uint16 *hane1, Uint16 *hane2, Uint16 *dmg1, Uint16 *dmg2);
 
 static SDL_SharedObject *currentDll = NULL;
 
@@ -43,6 +44,7 @@ int DLL_Load(const char *path) {
     FadeProc = loadFunction(dll, "FadeProc");
     SetDebugFlag = loadFunction(dll, "SetDebugFlag");
     GetRoundStr = loadFunction(dll, "GetRoundStr");
+    Special_block_chg = loadFunction(dll, "Special_block_chg");
 
     if (!game_init || !game || !DLL_meminit) {
         SDL_Log("Missing essential exports!");

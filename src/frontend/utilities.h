@@ -1,4 +1,7 @@
 #pragma once
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include "../types.h"
 
 void *sMemAlloc(Sint32 size);
@@ -11,3 +14,7 @@ char *sStrcpy(char *dst, char *src);
 Sint32 sStrncmp(char *lhs, char *rhs, Sint32 size);
 void sPrintf(char *dst, const char *format, ...);
 void sOutputDebugString(char *msg);
+
+#ifdef __cplusplus
+}
+#endif
