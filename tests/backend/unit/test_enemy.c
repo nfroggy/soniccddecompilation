@@ -3,6 +3,18 @@
 #include "support/test_runner.h"
 #include "types.h"
 
+typedef void *test_handle;
+typedef unsigned long test_dword;
+#define TEST_STILL_ACTIVE 259UL
+__declspec(dllimport) test_handle __stdcall CreateThread(
+    void *thread_attributes, size_t stack_size,
+    test_dword(__stdcall *start_address)(void *), void *parameter,
+    test_dword creation_flags, test_dword *thread_id);
+__declspec(dllimport) void __stdcall Sleep(test_dword milliseconds);
+__declspec(dllimport) int __stdcall GetExitCodeThread(test_handle thread,
+                                                      test_dword *exit_code);
+__declspec(dllimport) int __stdcall CloseHandle(test_handle object);
+
 sprite_status actwk[128];
 short_union editmode;
 
@@ -354,6 +366,35 @@ static void test_ka_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s0_count);
 }
 
+static test_dword __stdcall ka_outside_band_nonreturning_thread(void *param) {
+    ka_move((sprite_status *)param);
+    return 0;
+}
+
+static void test_ka_outside_home_band_does_not_return(test_context *ctx) {
+    test_handle thread;
+    test_dword exit_code;
+
+    reset_enemy_state();
+    actwk[0].xposi.w.h = 1000;
+    actwk[0].yposi.w.h = 1000;
+    actwk[1].xposi.w.h = 100;
+    actwk[1].yposi.w.h = 200;
+    ka_init(&actwk[1]);
+    actwk[1].xposi.w.h = 400;
+    patchg_count = 0;
+
+    thread = CreateThread(0, 0, ka_outside_band_nonreturning_thread, &actwk[1],
+                          0, 0);
+    TEST_ASSERT_NOT_NULL(ctx, thread);
+    Sleep(50);
+    exit_code = 0;
+    TEST_ASSERT_TRUE(ctx, GetExitCodeThread(thread, &exit_code) != 0);
+    TEST_ASSERT_EQ_INT(ctx, TEST_STILL_ACTIVE, exit_code);
+    TEST_ASSERT_EQ_INT(ctx, 0, patchg_count);
+    CloseHandle(thread);
+}
+
 static void test_kamemusi_and_tama_paths(test_context *ctx) {
     reset_enemy_state();
     actwk[0].xposi.w.h = 1000;
@@ -550,6 +591,7 @@ TEST_MAIN_BEGIN;
     test_ari_paths(&ctx);
     test_chou_paths(&ctx);
     test_ka_paths(&ctx);
+    test_ka_outside_home_band_does_not_return(&ctx);
     test_kamemusi_and_tama_paths(&ctx);
     test_tagame_paths(&ctx);
 TEST_MAIN_END

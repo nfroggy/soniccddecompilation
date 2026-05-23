@@ -88,6 +88,11 @@ static void queue_actwkchk(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
+static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
+    actor->actfree[offset] = (Uint8)value;
+    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
+}
+
 static void reset_logs(void) {
     actionsub_count = 0;
     actionsub_actor = 0;
@@ -231,6 +236,38 @@ static void test_dai8_child_frames_out_when_parent_is_missing(test_context *ctx)
     queue_actwkchk(child);
     init_platform(parent, 1000, 200, 1);
     parent->actno = 0;
+
+    dai8(child);
+
+    TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
+    TEST_ASSERT_TRUE(ctx, frameout_actor == child);
+    TEST_ASSERT_EQ_INT(ctx, 0, actionsub_count);
+    TEST_ASSERT_EQ_INT(ctx, 0, frameout_s00_count);
+}
+
+static void test_dai8_child_frames_out_when_origin_words_differ(
+    test_context *ctx) {
+    sprite_status *parent = &actwk[3];
+    sprite_status *child = &actwk[20];
+
+    reset_dai8_state();
+    queue_actwkchk(child);
+    init_platform(parent, 1000, 200, 1);
+    set_actfree_word(child, 4, 1001);
+
+    dai8(child);
+
+    TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
+    TEST_ASSERT_TRUE(ctx, frameout_actor == child);
+    TEST_ASSERT_EQ_INT(ctx, 0, actionsub_count);
+    TEST_ASSERT_EQ_INT(ctx, 0, frameout_s00_count);
+
+    reset_dai8_state();
+    parent = &actwk[3];
+    child = &actwk[20];
+    queue_actwkchk(child);
+    init_platform(parent, 1000, 200, 1);
+    set_actfree_word(child, 6, 201);
 
     dai8(child);
 
@@ -429,6 +466,7 @@ TEST_MAIN_BEGIN;
     test_dai8_initializes_two_children_for_type2(&ctx);
     test_dai8_initialization_frames_out_when_child_allocation_fails(&ctx);
     test_dai8_child_frames_out_when_parent_is_missing(&ctx);
+    test_dai8_child_frames_out_when_origin_words_differ(&ctx);
     test_dai8_child_with_valid_parent_runs_without_frameout_s00(&ctx);
     test_dai8_wait_counts_down_and_advances_on_zero(&ctx);
     test_dai8_appear_waits_until_animation_reaches_patno_zero(&ctx);

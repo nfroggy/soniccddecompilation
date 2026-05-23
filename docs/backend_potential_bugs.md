@@ -119,6 +119,26 @@ tests.
   characterization.
 - Related source location: `src/r8/scarab.c`, line 215.
 
+## `src/r8/scr81*.c`, `src/r8/scr82b.c`, and `src/r8/scr82c.c`: `scrollwrtb` can read past its write table at the top edge
+
+- Test case or snapshot path: `tests/backend/unit/r8/test_scr82b.c` and
+  `tests/backend/unit/r8/test_scr82c.c`; same guarded fixture shape is used by
+  `tests/backend/unit/r8/test_scr81a.c` through
+  `tests/backend/unit/r8/test_scr81d.c`
+- Variant and build configuration: `R11A`, MSVC 19.51, Win32 Debug
+- Observed exact behavior: while adding coverage for the screen-update flags,
+  setting the upward update bit with `scrb_v_posit.w.h == 0` made `scrollwrtb`
+  compute `(scrb_v_posit.w.h - 16) / 16`, mask it to `127`, and index beyond
+  the local `z81awrttbl` array. The same top-edge calculation is present in
+  `src/r8/scr81a.c` through `src/r8/scr81d.c`. The characterization tests seed
+  `scrb_v_posit.w.h = 16` before exercising that normal update path.
+- Why the behavior looks suspicious: the table has 33 entries in these files,
+  49 entries in the `scr81*` files, but the masked top-edge index can address
+  `z81awrttbl[128]`. This is intentionally not fixed during characterization.
+- Related source location: `src/r8/scr81a.c` through `src/r8/scr81d.c`, lines
+  690-707 or equivalent; `src/r8/scr82b.c`, lines 687-704; `src/r8/scr82c.c`,
+  lines 687-704.
+
 ## `src/r6/batta.c`: `emylr_jump` does not return a value
 
 - Test case or snapshot path: `tests/backend/unit/r6/test_batta.c`
@@ -218,6 +238,22 @@ tests.
   This is intentionally not fixed during characterization.
 - Related source location: `src/r8/shut.c`, lines 65-71.
 
+## `src/r8/dango8.c`: roll rebound speed preserves unsigned low word
+
+- Test case or snapshot path: `tests/backend/unit/r8/test_dango8.c`
+- Variant and build configuration: default/R8 sprite-base path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: in the rolling collision path, with `cos = 128`,
+  the player X speed is set to `-896`, but the actor's stored rebound speed
+  becomes `-16547840` after masking `lD1` to 16 bits, negating it, and shifting
+  left by 8.
+- Why the behavior looks suspicious: the sibling `dango7` implementation narrows
+  through a signed 16-bit temporary before the shift, which produces a much
+  smaller positive rebound speed for the same callback values. This may be a
+  transcription difference, but it is intentionally not fixed during
+  characterization.
+- Related source location: `src/r8/dango8.c`, lines 203-210.
+
 ## `src/r4/scrchk4.c`: downward limit movement stores the step value
 
 - Test case or snapshot path: `tests/backend/unit/r4/test_scrchk4.c`
@@ -232,3 +268,33 @@ tests.
   intentionally not fixed during characterization.
 - Related source location: `src/r4/scrchk4.c`, downward-limit branch in
   `scrchk`.
+
+## `src/r8/shoot.c`: `mspd_set` indexes a four-entry table with a nibble
+
+- Test case or snapshot path: `tests/backend/unit/r8/test_shoot.c`
+- Variant and build configuration: default/R8 include path, MSVC 19.51, Win32
+  Debug
+- Observed exact behavior: `mspd_set` declares `Sint16 mspdtbl[4]`, then reads
+  `mspdtbl[shootwk->userflag.b.h & 15]`. During characterization, using a
+  non-negative high-userflag value outside `0..3` produced unstable movement
+  setup, so the tests avoid those inputs and keep the source behavior
+  documented rather than corrected.
+- Why the behavior looks suspicious: the mask allows indexes `4..15` even
+  though the table has only four entries. This is intentionally not fixed during
+  characterization.
+- Related source location: `src/r8/shoot.c`, lines 329-338.
+
+## `src/r8/scr81*.c` and `src/r8/scr82*.c`: high `scrollwrtb` clamp can walk past the write table
+
+- Test case or snapshot path: attempted during scroll coverage expansion; not
+  retained as a unit test because it crashes several variants.
+- Variant and build configuration: default/R8 scroll include paths, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: forcing `scrb_v_posit.w.h` high enough for
+  `WrtTblCnt` to clamp to `113` in `scrollwrtb` can still crash while the
+  following loop reads sixteen entries starting at that clamped index.
+- Why the behavior looks suspicious: the clamp protects the starting index, but
+  not the whole range consumed by the loop. This is intentionally not fixed
+  during characterization.
+- Related source location: `src/r8/scr81a.c`, lines 724-733, and sibling
+  `scr81*`/`scr82*` scroll files.

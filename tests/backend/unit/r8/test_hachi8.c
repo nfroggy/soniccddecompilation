@@ -437,6 +437,26 @@ static void test_hachi8_kusari_initializes_and_moves_when_parent_alive(
     TEST_ASSERT_TRUE(ctx, actionsub_actor == link);
 }
 
+static void test_hachi8_kusari_existing_routine_dispatches_to_move(
+    test_context *ctx) {
+    sprite_status *body_actor = &actwk[4];
+    sprite_status *ball_actor = &actwk[5];
+    sprite_status *ball1 = &actwk[6];
+    sprite_status *link = &actwk[30];
+
+    reset_hachi8_state();
+    spawn_electric_body(body_actor, ball_actor, ball1);
+    spawn_ball_with_links(ball_actor, 10);
+
+    hachi8(link);
+    reset_logs();
+    hachi8(link);
+
+    TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
+    TEST_ASSERT_TRUE(ctx, actionsub_actor == link);
+    TEST_ASSERT_EQ_INT(ctx, 0, frameout_count);
+}
+
 static void test_hachi8_kusari_frames_out_when_parent_is_not_hachi(
     test_context *ctx) {
     sprite_status *body_actor = &actwk[4];
@@ -471,5 +491,6 @@ TEST_MAIN_BEGIN;
     test_hachi8_ball_move_reverses_at_positive_threshold(&ctx);
     test_hachi8_ball_move_reverses_at_negative_threshold(&ctx);
     test_hachi8_kusari_initializes_and_moves_when_parent_alive(&ctx);
+    test_hachi8_kusari_existing_routine_dispatches_to_move(&ctx);
     test_hachi8_kusari_frames_out_when_parent_is_not_hachi(&ctx);
 TEST_MAIN_END

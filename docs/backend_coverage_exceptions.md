@@ -78,17 +78,6 @@ mapping.
   negative. The surrounding air-control, time-attack gate, camera return, and
   drag behavior are covered by `tests/backend/unit/test_player.c`.
 
-## `src/enemy.c`
-
-- `ka_move`, lines 312-315: this patrol-turn block is reached when the mosquito
-  actor is outside its 128-pixel home band. With the actor initialized through
-  `ka_init` and then placed outside that band by visible position fields, the
-  `do while (1)` loop toggles the internal speed/flip state and does not return
-  to a covered movement path. The normal patrol, player-triggered drop, turn
-  animation, drop, stop, and wrapper dispatch paths are covered by
-  `tests/backend/unit/test_enemy.c`; the non-returning outside-band behavior is
-  recorded in `docs/backend_potential_bugs.md`.
-
 ## `src/r8/trap_r82.c`
 
 - `togeitax`, lines 274-276: this is a duplicate guard immediately after an
@@ -98,6 +87,38 @@ mapping.
   The live-parent follow path and the missing-parent frameout path are covered
   by `tests/backend/unit/r8/test_trap_r82.c`, and the duplicated unreachable
   check is recorded in `docs/backend_potential_bugs.md`.
+
+## `src/r8/okusieso.c`
+
+- `ball_move`, lines 222-223: after the gravity update, the code compares
+  signed 16-bit `yspeed.w` to the positive literal `57344`. The matching bit
+  pattern is `-8192` in `Sint16`, and under 32-bit MSVC Win32 the comparison
+  remains false even when the ball reaches that exact stored speed. The
+  surrounding launched-ball, landing, zero-speed animation, paused, and parent
+  gate paths are covered by `tests/backend/unit/r8/test_okusieso.c`.
+
+## `src/r8/shoot.c`
+
+- `mspd_set`, line 338: the assignment is guarded by
+  `if (cal_mspeed > actwk[0].mspeed.w)` immediately after
+  `actwk[0].mspeed.w = 4096`. The in-bounds speed table values are
+  `4096`, `3072`, `3072`, and `2048`, so the branch is false for every
+  in-bounds entry under 32-bit MSVC Win32. Reaching a larger value would require
+  depending on the documented nibble-index out-of-bounds read in
+  `docs/backend_potential_bugs.md`.
+
+## `src/r8/scr81a.c`, `src/r8/scr81b.c`, `src/r8/scr81c.c`, `src/r8/scr81d.c`, `src/r8/scr82b.c`, and `src/r8/scr82c.c`
+
+- `scrollwrtb`, the `WrtTblCnt < 0` and `WrtTblCnt > 113` clamp bodies:
+  `WrtTblCnt` is `Uint16`, so the negative clamp is not reachable under
+  32-bit MSVC Win32. The high clamp is tied to the documented top-edge and
+  high-edge write-table out-of-bounds behavior in
+  `docs/backend_potential_bugs.md`; characterization tests cover the normal
+  write-table rows and avoid forcing the unsafe table walk.
+- `mapadrset99`, the `i < 0` clamp body: `xOffs` and `yOffs` are unsigned
+  inputs and are clamped to nonnegative map ranges before `i` is calculated, so
+  the negative-index correction does not appear reachable through the public map
+  address helpers.
 
 ## `src/r8/shut.c`
 

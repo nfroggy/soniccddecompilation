@@ -86,8 +86,6 @@ void sinset(Uint8 kakudo, Sint16 *sin, Sint16 *cos);
 Sint16 atan_sonic(Sint16 x, Sint16 y);
 void test_wave_all_stop(void);
 
-#include "src/item.c"
-
 void (*WaveAllStop)(void) = test_wave_all_stop;
 
 void sub_sync(Sint16 ReqNo) {
@@ -335,6 +333,11 @@ static void reset_player_state(void) {
     stub_sin_value = 0;
     stub_cos_value = 256;
     stub_atan_value = 0;
+}
+
+static void set_player_work_word(int offset, Uint16 value) {
+    actwk[0].actfree[offset] = (Uint8)value;
+    actwk[0].actfree[offset + 1] = (Uint8)(value >> 8);
 }
 
 static void test_bye_chk_resets_counter_when_not_waiting(test_context *ctx) {
@@ -2947,9 +2950,28 @@ static void test_play00erase_completes_death_timer_paths(test_context *ctx) {
 }
 
 static void collect_item_powerup(Uint8 mstno) {
-    actwk[1].yspeed.w = 0;
-    actwk[1].mstno.b.h = mstno;
-    item2move(&actwk[1]);
+    switch (mstno) {
+    case 3:
+        plpower_m = 1;
+        set_player_work_word(8, 1320);
+        break;
+    case 4:
+        plpower_s = 1;
+        set_player_work_word(10, 1320);
+        plmaxspdwk = 3072;
+        pladdspdwk = 24;
+        plretspdwk = 128;
+        break;
+    default:
+        plpower_m = 1;
+        set_player_work_word(8, 1320);
+        plpower_s = 1;
+        set_player_work_word(10, 1320);
+        plmaxspdwk = 3072;
+        pladdspdwk = 24;
+        plretspdwk = 128;
+        break;
+    }
 }
 
 static void test_play00_damage_die_wrappers_and_grounded_damage_sub(
