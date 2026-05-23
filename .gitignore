@@ -13,4 +13,5 @@
 *.dSYM/
 
 build/
+build-backend-tests-win32/
 assets/
