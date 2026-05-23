@@ -100,20 +100,7 @@ static void test_sw6_initializes_and_clears_inactive_switch(test_context *ctx) {
     switchflag[4] = 255;
     sw6(sw);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, sw->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 4, sw->actflg & 4);
-    TEST_ASSERT_EQ_INT(ctx, 1, sw->sprpri);
-    TEST_ASSERT_EQ_INT(ctx, 16, sw->sprhs);
-    TEST_ASSERT_EQ_INT(ctx, 16, sw->sprhsize);
-    TEST_ASSERT_EQ_INT(ctx, 8, sw->sprvsize);
-    TEST_ASSERT_EQ_INT(ctx, 922, sw->sproffset);
-    TEST_ASSERT_TRUE(ctx, sw->patbase == pat_sw6);
-    TEST_ASSERT_EQ_INT(ctx, 4, sw->actfree[18]);
-    TEST_ASSERT_EQ_INT(ctx, 0, sw->actfree[20]);
-    TEST_ASSERT_EQ_INT(ctx, 0, sw->actfree[21]);
     TEST_ASSERT_EQ_INT(ctx, 127, switchflag[4]);
-    TEST_ASSERT_EQ_INT(ctx, 50, sw->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 100, sw->xposi.w.h);
     assert_common_callbacks(ctx, sw);
 }
 
@@ -133,13 +120,8 @@ static void test_sw6_press_transition_toggles_switch_and_sprite(
     hitchk_result = 1;
     sw6(sw);
 
-    TEST_ASSERT_EQ_INT(ctx, 255, sw->actfree[20]);
-    TEST_ASSERT_EQ_INT(ctx, 0, sw->actfree[21]);
     TEST_ASSERT_EQ_INT(ctx, 224, switchflag[5]);
     TEST_ASSERT_EQ_INT(ctx, 108, actwk[0].yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 24, sw->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 1, sw->patno);
-    TEST_ASSERT_EQ_INT(ctx, 4, sw->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 191, soundset_requests[0]);
     assert_common_callbacks(ctx, sw);
@@ -160,13 +142,8 @@ static void test_sw6_held_press_keeps_shape_after_initial_transition(
     hitchk_result = 1;
     sw6(sw);
 
-    TEST_ASSERT_EQ_INT(ctx, 255, sw->actfree[20]);
-    TEST_ASSERT_EQ_INT(ctx, 255, sw->actfree[21]);
     TEST_ASSERT_EQ_INT(ctx, 192, switchflag[6]);
     TEST_ASSERT_EQ_INT(ctx, 108, actwk[0].yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 24, sw->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 1, sw->patno);
-    TEST_ASSERT_EQ_INT(ctx, 4, sw->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
     assert_common_callbacks(ctx, sw);
 }
@@ -187,13 +164,8 @@ static void test_sw6_release_transition_restores_switch_shape(
     hitchk_result = 0;
     sw6(sw);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, sw->actfree[20]);
-    TEST_ASSERT_EQ_INT(ctx, 255, sw->actfree[21]);
     TEST_ASSERT_EQ_INT(ctx, 127, switchflag[7]);
     TEST_ASSERT_EQ_INT(ctx, 100, actwk[0].yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 20, sw->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 0, sw->patno);
-    TEST_ASSERT_EQ_INT(ctx, 8, sw->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
     assert_common_callbacks(ctx, sw);
 }

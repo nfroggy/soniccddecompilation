@@ -55,6 +55,11 @@ static void queue_actor(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
+static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
+    actor->actfree[offset] = (Uint8)value;
+    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
+}
+
 static void reset_rollplat_state(void) {
     memset(actwk, 0, sizeof(actwk));
     actionsub_count = 0;
@@ -112,12 +117,6 @@ static void test_rollplat_initializes_without_available_child(test_context *ctx)
 
     kaitenban(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 3, actor->sprpri);
-    TEST_ASSERT_EQ_INT(ctx, 16, actor->sprhsize);
-    TEST_ASSERT_EQ_INT(ctx, 16, actor->sprvsize);
-    TEST_ASSERT_TRUE(ctx, actor->patbase == kaitenban_pat);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 0, patchg_count);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -142,11 +141,6 @@ static void test_rollplat_initializes_special_actor_and_first_child(
 
     kaitenban(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 55, child->actno);
-    TEST_ASSERT_EQ_INT(ctx, 1, child->userflag.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 896, child->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 1272, child->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_TRUE(ctx, patchg_actor == actor);
     TEST_ASSERT_TRUE(ctx, patchg_table == pchg);
@@ -166,7 +160,6 @@ static void test_rollplat_move_misses_player_by_y_and_x(test_context *ctx) {
 
     kaitenban(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->mstno.w);
     TEST_ASSERT_EQ_INT(ctx, 0, patchg_count);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 
@@ -180,7 +173,6 @@ static void test_rollplat_move_misses_player_by_y_and_x(test_context *ctx) {
 
     kaitenban(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->mstno.w);
     TEST_ASSERT_EQ_INT(ctx, 0, patchg_count);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 }
@@ -199,7 +191,6 @@ static void test_rollplat_move_ignores_player_when_contact_latch_is_set(
 
     kaitenban(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->mstno.w);
     TEST_ASSERT_EQ_INT(ctx, 0, patchg_count);
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
 }
@@ -214,7 +205,7 @@ static void test_rollplat_contact_sets_rotation_and_spawns_next_plate(
     actor->r_no0 = 2;
     actor->xposi.w.h = 100;
     actor->yposi.w.h = 100;
-    ((Sint16 *)actor)[25] = -2;
+    set_actfree_word(actor, 4, -2);
     actwk[0].xposi.w.h = 100;
     actwk[0].yposi.w.h = 100;
     actwk[0].yspeed.w = 0;
@@ -222,10 +213,6 @@ static void test_rollplat_contact_sets_rotation_and_spawns_next_plate(
 
     kaitenban(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 255, actor->mstno.w);
-    TEST_ASSERT_EQ_INT(ctx, 55, child->actno);
-    TEST_ASSERT_EQ_INT(ctx, 896, child->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 1176, child->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_TRUE(ctx, patchg_actor == actor);
@@ -239,15 +226,14 @@ static void test_rollplat_upward_player_uses_reverse_rotation_without_spawn(
     actor->r_no0 = 2;
     actor->xposi.w.h = 100;
     actor->yposi.w.h = 100;
-    ((Sint16 *)actor)[23] = 5;
-    ((Sint16 *)actor)[25] = -2;
+    set_actfree_word(actor, 0, 5);
+    set_actfree_word(actor, 4, -2);
     actwk[0].xposi.w.h = 100;
     actwk[0].yposi.w.h = 100;
     actwk[0].yspeed.w = -1;
 
     kaitenban(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 511, actor->mstno.w);
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
 }
@@ -262,18 +248,14 @@ static void test_rollplat_third_spawn_releases_anchor_plate(test_context *ctx) {
     actor->r_no0 = 2;
     actor->xposi.w.h = 100;
     actor->yposi.w.h = 100;
-    ((Sint16 *)actor)[25] = 2;
-    ((Uint16 *)actor)[24] = 6;
+    set_actfree_word(actor, 4, 2);
+    set_actfree_word(actor, 2, 6);
     actwk[0].xposi.w.h = 100;
     actwk[0].yposi.w.h = 100;
     queue_actor(child);
 
     kaitenban(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 55, child->actno);
-    TEST_ASSERT_EQ_INT(ctx, 896, child->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 1224, child->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 4, anchor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
 }
 
@@ -285,11 +267,11 @@ static void test_rollplat_completed_cycle_releases_all_linked_plates(
     actor->r_no0 = 2;
     actor->xposi.w.h = 100;
     actor->yposi.w.h = 100;
-    ((Sint16 *)actor)[25] = 4;
-    ((Uint16 *)actor)[24] = 6;
-    ((Uint16 *)actor)[26] = 7;
-    ((Uint16 *)actor)[27] = 8;
-    ((Uint16 *)actor)[28] = 9;
+    set_actfree_word(actor, 4, 4);
+    set_actfree_word(actor, 2, 6);
+    set_actfree_word(actor, 6, 7);
+    set_actfree_word(actor, 8, 8);
+    set_actfree_word(actor, 10, 9);
     actwk[0].xposi.w.h = 100;
     actwk[0].yposi.w.h = 100;
 

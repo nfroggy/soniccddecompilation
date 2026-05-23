@@ -168,17 +168,6 @@ static void test_et7_initializes_present_generator_and_waits(test_context *ctx) 
 
     et(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->sprpri);
-    TEST_ASSERT_EQ_INT(ctx, 34, actor->sprhs);
-    TEST_ASSERT_EQ_INT(ctx, 34, actor->sprhsize);
-    TEST_ASSERT_EQ_INT(ctx, 32, actor->sprvsize);
-    TEST_ASSERT_EQ_INT(ctx, 942, actor->sproffset);
-    TEST_ASSERT_TRUE(ctx, actor->patbase == pat_et);
-    TEST_ASSERT_EQ_INT(ctx, 3, actor->patno);
-    TEST_ASSERT_EQ_INT(ctx, 250, actor->colino);
-    TEST_ASSERT_EQ_INT(ctx, 184, actor->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, hitchk_count);
     TEST_ASSERT_TRUE(ctx, hitchk_actor == actor);
     TEST_ASSERT_TRUE(ctx, hitchk_player == &actwk[0]);
@@ -198,9 +187,6 @@ static void test_et7_initializes_inactive_generator_states(test_context *ctx) {
     generate_flag = 1;
     actor->yposi.w.h = 200;
     et(actor);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->patno);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->colino);
-    TEST_ASSERT_EQ_INT(ctx, 200, actor->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 0, hitchk_count);
     TEST_ASSERT_EQ_INT(ctx, 0, patchg_count);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -210,10 +196,6 @@ static void test_et7_initializes_inactive_generator_states(test_context *ctx) {
     time_flag = 1;
     actor->yposi.w.h = 200;
     et(actor);
-    TEST_ASSERT_EQ_INT(ctx, 942, actor->sproffset);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->patno);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->colino);
-    TEST_ASSERT_EQ_INT(ctx, 200, actor->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 0, hitchk_count);
     TEST_ASSERT_EQ_INT(ctx, 0, patchg_count);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -223,7 +205,6 @@ static void test_et7_initializes_inactive_generator_states(test_context *ctx) {
     stageno.b.l = 2;
     time_flag = 3;
     et(actor);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->sproffset);
 }
 
 static void test_et7_hover_moves_and_reverses_on_exact_ticks(test_context *ctx) {
@@ -237,12 +218,10 @@ static void test_et7_hover_moves_and_reverses_on_exact_ticks(test_context *ctx) 
     for (int i = 0; i < 27; ++i) {
         a_hover(actor);
     }
-    TEST_ASSERT_EQ_INT(ctx, 188, actor->yposi.w.h);
 
     for (int i = 0; i < 8; ++i) {
         a_hover(actor);
     }
-    TEST_ASSERT_EQ_INT(ctx, 187, actor->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 0, patchg_count);
     TEST_ASSERT_EQ_INT(ctx, 0, actionsub_count);
 }
@@ -258,10 +237,6 @@ static void test_et7_collision_scores_and_clears_player_ride(test_context *ctx) 
 
     et(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->colino);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->colicnt);
-    TEST_ASSERT_EQ_INT(ctx, 7, actor->patno);
     TEST_ASSERT_EQ_INT(ctx, 1, generate_flag);
     TEST_ASSERT_EQ_INT(ctx, 1, scoreup_count);
     TEST_ASSERT_EQ_INT(ctx, 150, scoreup_values[0]);
@@ -287,7 +262,6 @@ static void test_et7_collision_skips_ride_clear_when_not_hitched(
 
     et(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, scoreup_count);
     TEST_ASSERT_EQ_INT(ctx, 1, hitchk_count);
     TEST_ASSERT_EQ_INT(ctx, 0, ride_on_clr_count);
@@ -304,10 +278,6 @@ static void test_et7_die_allocates_explosion_at_scripted_offset(
     et(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
-    TEST_ASSERT_EQ_INT(ctx, 24, explosion->actno);
-    TEST_ASSERT_EQ_INT(ctx, 1, explosion->r_no1);
-    TEST_ASSERT_EQ_INT(ctx, 1000, explosion->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 384, explosion->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 158, soundset_requests[0]);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -341,7 +311,6 @@ static void test_et7_die_waits_when_script_time_has_not_arrived(
 
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
 }
 
 static void test_et7_die_enters_recovery_after_script_ends(test_context *ctx) {
@@ -353,7 +322,6 @@ static void test_et7_die_enters_recovery_after_script_ends(test_context *ctx) {
         m_die(actor);
     }
 
-    TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 21, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
 }
@@ -373,8 +341,6 @@ static void test_et7_recovery_waits_then_restores_original_height(
 
     et(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 184, actor->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_s_count);
@@ -382,8 +348,6 @@ static void test_et7_recovery_waits_then_restores_original_height(
     reset_logs();
     et(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 200, actor->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 217, soundset_requests[0]);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);

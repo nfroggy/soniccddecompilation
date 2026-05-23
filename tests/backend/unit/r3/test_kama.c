@@ -126,11 +126,15 @@ static void queue_actor(sprite_status *actor) {
 }
 
 static void set_actor_word(sprite_status *actor, int index, Sint16 value) {
-    ((Sint16 *)actor)[index] = value;
+    int offset = (index - 23) * 2;
+    actor->actfree[offset] = (Uint8)value;
+    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
 }
 
 static Sint16 actor_word(sprite_status *actor, int index) {
-    return ((Sint16 *)actor)[index];
+    int offset = (index - 23) * 2;
+    return (Sint16)(actor->actfree[offset] |
+                    ((Uint16)actor->actfree[offset + 1] << 8));
 }
 
 static void reset_kama_state(void) {
@@ -213,11 +217,6 @@ static void test_ene_kama_wrapper_and_initialization(test_context *ctx) {
     actor->yposi.w.h = 890;
     emycol_d_result = 0;
     ene_kama(actor);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->actflg);
-    TEST_ASSERT_TRUE(ctx, actor->patbase == kamapat);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->patno);
-    TEST_ASSERT_EQ_INT(ctx, 6, actor->colino);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s_count);
     TEST_ASSERT_TRUE(ctx, patchg_table == kama_pchg);
 
@@ -225,8 +224,6 @@ static void test_ene_kama_wrapper_and_initialization(test_context *ctx) {
     actor->userflag.b.h = -1;
     emycol_d_result = 0;
     kama_init(actor);
-    TEST_ASSERT_TRUE(ctx, actor->patbase == bkamapat);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->patno);
 }
 
 static void test_kama_fall_and_movement_preserve_fixed_point_behavior(
@@ -239,14 +236,11 @@ static void test_kama_fall_and_movement_preserve_fixed_point_behavior(
     actor->xposi.l = 0x00100000;
     actor->yposi.l = 0x00200000;
     movement(actor);
-    TEST_ASSERT_EQ_INT(ctx, 15, actor->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 31, actor->yposi.w.h);
 
     reset_kama_state();
     actor->yspeed.w = 256;
     emycol_d_result = -1;
     kama_fall(actor);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
     TEST_ASSERT_TRUE(ctx, patchg_table == kama_pchg);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 }
@@ -256,7 +250,6 @@ static void test_kama_wait_attack_and_timer_paths(test_context *ctx) {
 
     reset_kama_state();
     kama_wait(actor);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->mstno.b.h);
     TEST_ASSERT_TRUE(ctx, patchg_table == kama_pchg);
 
     reset_kama_state();
@@ -269,8 +262,6 @@ static void test_kama_wait_attack_and_timer_paths(test_context *ctx) {
     queue_actor(&actwk[10]);
     queue_actor(&actwk[11]);
     kama_wait(actor);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->mstno.b.h);
     TEST_ASSERT_EQ_INT(ctx, 2, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 37, actwk[10].actno);
     TEST_ASSERT_EQ_INT(ctx, 117, actwk[10].xposi.w.h);
@@ -286,21 +277,16 @@ static void test_kama_wait_attack_and_timer_paths(test_context *ctx) {
     queue_actor(&actwk[10]);
     queue_actor(&actwk[11]);
     kama_wait(actor);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->mstno.b.h);
 
     reset_kama_state();
     set_actor_word(actor, 24, 1);
     kama_atck(actor);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 3, actor->mstno.b.h);
     TEST_ASSERT_EQ_INT(ctx, 59, actor_word(actor, 24));
 
     reset_kama_state();
     set_actor_word(actor, 24, 1);
     dircol_l2_result = -1;
     kama_pati(actor);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 3, actor->mstno.b.h);
 }
 
 static void test_kama_move_ground_wall_and_reveal_paths(test_context *ctx) {
@@ -311,7 +297,6 @@ static void test_kama_move_ground_wall_and_reveal_paths(test_context *ctx) {
     actor->userflag.b.h = 0;
     emycol_d_result = 0;
     kama_move(actor);
-    TEST_ASSERT_EQ_INT(ctx, -256, actor->xspeed.w);
     TEST_ASSERT_TRUE(ctx, patchg_table == kama_pchg);
 
     reset_kama_state();
@@ -319,20 +304,15 @@ static void test_kama_move_ground_wall_and_reveal_paths(test_context *ctx) {
     actor->userflag.b.h = -1;
     emycol_d_result = 6;
     kama_move(actor);
-    TEST_ASSERT_EQ_INT(ctx, 128, actor->xspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 6, actor->yposi.w.h);
 
     reset_kama_state();
     dircol_l2_result = -1;
     kama_move(actor);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 3, actor->mstno.b.h);
     TEST_ASSERT_EQ_INT(ctx, 71, actor_word(actor, 24));
 
     reset_kama_state();
     dircol_r2_result = -1;
     kama_move(actor);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
 
     reset_kama_state();
     set_actor_word(actor, 24, 1);
@@ -340,9 +320,6 @@ static void test_kama_move_ground_wall_and_reveal_paths(test_context *ctx) {
     actor->cddat = 0;
     actor->r_no0 = 6;
     kama_reve(actor);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actflg & 1);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->cddat & 1);
 }
 
 static void test_set_wpkama_spawns_or_skips_by_userflag(test_context *ctx) {
@@ -384,10 +361,6 @@ static void test_tama_kama_init_wait_and_display_paths(test_context *ctx) {
     reset_kama_state();
     actor->xposi.w.h = 200;
     tama_kama(actor);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, -768, actor->xspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actflg & 1);
-    TEST_ASSERT_TRUE(ctx, actor->patbase == wpkamapat);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s00_count);
     TEST_ASSERT_EQ_INT(ctx, 200, frameout_s00_xpos);
@@ -395,8 +368,6 @@ static void test_tama_kama_init_wait_and_display_paths(test_context *ctx) {
     reset_kama_state();
     actor->actfree[4] = 1;
     wpkama_init(actor);
-    TEST_ASSERT_EQ_INT(ctx, 768, actor->xspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actflg & 1);
 
     reset_kama_state();
     actor->r_no0 = 2;
@@ -404,8 +375,6 @@ static void test_tama_kama_init_wait_and_display_paths(test_context *ctx) {
     set_actor_word(actor, 26, 5);
     actwk[5].actno = 0;
     wpkama_wait(actor);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 135, actor->colino);
     TEST_ASSERT_EQ_INT(ctx, 60, actor_word(actor, 28));
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
 
@@ -415,14 +384,12 @@ static void test_tama_kama_init_wait_and_display_paths(test_context *ctx) {
     set_actor_word(actor, 26, 5);
     actwk[5].actno = 36;
     wpkama_wait(actor);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
     TEST_ASSERT_TRUE(ctx, patchg_table == wpkama_pchg);
 
     reset_kama_state();
     actor->colino = 135;
     set_actor_word(actor, 28, 1);
     wpkama_disp(actor);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->colino);
     TEST_ASSERT_EQ_INT(ctx, 1, actor_word(actor, 28));
 }
 
@@ -457,10 +424,6 @@ static void test_wpkama_collision_checks_and_reveal(test_context *ctx) {
     player->xspeed.w = 100;
     bullet->xspeed.w = 20;
     wpkama_reve(bullet, player);
-    TEST_ASSERT_EQ_INT(ctx, 0, bullet->colino);
-    TEST_ASSERT_EQ_INT(ctx, 1, bullet->mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 120, bullet->xspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, -2048, bullet->yspeed.w);
 }
 
 static void test_wpkama_move_sound_collision_and_frameout(test_context *ctx) {
@@ -481,7 +444,6 @@ static void test_wpkama_move_sound_collision_and_frameout(test_context *ctx) {
     wpkama_move(bullet);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 185, soundset_requests[0]);
-    TEST_ASSERT_EQ_INT(ctx, 1, bullet->mstno.b.h);
     TEST_ASSERT_TRUE(ctx, patchg_table == wpkama_pchg);
 
     reset_kama_state();

@@ -88,3 +88,32 @@ mapping.
   animation, drop, stop, and wrapper dispatch paths are covered by
   `tests/backend/unit/test_enemy.c`; the non-returning outside-band behavior is
   recorded in `docs/backend_potential_bugs.md`.
+
+## `src/r8/trap_r82.c`
+
+- `togeitax`, lines 274-276: this is a duplicate guard immediately after an
+  identical `if (actwk[ride_number].actno != 51)` that already calls
+  `frameout` and returns. If the first guard is true, execution never reaches
+  the second one; if the first guard is false, the second one is false too.
+  The live-parent follow path and the missing-parent frameout path are covered
+  by `tests/backend/unit/r8/test_trap_r82.c`, and the duplicated unreachable
+  check is recorded in `docs/backend_potential_bugs.md`.
+
+## `src/r8/shut.c`
+
+- `shut_init`, line 71: the function writes `shutwk->userflag.b.h = 1`
+  immediately before checking `if (shutwk->userflag.b.h)`, so the actor's own
+  `else` branch does not appear reachable under 32-bit MSVC Win32. The partner
+  actor's matching high-userflag path and the normal/failed allocation paths are
+  covered by `tests/backend/unit/r8/test_shut.c`, and the suspicious forced
+  branch is recorded in `docs/backend_potential_bugs.md`.
+
+## `src/r8/dai8.c`
+
+- `dai8`, lines 49-57: these child/parent position mismatch guards compare
+  hidden actor words that are written only by `act_init_sub`. A test can cover
+  the live-parent child path and the missing-parent frameout path by creating
+  the child through `dai8`, but forcing only the hidden stored X or Y snapshot to
+  differ would require direct raw `sprite_status` storage writes. The backend
+  test plan forbids that because those storage slots are expected to change
+  during the 64-bit port.

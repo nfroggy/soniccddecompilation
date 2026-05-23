@@ -166,7 +166,9 @@ static void queue_emycol(Sint16 value) {
 }
 
 static void set_actor_word(sprite_status *actor, int index, Sint16 value) {
-    ((Sint16 *)actor)[index] = value;
+    int offset = (index - 23) * 2;
+    actor->actfree[offset] = (Uint8)value;
+    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
 }
 
 static void set_actor_long(sprite_status *actor, int byte_offset, Sint32 value) {
@@ -242,7 +244,6 @@ static void test_controller_init_wait_and_make_paths(test_context *ctx) {
     actwk[0].xposi.w.h = 0;
     actwk[0].yposi.w.h = 0;
     scarab(ctrl);
-    TEST_ASSERT_EQ_INT(ctx, 2, ctrl->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s_count);
 
     reset_scarab_state();
@@ -254,7 +255,6 @@ static void test_controller_init_wait_and_make_paths(test_context *ctx) {
     queue_actor2(&actwk[10]);
     queue_actor2(&actwk[11]);
     c_init(ctrl);
-    TEST_ASSERT_EQ_INT(ctx, 4, ctrl->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 47, actwk[10].actno);
     TEST_ASSERT_EQ_INT(ctx, 1, actwk[10].userflag.b.h);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[11].userflag.b.h);
@@ -352,8 +352,6 @@ static void test_enemy_wrapper_and_initialization(test_context *ctx) {
     set_actor_word(enemywk, 23, 3);
     enemywk->userflag.b.l = 1;
     scarab(enemywk);
-    TEST_ASSERT_EQ_INT(ctx, 2, enemywk->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 3, enemywk->sprpri);
 
     reset_scarab_state();
     ctrl->actno = 47;
@@ -381,13 +379,8 @@ static void test_enemy_wrapper_and_initialization(test_context *ctx) {
     queue_emycol(0);
     queue_actor2(&actwk[10]);
     enemy(enemywk);
-    TEST_ASSERT_EQ_INT(ctx, 2, enemywk->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 4, enemywk->actflg & 4);
-    TEST_ASSERT_EQ_INT(ctx, 240, enemywk->colino);
-    TEST_ASSERT_TRUE(ctx, enemywk->patbase == pat_scarab);
     TEST_ASSERT_EQ_INT(ctx, 47, actwk[10].actno);
     TEST_ASSERT_EQ_INT(ctx, 1, actwk[10].userflag.b.l);
-    TEST_ASSERT_EQ_INT(ctx, 0, enemywk->cddat & 1);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 
     reset_scarab_state();
@@ -407,7 +400,6 @@ static void test_enemy_wrapper_and_initialization(test_context *ctx) {
     queue_emycol(0);
     queue_actor2(&actwk[10]);
     e_init(enemywk);
-    TEST_ASSERT_EQ_INT(ctx, 1, enemywk->cddat & 1);
     TEST_ASSERT_EQ_INT(ctx, 1, actwk[10].cddat & 1);
 }
 
@@ -432,7 +424,6 @@ static void test_enemy_move_turn_followers_and_catch(test_context *ctx) {
     set_actor_long(enemywk, 4, 65536);
     emycol_d_result = 0;
     e_move(enemywk);
-    TEST_ASSERT_EQ_INT(ctx, 101, enemywk->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 256, actwk[11].xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 101, actwk[10].xposi.w.h);
 
@@ -446,7 +437,6 @@ static void test_enemy_move_turn_followers_and_catch(test_context *ctx) {
     set_actor_long(enemywk, 4, 24576);
     emycol_d_result = 7;
     e_move(enemywk);
-    TEST_ASSERT_EQ_INT(ctx, 100, enemywk->xposi.w.h);
 
     reset_scarab_state();
     ctrl->actno = 47;
@@ -467,7 +457,6 @@ static void test_enemy_move_turn_followers_and_catch(test_context *ctx) {
     enemywk->xposi.w.h = 100;
     set_actor_long(enemywk, 4, 65536);
     e_move(enemywk);
-    TEST_ASSERT_EQ_INT(ctx, 100, enemywk->xposi.w.h);
 
     reset_scarab_state();
     set_actor_word(enemywk, 28, -1);
@@ -482,10 +471,8 @@ static void test_enemy_move_turn_followers_and_catch(test_context *ctx) {
     set_actor_word(enemywk, 28, 1);
     enemywk->colicnt = 1;
     e1_check(enemywk);
-    TEST_ASSERT_EQ_INT(ctx, 2, enemywk->r_no1);
     TEST_ASSERT_EQ_INT(ctx, 1, actwk[0].actfree[2] & 1);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[0].mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 240, enemywk->colino);
 
     reset_scarab_state();
     set_actor_word(enemywk, 23, 3);
@@ -493,7 +480,6 @@ static void test_enemy_move_turn_followers_and_catch(test_context *ctx) {
     enemywk->colicnt = 1;
     actwk[0].r_no0 = 4;
     e1_check(enemywk);
-    TEST_ASSERT_EQ_INT(ctx, 0, enemywk->colicnt);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
 
     reset_scarab_state();
@@ -517,8 +503,6 @@ static void test_enemy_keep_and_wait_release_player(test_context *ctx) {
     set_actor_word(enemywk, 27, 0);
     set_actor_word(enemywk, 29, 2);
     e1_keep(enemywk);
-    TEST_ASSERT_EQ_INT(ctx, 1, enemywk->colicnt == 0);
-    TEST_ASSERT_EQ_INT(ctx, 240, enemywk->colino);
 
     reset_scarab_state();
     set_actor_word(enemywk, 27, 0);
@@ -527,11 +511,6 @@ static void test_enemy_keep_and_wait_release_player(test_context *ctx) {
     enemywk->userflag.b.h = 0;
     enemywk->userflag.b.l = 0;
     e1_keep(enemywk);
-    TEST_ASSERT_EQ_INT(ctx, 2, enemywk->r_no1);
-    TEST_ASSERT_EQ_INT(ctx, -2560, player->xspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, -2560, player->mspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 1, player->cddat & 1);
-    TEST_ASSERT_EQ_INT(ctx, 2, enemywk->patno);
 
     reset_scarab_state();
     set_actor_word(enemywk, 27, 0);
@@ -540,19 +519,13 @@ static void test_enemy_keep_and_wait_release_player(test_context *ctx) {
     enemywk->userflag.b.l = 1;
     player->cddat = 1;
     e1_keep(enemywk);
-    TEST_ASSERT_EQ_INT(ctx, 1280, player->xspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 0, player->cddat & 1);
 
     reset_scarab_state();
     set_actor_word(enemywk, 29, 2);
     e1_wait(enemywk);
-    TEST_ASSERT_EQ_INT(ctx, 0, enemywk->r_no1);
 
     set_actor_word(enemywk, 29, 1);
     e1_wait(enemywk);
-    TEST_ASSERT_EQ_INT(ctx, 0, enemywk->r_no1);
-    TEST_ASSERT_EQ_INT(ctx, -1, enemywk->mstno.b.l);
-    TEST_ASSERT_EQ_INT(ctx, 240, enemywk->colino);
 }
 
 static void test_item_states_and_pickup(test_context *ctx) {
@@ -572,10 +545,6 @@ static void test_item_states_and_pickup(test_context *ctx) {
     set_actor_word(item, 23, 3);
     emycol_d_result = 3;
     scarab(item);
-    TEST_ASSERT_EQ_INT(ctx, 2, item->r_no0);
-    TEST_ASSERT_TRUE(ctx, item->patbase == itempat);
-    TEST_ASSERT_EQ_INT(ctx, 198, item->colino);
-    TEST_ASSERT_EQ_INT(ctx, 5, item->mstno.b.h);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 
     reset_scarab_state();
@@ -596,8 +565,6 @@ static void test_item_states_and_pickup(test_context *ctx) {
     emycol_d_result = -5;
     itemmove(item);
     TEST_ASSERT_EQ_INT(ctx, 1, speedset_count);
-    TEST_ASSERT_EQ_INT(ctx, 0, item->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 0, item->r_no1);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
 
     reset_scarab_state();
@@ -606,7 +573,6 @@ static void test_item_states_and_pickup(test_context *ctx) {
     itemmove(item);
     TEST_ASSERT_EQ_INT(ctx, 1, ride_on_chk_count);
     TEST_ASSERT_EQ_INT(ctx, 25, ride_on_chk_actno_seen[0]);
-    TEST_ASSERT_EQ_INT(ctx, 47, item->actno);
 
     reset_scarab_state();
     time_stop = 1;

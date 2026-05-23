@@ -1615,6 +1615,91 @@ set_target_properties(backend_r4_rblk4 PROPERTIES
 
 add_test(NAME backend.r4.rblk4 COMMAND backend_r4_rblk4)
 
+add_executable(backend_r4_wall1
+  unit/r4/test_wall1.c
+)
+
+target_include_directories(backend_r4_wall1 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_wall1 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.wall1 COMMAND backend_r4_wall1)
+
+add_executable(backend_r4_wall4
+  unit/r4/test_wall4.c
+)
+
+target_include_directories(backend_r4_wall4 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_wall4 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.wall4 COMMAND backend_r4_wall4)
+
+add_executable(backend_r4_screw_a
+  unit/r4/test_screw_a.c
+)
+
+target_include_directories(backend_r4_screw_a PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_screw_a PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.screw_a COMMAND backend_r4_screw_a)
+
+add_executable(backend_r4_screw_c
+  unit/r4/test_screw_c.c
+)
+
+target_include_directories(backend_r4_screw_c PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_screw_c PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.screw_c COMMAND backend_r4_screw_c)
+
+add_executable(backend_r4_scrchk4
+  unit/r4/test_scrchk4.c
+)
+
+target_include_directories(backend_r4_scrchk4 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_scrchk4 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.scrchk4 COMMAND backend_r4_scrchk4)
+
 add_executable(backend_r6_batta
   unit/r6/test_batta.c
 )
@@ -2489,6 +2574,91 @@ set_target_properties(backend_r8_sw8 PROPERTIES
 
 add_test(NAME backend.r8.sw8 COMMAND backend_r8_sw8)
 
+add_executable(backend_r8_haguruma
+  unit/r8/test_haguruma.c
+)
+
+target_include_directories(backend_r8_haguruma PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_haguruma PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.haguruma COMMAND backend_r8_haguruma)
+
+add_executable(backend_r8_piston
+  unit/r8/test_piston.c
+)
+
+target_include_directories(backend_r8_piston PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_piston PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.piston COMMAND backend_r8_piston)
+
+add_executable(backend_r8_kuzure8
+  unit/r8/test_kuzure8.c
+)
+
+target_include_directories(backend_r8_kuzure8 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_kuzure8 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.kuzure8 COMMAND backend_r8_kuzure8)
+
+add_executable(backend_r8_dai8
+  unit/r8/test_dai8.c
+)
+
+target_include_directories(backend_r8_dai8 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_dai8 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.dai8 COMMAND backend_r8_dai8)
+
+add_executable(backend_r8_pipe8
+  unit/r8/test_pipe8.c
+)
+
+target_include_directories(backend_r8_pipe8 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_pipe8 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.pipe8 COMMAND backend_r8_pipe8)
+
 add_executable(backend_r8_jettoge8
   unit/r8/test_jettoge8.c
 )
@@ -2505,6 +2675,176 @@ set_target_properties(backend_r8_jettoge8 PROPERTIES
 )
 
 add_test(NAME backend.r8.jettoge8 COMMAND backend_r8_jettoge8)
+
+add_executable(backend_r8_beam
+  unit/r8/test_beam.c
+)
+
+target_include_directories(backend_r8_beam PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_beam PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.beam COMMAND backend_r8_beam)
+
+add_executable(backend_r8_hachi8
+  unit/r8/test_hachi8.c
+)
+
+target_include_directories(backend_r8_hachi8 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_hachi8 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.hachi8 COMMAND backend_r8_hachi8)
+
+add_executable(backend_r8_tobira
+  unit/r8/test_tobira.c
+)
+
+target_include_directories(backend_r8_tobira PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_tobira PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.tobira COMMAND backend_r8_tobira)
+
+add_executable(backend_r8_koma8
+  unit/r8/test_koma8.c
+)
+
+target_include_directories(backend_r8_koma8 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_koma8 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.koma8 COMMAND backend_r8_koma8)
+
+add_executable(backend_r8_kabuto8
+  unit/r8/test_kabuto8.c
+)
+
+target_include_directories(backend_r8_kabuto8 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_kabuto8 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.kabuto8 COMMAND backend_r8_kabuto8)
+
+add_executable(backend_r8_nokogiri
+  unit/r8/test_nokogiri.c
+)
+
+target_include_directories(backend_r8_nokogiri PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_nokogiri PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.nokogiri COMMAND backend_r8_nokogiri)
+
+add_executable(backend_r8_propera8
+  unit/r8/test_propera8.c
+)
+
+target_include_directories(backend_r8_propera8 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_propera8 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.propera8 COMMAND backend_r8_propera8)
+
+add_executable(backend_r8_trap_r81
+  unit/r8/test_trap_r81.c
+)
+
+target_include_directories(backend_r8_trap_r81 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_trap_r81 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.trap_r81 COMMAND backend_r8_trap_r81)
+
+add_executable(backend_r8_trap_r82
+  unit/r8/test_trap_r82.c
+)
+
+target_include_directories(backend_r8_trap_r82 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_trap_r82 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.trap_r82 COMMAND backend_r8_trap_r82)
+
+add_executable(backend_r8_trap_r83
+  unit/r8/test_trap_r83.c
+)
+
+target_include_directories(backend_r8_trap_r83 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_trap_r83 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.trap_r83 COMMAND backend_r8_trap_r83)
 
 add_executable(backend_r8_act82a
   unit/r8/test_act82a.c
@@ -2727,6 +3067,23 @@ set_target_properties(backend_r8_dev83d PROPERTIES
 
 add_test(NAME backend.r8.dev83d COMMAND backend_r8_dev83d)
 
+add_executable(backend_r8_edtbl81
+  unit/r8/test_edtbl81.c
+)
+
+target_include_directories(backend_r8_edtbl81 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_edtbl81 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.edtbl81 COMMAND backend_r8_edtbl81)
+
 add_executable(backend_r8_edtbl82
   unit/r8/test_edtbl82.c
 )
@@ -2743,6 +3100,210 @@ set_target_properties(backend_r8_edtbl82 PROPERTIES
 )
 
 add_test(NAME backend.r8.edtbl82 COMMAND backend_r8_edtbl82)
+
+add_executable(backend_r8_edtbl83
+  unit/r8/test_edtbl83.c
+)
+
+target_include_directories(backend_r8_edtbl83 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_edtbl83 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.edtbl83 COMMAND backend_r8_edtbl83)
+
+add_executable(backend_r8_z81atbl
+  unit/r8/test_z81atbl.c
+)
+
+target_include_directories(backend_r8_z81atbl PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_z81atbl PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.z81atbl COMMAND backend_r8_z81atbl)
+
+add_executable(backend_r8_z81btbl
+  unit/r8/test_z81btbl.c
+)
+
+target_include_directories(backend_r8_z81btbl PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_z81btbl PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.z81btbl COMMAND backend_r8_z81btbl)
+
+add_executable(backend_r8_z81ctbl
+  unit/r8/test_z81ctbl.c
+)
+
+target_include_directories(backend_r8_z81ctbl PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_z81ctbl PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.z81ctbl COMMAND backend_r8_z81ctbl)
+
+add_executable(backend_r8_z81dtbl
+  unit/r8/test_z81dtbl.c
+)
+
+target_include_directories(backend_r8_z81dtbl PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_z81dtbl PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.z81dtbl COMMAND backend_r8_z81dtbl)
+
+add_executable(backend_r8_z82atbl
+  unit/r8/test_z82atbl.c
+)
+
+target_include_directories(backend_r8_z82atbl PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_z82atbl PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.z82atbl COMMAND backend_r8_z82atbl)
+
+add_executable(backend_r8_z82btbl
+  unit/r8/test_z82btbl.c
+)
+
+target_include_directories(backend_r8_z82btbl PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_z82btbl PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.z82btbl COMMAND backend_r8_z82btbl)
+
+add_executable(backend_r8_z82ctbl
+  unit/r8/test_z82ctbl.c
+)
+
+target_include_directories(backend_r8_z82ctbl PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_z82ctbl PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.z82ctbl COMMAND backend_r8_z82ctbl)
+
+add_executable(backend_r8_z82dtbl
+  unit/r8/test_z82dtbl.c
+)
+
+target_include_directories(backend_r8_z82dtbl PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_z82dtbl PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.z82dtbl COMMAND backend_r8_z82dtbl)
+
+add_executable(backend_r8_z83ctbl
+  unit/r8/test_z83ctbl.c
+)
+
+target_include_directories(backend_r8_z83ctbl PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_z83ctbl PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.z83ctbl COMMAND backend_r8_z83ctbl)
+
+add_executable(backend_r8_shut
+  unit/r8/test_shut.c
+)
+
+target_include_directories(backend_r8_shut PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_shut PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.shut COMMAND backend_r8_shut)
+
+add_executable(backend_r8_scrchk8
+  unit/r8/test_scrchk8.c
+)
+
+target_include_directories(backend_r8_scrchk8 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_scrchk8 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.scrchk8 COMMAND backend_r8_scrchk8)
 
 add_executable(backend_player
   unit/test_player.c
@@ -2861,6 +3422,11 @@ add_custom_target(backend-tests
     backend_r3_z33dtbl
     backend_r3_zonetbl3
     backend_r4_rblk4
+    backend_r4_wall1
+    backend_r4_wall4
+    backend_r4_screw_a
+    backend_r4_screw_c
+    backend_r4_scrchk4
     backend_r6_batta
     backend_r6_sw6
     backend_r7_chgwall7
@@ -2914,7 +3480,22 @@ add_custom_target(backend-tests
     backend_r8_et8
     backend_r8_scarab
     backend_r8_sw8
+    backend_r8_haguruma
+    backend_r8_piston
+    backend_r8_kuzure8
+    backend_r8_dai8
+    backend_r8_pipe8
     backend_r8_jettoge8
+    backend_r8_beam
+    backend_r8_hachi8
+    backend_r8_tobira
+    backend_r8_koma8
+    backend_r8_kabuto8
+    backend_r8_nokogiri
+    backend_r8_propera8
+    backend_r8_trap_r81
+    backend_r8_trap_r82
+    backend_r8_trap_r83
     backend_r8_act82a
     backend_r8_act81a
     backend_r8_act83
@@ -2928,7 +3509,20 @@ add_custom_target(backend-tests
     backend_r8_dev81d
     backend_r8_dev83c
     backend_r8_dev83d
+    backend_r8_edtbl81
     backend_r8_edtbl82
+    backend_r8_edtbl83
+    backend_r8_z81atbl
+    backend_r8_z81btbl
+    backend_r8_z81ctbl
+    backend_r8_z81dtbl
+    backend_r8_z82atbl
+    backend_r8_z82btbl
+    backend_r8_z82ctbl
+    backend_r8_z82dtbl
+    backend_r8_z83ctbl
+    backend_r8_shut
+    backend_r8_scrchk8
     backend_player
 )
 

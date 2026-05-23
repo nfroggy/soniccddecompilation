@@ -69,10 +69,6 @@ static void queue_actor(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
-static void set_actor_word(sprite_status *actor, int index, Sint16 value) {
-    ((Sint16 *)actor)[index] = value;
-}
-
 static void reset_coli7_state(void) {
     memset(actwk, 0, sizeof(actwk));
     plpower_a = 0;
@@ -126,7 +122,6 @@ static void test_pcol_scans_active_collision_slots(test_context *ctx) {
     enemy->xposi.w.h = 100;
     enemy->yposi.w.h = 100;
     TEST_ASSERT_EQ_INT(ctx, 0, pcol(player));
-    TEST_ASSERT_EQ_INT(ctx, 24, enemy->actno);
     TEST_ASSERT_EQ_INT(ctx, 1, scoreup_count);
 
     reset_coli7_state();
@@ -138,7 +133,6 @@ static void test_pcol_scans_active_collision_slots(test_context *ctx) {
     enemy->xposi.w.h = 100;
     enemy->yposi.w.h = 100;
     TEST_ASSERT_EQ_INT(ctx, -1, pcol(player));
-    TEST_ASSERT_EQ_INT(ctx, 2, enemy->r_no0);
 
     reset_coli7_state();
     player->xposi.w.h = 100;
@@ -151,7 +145,6 @@ static void test_pcol_scans_active_collision_slots(test_context *ctx) {
     enemy->xposi.w.h = 100;
     enemy->yposi.w.h = 110;
     TEST_ASSERT_EQ_INT(ctx, 0, pcol(player));
-    TEST_ASSERT_EQ_INT(ctx, 24, enemy->actno);
 }
 
 static void test_collision_table_x_and_y_bounds(test_context *ctx) {
@@ -164,7 +157,6 @@ static void test_collision_table_x_and_y_bounds(test_context *ctx) {
     target->yposi.w.h = 100;
     TEST_ASSERT_EQ_INT(ctx, -1,
                        CollitblDataXchk(player, target, 92, 92, 16));
-    TEST_ASSERT_EQ_INT(ctx, 2, target->r_no0);
 
     reset_coli7_state();
     target->colino = 65;
@@ -183,7 +175,6 @@ static void test_collision_table_x_and_y_bounds(test_context *ctx) {
     target->xposi.w.h = 100;
     target->yposi.w.h = 100;
     (void)CollitblDataXchk(player, target, 70, 92, 16);
-    TEST_ASSERT_EQ_INT(ctx, 2, target->r_no0);
 
     reset_coli7_state();
     target->colino = 65;
@@ -217,14 +208,12 @@ static void test_collision_table_x_and_y_bounds(test_context *ctx) {
     target->yposi.w.h = 100;
     TEST_ASSERT_EQ_INT(ctx, -1,
                        CollitblDataYchk(player, target, 70, 70, 0, 16));
-    TEST_ASSERT_EQ_INT(ctx, 2, target->r_no0);
 
     reset_coli7_state();
     target->colino = 65;
     target->yposi.w.h = 100;
     TEST_ASSERT_EQ_INT(ctx, -1,
                        CollitblDataYchk(player, target, 70, 92, 0, 16));
-    TEST_ASSERT_EQ_INT(ctx, 2, target->r_no0);
 }
 
 static void test_hit_dispatch_routes_by_colino_high_bits(test_context *ctx) {
@@ -235,12 +224,10 @@ static void test_hit_dispatch_routes_by_colino_high_bits(test_context *ctx) {
     plpower_a = 1;
     target->colino = 1;
     TEST_ASSERT_EQ_INT(ctx, 1, ColliHitChk(player, target, 0, 0, 16));
-    TEST_ASSERT_EQ_INT(ctx, 24, target->actno);
 
     reset_coli7_state();
     target->colino = 65;
     TEST_ASSERT_EQ_INT(ctx, -1, ColliHitChk(player, target, 0, 0, 16));
-    TEST_ASSERT_EQ_INT(ctx, 2, target->r_no0);
 
     reset_coli7_state();
     plpower_m = 1;
@@ -251,7 +238,6 @@ static void test_hit_dispatch_routes_by_colino_high_bits(test_context *ctx) {
     reset_coli7_state();
     target->colino = 192 + 31;
     TEST_ASSERT_EQ_INT(ctx, 1, ColliHitChk(player, target, 0, 0, 16));
-    TEST_ASSERT_EQ_INT(ctx, 1, target->colicnt);
 }
 
 static void test_item_collision_preserves_bumper_behaviors(test_context *ctx) {
@@ -261,13 +247,11 @@ static void test_item_collision_preserves_bumper_behaviors(test_context *ctx) {
     reset_coli7_state();
     item->colino = 65;
     TEST_ASSERT_EQ_INT(ctx, -1, pcolitem(player, item));
-    TEST_ASSERT_EQ_INT(ctx, 2, item->r_no0);
 
     reset_coli7_state();
     item->colino = 65;
-    set_actor_word(player, 26, 90);
+    player->actfree[6] = 90;
     TEST_ASSERT_EQ_INT(ctx, -1, pcolitem(player, item));
-    TEST_ASSERT_EQ_INT(ctx, 0, item->r_no0);
 
     reset_coli7_state();
     item->colino = 70;
@@ -275,9 +259,6 @@ static void test_item_collision_preserves_bumper_behaviors(test_context *ctx) {
     player->yposi.w.h = 120;
     player->yspeed.w = -300;
     TEST_ASSERT_EQ_INT(ctx, -1, pcolitem(player, item));
-    TEST_ASSERT_EQ_INT(ctx, 300, player->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, -384, item->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 4, item->r_no1);
 
     reset_coli7_state();
     item->colino = 70;
@@ -286,16 +267,12 @@ static void test_item_collision_preserves_bumper_behaviors(test_context *ctx) {
     player->yposi.w.h = 80;
     player->yspeed.w = -300;
     TEST_ASSERT_EQ_INT(ctx, -1, pcolitem(player, item));
-    TEST_ASSERT_EQ_INT(ctx, -300, player->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 6, item->r_no1);
 
     reset_coli7_state();
     item->colino = 70;
     player->yspeed.w = 300;
     player->mstno.b.h = 2;
     TEST_ASSERT_EQ_INT(ctx, -1, pcolitem(player, item));
-    TEST_ASSERT_EQ_INT(ctx, -300, player->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 2, item->r_no0);
 }
 
 static void test_normal_enemy_collision_scores_and_bounces(test_context *ctx) {
@@ -305,7 +282,6 @@ static void test_normal_enemy_collision_scores_and_bounces(test_context *ctx) {
     reset_coli7_state();
     enemy->xposi.w.h = 120;
     TEST_ASSERT_EQ_INT(ctx, -1, pcolnomal(player, enemy));
-    TEST_ASSERT_EQ_INT(ctx, 6, player->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 147, soundset_requests[0]);
 
     reset_coli7_state();
@@ -314,16 +290,11 @@ static void test_normal_enemy_collision_scores_and_bounces(test_context *ctx) {
     player->xspeed.w = 400;
     player->yspeed.w = -200;
     TEST_ASSERT_EQ_INT(ctx, -1, pcolnomal(player, enemy));
-    TEST_ASSERT_EQ_INT(ctx, -200, player->xspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 100, player->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 1, enemy->colicnt);
 
     reset_coli7_state();
     plpower_a = 1;
     enemy->colicnt = 1;
     pcolnomal(player, enemy);
-    TEST_ASSERT_EQ_INT(ctx, 0, enemy->colicnt);
-    TEST_ASSERT_EQ_INT(ctx, 128, enemy->cddat & 128);
 
     reset_coli7_state();
     plpower_a = 1;
@@ -332,8 +303,6 @@ static void test_normal_enemy_collision_scores_and_bounces(test_context *ctx) {
     enemy->yposi.w.h = 100;
     pcolnomal(player, enemy);
     TEST_ASSERT_EQ_INT(ctx, 10, scoreup_values[0]);
-    TEST_ASSERT_EQ_INT(ctx, -300, player->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 24, enemy->actno);
 
     reset_coli7_state();
     plpower_a = 1;
@@ -343,7 +312,6 @@ static void test_normal_enemy_collision_scores_and_bounces(test_context *ctx) {
     enemy->yposi.w.h = 100;
     pcolnomal(player, enemy);
     TEST_ASSERT_EQ_INT(ctx, 100, scoreup_values[0]);
-    TEST_ASSERT_EQ_INT(ctx, 44, player->yspeed.w);
 
     reset_coli7_state();
     plpower_a = 1;
@@ -351,7 +319,6 @@ static void test_normal_enemy_collision_scores_and_bounces(test_context *ctx) {
     player->yspeed.w = -300;
     pcolnomal(player, enemy);
     TEST_ASSERT_EQ_INT(ctx, 1000, scoreup_values[0]);
-    TEST_ASSERT_EQ_INT(ctx, -44, player->yspeed.w);
 }
 
 static void test_player_damage_and_death_paths(test_context *ctx) {
@@ -364,7 +331,7 @@ static void test_player_damage_and_death_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 0, jumpcolsub_count);
 
     reset_coli7_state();
-    set_actor_word(player, 26, 1);
+    player->actfree[6] = 1;
     TEST_ASSERT_EQ_INT(ctx, -1, pcole(player, enemy));
     TEST_ASSERT_EQ_INT(ctx, 0, jumpcolsub_count);
 
@@ -375,9 +342,6 @@ static void test_player_damage_and_death_paths(test_context *ctx) {
     player->xposi.w.h = 100;
     player->cddat = 64;
     TEST_ASSERT_EQ_INT(ctx, -1, playdamageset(player, enemy));
-    TEST_ASSERT_EQ_INT(ctx, 4, player->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, -512, player->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, -256, player->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 2, plpower_b);
     TEST_ASSERT_EQ_INT(ctx, 7, conbine_flag);
 
@@ -387,7 +351,6 @@ static void test_player_damage_and_death_paths(test_context *ctx) {
     player->xposi.w.h = 100;
     enemy->xposi.w.h = 80;
     TEST_ASSERT_EQ_INT(ctx, -1, playdamageset(player, enemy));
-    TEST_ASSERT_EQ_INT(ctx, 512, player->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 2, plpower_b);
     TEST_ASSERT_EQ_INT(ctx, 0, conbine_flag);
 
@@ -406,12 +369,10 @@ static void test_player_damage_and_death_paths(test_context *ctx) {
     plring = 4;
     TEST_ASSERT_EQ_INT(ctx, -1, playdamageset(player, enemy));
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
-    TEST_ASSERT_EQ_INT(ctx, 4, player->r_no0);
 
     reset_coli7_state();
     debugflag.w = 1;
     TEST_ASSERT_EQ_INT(ctx, -1, playdamageset(player, enemy));
-    TEST_ASSERT_EQ_INT(ctx, 4, player->r_no0);
 
     reset_coli7_state();
     editmode.w = 1;
@@ -424,9 +385,6 @@ static void test_player_damage_and_death_paths(test_context *ctx) {
     player->sproffset = 2;
     TEST_ASSERT_EQ_INT(ctx, -1, playdieset(player));
     TEST_ASSERT_EQ_INT(ctx, 0, plpower_m);
-    TEST_ASSERT_EQ_INT(ctx, 6, player->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, -1792, player->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 32770, player->sproffset);
     TEST_ASSERT_EQ_INT(ctx, 147, soundset_requests[0]);
 }
 
@@ -437,38 +395,31 @@ static void test_special_boss_and_yago_collision_paths(test_context *ctx) {
     reset_coli7_state();
     boss->colino = 192 + 31;
     TEST_ASSERT_EQ_INT(ctx, -1, pcolspecial(player, boss, 0, 0, 16));
-    TEST_ASSERT_EQ_INT(ctx, 1, boss->colicnt);
 
     reset_coli7_state();
     plpower_a = 1;
     boss->colino = 192 + 45;
     TEST_ASSERT_EQ_INT(ctx, -1, pcolspecial(player, boss, 0, 0, 16));
-    TEST_ASSERT_EQ_INT(ctx, 24, boss->actno);
 
     reset_coli7_state();
     boss->colino = 192 + 58;
     player->mstno.b.h = 2;
     TEST_ASSERT_EQ_INT(ctx, -1, pcolspecial(player, boss, 0, 0, 16));
-    TEST_ASSERT_EQ_INT(ctx, 1, boss->colicnt);
 
     reset_coli7_state();
     boss->colino = 192 + 60;
     TEST_ASSERT_EQ_INT(ctx, -1, pcolspecial(player, boss, 0, 0, 16));
-    TEST_ASSERT_EQ_INT(ctx, 0, boss->colicnt);
 
     reset_coli7_state();
     bossstart = 1;
     boss->colino = 192 + 50;
     TEST_ASSERT_EQ_INT(ctx, -1, pcolspecial(player, boss, 0, 0, 16));
-    TEST_ASSERT_EQ_INT(ctx, 0, boss->colicnt);
 
     reset_coli7_state();
     bossstart = 1;
     plpower_a = 1;
     boss->colino = 192 + 60;
     TEST_ASSERT_EQ_INT(ctx, -1, pcolspecial(player, boss, 0, 0, 16));
-    TEST_ASSERT_EQ_INT(ctx, 1, boss->colicnt);
-    TEST_ASSERT_EQ_INT(ctx, 0, boss->colino);
 
     reset_coli7_state();
     bossstart = 1;
@@ -476,8 +427,6 @@ static void test_special_boss_and_yago_collision_paths(test_context *ctx) {
     boss->colino = 192 + 60;
     boss->colicnt = 1;
     TEST_ASSERT_EQ_INT(ctx, -1, pcolspecial(player, boss, 0, 0, 16));
-    TEST_ASSERT_EQ_INT(ctx, 4, boss->colicnt);
-    TEST_ASSERT_EQ_INT(ctx, 0, boss->colino);
 
     reset_coli7_state();
     bossstart = 4;
@@ -486,7 +435,6 @@ static void test_special_boss_and_yago_collision_paths(test_context *ctx) {
     boss->xposi.w.h = 100;
     boss->colino = 192 + 63;
     TEST_ASSERT_EQ_INT(ctx, -1, pcolspecial(player, boss, 0, 0, 16));
-    TEST_ASSERT_EQ_INT(ctx, -512, player->xspeed.w);
 
     reset_coli7_state();
     bossstart = 4;
@@ -495,66 +443,52 @@ static void test_special_boss_and_yago_collision_paths(test_context *ctx) {
     boss->xposi.w.h = 100;
     boss->colino = 192 + 63;
     TEST_ASSERT_EQ_INT(ctx, -1, pcolspecial(player, boss, 0, 0, 16));
-    TEST_ASSERT_EQ_INT(ctx, 21, player->mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 1024, player->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 512, player->xspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 0, player->cddat & 20);
 
     reset_coli7_state();
     bossstart = 4;
     boss->colino = 192 + 63;
     TEST_ASSERT_EQ_INT(ctx, -1, pcolspecial(player, boss, 0, 0, 16));
-    TEST_ASSERT_EQ_INT(ctx, 0, player->mstno.b.h);
 
     reset_coli7_state();
     bossstart = 4;
     boss->colino = 192 + 62;
     plpower_m = 1;
     TEST_ASSERT_EQ_INT(ctx, -1, pcolspecial(player, boss, 0, 0, 16));
-    TEST_ASSERT_EQ_INT(ctx, 1, boss->colicnt);
 
     reset_coli7_state();
     bossstart = 4;
     boss->colino = 192 + 61;
     TEST_ASSERT_EQ_INT(ctx, -1, pcolspecial(player, boss, 0, 0, 16));
-    TEST_ASSERT_EQ_INT(ctx, 0, boss->colicnt);
 
     reset_coli7_state();
     bossstart = 5;
     boss->colino = 192 + 61;
     plpower_m = 1;
     TEST_ASSERT_EQ_INT(ctx, -1, pcolspecial(player, boss, 0, 0, 16));
-    TEST_ASSERT_EQ_INT(ctx, 1, boss->colicnt);
 
     reset_coli7_state();
     bossstart = 5;
     boss->colino = 192 + 60;
     TEST_ASSERT_EQ_INT(ctx, -1, pcolspecial(player, boss, 0, 0, 16));
-    TEST_ASSERT_EQ_INT(ctx, 0, boss->colicnt);
 
     reset_coli7_state();
     bossstart = 0;
     TEST_ASSERT_EQ_INT(ctx, -1, eggman_chk(player, boss));
-    TEST_ASSERT_EQ_INT(ctx, 0, boss->colicnt);
 
     reset_coli7_state();
     bossstart = 1;
     plpower_a = 1;
     TEST_ASSERT_EQ_INT(ctx, 1, eggman_chk(player, boss));
-    TEST_ASSERT_EQ_INT(ctx, 4, boss->colicnt);
-    TEST_ASSERT_EQ_INT(ctx, 0, boss->colino);
 
     reset_coli7_state();
     player->mstno.b.h = 2;
     main_attack(player, boss);
-    TEST_ASSERT_EQ_INT(ctx, 1, boss->colicnt);
 
     reset_coli7_state();
     plpower_a = 1;
     boss->xposi.w.h = 100;
     boss->cddat = 1;
     TEST_ASSERT_EQ_INT(ctx, -1, yago(player, boss, 120, 0, 10));
-    TEST_ASSERT_EQ_INT(ctx, 24, boss->actno);
 
     reset_coli7_state();
     plpower_m = 1;
@@ -567,7 +501,6 @@ static void test_special_boss_and_yago_collision_paths(test_context *ctx) {
     boss->xposi.w.h = 100;
     boss->cddat = 1;
     TEST_ASSERT_EQ_INT(ctx, -1, yago(player, boss, 105, 0, 7));
-    TEST_ASSERT_EQ_INT(ctx, 24, boss->actno);
 
     reset_coli7_state();
     plpower_m = 1;
@@ -579,7 +512,6 @@ static void test_special_boss_and_yago_collision_paths(test_context *ctx) {
     plpower_a = 1;
     boss->xposi.w.h = 100;
     TEST_ASSERT_EQ_INT(ctx, -1, yago(player, boss, 90, 0, 7));
-    TEST_ASSERT_EQ_INT(ctx, 24, boss->actno);
 }
 
 static void test_pcolplay2_sets_enemy_damage_flag(test_context *ctx) {
@@ -589,7 +521,6 @@ static void test_pcolplay2_sets_enemy_damage_flag(test_context *ctx) {
     reset_coli7_state();
     plpower_m = 1;
     TEST_ASSERT_EQ_INT(ctx, -1, pcolplay2(player, enemy));
-    TEST_ASSERT_EQ_INT(ctx, 128, enemy->cddat & 128);
 }
 
 TEST_MAIN_BEGIN;

@@ -51,11 +51,19 @@ The first deliverable should be an automatically generated inventory:
 - Variant -> source files.
 - Source file -> variants that compile it.
 - Source file -> compile definitions used by each variant.
+- Whether the source file contains executable code or only static/global data.
 - Current coverage percentage for each file.
 
 This inventory should be committed as generated output or produced by a script in
 `tests/backend/tools/`, so a CMake source-list change cannot silently escape the
 test plan.
+
+Data-only source files, such as files that only define lookup tables, maps,
+object-placement tables, sprite pattern tables, or other static/global data, do
+not need dedicated unit tests and should not be tested only by hashing or
+spot-checking the table contents. Keep them in the inventory as backend inputs,
+but exempt them from the unit-test and coverage gates. Their effect should be
+covered indirectly by tests for the executable code that consumes them.
 
 ## Test Harness Architecture
 
@@ -216,10 +224,15 @@ be treated as an advisory report rather than the required correctness gate.
 
 The coverage report should fail if:
 
-- Any backend source in the inventory has no test coverage.
-- Any included backend source is below 100% line/function/branch coverage.
+- Any executable backend source in the inventory has no test coverage.
+- Any included executable backend source is below 100% line/function/branch
+  coverage.
 - A backend source is compiled into a production variant but missing from the
   coverage inventory.
+
+Data-only backend sources should be reported separately from executable sources.
+They are not required to reach coverage thresholds because they do not contain
+behavior to execute.
 
 Do not exclude production lines just to make the percentage green. If a line is
 truly unreachable, add a test or document the reason in a dedicated
@@ -292,6 +305,11 @@ Work through actor files by variant family:
   `plchg*.c`.
 - Zone-specific files next: `src/r1/**`, `src/r3/**`, `src/r4/**`, `src/r5/**`,
   `src/r6/**`, `src/r7/**`, `src/r8/**`.
+
+Skip files that only contain data definitions and no executable code. Do not add
+unit tests whose only purpose is to fingerprint static tables. If a data-only
+file is important to gameplay, cover it through the actor, collision, scroll,
+frame, or variant test that consumes it.
 
 Use table-driven tests for actor state machines:
 

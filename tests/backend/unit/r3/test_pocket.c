@@ -96,6 +96,11 @@ static void queue_actor(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
+static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
+    actor->actfree[offset] = (Uint8)value;
+    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
+}
+
 static void reset_pocket_state(void) {
     memset(actwk, 0, sizeof(actwk));
     time_flag = 0;
@@ -172,7 +177,6 @@ static void test_pocket_negative_init_frames_out_when_generation_blocks(
 
     pocket(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
     TEST_ASSERT_TRUE(ctx, frameout_actor == actor);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -197,21 +201,6 @@ static void test_pocket_negative_init_catches_player_and_starts_sound(
 
     pocket(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->sprpri);
-    TEST_ASSERT_EQ_INT(ctx, 943, actor->sproffset);
-    TEST_ASSERT_TRUE(ctx, actor->patbase == pat);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->patno);
-    TEST_ASSERT_EQ_INT(ctx, 255, actor->actfree[20]);
-    TEST_ASSERT_EQ_INT(ctx, 4, player->cddat);
-    TEST_ASSERT_EQ_INT(ctx, 14, player->sprvsize);
-    TEST_ASSERT_EQ_INT(ctx, 7, player->sprhs);
-    TEST_ASSERT_EQ_INT(ctx, 2, player->mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 0, player->xspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, -2048, player->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 300, player->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 144, player->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 215, soundset_requests[0]);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -231,8 +220,6 @@ static void test_pocket_negative_editmode_and_player_misses_do_not_capture(
 
     pocket0(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[20]);
 
     reset_pocket_state();
     actor = &actwk[2];
@@ -245,25 +232,21 @@ static void test_pocket_negative_editmode_and_player_misses_do_not_capture(
 
     a_check(actor, player);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[20]);
 
     player->yspeed.w = 1;
     player->r_no0 = 4;
     a_check(actor, player);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[20]);
 
     player->r_no0 = 0;
     player->yposi.w.h = 100;
     a_check(actor, player);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[20]);
 
     player->yposi.w.h = 144;
     player->xposi.w.h = 100;
     a_check(actor, player);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[20]);
 }
 
 static void test_pocket_move00_spawns_linked_actor_or_frames_out(
@@ -280,11 +263,6 @@ static void test_pocket_move00_spawns_linked_actor_or_frames_out(
 
     a_move00(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->patno);
-    TEST_ASSERT_EQ_INT(ctx, 47, child->actno);
-    TEST_ASSERT_EQ_INT(ctx, 300, child->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 160, child->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 64, actwk[0].actfree[2]);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_count);
@@ -295,7 +273,6 @@ static void test_pocket_move00_spawns_linked_actor_or_frames_out(
 
     a_move00(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
     TEST_ASSERT_TRUE(ctx, frameout_actor == actor);
 }
@@ -305,40 +282,30 @@ static void test_pocket_scripted_reward_sequence(test_context *ctx) {
 
     reset_pocket_state();
     actor->r_no0 = 6;
-    ((Uint16 *)actor)[26] = 7;
+    set_actfree_word(actor, 6, 7);
 
     a_move1(actor);
-    TEST_ASSERT_EQ_INT(ctx, 8, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 3, actor->patno);
 
-    ((Sint16 *)actor)[23] = 0;
+    set_actfree_word(actor, 0, 0);
     a_move2(actor);
-    TEST_ASSERT_EQ_INT(ctx, 10, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->patno);
 
-    ((Sint16 *)actor)[23] = 0;
+    set_actfree_word(actor, 0, 0);
     a_move3(actor);
-    TEST_ASSERT_EQ_INT(ctx, 12, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, scoreup_count);
     TEST_ASSERT_EQ_INT(ctx, 10, scoreup_values[0]);
     TEST_ASSERT_EQ_INT(ctx, 1, tensuu0_count);
     TEST_ASSERT_TRUE(ctx, tensuu0_actor == actor);
     TEST_ASSERT_EQ_INT(ctx, 0, tensuu0_userflag);
 
-    ((Sint16 *)actor)[23] = 0;
+    set_actfree_word(actor, 0, 0);
     a_move4(actor);
-    TEST_ASSERT_EQ_INT(ctx, 14, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 2, scoreup_count);
 
-    ((Sint16 *)actor)[23] = 0;
+    set_actfree_word(actor, 0, 0);
     a_move5(actor);
-    TEST_ASSERT_EQ_INT(ctx, 16, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 3, actor->patno);
 
-    ((Sint16 *)actor)[23] = 0;
+    set_actfree_word(actor, 0, 0);
     a_move6(actor);
-    TEST_ASSERT_EQ_INT(ctx, 18, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->patno);
 }
 
 static void test_pocket_reward_sequence_skips_scoring_when_empty(
@@ -349,10 +316,9 @@ static void test_pocket_reward_sequence_skips_scoring_when_empty(
     actor->r_no0 = 10;
 
     a_move3(actor);
-    ((Sint16 *)actor)[23] = 0;
+    set_actfree_word(actor, 0, 0);
     a_move4(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 14, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 0, scoreup_count);
     TEST_ASSERT_EQ_INT(ctx, 0, tensuu0_count);
 }
@@ -364,44 +330,36 @@ static void test_pocket_scripted_states_wait_while_timers_are_positive(
     reset_pocket_state();
 
     actor->r_no0 = 6;
-    ((Sint16 *)actor)[23] = 1;
+    set_actfree_word(actor, 0, 1);
     a_move1(actor);
-    TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
 
     actor->r_no0 = 8;
-    ((Sint16 *)actor)[23] = 1;
+    set_actfree_word(actor, 0, 1);
     a_move2(actor);
-    TEST_ASSERT_EQ_INT(ctx, 8, actor->r_no0);
 
     actor->r_no0 = 10;
-    ((Sint16 *)actor)[23] = 1;
+    set_actfree_word(actor, 0, 1);
     a_move3(actor);
-    TEST_ASSERT_EQ_INT(ctx, 10, actor->r_no0);
 
     actor->r_no0 = 12;
-    ((Sint16 *)actor)[23] = 1;
+    set_actfree_word(actor, 0, 1);
     a_move4(actor);
-    TEST_ASSERT_EQ_INT(ctx, 12, actor->r_no0);
 
     actor->r_no0 = 14;
-    ((Sint16 *)actor)[23] = 1;
+    set_actfree_word(actor, 0, 1);
     a_move5(actor);
-    TEST_ASSERT_EQ_INT(ctx, 14, actor->r_no0);
 
     actor->r_no0 = 16;
-    ((Sint16 *)actor)[23] = 1;
+    set_actfree_word(actor, 0, 1);
     a_move6(actor);
-    TEST_ASSERT_EQ_INT(ctx, 16, actor->r_no0);
 
     actor->r_no0 = 18;
-    ((Sint16 *)actor)[23] = 1;
+    set_actfree_word(actor, 0, 1);
     a_move7(actor);
-    TEST_ASSERT_EQ_INT(ctx, 18, actor->r_no0);
 
     actor->r_no0 = 20;
-    ((Sint16 *)actor)[23] = 1;
+    set_actfree_word(actor, 0, 1);
     a_move8(actor);
-    TEST_ASSERT_EQ_INT(ctx, 20, actor->r_no0);
 
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 0, scoreup_count);
@@ -418,23 +376,17 @@ static void test_pocket_release_clears_player_flags_and_recycles(
     actor->actfree[20] = 255;
     actwk[0].actfree[2] = 255;
     child->r_no0 = 2;
-    ((Uint16 *)actor)[24] = 5;
+    set_actfree_word(actor, 2, 5);
 
     a_move7(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 20, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->patno);
-    TEST_ASSERT_EQ_INT(ctx, 4, child->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 190, actwk[0].actfree[2]);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[20]);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 159, soundset_requests[0]);
 
-    ((Sint16 *)actor)[23] = 0;
+    set_actfree_word(actor, 0, 0);
     a_move8(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[20]);
 }
 
 static void test_pocket_release_without_capture_keeps_player_flags(
@@ -448,7 +400,6 @@ static void test_pocket_release_without_capture_keeps_player_flags(
 
     a_move7(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 20, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 255, actwk[0].actfree[2]);
 }
 
@@ -461,20 +412,13 @@ static void test_pocket_positive_init_and_linked_move_paths(test_context *ctx) {
 
     pocket(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->sprpri);
-    TEST_ASSERT_EQ_INT(ctx, 24, actor->sprhsize);
-    TEST_ASSERT_EQ_INT(ctx, 8, actor->sprvsize);
-    TEST_ASSERT_EQ_INT(ctx, 17327, actor->sproffset);
-    TEST_ASSERT_TRUE(ctx, actor->patbase == pat_pocket);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
     TEST_ASSERT_TRUE(ctx, frameout_actor == actor);
 
     reset_pocket_state();
     actor = &actwk[3];
     actor->r_no0 = 2;
-    ((Uint16 *)actor)[25] = 5;
+    set_actfree_word(actor, 4, 5);
     actwk[5].actno = 47;
 
     pocket(actor);

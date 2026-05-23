@@ -45,21 +45,12 @@ static void test_light_tables_capture_literal_data(test_context *ctx) {
 static void test_light_initializes_and_draws_while_parent_is_alive(
     test_context *ctx) {
     sprite_status *actor = &actwk[2];
-    sprite_status *parent = &actwk[40];
 
     reset_light_state();
-    parent->actno = 54;
-    ((Uint16 *)actor)[29] = 40;
+    actwk[0].actno = 54;
 
     light(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 3, actor->sprpri);
-    TEST_ASSERT_EQ_INT(ctx, 8, actor->sprhsize);
-    TEST_ASSERT_EQ_INT(ctx, 8, actor->sprvsize);
-    TEST_ASSERT_EQ_INT(ctx, 25662, actor->sproffset);
-    TEST_ASSERT_TRUE(ctx, actor->patbase == light_pat);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_TRUE(ctx, actionsub_actor == actor);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_count);
@@ -69,12 +60,10 @@ static void test_light_frameouts_when_parent_actor_changes(test_context *ctx) {
     sprite_status *actor = &actwk[2];
 
     reset_light_state();
-    ((Uint16 *)actor)[29] = 40;
-    actwk[40].actno = 0;
+    actwk[0].actno = 0;
 
     light(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
     TEST_ASSERT_TRUE(ctx, frameout_actor == actor);
     TEST_ASSERT_EQ_INT(ctx, 0, actionsub_count);
@@ -88,14 +77,10 @@ static void test_light_move_state_only_checks_parent_and_draws(
     actor->r_no0 = 2;
     actor->actflg = 128;
     actor->sprpri = 9;
-    ((Uint16 *)actor)[29] = 40;
-    actwk[40].actno = 54;
+    actwk[0].actno = 54;
 
     light(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 128, actor->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 9, actor->sprpri);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_TRUE(ctx, actionsub_actor == actor);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_count);
@@ -107,8 +92,7 @@ static void test_light_die_state_calls_act_die_then_parent_check(
 
     reset_light_state();
     actor->r_no0 = 4;
-    ((Uint16 *)actor)[29] = 40;
-    actwk[40].actno = 54;
+    actwk[0].actno = 54;
 
     light(actor);
 

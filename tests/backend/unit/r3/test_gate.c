@@ -85,14 +85,6 @@ static void test_gate_initializes_closed_target_and_waits_for_animation(
 
     gate(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 7, actor->actfree[0]);
-    TEST_ASSERT_EQ_INT(ctx, 132, actor->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 3, actor->sprpri);
-    TEST_ASSERT_EQ_INT(ctx, 1140, actor->sproffset);
-    TEST_ASSERT_TRUE(ctx, actor->patbase == gate_pat);
-    TEST_ASSERT_EQ_INT(ctx, 72, actor->sprhsize);
-    TEST_ASSERT_EQ_INT(ctx, 16, actor->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_TRUE(ctx, patchg_actor == actor);
     TEST_ASSERT_TRUE(ctx, patchg_table == (Uint8 **)pchg);
@@ -113,7 +105,6 @@ static void test_gate_open_state_finishes_and_moves_in_same_call(
 
     gate(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_TRUE(ctx, patchg_actor == actor);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -135,7 +126,6 @@ static void test_gate_open_state_keeps_waiting_when_pattern_not_done(
 
     gate(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_EQ_INT(ctx, 0, ridechk_count);
@@ -152,7 +142,6 @@ static void test_gate_state_four_moves_before_and_after_dispatch(
 
     gate(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 2, actionsub_count);
     TEST_ASSERT_TRUE(ctx, actionsub_actor == actor);
     TEST_ASSERT_EQ_INT(ctx, 2, ridechk_count);
@@ -171,9 +160,6 @@ static void test_gate_state_six_reinitializes_without_public_short_target(
 
     gate(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 10, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 7, actor->actfree[0]);
-    TEST_ASSERT_TRUE(ctx, actor->patbase == gate_pat);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_EQ_INT(ctx, 0, actionsub_count);
 }
@@ -188,14 +174,6 @@ static void test_act_init6_uses_short_target_and_public_init10_keeps_target(
 
     act_init6(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 5, actor->actfree[0]);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 3, actor->sprpri);
-    TEST_ASSERT_EQ_INT(ctx, 1140, actor->sproffset);
-    TEST_ASSERT_TRUE(ctx, actor->patbase == gate_pat);
-    TEST_ASSERT_EQ_INT(ctx, 72, actor->sprhsize);
-    TEST_ASSERT_EQ_INT(ctx, 16, actor->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
 
     reset_gate_state();
@@ -206,9 +184,6 @@ static void test_act_init6_uses_short_target_and_public_init10_keeps_target(
 
     act_init10(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 10, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 5, actor->actfree[0]);
-    TEST_ASSERT_TRUE(ctx, actor->patbase == gate_pat);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
 }
 

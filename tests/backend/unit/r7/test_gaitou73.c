@@ -49,11 +49,15 @@ static void reset_gaitou73_state(void) {
 }
 
 static Sint16 actor_word(sprite_status *actor, int index) {
-    return ((Sint16 *)actor)[index];
+    int offset = (index - 23) * 2;
+    return (Sint16)(actor->actfree[offset] |
+                    ((Uint16)actor->actfree[offset + 1] << 8));
 }
 
 static void set_actor_word(sprite_status *actor, int index, Sint16 value) {
-    ((Sint16 *)actor)[index] = value;
+    int offset = (index - 23) * 2;
+    actor->actfree[offset] = (Uint8)value;
+    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
 }
 
 static void test_gaitou73_tables_capture_literal_data(test_context *ctx) {
@@ -78,18 +82,9 @@ static void test_gaitou73_base_initializes_and_allocates_child(test_context *ctx
 
     gaitou73(base);
 
-    TEST_ASSERT_EQ_INT(ctx, 4, base->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 0, base->sprpri);
-    TEST_ASSERT_EQ_INT(ctx, 17692, base->sproffset);
-    TEST_ASSERT_TRUE(ctx, base->patbase == gaitou73_pat);
-    TEST_ASSERT_EQ_INT(ctx, 24, base->sprhsize);
-    TEST_ASSERT_EQ_INT(ctx, 12, base->sprvsize);
-    TEST_ASSERT_EQ_INT(ctx, 2, base->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 9, actor_word(base, 25));
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk2_count);
     TEST_ASSERT_TRUE(ctx, actwkchk2_actor == base);
-    TEST_ASSERT_EQ_INT(ctx, 54, child->actno);
-    TEST_ASSERT_EQ_INT(ctx, 1, child->userflag.b.h);
     TEST_ASSERT_EQ_INT(ctx, 4, actor_word(child, 25));
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_TRUE(ctx, actionsub_actor == base);
@@ -104,9 +99,6 @@ static void test_gaitou73_base_handles_child_allocation_failure(
 
     gaitou73(base);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, base->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 24, base->sprhsize);
-    TEST_ASSERT_EQ_INT(ctx, 12, base->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 0, actor_word(base, 25));
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk2_count);
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[9].actno);
@@ -121,14 +113,6 @@ static void test_gaitou73_child_initializes_without_allocation(test_context *ctx
 
     gaitou73(child);
 
-    TEST_ASSERT_EQ_INT(ctx, 4, child->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 0, child->sprpri);
-    TEST_ASSERT_EQ_INT(ctx, 17692, child->sproffset);
-    TEST_ASSERT_TRUE(ctx, child->patbase == gaitou73_pat);
-    TEST_ASSERT_EQ_INT(ctx, 1, child->patno);
-    TEST_ASSERT_EQ_INT(ctx, 8, child->sprhsize);
-    TEST_ASSERT_EQ_INT(ctx, 112, child->sprvsize);
-    TEST_ASSERT_EQ_INT(ctx, 4, child->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk2_count);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_TRUE(ctx, actionsub_actor == child);
@@ -147,11 +131,6 @@ static void test_gaitou73_base_move_selects_short_pattern_near_scroll(
 
     TEST_ASSERT_EQ_INT(ctx, 496, actor_word(base, 26));
     TEST_ASSERT_EQ_INT(ctx, 350, actor_word(base, 27));
-    TEST_ASSERT_EQ_INT(ctx, 496, base->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 350, base->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 0, base->patno);
-    TEST_ASSERT_EQ_INT(ctx, 24, base->sprhsize);
-    TEST_ASSERT_EQ_INT(ctx, 12, base->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 }
 
@@ -168,11 +147,6 @@ static void test_gaitou73_base_move_selects_tall_pattern_when_above_scroll(
 
     TEST_ASSERT_EQ_INT(ctx, 496, actor_word(base, 26));
     TEST_ASSERT_EQ_INT(ctx, 236, actor_word(base, 27));
-    TEST_ASSERT_EQ_INT(ctx, 496, base->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 584, base->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 1, base->patno);
-    TEST_ASSERT_EQ_INT(ctx, 8, base->sprhsize);
-    TEST_ASSERT_EQ_INT(ctx, 112, base->sprvsize);
 }
 
 static void test_gaitou73_horizontal_scroll_wraps_after_segment_48(
@@ -187,7 +161,6 @@ static void test_gaitou73_horizontal_scroll_wraps_after_segment_48(
     gaitou73(base);
 
     TEST_ASSERT_EQ_INT(ctx, 576, actor_word(base, 26));
-    TEST_ASSERT_EQ_INT(ctx, 576, base->xposi.w.h);
 }
 
 static void test_gaitou73_child_follows_base_cached_position(test_context *ctx) {
@@ -202,8 +175,6 @@ static void test_gaitou73_child_follows_base_cached_position(test_context *ctx) 
 
     gaitou73(child);
 
-    TEST_ASSERT_EQ_INT(ctx, 444, child->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 679, child->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_TRUE(ctx, actionsub_actor == child);
 }

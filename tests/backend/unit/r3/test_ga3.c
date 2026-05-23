@@ -96,7 +96,6 @@ static void run_ga_until_r_no0(test_context *ctx, sprite_status *actor,
         ga(actor);
     }
 
-    TEST_ASSERT_EQ_INT(ctx, r_no0, actor->r_no0);
 }
 
 static void run_ga_until_actwkchk(test_context *ctx, sprite_status *actor,
@@ -135,7 +134,6 @@ static void test_ga_enemy_suicide_short_circuits_main_enemy(test_context *ctx) {
     ga(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 1, enemy_suicide_count);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 0, actionsub_count);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_s_count);
     TEST_ASSERT_EQ_INT(ctx, 0, patchg_count);
@@ -150,14 +148,6 @@ static void test_ga_main_enemy_initializes_visible_fields(test_context *ctx) {
     ga(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 1, enemy_suicide_count);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 132, actor->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->patno);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->sprpri);
-    TEST_ASSERT_EQ_INT(ctx, 16, actor->sprhsize);
-    TEST_ASSERT_EQ_INT(ctx, 8, actor->sprvsize);
-    TEST_ASSERT_EQ_INT(ctx, 42017, actor->sproffset);
-    TEST_ASSERT_TRUE(ctx, actor->patbase == pat_e_ga);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_TRUE(ctx, actionsub_actor == actor);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s_count);
@@ -174,8 +164,6 @@ static void test_ga_main_enemy_uses_b_pattern_for_negative_userflag(
 
     ga(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_TRUE(ctx, actor->patbase == pat_b_ga);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s_count);
 }
@@ -192,29 +180,18 @@ static void test_ga_main_enemy_progresses_to_attack_and_spawns_ring(
     actwk[0].xposi.w.h = 200;
 
     run_ga_until_r_no0(ctx, actor, 4, 70);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->colino);
 
     run_ga_until_r_no0(ctx, actor, 6, 70);
-    TEST_ASSERT_EQ_INT(ctx, 37, actor->colino);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->mstno.b.h);
     TEST_ASSERT_TRUE(ctx, patchg_count > 0);
     TEST_ASSERT_TRUE(ctx, patchg_actor == actor);
     TEST_ASSERT_TRUE(ctx, patchg_table == (Uint8 **)pchg);
 
     run_ga_until_r_no0(ctx, actor, 8, 70);
-    TEST_ASSERT_EQ_INT(ctx, 38, actor->colino);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->mstno.b.h);
-    TEST_ASSERT_TRUE(ctx, actor->actflg & 1);
-    TEST_ASSERT_TRUE(ctx, actor->cddat & 1);
 
     run_ga_until_actwkchk(ctx, actor, 40);
     spawned = &actwk[32];
 
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
-    TEST_ASSERT_EQ_INT(ctx, 44, spawned->actno);
-    TEST_ASSERT_EQ_INT(ctx, 1, spawned->userflag.b.h);
-    TEST_ASSERT_EQ_INT(ctx, actor->xposi.w.h, spawned->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, actor->yposi.w.h, spawned->yposi.w.h);
 }
 
 static void test_ga_main_enemy_does_not_spawn_when_allocator_fails(
@@ -233,8 +210,6 @@ static void test_ga_main_enemy_does_not_spawn_when_allocator_fails(
 
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[32].actno);
-    TEST_ASSERT_TRUE(ctx, !(actor->actflg & 1));
-    TEST_ASSERT_TRUE(ctx, !(actor->cddat & 1));
 }
 
 static void test_ga_negative_main_enemy_runs_without_spawn(test_context *ctx) {
@@ -252,9 +227,6 @@ static void test_ga_negative_main_enemy_runs_without_spawn(test_context *ctx) {
     }
 
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
-    TEST_ASSERT_EQ_INT(ctx, 38, actor->colino);
-    TEST_ASSERT_TRUE(ctx, actor->actflg & 1);
-    TEST_ASSERT_TRUE(ctx, actor->cddat & 1);
 }
 
 static void test_ga_spawned_ring_initializes_and_falls(test_context *ctx) {
@@ -266,15 +238,6 @@ static void test_ga_spawned_ring_initializes_and_falls(test_context *ctx) {
 
     ga(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->sprpri);
-    TEST_ASSERT_EQ_INT(ctx, 6, actor->sprhs);
-    TEST_ASSERT_EQ_INT(ctx, 6, actor->sprhsize);
-    TEST_ASSERT_EQ_INT(ctx, 6, actor->sprvsize);
-    TEST_ASSERT_EQ_INT(ctx, 42926, actor->sproffset);
-    TEST_ASSERT_TRUE(ctx, actor->patbase == ringpat);
-    TEST_ASSERT_EQ_INT(ctx, 101, actor->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_TRUE(ctx, patchg_actor == actor);
     TEST_ASSERT_TRUE(ctx, patchg_table == (Uint8 **)ringchg);

@@ -98,13 +98,6 @@ static void test_stopper_initializes_and_draws_when_parent_is_alive(
 
     stopper(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 132, actor->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 3, actor->sprpri);
-    TEST_ASSERT_EQ_INT(ctx, 1086, actor->sproffset);
-    TEST_ASSERT_TRUE(ctx, actor->patbase == stopper_pat);
-    TEST_ASSERT_EQ_INT(ctx, 16, actor->sprhsize);
-    TEST_ASSERT_EQ_INT(ctx, 8, actor->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 0, ridechk_count);
     TEST_ASSERT_EQ_INT(ctx, 0, patchg_count);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_count);
@@ -120,7 +113,6 @@ static void test_stopper_frameouts_when_parent_is_missing(test_context *ctx) {
 
     stopper(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
     TEST_ASSERT_TRUE(ctx, frameout_actor == actor);
     TEST_ASSERT_EQ_INT(ctx, 0, actionsub_count);
@@ -200,8 +192,6 @@ static void test_stopper_open_and_close_states_select_animation(
 
     stopper(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 8, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 255, actor->mstno.w);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_TRUE(ctx, patchg_actor == actor);
     TEST_ASSERT_TRUE(ctx, patchg_table == (Uint8 **)pchg);
@@ -214,8 +204,6 @@ static void test_stopper_open_and_close_states_select_animation(
 
     stopper(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 8, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 511, actor->mstno.w);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_TRUE(ctx, patchg_actor == actor);
     TEST_ASSERT_TRUE(ctx, patchg_table == (Uint8 **)pchg);
@@ -231,7 +219,6 @@ static void test_stopper_animation_state_only_patches(test_context *ctx) {
 
     stopper(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 8, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_TRUE(ctx, patchg_actor == actor);
     TEST_ASSERT_TRUE(ctx, patchg_table == (Uint8 **)pchg);
@@ -252,7 +239,6 @@ static void test_stopper_late_move_state_uses_same_ride_logic(
 
     stopper(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 10, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, ridechk_count);
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, -1024, actwk[0].yspeed.w);

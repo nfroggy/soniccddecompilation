@@ -161,3 +161,74 @@ tests.
   animation counter directly. This is intentionally not fixed during
   characterization.
 - Related source location: `src/r8/dev83d.c`, pan gate in `cg_change`.
+
+## `src/r8/trap_r82.c`: `togeitax` repeats the same parent guard
+
+- Test case or snapshot path: `tests/backend/unit/r8/test_trap_r82.c`
+- Variant and build configuration: `R82`, MSVC 19.51, Win32 Debug
+- Observed exact behavior: `togeitax` frames out when the parent actor stored in
+  the hidden ride-number word is not `actno == 51`, and follows the parent when
+  it is `actno == 51`. The second identical parent guard is not reachable:
+  when the first guard is true it returns immediately, and when the first guard
+  is false the second guard is false too.
+- Why the behavior looks suspicious: the duplicate check looks accidental or
+  like a missing alternate condition, but it is intentionally not fixed during
+  characterization.
+- Related source location: `src/r8/trap_r82.c`, lines 270-276.
+
+## `src/r8/tobira.c`: `ms_hitchk` does not return a value
+
+- Test case or snapshot path: `tests/backend/unit/r8/test_tobira.c`
+- Variant and build configuration: default/R81 sprite-base path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: compiling the `backend_r8_tobira` test target emits
+  MSVC warning C4716 because `ms_hitchk` is declared to return `Sint16`, but it
+  only calls `hitchk` for the two door halves and then reaches the end of the
+  function.
+- Why the behavior looks suspicious: callers ignore the return value today, so
+  the visible door behavior is deterministic, but the signature implies a value
+  should be returned. This is intentionally not fixed during characterization.
+- Related source location: `src/r8/tobira.c`, lines 197-202.
+
+## `src/r8/shut.c`: `ridechk_k` does not return a value
+
+- Test case or snapshot path: `tests/backend/unit/r8/test_shut.c`
+- Variant and build configuration: default/R81 sprite-base path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: compiling the `backend_r8_shut` test target emits
+  MSVC warning C4716 because `ridechk_k` is declared to return `Sint16`, but it
+  only calls `ridechk(loopwk, &actwk[0])` and reaches the end of the function.
+- Why the behavior looks suspicious: callers currently use the value in branch
+  conditions, so the missing return may depend on compiler/codegen behavior.
+  This is intentionally not fixed during characterization.
+- Related source location: `src/r8/shut.c`, line 265.
+
+## `src/r8/shut.c`: `shut_init` forces its own userflag branch
+
+- Test case or snapshot path: `tests/backend/unit/r8/test_shut.c`
+- Variant and build configuration: default/R81 sprite-base path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `shut_init` writes `shutwk->userflag.b.h = 1` and
+  then immediately branches on that same value, so the actor's own low-userflag
+  branch is not reachable through the existing code path. The spawned partner
+  can still take its separate high-userflag branch if its storage already has
+  that value.
+- Why the behavior looks suspicious: the local branch shape implies the door may
+  once have supported both directions, but the current code forces one side.
+  This is intentionally not fixed during characterization.
+- Related source location: `src/r8/shut.c`, lines 65-71.
+
+## `src/r4/scrchk4.c`: downward limit movement stores the step value
+
+- Test case or snapshot path: `tests/backend/unit/r4/test_scrchk4.c`
+- Variant and build configuration: default/R41A-style include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: when `scrchk` moves `scralim_down` toward a larger
+  `scralim_n_down`, it assigns `scralim_down` to `4`, or `16` when the player is
+  grounded near the camera threshold, instead of adding that step to the current
+  limit.
+- Why the behavior looks suspicious: sibling scroll-check implementations add
+  the step to the current limit, so this may be a transcription error. It is
+  intentionally not fixed during characterization.
+- Related source location: `src/r4/scrchk4.c`, downward-limit branch in
+  `scrchk`.

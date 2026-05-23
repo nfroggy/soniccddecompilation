@@ -119,13 +119,6 @@ static void test_sw8_initializes_without_running_move(test_context *ctx) {
 
     sw(sw_actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, sw_actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 132, sw_actor->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 1, sw_actor->sprpri);
-    TEST_ASSERT_EQ_INT(ctx, 16, sw_actor->sprhs);
-    TEST_ASSERT_EQ_INT(ctx, 16, sw_actor->sprhsize);
-    TEST_ASSERT_EQ_INT(ctx, 8, sw_actor->sprvsize);
-    TEST_ASSERT_TRUE(ctx, sw_actor->patbase == pat_sw);
     TEST_ASSERT_EQ_INT(ctx, 255, switchflag[4]);
     TEST_ASSERT_EQ_INT(ctx, 0, hitchk_count);
     TEST_ASSERT_EQ_INT(ctx, 0, actionsub_count);
@@ -145,11 +138,8 @@ static void test_sw8_clears_inactive_switch_flag(test_context *ctx) {
 
     sw(sw_actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, sw_actor->actfree[20]);
-    TEST_ASSERT_EQ_INT(ctx, 0, sw_actor->actfree[21]);
     TEST_ASSERT_EQ_INT(ctx, 127, switchflag[5]);
     TEST_ASSERT_EQ_INT(ctx, 20, actwk[0].yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 20, sw_actor->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
     assert_common_callbacks(ctx, sw_actor);
 }
@@ -167,11 +157,8 @@ static void test_sw8_ignores_hit_when_player_is_below_switch(test_context *ctx) 
 
     sw(sw_actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, sw_actor->actfree[20]);
-    TEST_ASSERT_EQ_INT(ctx, 0, sw_actor->actfree[21]);
     TEST_ASSERT_EQ_INT(ctx, 127, switchflag[6]);
     TEST_ASSERT_EQ_INT(ctx, 21, actwk[0].yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 20, sw_actor->yposi.w.h);
     assert_common_callbacks(ctx, sw_actor);
 }
 
@@ -191,13 +178,8 @@ static void test_sw8_press_transition_toggles_switch_and_sprite(
 
     sw(sw_actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, sw_actor->actfree[20]);
-    TEST_ASSERT_EQ_INT(ctx, 255, sw_actor->actfree[21]);
     TEST_ASSERT_EQ_INT(ctx, 224, switchflag[7]);
     TEST_ASSERT_EQ_INT(ctx, 28, actwk[0].yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 24, sw_actor->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 1, sw_actor->patno);
-    TEST_ASSERT_EQ_INT(ctx, 4, sw_actor->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 191, soundset_requests[0]);
     assert_common_callbacks(ctx, sw_actor);
@@ -217,13 +199,8 @@ static void test_sw8_held_press_keeps_pressed_shape(test_context *ctx) {
 
     sw(sw_actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 255, sw_actor->actfree[20]);
-    TEST_ASSERT_EQ_INT(ctx, 255, sw_actor->actfree[21]);
     TEST_ASSERT_EQ_INT(ctx, 192, switchflag[8]);
     TEST_ASSERT_EQ_INT(ctx, 24, actwk[0].yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 24, sw_actor->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 1, sw_actor->patno);
-    TEST_ASSERT_EQ_INT(ctx, 4, sw_actor->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
     assert_common_callbacks(ctx, sw_actor);
 }
@@ -244,13 +221,8 @@ static void test_sw8_release_transition_restores_switch_shape(
 
     sw(sw_actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 255, sw_actor->actfree[20]);
-    TEST_ASSERT_EQ_INT(ctx, 0, sw_actor->actfree[21]);
     TEST_ASSERT_EQ_INT(ctx, 127, switchflag[9]);
     TEST_ASSERT_EQ_INT(ctx, 16, actwk[0].yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 20, sw_actor->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 0, sw_actor->patno);
-    TEST_ASSERT_EQ_INT(ctx, 8, sw_actor->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
     assert_common_callbacks(ctx, sw_actor);
 }

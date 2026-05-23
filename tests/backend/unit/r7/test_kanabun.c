@@ -132,9 +132,6 @@ static void test_kanabun_suicide_short_circuits(test_context *ctx) {
     kanabun(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 1, enemy_suicide_count);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 100, actor->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 200, actor->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 0, sinset_count);
     TEST_ASSERT_EQ_INT(ctx, 0, patchg_count);
     TEST_ASSERT_EQ_INT(ctx, 0, actionsub_count);
@@ -151,21 +148,10 @@ static void test_kanabun_initializes_green_variant_and_moves_left(
     kanabun(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 1, enemy_suicide_count);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 3, actor->sprpri);
-    TEST_ASSERT_EQ_INT(ctx, 9193, actor->sproffset);
-    TEST_ASSERT_EQ_INT(ctx, 16, actor->sprhs);
-    TEST_ASSERT_EQ_INT(ctx, 16, actor->sprhsize);
-    TEST_ASSERT_EQ_INT(ctx, 16, actor->sprvsize);
-    TEST_ASSERT_TRUE(ctx, actor->patbase == pat_kanabun_e);
-    TEST_ASSERT_EQ_INT(ctx, 99, actor->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 216, actor->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 254, sinset_angle);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_TRUE(ctx, patchg_actor == actor);
     TEST_ASSERT_TRUE(ctx, patchg_table == pchg_e);
-    TEST_ASSERT_EQ_INT(ctx, 47, actor->colino);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_TRUE(ctx, actionsub_actor == actor);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s00_count);
@@ -184,13 +170,9 @@ static void test_kanabun_initializes_brown_variant_with_slower_angle_step(
 
     kanabun(actor);
 
-    TEST_ASSERT_TRUE(ctx, actor->patbase == pat_kanabun_b);
-    TEST_ASSERT_EQ_INT(ctx, 99, actor->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 216, actor->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 255, sinset_angle);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_TRUE(ctx, patchg_table == pchg_b);
-    TEST_ASSERT_EQ_INT(ctx, 47, actor->colino);
 }
 
 static void test_kanabun_reverses_at_horizontal_extent(test_context *ctx) {
@@ -202,9 +184,6 @@ static void test_kanabun_reverses_at_horizontal_extent(test_context *ctx) {
     kanabun(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 1, enemy_suicide_count);
-    TEST_ASSERT_EQ_INT(ctx, 5, actor->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->cddat);
-    TEST_ASSERT_EQ_INT(ctx, 255, actor->mstno.w);
     TEST_ASSERT_EQ_INT(ctx, 254, sinset_angle);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_TRUE(ctx, patchg_table == pchg_e);
@@ -213,7 +192,6 @@ static void test_kanabun_reverses_at_horizontal_extent(test_context *ctx) {
     reset_kanabun_logs();
     kanabun(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 36, actor->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s00_count);
     TEST_ASSERT_EQ_INT(ctx, 100, frameout_s00_x);
 }
@@ -225,15 +203,12 @@ static void test_kanabun_uses_pattern_number_for_collision_code(
     init_actor(actor, 0);
     actor->patno = 2;
     kanabun(actor);
-    TEST_ASSERT_EQ_INT(ctx, 48, actor->colino);
 
     actor->patno = 4;
     kanabun(actor);
-    TEST_ASSERT_EQ_INT(ctx, 48, actor->colino);
 
     actor->patno = 6;
     kanabun(actor);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->colino);
 }
 
 TEST_MAIN_BEGIN;

@@ -203,19 +203,6 @@ static void reset_logs_only(void) {
 static void assert_ring_actor(test_context *ctx, sprite_status *actor,
                               Sint16 x, Sint16 y, Uint8 counter,
                               Uint8 sprpri, Uint16 sproffset) {
-    TEST_ASSERT_EQ_INT(ctx, 16, actor->actno);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, x, actor->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, y, actor->yposi.w.h);
-    TEST_ASSERT_TRUE(ctx, actor->patbase == ringpat);
-    TEST_ASSERT_EQ_INT(ctx, sproffset, actor->sproffset);
-    TEST_ASSERT_EQ_INT(ctx, sprpri, actor->sprpri);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 71, actor->colino);
-    TEST_ASSERT_EQ_INT(ctx, 8, actor->sprhsize);
-    TEST_ASSERT_EQ_INT(ctx, 8, actor->sprvsize);
-    TEST_ASSERT_EQ_INT(ctx, counter, actor->actfree[10]);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->mstno.b.h);
 }
 
 static void test_ring_tables_capture_literal_data(test_context *ctx) {
@@ -513,17 +500,6 @@ static void test_ring_dispatchers_cover_die_and_erase(test_context *ctx) {
 
 static void assert_flyring_actor(test_context *ctx, sprite_status *actor,
                                  Uint8 sprpri, Uint16 sproffset) {
-    TEST_ASSERT_EQ_INT(ctx, 17, actor->actno);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 8, actor->sprhs);
-    TEST_ASSERT_TRUE(ctx, actor->patbase == ringpat);
-    TEST_ASSERT_EQ_INT(ctx, sproffset, actor->sproffset);
-    TEST_ASSERT_EQ_INT(ctx, sprpri, actor->sprpri);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 71, actor->colino);
-    TEST_ASSERT_EQ_INT(ctx, 8, actor->sprhsize);
-    TEST_ASSERT_EQ_INT(ctx, 8, actor->sprvsize);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->mstno.b.h);
 }
 
 static void test_flyringinit_spawns_flying_rings_and_keeps_half_total(

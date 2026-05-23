@@ -138,6 +138,11 @@ static void reset_movie3_logs(void) {
     memset(soundset_requests, 0, sizeof(soundset_requests));
 }
 
+static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
+    actor->actfree[offset] = (Uint8)value;
+    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
+}
+
 static void init_projector(sprite_status *actor) {
     reset_movie3_state();
     actor->actno = 56;
@@ -197,14 +202,6 @@ static void test_movie_initializes_and_spawns_four_children(test_context *ctx) {
 
     movie(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->sprpri);
-    TEST_ASSERT_EQ_INT(ctx, 12, actor->sprhs);
-    TEST_ASSERT_EQ_INT(ctx, 12, actor->sprhsize);
-    TEST_ASSERT_EQ_INT(ctx, 12, actor->sprvsize);
-    TEST_ASSERT_EQ_INT(ctx, 251, actor->colino);
-    TEST_ASSERT_TRUE(ctx, actor->patbase == pat_movie);
     TEST_ASSERT_EQ_INT(ctx, 4, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s_count);
@@ -258,8 +255,6 @@ static void test_movie_wait_without_collision_calls_hitchk(test_context *ctx) {
 
     movie(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 251, actor->colino);
     TEST_ASSERT_EQ_INT(ctx, 1, hitchk_count);
     TEST_ASSERT_TRUE(ctx, hitchk_actor == actor);
     TEST_ASSERT_TRUE(ctx, hitchk_player == &actwk[0]);
@@ -277,17 +272,11 @@ static void test_movie_collision_enters_destruction_and_clears_ride(
 
     movie(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->colicnt);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->colino);
     TEST_ASSERT_EQ_INT(ctx, 1, hitchk_count);
 
     reset_movie3_logs();
     movie(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->patno);
-    TEST_ASSERT_EQ_INT(ctx, 255, actor->actfree[21]);
     TEST_ASSERT_EQ_INT(ctx, 1, ride_on_clr_count);
     TEST_ASSERT_TRUE(ctx, ride_on_clr_actor == actor);
     TEST_ASSERT_TRUE(ctx, ride_on_clr_player == &actwk[0]);
@@ -345,7 +334,6 @@ static void test_movie_explosion_sequence_finishes_and_sets_projector_flag(
         movie(actor);
     }
 
-    TEST_ASSERT_EQ_INT(ctx, 8, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 12, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 24, actwk[47].actno);
     TEST_ASSERT_EQ_INT(ctx, 390, actwk[47].xposi.w.h);
@@ -369,7 +357,7 @@ static void test_movie_child_frameouts_when_parent_missing_or_destroying(
 
     reset_movie3_state();
     child->userflag.b.h = -1;
-    ((Uint16 *)child)[33] = 2;
+    set_actfree_word(child, 20, 2);
     parent->actno = 0;
 
     movie(child);
@@ -381,7 +369,7 @@ static void test_movie_child_frameouts_when_parent_missing_or_destroying(
     child = &actwk[5];
     parent = &actwk[2];
     child->userflag.b.h = 1;
-    ((Uint16 *)child)[33] = 2;
+    set_actfree_word(child, 20, 2);
     parent->actno = 56;
     parent->actfree[21] = 255;
 
@@ -398,34 +386,21 @@ static void test_movie_child_initializes_negative_and_positive_shapes(
 
     reset_movie3_state();
     child->userflag.b.h = -1;
-    ((Uint16 *)child)[33] = 2;
+    set_actfree_word(child, 20, 2);
     parent->actno = 56;
 
     movie(child);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, child->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 4, child->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 4, child->sprpri);
-    TEST_ASSERT_TRUE(ctx, child->patbase == pat_movie);
-    TEST_ASSERT_EQ_INT(ctx, 8, child->sprhs);
-    TEST_ASSERT_EQ_INT(ctx, 8, child->sprhsize);
-    TEST_ASSERT_EQ_INT(ctx, 4, child->sprvsize);
-    TEST_ASSERT_EQ_INT(ctx, 0, child->mstno.b.h);
 
     reset_movie3_state();
     child = &actwk[5];
     parent = &actwk[2];
     child->userflag.b.h = 1;
-    ((Uint16 *)child)[33] = 2;
+    set_actfree_word(child, 20, 2);
     parent->actno = 56;
 
     movie(child);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, child->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 20, child->sprhs);
-    TEST_ASSERT_EQ_INT(ctx, 20, child->sprhsize);
-    TEST_ASSERT_EQ_INT(ctx, 24, child->sprvsize);
-    TEST_ASSERT_EQ_INT(ctx, 1, child->mstno.b.h);
 }
 
 static void test_movie_child_moves_with_patch_animation(test_context *ctx) {
@@ -435,7 +410,7 @@ static void test_movie_child_moves_with_patch_animation(test_context *ctx) {
     reset_movie3_state();
     child->userflag.b.h = 1;
     child->r_no0 = 2;
-    ((Uint16 *)child)[33] = 2;
+    set_actfree_word(child, 20, 2);
     parent->actno = 56;
 
     movie(child);

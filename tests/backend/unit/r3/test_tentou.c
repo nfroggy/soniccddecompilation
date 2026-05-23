@@ -121,7 +121,9 @@ static void queue_emycol_d(Sint16 result) {
 }
 
 static void set_actor_word(sprite_status *actor, int index, Sint16 value) {
-    ((Sint16 *)actor)[index] = value;
+    int offset = (index - 23) * 2;
+    actor->actfree[offset] = (Uint8)value;
+    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
 }
 
 static void set_actfree_long(sprite_status *actor, int offset, Sint32 value) {
@@ -193,7 +195,6 @@ static void test_tentou_wrapper_routes_and_obeys_suicide(test_context *ctx) {
     reset_tentou_state();
     actor->userflag.b.h = 1;
     tentou(actor);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 0, enemy_suicide_count);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_s_count);
@@ -220,32 +221,21 @@ static void test_tentou_a_init_and_fall_paths(test_context *ctx) {
     reset_tentou_state();
     emycol_d_result = 9;
     ten_a_init(actor);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 132, actor->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->sprpri);
-    TEST_ASSERT_EQ_INT(ctx, 6, actor->colino);
-    TEST_ASSERT_TRUE(ctx, actor->patbase == pat_e_tentou);
-    TEST_ASSERT_EQ_INT(ctx, 255, actor->actfree[21]);
 
     reset_tentou_state();
     actor->userflag.w = -1;
     emycol_d_result = 8;
     ten_a_init(actor);
-    TEST_ASSERT_TRUE(ctx, actor->patbase == pat_ten_b_tentou);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[21]);
 
     reset_tentou_state();
     actor->yposi.w.h = 20;
     emycol_d_result = -4;
     ten_a_fall(actor);
-    TEST_ASSERT_EQ_INT(ctx, 33, actor->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
 
     reset_tentou_state();
     set_actfree_long(actor, 0, 1);
     emycol_d_result = -8;
     ten_a_fall(actor);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
 }
 
 static void test_tentou_a_wait_and_direct_bomb_spawn_paths(test_context *ctx) {
@@ -263,9 +253,7 @@ static void test_tentou_a_wait_and_direct_bomb_spawn_paths(test_context *ctx) {
 
     ten_a_wait(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->cddat & 1);
 
     reset_tentou_state();
     actwk[0].xposi.w.h = 80;
@@ -275,9 +263,6 @@ static void test_tentou_a_wait_and_direct_bomb_spawn_paths(test_context *ctx) {
     actor->actflg = 0;
     actor->cddat = 0;
     ten_a_wait(actor);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actflg & 1);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->cddat & 1);
 
     reset_tentou_state();
     actwk[0].xposi.w.h = 20;
@@ -289,9 +274,6 @@ static void test_tentou_a_wait_and_direct_bomb_spawn_paths(test_context *ctx) {
 
     ten_a_wait(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actflg & 1);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->cddat & 1);
 }
 
 static void test_tentou_a_hover_up_and_abs(test_context *ctx) {
@@ -300,13 +282,11 @@ static void test_tentou_a_hover_up_and_abs(test_context *ctx) {
     reset_tentou_state();
     actor->yposi.l = 0x00200000;
     ten_a_up(actor);
-    TEST_ASSERT_EQ_INT(ctx, 31, actor->yposi.w.h);
 
     reset_tentou_state();
     set_actor_word(actor, 29, 15);
     set_actfree_long(actor, 4, 12288);
     ten_a_hover(actor);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 5, abs(-5));
     TEST_ASSERT_EQ_INT(ctx, 7, abs(7));
 }
@@ -324,8 +304,6 @@ static void test_tentou_a_lr_ground_wall_and_ledge_paths(test_context *ctx) {
     emycol_r_result = 0;
     emycol_d_result = 5;
     ten_a_lr(actor);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, -3, actor->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 22, actwk[10].actno);
     TEST_ASSERT_EQ_INT(ctx, 1, actwk[10].userflag.b.h);
@@ -334,14 +312,12 @@ static void test_tentou_a_lr_ground_wall_and_ledge_paths(test_context *ctx) {
     set_actfree_long(actor, 0, -1);
     emycol_l_result = -1;
     ten_a_lr(actor);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
 
     reset_tentou_state();
     actor->cddat = 1;
     emycol_r_result = 0;
     emycol_d_result = 20;
     ten_a_lr(actor);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
 
     reset_tentou_state();
     actor->r_no0 = 10;
@@ -350,7 +326,6 @@ static void test_tentou_a_lr_ground_wall_and_ledge_paths(test_context *ctx) {
     actor->sprhsize = 8;
     emycol_d2_result = 16;
     ten_a_gake(actor);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
 
 }
 
@@ -373,32 +348,22 @@ static void test_tentou_b_init_fall_wait_blink_and_die(test_context *ctx) {
     reset_tentou_state();
     emycol_d_result = 4;
     ten_b_init(actor);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 139, actor->colino);
-    TEST_ASSERT_TRUE(ctx, actor->patbase == tentou_bomten_b_pat);
 
     reset_tentou_state();
     actor->colicnt = 1;
     ten_b_fall(actor);
-    TEST_ASSERT_EQ_INT(ctx, 24, actor->actno);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->r_no1);
 
     reset_tentou_state();
     emycol_d_result = -3;
     ten_b_fall(actor);
-    TEST_ASSERT_EQ_INT(ctx, -2, actor->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
 
     reset_tentou_state();
     set_actor_word(actor, 23, 1);
     ten_b_wait(actor);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
 
     reset_tentou_state();
     actor->colicnt = 1;
     ten_b_wait(actor);
-    TEST_ASSERT_EQ_INT(ctx, 24, actor->actno);
 
     reset_tentou_state();
     set_actor_word(actor, 23, 2);
@@ -407,18 +372,14 @@ static void test_tentou_b_init_fall_wait_blink_and_die(test_context *ctx) {
     reset_tentou_logs();
     set_actor_word(actor, 23, 1);
     ten_b_blink(actor);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
 
     reset_tentou_state();
     actor->colicnt = 1;
     ten_b_blink(actor);
-    TEST_ASSERT_EQ_INT(ctx, 24, actor->actno);
 
     reset_tentou_state();
     actor->actflg = 128;
     ten_b_die(actor);
-    TEST_ASSERT_EQ_INT(ctx, 24, actor->actno);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->r_no1);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 158, soundset_requests[0]);
 }

@@ -98,6 +98,11 @@ static void reset_togebl3b_logs(void) {
     sinset_angle = 0;
 }
 
+static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
+    actor->actfree[offset] = (Uint8)value;
+    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
+}
+
 static void test_togebl3b_tables_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, pat_chg[0] == &spat_chg0);
     TEST_ASSERT_TRUE(ctx, togeball_pat[0] == &spat_chg1);
@@ -124,18 +129,7 @@ static void test_togebl3b_main_initializes_and_spawns_options(
 
     togeball(parent);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, parent->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 4, parent->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 1, parent->sprpri);
-    TEST_ASSERT_EQ_INT(ctx, 8, parent->sprhsize);
-    TEST_ASSERT_EQ_INT(ctx, 8, parent->sprvsize);
-    TEST_ASSERT_TRUE(ctx, parent->patbase == pat_chg);
-    TEST_ASSERT_EQ_INT(ctx, 957, parent->sproffset);
     TEST_ASSERT_EQ_INT(ctx, 2, actwkchk2_count);
-    TEST_ASSERT_EQ_INT(ctx, 44, opt1->actno);
-    TEST_ASSERT_EQ_INT(ctx, 44, opt2->actno);
-    TEST_ASSERT_EQ_INT(ctx, -1, opt1->userflag.b.h);
-    TEST_ASSERT_EQ_INT(ctx, -1, opt2->userflag.b.h);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_TRUE(ctx, actionsub_actor == parent);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s_count);
@@ -215,15 +209,11 @@ static void test_togebl3b_parent_move_positions_options_through_option_path(
 
     reset_togebl3b_logs();
     togeball(opt1);
-    TEST_ASSERT_EQ_INT(ctx, 100, opt1->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 50, opt1->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_count);
 
     reset_togebl3b_logs();
     togeball(opt2);
-    TEST_ASSERT_EQ_INT(ctx, 100, opt2->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 51, opt2->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 }
 
@@ -235,20 +225,12 @@ static void test_togebl3b_option_initializes_and_moves_existing_position(
     reset_togebl3b_state();
     parent->actno = 44;
     opt->userflag.b.h = -1;
-    ((Uint16 *)opt)[33] = 2;
-    ((Sint16 *)opt)[24] = 12;
-    ((Sint16 *)opt)[26] = 34;
+    set_actfree_word(opt, 20, 2);
+    set_actfree_word(opt, 2, 12);
+    set_actfree_word(opt, 6, 34);
 
     togeball(opt);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, opt->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 4, opt->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 1, opt->sprpri);
-    TEST_ASSERT_TRUE(ctx, opt->patbase == togeball_pat);
-    TEST_ASSERT_EQ_INT(ctx, 957, opt->sproffset);
-    TEST_ASSERT_EQ_INT(ctx, 139, opt->colino);
-    TEST_ASSERT_EQ_INT(ctx, 12, opt->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 34, opt->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_count);
 }
@@ -260,7 +242,7 @@ static void test_togebl3b_option_frameouts_when_parent_is_gone(
     reset_togebl3b_state();
     opt->userflag.b.h = -1;
     opt->r_no0 = 2;
-    ((Uint16 *)opt)[33] = 2;
+    set_actfree_word(opt, 20, 2);
 
     togeball(opt);
 

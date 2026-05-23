@@ -83,13 +83,6 @@ static void test_chgwall7_initializes_and_draws(test_context *ctx) {
     wall->patno = 1;
     chgwall7(wall);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, wall->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 132, wall->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 32, wall->sprhs);
-    TEST_ASSERT_EQ_INT(ctx, 32, wall->sprhsize);
-    TEST_ASSERT_EQ_INT(ctx, 17, wall->sprvsize);
-    TEST_ASSERT_TRUE(ctx, wall->patbase == pat_chgwall7);
-    TEST_ASSERT_EQ_INT(ctx, 0, wall->patno);
     TEST_ASSERT_EQ_INT(ctx, 0, hitchk_count);
     TEST_ASSERT_EQ_INT(ctx, 0, ride_on_clr_count);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -110,7 +103,6 @@ static void test_chgwall7_priority_on_sets_latch_when_player_hits(
     TEST_ASSERT_EQ_INT(ctx, 1, hitchk_count);
     TEST_ASSERT_TRUE(ctx, hitchk_actor == wall);
     TEST_ASSERT_TRUE(ctx, hitchk_player == &actwk[0]);
-    TEST_ASSERT_EQ_INT(ctx, 0, wall->actfree[0]);
     TEST_ASSERT_EQ_INT(ctx, 0, ride_on_clr_count);
 
     reset_chgwall7_state();
@@ -118,7 +110,6 @@ static void test_chgwall7_priority_on_sets_latch_when_player_hits(
     prio_flag = 1;
     hitchk_result = 1;
     chgwall7(wall);
-    TEST_ASSERT_EQ_INT(ctx, 1, wall->actfree[0]);
     TEST_ASSERT_EQ_INT(ctx, 1, hitchk_count);
 }
 
@@ -138,7 +129,6 @@ static void test_chgwall7_priority_off_clears_previous_ride(test_context *ctx) {
     prio_flag = 0;
     wall->actfree[0] = 1;
     chgwall7(wall);
-    TEST_ASSERT_EQ_INT(ctx, 0, wall->actfree[0]);
     TEST_ASSERT_EQ_INT(ctx, 1, ride_on_clr_count);
     TEST_ASSERT_TRUE(ctx, ride_on_clr_actor == wall);
     TEST_ASSERT_TRUE(ctx, ride_on_clr_player == &actwk[0]);

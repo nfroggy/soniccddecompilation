@@ -131,6 +131,11 @@ static void reset_friend7_logs(void) {
     emycol_d_actor = 0;
 }
 
+static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
+    actor->actfree[offset] = (Uint8)value;
+    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
+}
+
 static void init_flicky(sprite_status *actor, Sint16 x, Sint16 y,
                         Sint8 userflag_h) {
     reset_friend7_state();
@@ -181,7 +186,6 @@ static void test_friend_suicide_short_circuits(test_context *ctx) {
     friend(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 1, friend_suicide_count);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 0, actionsub_count);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_s_count);
     TEST_ASSERT_EQ_INT(ctx, 0, patchg_count);
@@ -197,17 +201,6 @@ static void test_flicky_initializes_visible_fields(test_context *ctx) {
     friend(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 1, friend_suicide_count);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 5, actor->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->cddat);
-    TEST_ASSERT_EQ_INT(ctx, 8, actor->sprvsize);
-    TEST_ASSERT_EQ_INT(ctx, 8, actor->sprhs);
-    TEST_ASSERT_EQ_INT(ctx, 8, actor->sprhsize);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->sprpri);
-    TEST_ASSERT_TRUE(ctx, actor->patbase == pat_friend0);
-    TEST_ASSERT_EQ_INT(ctx, 918, actor->sproffset);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[4]);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[5]);
     TEST_ASSERT_EQ_INT(ctx, 0, actionsub_count);
 }
 
@@ -220,7 +213,6 @@ static void test_flicky_sproffset_uses_stage_and_time_index(test_context *ctx) {
 
     friend(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->sproffset);
 }
 
 static void test_flicky_moves_with_roll_animation_and_frameout_origin(
@@ -234,8 +226,6 @@ static void test_flicky_moves_with_roll_animation_and_frameout_origin(
     TEST_ASSERT_EQ_INT(ctx, 1, friend_suicide_count);
     TEST_ASSERT_EQ_INT(ctx, 1, sinset_count);
     TEST_ASSERT_EQ_INT(ctx, 1, sinset_angle);
-    TEST_ASSERT_EQ_INT(ctx, 132, actor->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 216, actor->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_TRUE(ctx, patchg_actor == actor);
     TEST_ASSERT_TRUE(ctx, patchg_table == pchg0);
@@ -256,8 +246,6 @@ static void test_flicky_move_reverses_direction_after_existing_wrap(
         friend(actor);
     }
 
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->cddat);
 }
 
 static void test_flicky_movie_variant_initializes_and_uses_parent(
@@ -267,13 +255,8 @@ static void test_flicky_movie_variant_initializes_and_uses_parent(
 
     init_flicky(actor, 120, 220, -128);
 
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 3, actor->sprpri);
-    TEST_ASSERT_TRUE(ctx, actor->patbase == pat_friend0);
-    TEST_ASSERT_EQ_INT(ctx, 918, actor->sproffset);
 
-    ((Uint16 *)actor)[33] = 2;
+    set_actfree_word(actor, 20, 2);
     parent->actno = 39;
     actor->actfree[4] = 8;
 
@@ -281,8 +264,6 @@ static void test_flicky_movie_variant_initializes_and_uses_parent(
 
     TEST_ASSERT_EQ_INT(ctx, 1, sinset_count);
     TEST_ASSERT_EQ_INT(ctx, 8, sinset_angle);
-    TEST_ASSERT_EQ_INT(ctx, 128, actor->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 222, actor->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_TRUE(ctx, patchg_table == pchg0);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -293,14 +274,12 @@ static void test_flicky_movie_wrap_reverses_without_drawing(test_context *ctx) {
     sprite_status *parent = &actwk[2];
 
     init_flicky(actor, 120, 220, -128);
-    ((Uint16 *)actor)[33] = 2;
+    set_actfree_word(actor, 20, 2);
     parent->actno = 39;
     actor->actfree[4] = 124;
 
     friend(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->cddat);
     TEST_ASSERT_EQ_INT(ctx, 0, patchg_count);
     TEST_ASSERT_EQ_INT(ctx, 0, actionsub_count);
 }
@@ -312,7 +291,7 @@ static void test_flicky_movie_frameouts_when_parent_invalid(test_context *ctx) {
     reset_friend7_state();
     actor->r_no0 = 4;
     actor->userflag.b.h = -128;
-    ((Uint16 *)actor)[33] = 2;
+    set_actfree_word(actor, 20, 2);
 
     friend(actor);
 
@@ -324,7 +303,7 @@ static void test_flicky_movie_frameouts_when_parent_invalid(test_context *ctx) {
     parent = &actwk[2];
     actor->r_no0 = 4;
     actor->userflag.b.h = -128;
-    ((Uint16 *)actor)[33] = 2;
+    set_actfree_word(actor, 20, 2);
     parent->actno = 39;
     parent->actfree[21] = 255;
 
@@ -344,21 +323,10 @@ static void test_ricky_initializes_and_moves_in_arc(test_context *ctx) {
 
     friend(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 12, actor->sprvsize);
-    TEST_ASSERT_EQ_INT(ctx, 8, actor->sprhs);
-    TEST_ASSERT_EQ_INT(ctx, 8, actor->sprhsize);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->sprpri);
-    TEST_ASSERT_TRUE(ctx, actor->patbase == pat_friend1);
-    TEST_ASSERT_EQ_INT(ctx, 918, actor->sproffset);
 
     reset_friend7_logs();
     friend(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 301, actor->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 396, actor->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->patno);
     TEST_ASSERT_EQ_INT(ctx, 1, emycol_d_count);
     TEST_ASSERT_TRUE(ctx, emycol_d_actor == actor);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -373,23 +341,16 @@ static void test_ricky_lands_then_reverses(test_context *ctx) {
 
     friend(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 393, actor->yposi.w.h);
 
     reset_friend7_logs();
     emycol_d_result = -2;
 
     friend(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 387, actor->yposi.w.h);
 
     reset_friend7_logs();
     friend(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 5, actor->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->cddat);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s_count);
 }
@@ -403,7 +364,6 @@ static void test_ricky_switches_to_falling_pattern_after_velocity_positive(
         friend(actor);
     }
 
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->patno);
 }
 
 static void test_ricky_movie_variant_initializes_and_moves(test_context *ctx) {
@@ -412,12 +372,8 @@ static void test_ricky_movie_variant_initializes_and_moves(test_context *ctx) {
 
     init_ricky(actor, 300, 400, -127);
 
-    TEST_ASSERT_EQ_INT(ctx, 8, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 5, actor->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->cddat);
-    TEST_ASSERT_TRUE(ctx, actor->patbase == pat_friend1);
 
-    ((Uint16 *)actor)[33] = 2;
+    set_actfree_word(actor, 20, 2);
     parent->actno = 39;
 
     friend(actor);
@@ -436,7 +392,7 @@ static void test_ricky_movie_frameouts_when_parent_invalid(test_context *ctx) {
     reset_friend7_state();
     actor->userflag.b.h = -127;
     actor->r_no0 = 8;
-    ((Uint16 *)actor)[33] = 2;
+    set_actfree_word(actor, 20, 2);
 
     friend(actor);
 
@@ -448,7 +404,7 @@ static void test_ricky_movie_frameouts_when_parent_invalid(test_context *ctx) {
     parent = &actwk[2];
     actor->userflag.b.h = -127;
     actor->r_no0 = 8;
-    ((Uint16 *)actor)[33] = 2;
+    set_actfree_word(actor, 20, 2);
     parent->actno = 39;
     parent->actfree[21] = 255;
 

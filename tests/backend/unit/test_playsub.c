@@ -464,7 +464,8 @@ static void test_test_act_tensuu_and_bakuha(test_context *ctx) {
 
     reset_playsub_state();
     scra_h_posit.w.h = 128;
-    ((Uint16 *)&actwk[1])[26] = 1024;
+    actwk[1].actfree[6] = 0;
+    actwk[1].actfree[7] = 4;
     test_move(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
 
