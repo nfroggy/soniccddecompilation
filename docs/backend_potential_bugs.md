@@ -95,6 +95,60 @@ tests.
   intentionally not fixed during characterization.
 - Related source location: `src/r3/coli3.c`, lines 325-345.
 
+## `src/r6/coli6.c`: collision helpers have missing returns
+
+- Test case or snapshot path: `tests/backend/unit/r6/test_coli6.c`
+- Variant and build configuration: `R11A`, MSVC 19.51, Win32 Debug
+- Observed exact behavior: compiling `backend_r6_coli6` emits C4716 for
+  `pcolplay2` and C4715 for `playdamageset`. The characterized call paths still
+  produce the surrounding side effects, including setting the enemy damage flag,
+  spawning loose rings when available, and entering the death path when no
+  protection applies.
+- Why the behavior looks suspicious: both functions are declared `Sint16`, but
+  `pcolplay2` falls through after calling `pcolplay`, and `playdamageset` falls
+  through after calling `playdieset` on the no-ring/no-debug path. This is
+  intentionally not fixed during characterization.
+- Related source location: `src/r6/coli6.c`, lines 215-217 and 258-290.
+
+## `src/r6/coli6.c`: `eggman_chk` switch cases are guarded out
+
+- Test case or snapshot path: `tests/backend/unit/r6/test_coli6.c`
+- Variant and build configuration: `R11A`, MSVC 19.51, Win32 Debug
+- Observed exact behavior: `eggman_chk` returns `-1` for every `bossstart`
+  value except `1`. When `bossstart` is `1`, the following `switch (bossstart)`
+  can only enter `case 1`; the `case 4`, `case 5`, and `default` bodies are not
+  reachable through this function.
+- Why the behavior looks suspicious: the switch appears to describe multiple
+  boss collision modes, but the preceding guard prevents all modes except `1`.
+  The `boss_4` and `boss_5` functions are characterized directly, and this is
+  intentionally not fixed during characterization.
+- Related source location: `src/r6/coli6.c`, lines 330-349.
+
+## `src/r6/dev61c.c`: thunder/null toggle has an unreachable duration
+
+- Test case or snapshot path: `tests/backend/unit/r6/test_dev61c.c`
+- Variant and build configuration: `R11A`, MSVC 19.51, Win32 Debug
+- Observed exact behavior: the timer underflow path can set `cgchgtim[2]` to
+  `30`, but the adjacent assignment to `90` is not reachable through byte timer
+  values under the tested 32-bit MSVC build.
+- Why the behavior looks suspicious: the code appears to intend a two-state
+  toggle between `30` and `90`, but the signed-negative guard is only entered
+  for byte values that remain nonzero after `cgchgtim[2] ^= 1`.
+- Related source location: `src/r6/dev61c.c`, lines 35-42.
+
+## `src/r6/dev62c.c`: thunder/null toggle has an unreachable duration
+
+- Test case or snapshot path: `tests/backend/unit/r6/test_dev62c.c`
+- Variant and build configuration: `R11A`, MSVC 19.51, Win32 Debug
+- Observed exact behavior: the timer underflow path can set `cgchgtim[2]` to
+  `30`, but the adjacent assignment to `90` is not reachable through byte timer
+  values under the tested 32-bit MSVC build.
+- Why the behavior looks suspicious: this matches the `dev61c` toggle shape;
+  the code appears to intend a two-state toggle between `30` and `90`, but the
+  signed-negative guard is only entered for byte values that remain nonzero
+  after `cgchgtim[2] ^= 1`.
+- Related source location: `src/r6/dev62c.c`, lines 35-42.
+
 ## `src/r3/edtbl32a.c`: `edit_tbl.num` is smaller than initialized entries
 
 - Test case or snapshot path: `tests/backend/unit/r3/test_edtbl32a.c`
@@ -119,25 +173,45 @@ tests.
   characterization.
 - Related source location: `src/r8/scarab.c`, line 215.
 
-## `src/r8/scr81*.c`, `src/r8/scr82b.c`, and `src/r8/scr82c.c`: `scrollwrtb` can read past its write table at the top edge
+## `src/r8/scr81*.c`, `src/r8/scr82*.c`, and `src/r8/scr83*.c`: `scrollwrtb` can read past its write table at the top edge
 
-- Test case or snapshot path: `tests/backend/unit/r8/test_scr82b.c` and
-  `tests/backend/unit/r8/test_scr82c.c`; same guarded fixture shape is used by
+- Test case or snapshot path: `tests/backend/unit/r8/test_scr82a.c` through
+  `tests/backend/unit/r8/test_scr82d.c` and
+  `tests/backend/unit/r8/test_scr83c.c` and
+  `tests/backend/unit/r8/test_scr83d.c`; same guarded fixture shape is used by
   `tests/backend/unit/r8/test_scr81a.c` through
-  `tests/backend/unit/r8/test_scr81d.c`
+  `tests/backend/unit/r8/test_scr81d.c`.
 - Variant and build configuration: `R11A`, MSVC 19.51, Win32 Debug
 - Observed exact behavior: while adding coverage for the screen-update flags,
   setting the upward update bit with `scrb_v_posit.w.h == 0` made `scrollwrtb`
   compute `(scrb_v_posit.w.h - 16) / 16`, mask it to `127`, and index beyond
   the local `z81awrttbl` array. The same top-edge calculation is present in
-  `src/r8/scr81a.c` through `src/r8/scr81d.c`. The characterization tests seed
+  `src/r8/scr81a.c` through `src/r8/scr81d.c`, `src/r8/scr82a.c` through
+  `src/r8/scr82d.c`, `src/r8/scr83c.c`, and `src/r8/scr83d.c`. The
+  characterization tests seed
   `scrb_v_posit.w.h = 16` before exercising that normal update path.
 - Why the behavior looks suspicious: the table has 33 entries in these files,
   49 entries in the `scr81*` files, but the masked top-edge index can address
   `z81awrttbl[128]`. This is intentionally not fixed during characterization.
 - Related source location: `src/r8/scr81a.c` through `src/r8/scr81d.c`, lines
-  690-707 or equivalent; `src/r8/scr82b.c`, lines 687-704; `src/r8/scr82c.c`,
-  lines 687-704.
+  690-707 or equivalent; `src/r8/scr82a.c` through `src/r8/scr82d.c`, lines
+  689-706 or equivalent; `src/r8/scr83c.c`, lines 683-700;
+  `src/r8/scr83d.c`, lines 607-624.
+
+## `src/r8/scr83c.c` and `src/r8/scr83d.c`: `block_wrt` draws but does not store the new block number
+
+- Test case or snapshot path: `tests/backend/unit/r8/test_scr83c.c` and
+  `tests/backend/unit/r8/test_scr83d.c`.
+- Variant and build configuration: `R11A`, MSVC 19.51, Win32 Debug.
+- Observed exact behavior: `block_wrt(12, 64, 0)` resolves a visible map cell
+  and emits the expected four `SetGrid` calls, but the map word remains
+  unchanged. Neighboring scroll files assign `*pBlockIndex = BlockNo` before
+  drawing the block.
+- Why the behavior looks suspicious: the function name and sibling
+  implementations suggest the map should be updated as well as VRAM, but this
+  characterization pass intentionally preserves the existing behavior.
+- Related source location: `src/r8/scr83c.c`, lines 955-960, and
+  `src/r8/scr83d.c`, lines 888-893.
 
 ## `src/r6/batta.c`: `emylr_jump` does not return a value
 
@@ -346,7 +420,7 @@ tests.
   characterization.
 - Related source location: `src/r1/shoot1.c`, lines 344-353.
 
-## `src/r8/scr81*.c` and `src/r8/scr82*.c`: high `scrollwrtb` clamp can walk past the write table
+## `src/r8/scr81*.c`, `src/r8/scr82*.c`, and `src/r8/scr83*.c`: high `scrollwrtb` clamp can walk past the write table
 
 - Test case or snapshot path: attempted during scroll coverage expansion; not
   retained as a unit test because it crashes several variants.

@@ -782,22 +782,22 @@ set_target_properties(backend_r3_playsp3 PROPERTIES
 
 add_test(NAME backend.r3.playsp3 COMMAND backend_r3_playsp3)
 
-add_executable(backend_playsp7
-  unit/test_playsp7.c
+add_executable(backend_r7_playsp7
+  unit/r7/test_playsp7.c
 )
 
-target_include_directories(backend_playsp7 PRIVATE
+target_include_directories(backend_r7_playsp7 PRIVATE
   ${PROJECT_SOURCE_DIR}
   ${PROJECT_SOURCE_DIR}/src
   ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-set_target_properties(backend_playsp7 PROPERTIES
+set_target_properties(backend_r7_playsp7 PROPERTIES
   C_STANDARD 17
   C_STANDARD_REQUIRED ON
 )
 
-add_test(NAME backend.playsp7 COMMAND backend_playsp7)
+add_test(NAME backend.r7.playsp7 COMMAND backend_r7_playsp7)
 
 add_executable(backend_r8_playsp8
   unit/r8/test_playsp8.c
@@ -815,23 +815,6 @@ set_target_properties(backend_r8_playsp8 PROPERTIES
 )
 
 add_test(NAME backend.r8.playsp8 COMMAND backend_r8_playsp8)
-
-add_executable(backend_playsp5
-  unit/test_playsp5.c
-)
-
-target_include_directories(backend_playsp5 PRIVATE
-  ${PROJECT_SOURCE_DIR}
-  ${PROJECT_SOURCE_DIR}/src
-  ${CMAKE_CURRENT_SOURCE_DIR}
-)
-
-set_target_properties(backend_playsp5 PROPERTIES
-  C_STANDARD 17
-  C_STANDARD_REQUIRED ON
-)
-
-add_test(NAME backend.playsp5 COMMAND backend_playsp5)
 
 add_executable(backend_r3_act31a
   unit/r3/test_act31a.c
@@ -2006,6 +1989,312 @@ set_target_properties(backend_r4_scrchk4 PROPERTIES
 
 add_test(NAME backend.r4.scrchk4 COMMAND backend_r4_scrchk4)
 
+add_executable(backend_r5_beltsw5
+  unit/r5/test_beltsw5.c
+)
+
+target_include_directories(backend_r5_beltsw5 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r5_beltsw5 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r5.beltsw5 COMMAND backend_r5_beltsw5)
+
+add_executable(backend_r5_act51a
+  unit/r5/test_act51a.c
+)
+
+target_include_directories(backend_r5_act51a PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r5_act51a PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r5.act51a COMMAND backend_r5_act51a)
+
+add_executable(backend_r5_act53
+  unit/r5/test_act53.c
+)
+
+target_include_directories(backend_r5_act53 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r5_act53 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r5.act53 COMMAND backend_r5_act53)
+
+add_executable(backend_r5_buranko5
+  unit/r5/test_buranko5.c
+)
+
+target_include_directories(backend_r5_buranko5 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r5_buranko5 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r5.buranko5 COMMAND backend_r5_buranko5)
+
+add_executable(backend_r5_denden
+  unit/r5/test_denden.c
+)
+
+target_include_directories(backend_r5_denden PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r5_denden PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r5.denden COMMAND backend_r5_denden)
+
+add_executable(backend_r5_et5
+  unit/r5/test_et5.c
+)
+
+target_include_directories(backend_r5_et5 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r5_et5 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r5.et5 COMMAND backend_r5_et5)
+
+add_executable(backend_r5_friend5
+  unit/r5/test_friend5.c
+)
+
+target_include_directories(backend_r5_friend5 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r5_friend5 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r5.friend5 COMMAND backend_r5_friend5)
+
+add_executable(backend_r5_hari5f
+  unit/r5/test_hari5f.c
+)
+
+target_include_directories(backend_r5_hari5f PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r5_hari5f PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r5.hari5f COMMAND backend_r5_hari5f)
+
+add_executable(backend_r5_harir5
+  unit/r5/test_harir5.c
+)
+
+target_include_directories(backend_r5_harir5 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r5_harir5 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r5.harir5 COMMAND backend_r5_harir5)
+
+add_executable(backend_r5_hasira5
+  unit/r5/test_hasira5.c
+)
+
+target_include_directories(backend_r5_hasira5 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r5_hasira5 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r5.hasira5 COMMAND backend_r5_hasira5)
+
+add_executable(backend_r5_hashi5
+  unit/r5/test_hashi5.c
+)
+
+target_include_directories(backend_r5_hashi5 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r5_hashi5 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r5.hashi5 COMMAND backend_r5_hashi5)
+
+add_executable(backend_r5_iwa5
+  unit/r5/test_iwa5.c
+)
+
+target_include_directories(backend_r5_iwa5 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r5_iwa5 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r5.iwa5 COMMAND backend_r5_iwa5)
+
+add_executable(backend_r5_iwa5roll
+  unit/r5/test_iwa5roll.c
+)
+
+target_include_directories(backend_r5_iwa5roll PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r5_iwa5roll PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r5.iwa5roll COMMAND backend_r5_iwa5roll)
+
+add_executable(backend_r5_iwa5wave
+  unit/r5/test_iwa5wave.c
+)
+
+target_include_directories(backend_r5_iwa5wave PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r5_iwa5wave PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r5.iwa5wave COMMAND backend_r5_iwa5wave)
+
+add_executable(backend_r5_kowasi5
+  unit/r5/test_kowasi5.c
+)
+
+target_include_directories(backend_r5_kowasi5 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r5_kowasi5 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r5.kowasi5 COMMAND backend_r5_kowasi5)
+
+add_executable(backend_r5_kuzure5
+  unit/r5/test_kuzure5.c
+)
+
+target_include_directories(backend_r5_kuzure5 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r5_kuzure5 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r5.kuzure5 COMMAND backend_r5_kuzure5)
+
+add_executable(backend_r5_movie5
+  unit/r5/test_movie5.c
+)
+
+target_include_directories(backend_r5_movie5 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r5_movie5 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r5.movie5 COMMAND backend_r5_movie5)
+
+add_executable(backend_r5_playsp5
+  unit/r5/test_playsp5.c
+)
+
+target_include_directories(backend_r5_playsp5 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r5_playsp5 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r5.playsp5 COMMAND backend_r5_playsp5)
+
 add_executable(backend_r6_batta
   unit/r6/test_batta.c
 )
@@ -2295,6 +2584,23 @@ set_target_properties(backend_r6_friend6 PROPERTIES
 
 add_test(NAME backend.r6.friend6 COMMAND backend_r6_friend6)
 
+add_executable(backend_r6_egg6
+  unit/r6/test_egg6.c
+)
+
+target_include_directories(backend_r6_egg6 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r6_egg6 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r6.egg6 COMMAND backend_r6_egg6)
+
 add_executable(backend_r6_togebl6b
   unit/r6/test_togebl6b.c
 )
@@ -2431,6 +2737,227 @@ set_target_properties(backend_r6_col6c PROPERTIES
 
 add_test(NAME backend.r6.col6c COMMAND backend_r6_col6c)
 
+add_executable(backend_r6_col6d
+  unit/r6/test_col6d.c
+)
+
+target_include_directories(backend_r6_col6d PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r6_col6d PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r6.col6d COMMAND backend_r6_col6d)
+
+add_executable(backend_r6_coli6
+  unit/r6/test_coli6.c
+)
+
+target_include_directories(backend_r6_coli6 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r6_coli6 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r6.coli6 COMMAND backend_r6_coli6)
+
+add_executable(backend_r6_dev61a
+  unit/r6/test_dev61a.c
+)
+
+target_include_directories(backend_r6_dev61a PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r6_dev61a PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r6.dev61a COMMAND backend_r6_dev61a)
+
+add_executable(backend_r6_dev61b
+  unit/r6/test_dev61b.c
+)
+
+target_include_directories(backend_r6_dev61b PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r6_dev61b PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r6.dev61b COMMAND backend_r6_dev61b)
+
+add_executable(backend_r6_dev61c
+  unit/r6/test_dev61c.c
+)
+
+target_include_directories(backend_r6_dev61c PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r6_dev61c PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r6.dev61c COMMAND backend_r6_dev61c)
+
+add_executable(backend_r6_dev61d
+  unit/r6/test_dev61d.c
+)
+
+target_include_directories(backend_r6_dev61d PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r6_dev61d PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r6.dev61d COMMAND backend_r6_dev61d)
+
+add_executable(backend_r6_dev62a
+  unit/r6/test_dev62a.c
+)
+
+target_include_directories(backend_r6_dev62a PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r6_dev62a PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r6.dev62a COMMAND backend_r6_dev62a)
+
+add_executable(backend_r6_dev62b
+  unit/r6/test_dev62b.c
+)
+
+target_include_directories(backend_r6_dev62b PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r6_dev62b PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r6.dev62b COMMAND backend_r6_dev62b)
+
+add_executable(backend_r6_dev62c
+  unit/r6/test_dev62c.c
+)
+
+target_include_directories(backend_r6_dev62c PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r6_dev62c PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r6.dev62c COMMAND backend_r6_dev62c)
+
+add_executable(backend_r6_dev62d
+  unit/r6/test_dev62d.c
+)
+
+target_include_directories(backend_r6_dev62d PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r6_dev62d PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r6.dev62d COMMAND backend_r6_dev62d)
+
+add_executable(backend_r6_dev63c
+  unit/r6/test_dev63c.c
+)
+
+target_include_directories(backend_r6_dev63c PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r6_dev63c PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r6.dev63c COMMAND backend_r6_dev63c)
+
+add_executable(backend_r6_dev63d
+  unit/r6/test_dev63d.c
+)
+
+target_include_directories(backend_r6_dev63d PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r6_dev63d PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r6.dev63d COMMAND backend_r6_dev63d)
+
+add_executable(backend_r6_seesaw6
+  unit/r6/test_seesaw6.c
+)
+
+target_include_directories(backend_r6_seesaw6 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r6_seesaw6 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r6.seesaw6 COMMAND backend_r6_seesaw6)
+
 add_executable(backend_r7_chgwall7
   unit/r7/test_chgwall7.c
 )
@@ -2498,6 +3025,23 @@ set_target_properties(backend_r7_wall7 PROPERTIES
 )
 
 add_test(NAME backend.r7.wall7 COMMAND backend_r7_wall7)
+
+add_executable(backend_r7_wall73
+  unit/r7/test_wall73.c
+)
+
+target_include_directories(backend_r7_wall73 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r7_wall73 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r7.wall73 COMMAND backend_r7_wall73)
 
 add_executable(backend_r7_et7
   unit/r7/test_et7.c
@@ -3171,6 +3715,20 @@ set_target_properties(backend_r7_emie7cg PROPERTIES
     C_STANDARD_REQUIRED ON
 )
 add_test(NAME backend.r7.emie7cg COMMAND backend_r7_emie7cg)
+
+add_executable(backend_r7_emie7
+    unit/r7/test_emie7.c
+)
+target_include_directories(backend_r7_emie7 PRIVATE
+    ${PROJECT_SOURCE_DIR}
+    ${PROJECT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+set_target_properties(backend_r7_emie7 PROPERTIES
+    C_STANDARD 17
+    C_STANDARD_REQUIRED ON
+)
+add_test(NAME backend.r7.emie7 COMMAND backend_r7_emie7)
 
 add_executable(backend_r7_dango7
     unit/r7/test_dango7.c
@@ -4325,6 +4883,23 @@ set_target_properties(backend_r8_scr81d PROPERTIES
 
 add_test(NAME backend.r8.scr81d COMMAND backend_r8_scr81d)
 
+add_executable(backend_r8_scr82a
+  unit/r8/test_scr82a.c
+)
+
+target_include_directories(backend_r8_scr82a PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_scr82a PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.scr82a COMMAND backend_r8_scr82a)
+
 add_executable(backend_r8_scr82b
   unit/r8/test_scr82b.c
 )
@@ -4358,6 +4933,57 @@ set_target_properties(backend_r8_scr82c PROPERTIES
 )
 
 add_test(NAME backend.r8.scr82c COMMAND backend_r8_scr82c)
+
+add_executable(backend_r8_scr82d
+  unit/r8/test_scr82d.c
+)
+
+target_include_directories(backend_r8_scr82d PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_scr82d PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.scr82d COMMAND backend_r8_scr82d)
+
+add_executable(backend_r8_scr83c
+  unit/r8/test_scr83c.c
+)
+
+target_include_directories(backend_r8_scr83c PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_scr83c PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.scr83c COMMAND backend_r8_scr83c)
+
+add_executable(backend_r8_scr83d
+  unit/r8/test_scr83d.c
+)
+
+target_include_directories(backend_r8_scr83d PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_scr83d PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.scr83d COMMAND backend_r8_scr83d)
 
 add_executable(backend_r8_shoot
   unit/r8/test_shoot.c
@@ -4444,9 +5070,19 @@ add_custom_target(backend-tests
     backend_r1_scr13d
     backend_r1_scr11d
     backend_r3_playsp3
-    backend_playsp7
+    backend_r7_playsp7
     backend_r8_playsp8
-    backend_playsp5
+    backend_r5_harir5
+    backend_r5_hasira5
+    backend_r5_hashi5
+    backend_r5_hari5f
+    backend_r5_iwa5
+    backend_r5_iwa5roll
+    backend_r5_iwa5wave
+    backend_r5_kowasi5
+    backend_r5_kuzure5
+    backend_r5_movie5
+    backend_r5_playsp5
     backend_r3_act31a
     backend_r3_act31b
     backend_r3_act32a
@@ -4516,6 +5152,13 @@ add_custom_target(backend-tests
     backend_r4_screw_a
     backend_r4_screw_c
     backend_r4_scrchk4
+    backend_r5_beltsw5
+    backend_r5_act51a
+    backend_r5_act53
+    backend_r5_buranko5
+    backend_r5_denden
+    backend_r5_et5
+    backend_r5_friend5
     backend_r6_batta
     backend_r6_act61a
     backend_r6_act62a
@@ -4533,6 +5176,7 @@ add_custom_target(backend-tests
     backend_r6_hachi6
     backend_r6_minomusi
     backend_r6_friend6
+    backend_r6_egg6
     backend_r6_togebl6b
     backend_r6_togebl6a
     backend_r6_togebl6d
@@ -4541,10 +5185,24 @@ add_custom_target(backend-tests
     backend_r6_col6a
     backend_r6_col6b
     backend_r6_col6c
+    backend_r6_col6d
+    backend_r6_coli6
+    backend_r6_dev61a
+    backend_r6_dev61b
+    backend_r6_dev61c
+    backend_r6_dev61d
+    backend_r6_dev62a
+    backend_r6_dev62b
+    backend_r6_dev62c
+    backend_r6_dev62d
+    backend_r6_dev63c
+    backend_r6_dev63d
+    backend_r6_seesaw6
     backend_r7_chgwall7
     backend_r7_chgban
     backend_r7_hari73
     backend_r7_wall7
+    backend_r7_wall73
     backend_r7_et7
     backend_r7_movie7
     backend_r7_friend7
@@ -4586,6 +5244,7 @@ add_custom_target(backend-tests
     backend_r7_dev73c
     backend_r7_dev73d
     backend_r7_emie7cg
+    backend_r7_emie7
     backend_r7_dango7
     backend_r7_branko7
     backend_r7_slight7
@@ -4654,8 +5313,12 @@ add_custom_target(backend-tests
     backend_r8_scr81b
     backend_r8_scr81c
     backend_r8_scr81d
+    backend_r8_scr82a
     backend_r8_scr82b
     backend_r8_scr82c
+    backend_r8_scr82d
+    backend_r8_scr83c
+    backend_r8_scr83d
     backend_r8_shoot
     backend_player
 )

@@ -45,6 +45,32 @@ mapping.
   `tests/backend/unit/r3/test_coli3.c`, and the suspicious guard/switch shape is
   recorded in `docs/backend_potential_bugs.md`.
 
+## `src/r6/coli6.c`
+
+- `eggman_chk`, lines 335 and 340-346: this matches the `src/r3/coli3.c`
+  guard/switch shape. The function returns immediately unless `bossstart == 1`,
+  so `case 4`, `case 5`, and `default` are not reachable through `eggman_chk`
+  under 32-bit MSVC Win32. The boss handlers themselves are covered by direct
+  calls in `tests/backend/unit/r6/test_coli6.c`, and the suspicious
+  guard/switch shape is recorded in `docs/backend_potential_bugs.md`.
+
+## `src/r6/dev61c.c`
+
+- `cg_change`, line 40: after `--cgchgtim[2]`, the body is entered only when
+  `(char)cgchgtim[2] < 0`, which means the byte is in the signed-negative
+  range under 32-bit MSVC. XORing that value with `1` cannot make it `0`, so
+  the `cgchgtim[2] = 90` assignment does not appear reachable. The false
+  branch, normal thunder path, null-table path, and `= 30` assignment are
+  covered by `tests/backend/unit/r6/test_dev61c.c`.
+
+## `src/r6/dev62c.c`
+
+- `cg_change`, line 40: this matches the `src/r6/dev61c.c` thunder/null toggle
+  shape. After `--cgchgtim[2]`, the body is entered only when
+  `(char)cgchgtim[2] < 0`, and XORing that byte with `1` cannot make it `0`.
+  The false branch, normal thunder path, null-table path, and `= 30`
+  assignment are covered by `tests/backend/unit/r6/test_dev62c.c`.
+
 ## `src/goal.c`
 
 - `gene_move0`, lines 69, 72, and 80-83: the horizontal bounce path repeats the
@@ -124,7 +150,7 @@ mapping.
   cases, the low default return, and the boss-check path are covered by
   `tests/backend/unit/r1/test_coli1.c`.
 
-## `src/r8/scr81a.c`, `src/r8/scr81b.c`, `src/r8/scr81c.c`, `src/r8/scr81d.c`, `src/r8/scr82b.c`, and `src/r8/scr82c.c`
+## `src/r8/scr81a.c`, `src/r8/scr81b.c`, `src/r8/scr81c.c`, `src/r8/scr81d.c`, `src/r8/scr82a.c`, `src/r8/scr82b.c`, `src/r8/scr82c.c`, `src/r8/scr82d.c`, `src/r8/scr83c.c`, and `src/r8/scr83d.c`
 
 - `scrollwrtb`, the `WrtTblCnt < 0` and `WrtTblCnt > 113` clamp bodies:
   `WrtTblCnt` is `Uint16`, so the negative clamp is not reachable under
@@ -136,6 +162,11 @@ mapping.
   inputs and are clamped to nonnegative map ranges before `i` is calculated, so
   the negative-index correction does not appear reachable through the public map
   address helpers.
+- For `src/r8/scr83d.c`, `scrollwrtb` lines 649-652 are also left uncovered:
+  the variant's `z81awrttbl` has no in-range zero row selected by the normal
+  `wD0 + 1` lookup. Forcing the only apparent zero-row route would require the
+  same unsafe top-edge/out-of-bounds indexing described in
+  `docs/backend_potential_bugs.md`.
 
 ## `src/r1/scr13c.c`
 

@@ -205,10 +205,10 @@ static void test_belt_chk_uses_time_and_generate_tables(test_context *ctx) {
 }
 
 TEST_MAIN_BEGIN;
-test_playsp_routes_to_belt_and_honors_boss_gate(&ctx);
-test_belt_checks_left_then_right_probe_coordinates(&ctx);
-test_belt_returns_when_both_probes_miss(&ctx);
-test_belt_effect_uses_time_speed_and_collision_correction(&ctx);
-test_belt_effect_reverses_motion_and_collision_when_colrevflag(&ctx);
-test_belt_chk_uses_time_and_generate_tables(&ctx);
-TEST_MAIN_END;
+    test_playsp_routes_to_belt_and_honors_boss_gate(&ctx);
+    test_belt_checks_left_then_right_probe_coordinates(&ctx);
+    test_belt_returns_when_both_probes_miss(&ctx);
+    test_belt_effect_uses_time_speed_and_collision_correction(&ctx);
+    test_belt_effect_reverses_motion_and_collision_when_colrevflag(&ctx);
+    test_belt_chk_uses_time_and_generate_tables(&ctx);
+TEST_MAIN_END
