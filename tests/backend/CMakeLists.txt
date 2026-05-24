@@ -1887,6 +1887,363 @@ set_target_properties(backend_r3_zonetbl3 PROPERTIES
 
 add_test(NAME backend.r3.zonetbl3 COMMAND backend_r3_zonetbl3)
 
+add_executable(backend_r4_act41a
+  unit/r4/test_act41a.c
+)
+
+target_include_directories(backend_r4_act41a PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_act41a PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.act41a COMMAND backend_r4_act41a)
+
+add_executable(backend_r4_act41b
+  unit/r4/test_act41b.c
+)
+
+target_include_directories(backend_r4_act41b PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_act41b PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.act41b COMMAND backend_r4_act41b)
+
+add_executable(backend_r4_act41c
+  unit/r4/test_act41c.c
+)
+
+target_include_directories(backend_r4_act41c PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_act41c PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.act41c COMMAND backend_r4_act41c)
+
+add_executable(backend_r4_act42a
+  unit/r4/test_act42a.c
+)
+
+target_include_directories(backend_r4_act42a PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_act42a PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.act42a COMMAND backend_r4_act42a)
+
+add_executable(backend_r4_act42b
+  unit/r4/test_act42b.c
+)
+
+target_include_directories(backend_r4_act42b PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_act42b PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.act42b COMMAND backend_r4_act42b)
+
+add_executable(backend_r4_act42c
+  unit/r4/test_act42c.c
+)
+
+target_include_directories(backend_r4_act42c PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_act42c PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.act42c COMMAND backend_r4_act42c)
+
+add_executable(backend_r4_act43c
+  unit/r4/test_act43c.c
+)
+
+target_include_directories(backend_r4_act43c PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_act43c PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.act43c COMMAND backend_r4_act43c)
+
+add_executable(backend_r4_dev41a
+  unit/r4/test_dev41a.c
+)
+
+target_include_directories(backend_r4_dev41a PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_dev41a PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.dev41a COMMAND backend_r4_dev41a)
+
+add_executable(backend_r4_et4
+  unit/r4/test_et4.c
+)
+
+target_include_directories(backend_r4_et4 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_et4 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.et4 COMMAND backend_r4_et4)
+
+add_executable(backend_r4_awa
+  unit/r4/test_awa.c
+)
+
+target_include_directories(backend_r4_awa PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_awa PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.awa COMMAND backend_r4_awa)
+
+add_executable(backend_r4_movie4
+  unit/r4/test_movie4.c
+)
+
+target_include_directories(backend_r4_movie4 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_movie4 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.movie4 COMMAND backend_r4_movie4)
+
+add_executable(backend_r4_amenbo
+  unit/r4/test_amenbo.c
+)
+
+target_include_directories(backend_r4_amenbo PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_amenbo PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.amenbo COMMAND backend_r4_amenbo)
+
+add_executable(backend_r4_yago
+  unit/r4/test_yago.c
+)
+
+target_include_directories(backend_r4_yago PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_yago PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.yago COMMAND backend_r4_yago)
+
+add_executable(backend_r4_friend4
+  unit/r4/test_friend4.c
+)
+
+target_include_directories(backend_r4_friend4 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_friend4 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.friend4 COMMAND backend_r4_friend4)
+
+add_executable(backend_r4_tagameb4
+  unit/r4/test_tagameb4.c
+)
+
+target_include_directories(backend_r4_tagameb4 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_tagameb4 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.tagameb4 COMMAND backend_r4_tagameb4)
+
+add_executable(backend_r4_lrblk4
+  unit/r4/test_lrblk4.c
+)
+
+target_include_directories(backend_r4_lrblk4 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_lrblk4 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.lrblk4 COMMAND backend_r4_lrblk4)
+
+add_executable(backend_r4_swgun4
+  unit/r4/test_swgun4.c
+)
+
+target_include_directories(backend_r4_swgun4 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_swgun4 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.swgun4 COMMAND backend_r4_swgun4)
+
+add_executable(backend_r4_col4a
+  unit/r4/test_col4a.c
+)
+
+target_include_directories(backend_r4_col4a PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_col4a PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.col4a COMMAND backend_r4_col4a)
+
+add_executable(backend_r4_col4b
+  unit/r4/test_col4b.c
+)
+
+target_include_directories(backend_r4_col4b PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_col4b PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.col4b COMMAND backend_r4_col4b)
+
+add_executable(backend_r4_col4c
+  unit/r4/test_col4c.c
+)
+
+target_include_directories(backend_r4_col4c PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_col4c PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.col4c COMMAND backend_r4_col4c)
+
+add_executable(backend_r4_col4d
+  unit/r4/test_col4d.c
+)
+
+target_include_directories(backend_r4_col4d PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_col4d PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.col4d COMMAND backend_r4_col4d)
+
 add_executable(backend_r4_rblk4
   unit/r4/test_rblk4.c
 )
@@ -1903,6 +2260,193 @@ set_target_properties(backend_r4_rblk4 PROPERTIES
 )
 
 add_test(NAME backend.r4.rblk4 COMMAND backend_r4_rblk4)
+
+add_executable(backend_r4_baneiwa
+  unit/r4/test_baneiwa.c
+)
+
+target_include_directories(backend_r4_baneiwa PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_baneiwa PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.baneiwa COMMAND backend_r4_baneiwa)
+
+add_executable(backend_r4_brunko4
+  unit/r4/test_brunko4.c
+)
+
+target_include_directories(backend_r4_brunko4 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_brunko4 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.brunko4 COMMAND backend_r4_brunko4)
+
+add_executable(backend_r4_daid4
+  unit/r4/test_daid4.c
+)
+
+target_include_directories(backend_r4_daid4 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_daid4 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.daid4 COMMAND backend_r4_daid4)
+
+add_executable(backend_r4_escal4
+  unit/r4/test_escal4.c
+)
+
+target_include_directories(backend_r4_escal4 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_escal4 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.escal4 COMMAND backend_r4_escal4)
+
+add_executable(backend_r4_funsui4
+  unit/r4/test_funsui4.c
+)
+
+target_include_directories(backend_r4_funsui4 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_funsui4 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.funsui4 COMMAND backend_r4_funsui4)
+
+add_executable(backend_r4_harir4
+  unit/r4/test_harir4.c
+)
+
+target_include_directories(backend_r4_harir4 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_harir4 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.harir4 COMMAND backend_r4_harir4)
+
+add_executable(backend_r4_harid4
+  unit/r4/test_harid4.c
+)
+
+target_include_directories(backend_r4_harid4 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_harid4 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.harid4 COMMAND backend_r4_harid4)
+
+add_executable(backend_r4_kowasi4
+  unit/r4/test_kowasi4.c
+)
+
+target_include_directories(backend_r4_kowasi4 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_kowasi4 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.kowasi4 COMMAND backend_r4_kowasi4)
+
+add_executable(backend_r4_kuzure4
+  unit/r4/test_kuzure4.c
+)
+
+target_include_directories(backend_r4_kuzure4 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_kuzure4 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.kuzure4 COMMAND backend_r4_kuzure4)
+
+add_executable(backend_r4_osumizu
+  unit/r4/test_osumizu.c
+)
+
+target_include_directories(backend_r4_osumizu PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_osumizu PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.osumizu COMMAND backend_r4_osumizu)
+
+add_executable(backend_r4_renketu4
+  unit/r4/test_renketu4.c
+)
+
+target_include_directories(backend_r4_renketu4 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_renketu4 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.renketu4 COMMAND backend_r4_renketu4)
 
 add_executable(backend_r4_wall1
   unit/r4/test_wall1.c
@@ -1938,6 +2482,40 @@ set_target_properties(backend_r4_wall4 PROPERTIES
 
 add_test(NAME backend.r4.wall4 COMMAND backend_r4_wall4)
 
+add_executable(backend_r4_wall42
+  unit/r4/test_wall42.c
+)
+
+target_include_directories(backend_r4_wall42 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_wall42 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.wall42 COMMAND backend_r4_wall42)
+
+add_executable(backend_r4_walls
+  unit/r4/test_walls.c
+)
+
+target_include_directories(backend_r4_walls PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_walls PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.walls COMMAND backend_r4_walls)
+
 add_executable(backend_r4_screw_a
   unit/r4/test_screw_a.c
 )
@@ -1971,6 +2549,159 @@ set_target_properties(backend_r4_screw_c PROPERTIES
 )
 
 add_test(NAME backend.r4.screw_c COMMAND backend_r4_screw_c)
+
+add_executable(backend_r4_sw4
+  unit/r4/test_sw4.c
+)
+
+target_include_directories(backend_r4_sw4 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_sw4 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.sw4 COMMAND backend_r4_sw4)
+
+add_executable(backend_r4_swblk4
+  unit/r4/test_swblk4.c
+)
+
+target_include_directories(backend_r4_swblk4 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_swblk4 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.swblk4 COMMAND backend_r4_swblk4)
+
+add_executable(backend_r4_tekkyu
+  unit/r4/test_tekkyu.c
+)
+
+target_include_directories(backend_r4_tekkyu PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_tekkyu PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.tekkyu COMMAND backend_r4_tekkyu)
+
+add_executable(backend_r4_tekkyu1
+  unit/r4/test_tekkyu1.c
+)
+
+target_include_directories(backend_r4_tekkyu1 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_tekkyu1 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.tekkyu1 COMMAND backend_r4_tekkyu1)
+
+add_executable(backend_r4_tekkyu4
+  unit/r4/test_tekkyu4.c
+)
+
+target_include_directories(backend_r4_tekkyu4 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_tekkyu4 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.tekkyu4 COMMAND backend_r4_tekkyu4)
+
+add_executable(backend_r4_tobira4
+  unit/r4/test_tobira4.c
+)
+
+target_include_directories(backend_r4_tobira4 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_tobira4 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.tobira4 COMMAND backend_r4_tobira4)
+
+add_executable(backend_r4_tobiras4
+  unit/r4/test_tobiras4.c
+)
+
+target_include_directories(backend_r4_tobiras4 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_tobiras4 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.tobiras4 COMMAND backend_r4_tobiras4)
+
+add_executable(backend_r4_tonbo
+  unit/r4/test_tonbo.c
+)
+
+target_include_directories(backend_r4_tonbo PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_tonbo PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.tonbo COMMAND backend_r4_tonbo)
+
+add_executable(backend_r4_ukidai
+  unit/r4/test_ukidai.c
+)
+
+target_include_directories(backend_r4_ukidai PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r4_ukidai PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r4.ukidai COMMAND backend_r4_ukidai)
 
 add_executable(backend_r4_scrchk4
   unit/r4/test_scrchk4.c
@@ -2056,6 +2787,108 @@ set_target_properties(backend_r5_buranko5 PROPERTIES
 )
 
 add_test(NAME backend.r5.buranko5 COMMAND backend_r5_buranko5)
+
+add_executable(backend_r5_col5a
+  unit/r5/test_col5a.c
+)
+
+target_include_directories(backend_r5_col5a PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r5_col5a PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r5.col5a COMMAND backend_r5_col5a)
+
+add_executable(backend_r5_col5b
+  unit/r5/test_col5b.c
+)
+
+target_include_directories(backend_r5_col5b PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r5_col5b PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r5.col5b COMMAND backend_r5_col5b)
+
+add_executable(backend_r5_col5c
+  unit/r5/test_col5c.c
+)
+
+target_include_directories(backend_r5_col5c PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r5_col5c PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r5.col5c COMMAND backend_r5_col5c)
+
+add_executable(backend_r5_col5d
+  unit/r5/test_col5d.c
+)
+
+target_include_directories(backend_r5_col5d PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r5_col5d PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r5.col5d COMMAND backend_r5_col5d)
+
+add_executable(backend_r5_coli5
+  unit/r5/test_coli5.c
+)
+
+target_include_directories(backend_r5_coli5 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r5_coli5 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r5.coli5 COMMAND backend_r5_coli5)
+
+add_executable(backend_r5_dai_rd5
+  unit/r5/test_dai_rd5.c
+)
+
+target_include_directories(backend_r5_dai_rd5 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r5_dai_rd5 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r5.dai_rd5 COMMAND backend_r5_dai_rd5)
 
 add_executable(backend_r5_denden
   unit/r5/test_denden.c
@@ -2227,6 +3060,40 @@ set_target_properties(backend_r5_iwa5wave PROPERTIES
 
 add_test(NAME backend.r5.iwa5wave COMMAND backend_r5_iwa5wave)
 
+add_executable(backend_r5_kemusi
+  unit/r5/test_kemusi.c
+)
+
+target_include_directories(backend_r5_kemusi PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r5_kemusi PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r5.kemusi COMMAND backend_r5_kemusi)
+
+add_executable(backend_r5_kumo
+  unit/r5/test_kumo.c
+)
+
+target_include_directories(backend_r5_kumo PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r5_kumo PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r5.kumo COMMAND backend_r5_kumo)
+
 add_executable(backend_r5_kowasi5
   unit/r5/test_kowasi5.c
 )
@@ -2277,6 +3144,40 @@ set_target_properties(backend_r5_movie5 PROPERTIES
 )
 
 add_test(NAME backend.r5.movie5 COMMAND backend_r5_movie5)
+
+add_executable(backend_r5_sasori
+  unit/r5/test_sasori.c
+)
+
+target_include_directories(backend_r5_sasori PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r5_sasori PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r5.sasori COMMAND backend_r5_sasori)
+
+add_executable(backend_r5_shoot5
+  unit/r5/test_shoot5.c
+)
+
+target_include_directories(backend_r5_shoot5 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r5_shoot5 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r5.shoot5 COMMAND backend_r5_shoot5)
 
 add_executable(backend_r5_playsp5
   unit/r5/test_playsp5.c
@@ -3110,6 +4011,23 @@ set_target_properties(backend_r7_kanabun PROPERTIES
 )
 
 add_test(NAME backend.r7.kanabun COMMAND backend_r7_kanabun)
+
+add_executable(backend_r7_kabasira
+  unit/r7/test_kabasira.c
+)
+
+target_include_directories(backend_r7_kabasira PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r7_kabasira PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r7.kabasira COMMAND backend_r7_kabasira)
 
 add_executable(backend_r7_tekkyu7
   unit/r7/test_tekkyu7.c
@@ -5079,9 +5997,13 @@ add_custom_target(backend-tests
     backend_r5_iwa5
     backend_r5_iwa5roll
     backend_r5_iwa5wave
+    backend_r5_kemusi
+    backend_r5_kumo
     backend_r5_kowasi5
     backend_r5_kuzure5
     backend_r5_movie5
+    backend_r5_sasori
+    backend_r5_shoot5
     backend_r5_playsp5
     backend_r3_act31a
     backend_r3_act31b
@@ -5146,16 +6068,65 @@ add_custom_target(backend-tests
     backend_r3_z33ctbl
     backend_r3_z33dtbl
     backend_r3_zonetbl3
+    backend_r4_act41a
+    backend_r4_act41b
+    backend_r4_act41c
+    backend_r4_act42a
+    backend_r4_act42b
+    backend_r4_act42c
+    backend_r4_act43c
+    backend_r4_dev41a
+    backend_r4_et4
+    backend_r4_awa
+    backend_r4_movie4
+    backend_r4_amenbo
+    backend_r4_yago
+    backend_r4_friend4
+    backend_r4_tagameb4
+    backend_r4_lrblk4
+    backend_r4_swgun4
+    backend_r4_col4a
+    backend_r4_col4b
+    backend_r4_col4c
+    backend_r4_col4d
     backend_r4_rblk4
+    backend_r4_baneiwa
+    backend_r4_brunko4
+    backend_r4_daid4
+    backend_r4_escal4
+    backend_r4_funsui4
+    backend_r4_harir4
+    backend_r4_harid4
+    backend_r4_kowasi4
+    backend_r4_kuzure4
+    backend_r4_osumizu
+    backend_r4_renketu4
     backend_r4_wall1
     backend_r4_wall4
+    backend_r4_wall42
+    backend_r4_walls
     backend_r4_screw_a
     backend_r4_screw_c
+    backend_r4_sw4
+    backend_r4_swblk4
+    backend_r4_tekkyu
+    backend_r4_tekkyu1
+    backend_r4_tekkyu4
+    backend_r4_tobira4
+    backend_r4_tobiras4
+    backend_r4_tonbo
+    backend_r4_ukidai
     backend_r4_scrchk4
     backend_r5_beltsw5
     backend_r5_act51a
     backend_r5_act53
     backend_r5_buranko5
+    backend_r5_col5a
+    backend_r5_col5b
+    backend_r5_col5c
+    backend_r5_col5d
+    backend_r5_coli5
+    backend_r5_dai_rd5
     backend_r5_denden
     backend_r5_et5
     backend_r5_friend5
@@ -5207,6 +6178,7 @@ add_custom_target(backend-tests
     backend_r7_movie7
     backend_r7_friend7
     backend_r7_kanabun
+    backend_r7_kabasira
     backend_r7_tekkyu7
     backend_r7_tekkyu7j
     backend_r7_gaitou73

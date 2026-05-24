@@ -15,6 +15,33 @@ Do not remove or rewrite an entry as part of characterization. Bug fixes should
 happen in a later, separate pass after the current behavior is fully captured by
 tests.
 
+## `src/r4/renketu4.c`: motion accumulator aliases the angle byte
+
+- Test case or snapshot path: `tests/backend/unit/r4/test_renketu4.c`
+- Variant and build configuration: `R11A`, MSVC 19.51, Win32 Debug
+- Observed exact behavior: `renketu4_move` adds the direction word at legacy
+  word slot 26 into legacy word slot 33 before calling `sinset`. Under the
+  tested 32-bit layout, word slot 33 overlaps `actfree[20]` and `actfree[21]`,
+  so the add mutates `actfree[21]`, which is then used as the sine angle.
+- Why the behavior looks suspicious: `actfree[21]` is assigned from
+  `renketu4_tbl` as a per-piece angle, but the motion accumulator changes that
+  same byte every frame. This is intentionally not fixed during characterization.
+- Related source location: `src/r4/renketu4.c`, lines 102-105.
+
+## `src/r4/escal4.c`: `escal4_ridechk` is missing a return value
+
+- Test case or snapshot path: `tests/backend/unit/r4/test_escal4.c`
+- Variant and build configuration: `R11A`, MSVC 19.51, Win32 Debug
+- Observed exact behavior: compiling `backend_r4_escal4` emits MSVC warning
+  C4716 because `escal4_ridechk` is declared to return `Sint16`, but it only
+  calls `hitchk` and does not explicitly return its result. Under the tested
+  build, the caller in `escal4_wait` behaves as if the `hitchk` return value is
+  propagated.
+- Why the behavior looks suspicious: this relies on compiler/code generation
+  behavior for a non-void function that falls off the end. This is intentionally
+  not fixed during characterization.
+- Related source location: `src/r4/escal4.c`, lines 25-26.
+
 ## `src/actset.c`: `tm_setchk` does not return for unexpected time state
 
 - Test case or snapshot path: `tests/backend/unit/test_actset.c`
@@ -448,3 +475,32 @@ tests.
   can walk outside the static table. This is intentionally not fixed during
   characterization.
 - Related source location: `src/r1/scr11d.c`, lines 603-605.
+
+## `src/r4/walls.c`: child pattern setup reads before the selected row
+
+- Test case or snapshot path: `tests/backend/unit/r4/test_walls.c`
+- Variant and build configuration: default/R4 include path, MSVC 19.51, Win32
+  Debug
+- Observed exact behavior: `main_init` assigns `pPatno` to the start of
+  `patno_tbl[pActwk->userflag.b.h + 1]`, then reads `*--pPatno` for each child.
+  For `userflag.b.h == 0`, the eight child pattern numbers therefore come from
+  row 0 in reverse order rather than row 1.
+- Why the behavior looks suspicious: the code appears to intend reverse
+  iteration through the selected row, but starts at the row's first element
+  instead of one-past-the-end. This is intentionally not fixed during
+  characterization.
+- Related source location: `src/r4/walls.c`, child pattern assignment in
+  `main_init`.
+
+## `src/r4/tagameb4.c`: `a_stop` checks whether an unsigned flag is negative
+
+- Test case or snapshot path: `tests/backend/unit/r4/test_tagameb4.c`
+- Variant and build configuration: default/R4 include path, MSVC 19.51, Win32
+  Debug
+- Observed exact behavior: `a_stop` advances the timer and launches child spike
+  actors, but the `soundset(179)` body is not reached because `actflg` is a
+  `Uint8` and `pActwk->actflg < 0` is always false.
+- Why the behavior looks suspicious: the condition looks like it may have been
+  intended to test bit 7 as a signed flag. This is intentionally not fixed
+  during characterization.
+- Related source location: `src/r4/tagameb4.c`, line 220.

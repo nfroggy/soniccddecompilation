@@ -222,3 +222,21 @@ mapping.
   differ would require direct raw `sprite_status` storage writes. The backend
   test plan forbids that because those storage slots are expected to change
   during the 64-bit port.
+
+## `src/r4/friend4.c`
+
+- `m0move`, lines 125-126: this frameout path depends on
+  `((char *)tempact)[67]` for the parent actor. Under the 32-bit MSVC layout
+  used by these tests, byte 67 is outside `actfree` and is not reachable through
+  a stable `sprite_status` field. The invalid-parent path and the live-parent
+  movement/toggle paths are covered by `tests/backend/unit/r4/test_friend4.c`;
+  forcing only this status byte would require a direct raw actor storage write
+  that the backend unit test plan forbids.
+
+## `src/r4/tagameb4.c`
+
+- `a_stop`, line 221: `actflg` is declared as `Uint8`, so the
+  `if (pActwk->actflg < 0)` body is not reachable under 32-bit MSVC Win32.
+  The timed stop, child launch setup, stop-to-dash, dash, and child movement
+  paths are covered by `tests/backend/unit/r4/test_tagameb4.c`, and the
+  suspicious signedness check is recorded in `docs/backend_potential_bugs.md`.
