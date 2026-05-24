@@ -107,6 +107,23 @@ mapping.
   depending on the documented nibble-index out-of-bounds read in
   `docs/backend_potential_bugs.md`.
 
+## `src/r1/shoot1.c`
+
+- `mspd_set`, line 353: this matches the `src/r8/shoot.c` behavior above. The
+  function assigns `actwk[0].mspeed.w = 4096` immediately before checking
+  `if (cal_mspeed > actwk[0].mspeed.w)`, and the in-bounds table values are
+  `4096`, `3072`, `3072`, and `2048`. Reaching the assignment would require
+  relying on the same nibble-index out-of-bounds table read documented in
+  `docs/backend_potential_bugs.md`.
+
+## `src/r1/coli1.c`
+
+- `pcolspecial`, line 337: `cColiNo` is assigned from
+  `pColliAct->colino & 63`, so the preceding `if (cColiNo > 63)` body does not
+  appear reachable under 32-bit MSVC Win32. The neighboring special-collision
+  cases, the low default return, and the boss-check path are covered by
+  `tests/backend/unit/r1/test_coli1.c`.
+
 ## `src/r8/scr81a.c`, `src/r8/scr81b.c`, `src/r8/scr81c.c`, `src/r8/scr81d.c`, `src/r8/scr82b.c`, and `src/r8/scr82c.c`
 
 - `scrollwrtb`, the `WrtTblCnt < 0` and `WrtTblCnt > 113` clamp bodies:
@@ -119,6 +136,42 @@ mapping.
   inputs and are clamped to nonnegative map ranges before `i` is calculated, so
   the negative-index correction does not appear reachable through the public map
   address helpers.
+
+## `src/r1/scr13c.c`
+
+- `scrollwrtb`, the `WrtTblCnt < 0` and `WrtTblCnt > 113` clamp bodies:
+  `WrtTblCnt` is `Uint16`, so the negative clamp is not reachable under
+  32-bit MSVC Win32. The high clamp uses a maximum row index far beyond the
+  33-entry `z12cwrttbl`, so forcing that path would characterize an unsafe
+  out-of-bounds table walk rather than normal scroll-write behavior.
+- `mapadrset99`, the `i < 0` clamp body: `xOffs` and `yOffs` are unsigned
+  inputs and are clamped to nonnegative map ranges before `i` is calculated, so
+  the negative-index correction does not appear reachable through the public map
+  address helpers.
+
+## `src/r1/scr13d.c`
+
+- `scrollwrtb`, the `WrtTblCnt < 0` and `WrtTblCnt > 113` clamp bodies:
+  `WrtTblCnt` is `Uint16`, so the negative clamp is not reachable under
+  32-bit MSVC Win32. The high clamp uses a maximum row index far beyond the
+  33-entry `z12dwrttbl`, so forcing that path would characterize an unsafe
+  out-of-bounds table walk rather than normal scroll-write behavior.
+- `mapadrset99`, the `i < 0` clamp body: `xOffs` and `yOffs` are unsigned
+  inputs and are clamped to nonnegative map ranges before `i` is calculated, so
+  the negative-index correction does not appear reachable through the public map
+  address helpers.
+
+## `src/r1/scr11d.c`
+
+- `scrollwrtb`, lines 637 and 639: these are the same write-table clamp bodies
+  covered by the `scr13c`/`scr13d` exceptions. The negative clamp is not
+  reachable after assigning a `Uint16` row value to `WrtTblCnt`, and the high
+  clamp is tied to unsafe write-table indexing beyond the 33-entry
+  `z11dwrttbl`. Normal top, bottom, parallax, and empty flag paths are covered
+  by `tests/backend/unit/r1/test_scr11d.c`.
+- `mapadrset99`, line 785: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative ranges before `i` is calculated, so the negative-index
+  correction does not appear reachable through the public map address helpers.
 
 ## `src/r8/shut.c`
 

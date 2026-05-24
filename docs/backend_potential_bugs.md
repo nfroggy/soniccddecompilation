@@ -153,6 +153,24 @@ tests.
   helper call. This is intentionally not fixed during characterization.
 - Related source location: `src/r6/batta.c`, lines 59-63.
 
+## `src/r6/togebl6a.c` and `src/r6/togebl6b.c`: one spawned option is overwritten in the parent link table
+
+- Test case or snapshot path: `tests/backend/unit/r6/test_togebl6a.c` and
+  `tests/backend/unit/r6/test_togebl6b.c`
+- Variant and build configuration: `R11A`, MSVC 19.51, Win32 Debug
+- Observed exact behavior: `togeball` allocates option actors, but the third
+  and fourth allocations both write their actor index into the parent's same
+  hidden child slot. On the next parent move, only the fourth actor in that slot
+  receives a new hidden position; the third allocated option still runs its own
+  option logic but copies the untouched zero hidden position into its visible
+  `xposi`/`yposi`.
+- Why the behavior looks suspicious: the allocation sequence appears intended to
+  preserve all spawned option actors, but one child is no longer referenced by
+  the parent movement update. This is intentionally not fixed during
+  characterization.
+- Related source location: `src/r6/togebl6b.c`, duplicated assignment to the
+  same parent child slot in the option allocation sequence.
+
 ## `src/r7/col7d.c`: `clchgctr` secondary palette reads past local tables
 
 - Test case or snapshot path: `tests/backend/unit/r7/test_col7d.c`
@@ -223,6 +241,35 @@ tests.
   This is intentionally not fixed during characterization.
 - Related source location: `src/r8/shut.c`, line 265.
 
+## `src/r6/kdai6.c`: `kdai6_ridechk` does not return a value
+
+- Test case or snapshot path: `tests/backend/unit/r6/test_kdai6.c`
+- Variant and build configuration: default/R6 include path, MSVC 19.51, Win32
+  Debug
+- Observed exact behavior: compiling the `backend_r6_kdai6` test target emits
+  MSVC warning C4716 because `kdai6_ridechk` is declared to return `Sint16`, but
+  it only calls `ridechk(pActwk, &actwk[0])` and reaches the end of the
+  function. Under this build, `kdai6_move` still observes the stubbed `ridechk`
+  result when branching on `iD0 = kdai6_ridechk(pActwk)`.
+- Why the behavior looks suspicious: the caller depends on a return value from a
+  function that has no explicit return, so this may depend on compiler/codegen
+  behavior. It is intentionally not fixed during characterization.
+- Related source location: `src/r6/kdai6.c`, lines 19 and 42-44.
+
+## `src/r6/et6.c`: collision count remains observable after death trigger
+
+- Test case or snapshot path: `tests/backend/unit/r6/test_et6.c`
+- Variant and build configuration: default/R6 include path, MSVC 19.51, Win32
+  Debug
+- Observed exact behavior: when `m_wait` is entered with `colicnt == 5`, the
+  actor transitions to `r_no0 == 4`, clears `colino`, sets `patno == 7`, sets
+  `generate_flag`, and awards 150 points, but the test still observes
+  `colicnt == 5` after the public `et` call.
+- Why the behavior looks suspicious: the source statement appears intended to
+  clear both collision fields during the death trigger. The characterization
+  test records the observed state and does not change the source.
+- Related source location: `src/r6/et6.c`, lines 109-117.
+
 ## `src/r8/shut.c`: `shut_init` forces its own userflag branch
 
 - Test case or snapshot path: `tests/backend/unit/r8/test_shut.c`
@@ -284,6 +331,21 @@ tests.
   characterization.
 - Related source location: `src/r8/shoot.c`, lines 329-338.
 
+## `src/r1/shoot1.c`: `mspd_set` indexes a four-entry table with a nibble
+
+- Test case or snapshot path: `tests/backend/unit/r1/test_shoot1.c`
+- Variant and build configuration: default/R1 include path, MSVC 19.51, Win32
+  Debug
+- Observed exact behavior: `mspd_set` declares `Sint16 mspdtbl[4]`, then reads
+  `mspdtbl[shootwk->userflag.b.h & 15]`. The tests cover the in-bounds values
+  and the negative high-userflag early return, but avoid non-negative
+  high-userflag values outside `0..3` because they would depend on an
+  out-of-bounds stack read.
+- Why the behavior looks suspicious: the mask allows indexes `4..15` even
+  though the table has only four entries. This is intentionally not fixed during
+  characterization.
+- Related source location: `src/r1/shoot1.c`, lines 344-353.
+
 ## `src/r8/scr81*.c` and `src/r8/scr82*.c`: high `scrollwrtb` clamp can walk past the write table
 
 - Test case or snapshot path: attempted during scroll coverage expansion; not
@@ -298,3 +360,17 @@ tests.
   during characterization.
 - Related source location: `src/r8/scr81a.c`, lines 724-733, and sibling
   `scr81*`/`scr82*` scroll files.
+
+## `src/r1/scr11d.c`: top-edge `scrollwrtb` row can walk past the write table
+
+- Test case or snapshot path: `tests/backend/unit/r1/test_scr11d.c`
+- Variant and build configuration: `R11A`, MSVC 19.51, Win32 Debug
+- Observed exact behavior: normal scroll-write paths are characterized with
+  `scrb_v_posit.w.h` inside the visible table range. Driving the bit-1
+  top-edge path at `scrb_v_posit.w.h == 0` computes a negative row, masks it
+  with `127`, and reads past the 33-entry `z11dwrttbl`.
+- Why the behavior looks suspicious: the later clamp only applies to the
+  multi-row flag pass, not to this first row lookup, so the top-edge write path
+  can walk outside the static table. This is intentionally not fixed during
+  characterization.
+- Related source location: `src/r1/scr11d.c`, lines 603-605.
