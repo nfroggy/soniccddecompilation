@@ -272,6 +272,703 @@ set_target_properties(backend_taki PROPERTIES
 
 add_test(NAME backend.taki COMMAND backend_taki)
 
+add_executable(backend_tree
+  unit/test_tree.c
+)
+
+target_include_directories(backend_tree PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_tree PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.tree COMMAND backend_tree)
+
+add_executable(backend_special_sin
+  unit/special/test_sin.c
+)
+
+target_include_directories(backend_special_sin PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_special_sin PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.special.sin COMMAND backend_special_sin)
+
+add_executable(backend_special_bact
+  unit/special/test_bact.c
+)
+
+target_include_directories(backend_special_bact PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_special_bact PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.special.bact COMMAND backend_special_bact)
+
+add_executable(backend_special_fadein
+  unit/special/test_fadein.c
+)
+
+target_include_directories(backend_special_fadein PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_special_fadein PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.special.fadein COMMAND backend_special_fadein)
+
+add_executable(backend_special_etc_s
+  unit/special/test_etc_s.c
+)
+
+target_include_directories(backend_special_etc_s PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_special_etc_s PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.special.etc_s COMMAND backend_special_etc_s)
+
+add_executable(backend_title_common_hmx_oeeactl
+  unit/title/common/test_hmx_oeeactl.c
+)
+
+target_include_directories(backend_title_common_hmx_oeeactl PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_common_hmx_oeeactl PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.common.hmx_oeeactl COMMAND backend_title_common_hmx_oeeactl)
+
+add_executable(backend_title_ta_fadein
+  unit/title/ta/test_fadein.c
+)
+
+target_include_directories(backend_title_ta_fadein PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_ta_fadein PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.ta.fadein COMMAND backend_title_ta_fadein)
+
+add_executable(backend_title_ta_tacolor
+  unit/title/ta/test_tacolor.c
+)
+
+target_include_directories(backend_title_ta_tacolor PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_ta_tacolor PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.ta.tacolor COMMAND backend_title_ta_tacolor)
+
+add_executable(backend_title_aviopen_aviopndo
+  unit/title/aviopen/test_aviopndo.c
+)
+
+target_include_directories(backend_title_aviopen_aviopndo PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_aviopen_aviopndo PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.aviopen.aviopndo COMMAND backend_title_aviopen_aviopndo)
+
+add_executable(backend_title_aviopen_aviopnen
+  unit/title/aviopen/test_aviopnen.c
+)
+
+target_include_directories(backend_title_aviopen_aviopnen PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_aviopen_aviopnen PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.aviopen.aviopnen COMMAND backend_title_aviopen_aviopnen)
+
+add_executable(backend_title_avigood_avigoddo
+  unit/title/avigood/test_avigoddo.c
+)
+
+target_include_directories(backend_title_avigood_avigoddo PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_avigood_avigoddo PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.avigood.avigoddo COMMAND backend_title_avigood_avigoddo)
+
+add_executable(backend_title_avigood_avigoden
+  unit/title/avigood/test_avigoden.c
+)
+
+target_include_directories(backend_title_avigood_avigoden PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_avigood_avigoden PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.avigood.avigoden COMMAND backend_title_avigood_avigoden)
+
+add_executable(backend_title_besttime_bestpalt
+  unit/title/besttime/test_bestpalt.c
+)
+
+target_include_directories(backend_title_besttime_bestpalt PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_besttime_bestpalt PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.besttime.bestpalt COMMAND backend_title_besttime_bestpalt)
+
+add_executable(backend_title_besttime_bestsprt
+  unit/title/besttime/test_bestsprt.c
+)
+
+target_include_directories(backend_title_besttime_bestsprt PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_besttime_bestsprt PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.besttime.bestsprt COMMAND backend_title_besttime_bestsprt)
+
+add_executable(backend_title_besttime_bestdo
+  unit/title/besttime/test_bestdo.c
+)
+
+target_include_directories(backend_title_besttime_bestdo PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_besttime_bestdo PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.besttime.bestdo COMMAND backend_title_besttime_bestdo)
+
+add_executable(backend_title_besttime_besentry
+  unit/title/besttime/test_besentry.c
+)
+
+target_include_directories(backend_title_besttime_besentry PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_besttime_besentry PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.besttime.besentry COMMAND backend_title_besttime_besentry)
+
+add_executable(backend_title_opening_opnpalt
+  unit/title/opening/test_opnpalt.c
+)
+
+target_include_directories(backend_title_opening_opnpalt PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_opening_opnpalt PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.opening.opnpalt COMMAND backend_title_opening_opnpalt)
+
+add_executable(backend_title_opening_opngrid
+  unit/title/opening/test_opngrid.c
+)
+
+target_include_directories(backend_title_opening_opngrid PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_opening_opngrid PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.opening.opngrid COMMAND backend_title_opening_opngrid)
+
+add_executable(backend_title_opening_opnentry
+  unit/title/opening/test_opnentry.c
+)
+
+target_include_directories(backend_title_opening_opnentry PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_opening_opnentry PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.opening.opnentry COMMAND backend_title_opening_opnentry)
+
+add_executable(backend_title_opening_opndo
+  unit/title/opening/test_opndo.c
+)
+
+target_include_directories(backend_title_opening_opndo PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_opening_opndo PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.opening.opndo COMMAND backend_title_opening_opndo)
+
+add_executable(backend_title_savedata_svdpalt
+  unit/title/savedata/test_svdpalt.c
+)
+
+target_include_directories(backend_title_savedata_svdpalt PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_savedata_svdpalt PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.savedata.svdpalt COMMAND backend_title_savedata_svdpalt)
+
+add_executable(backend_title_savedata_svdgrid
+  unit/title/savedata/test_svdgrid.c
+)
+
+target_include_directories(backend_title_savedata_svdgrid PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_savedata_svdgrid PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.savedata.svdgrid COMMAND backend_title_savedata_svdgrid)
+
+add_executable(backend_title_savedata_svdentry
+  unit/title/savedata/test_svdentry.c
+)
+
+target_include_directories(backend_title_savedata_svdentry PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_savedata_svdentry PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.savedata.svdentry COMMAND backend_title_savedata_svdentry)
+
+add_executable(backend_title_savedata_svdfile
+  unit/title/savedata/test_svdfile.c
+)
+
+target_include_directories(backend_title_savedata_svdfile PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_savedata_svdfile PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.savedata.svdfile COMMAND backend_title_savedata_svdfile)
+
+add_executable(backend_title_savedata_svdedit
+  unit/title/savedata/test_svdedit.c
+)
+
+target_include_directories(backend_title_savedata_svdedit PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_savedata_svdedit PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.savedata.svdedit COMMAND backend_title_savedata_svdedit)
+
+add_executable(backend_title_savedata_svddo
+  unit/title/savedata/test_svddo.c
+)
+
+target_include_directories(backend_title_savedata_svddo PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_savedata_svddo PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.savedata.svddo COMMAND backend_title_savedata_svddo)
+
+add_executable(backend_title_savedata_svdmenu
+  unit/title/savedata/test_svdmenu.c
+)
+
+target_include_directories(backend_title_savedata_svdmenu PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_savedata_svdmenu PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.savedata.svdmenu COMMAND backend_title_savedata_svdmenu)
+
+add_executable(backend_title_savedata_svdsprt
+  unit/title/savedata/test_svdsprt.c
+)
+
+target_include_directories(backend_title_savedata_svdsprt PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_savedata_svdsprt PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.savedata.svdsprt COMMAND backend_title_savedata_svdsprt)
+
+add_executable(backend_title_soundtst_sndpalt
+  unit/title/soundtst/test_sndpalt.c
+)
+
+target_include_directories(backend_title_soundtst_sndpalt PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_soundtst_sndpalt PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.soundtst.sndpalt COMMAND backend_title_soundtst_sndpalt)
+
+add_executable(backend_title_soundtst_sndsprt
+  unit/title/soundtst/test_sndsprt.c
+)
+
+target_include_directories(backend_title_soundtst_sndsprt PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_soundtst_sndsprt PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.soundtst.sndsprt COMMAND backend_title_soundtst_sndsprt)
+
+add_executable(backend_title_soundtst_sndentry
+  unit/title/soundtst/test_sndentry.c
+)
+
+target_include_directories(backend_title_soundtst_sndentry PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_soundtst_sndentry PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.soundtst.sndentry COMMAND backend_title_soundtst_sndentry)
+
+add_executable(backend_title_soundtst_snddo
+  unit/title/soundtst/test_snddo.c
+)
+
+target_include_directories(backend_title_soundtst_snddo PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_soundtst_snddo PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.soundtst.snddo COMMAND backend_title_soundtst_snddo)
+
+add_executable(backend_title_stagetst_stgpalt
+  unit/title/stagetst/test_stgpalt.c
+)
+
+target_include_directories(backend_title_stagetst_stgpalt PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_stagetst_stgpalt PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.stagetst.stgpalt COMMAND backend_title_stagetst_stgpalt)
+
+add_executable(backend_title_stagetst_stgdo
+  unit/title/stagetst/test_stgdo.c
+)
+
+target_include_directories(backend_title_stagetst_stgdo PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_stagetst_stgdo PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.stagetst.stgdo COMMAND backend_title_stagetst_stgdo)
+
+add_executable(backend_title_stagetst_stgsprt
+  unit/title/stagetst/test_stgsprt.c
+)
+
+target_include_directories(backend_title_stagetst_stgsprt PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_stagetst_stgsprt PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.stagetst.stgsprt COMMAND backend_title_stagetst_stgsprt)
+
+add_executable(backend_title_stagetst_stgentry
+  unit/title/stagetst/test_stgentry.c
+)
+
+target_include_directories(backend_title_stagetst_stgentry PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_stagetst_stgentry PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.stagetst.stgentry COMMAND backend_title_stagetst_stgentry)
+
+add_executable(backend_title_visualmd_vmdpalt
+  unit/title/visualmd/test_vmdpalt.c
+)
+
+target_include_directories(backend_title_visualmd_vmdpalt PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_visualmd_vmdpalt PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.visualmd.vmdpalt COMMAND backend_title_visualmd_vmdpalt)
+
+add_executable(backend_title_visualmd_vmdgrid
+  unit/title/visualmd/test_vmdgrid.c
+)
+
+target_include_directories(backend_title_visualmd_vmdgrid PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_visualmd_vmdgrid PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.visualmd.vmdgrid COMMAND backend_title_visualmd_vmdgrid)
+
+add_executable(backend_title_visualmd_vmddo
+  unit/title/visualmd/test_vmddo.c
+)
+
+target_include_directories(backend_title_visualmd_vmddo PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_visualmd_vmddo PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.visualmd.vmddo COMMAND backend_title_visualmd_vmddo)
+
+add_executable(backend_title_visualmd_vmdentry
+  unit/title/visualmd/test_vmdentry.c
+)
+
+target_include_directories(backend_title_visualmd_vmdentry PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_visualmd_vmdentry PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.visualmd.vmdentry COMMAND backend_title_visualmd_vmdentry)
+
+add_executable(backend_title_visualmd_vmdsprt
+  unit/title/visualmd/test_vmdsprt.c
+)
+
+target_include_directories(backend_title_visualmd_vmdsprt PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_visualmd_vmdsprt PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.visualmd.vmdsprt COMMAND backend_title_visualmd_vmdsprt)
+
 add_executable(backend_plchg
   unit/test_plchg.c
 )
@@ -492,6 +1189,23 @@ set_target_properties(backend_et1 PROPERTIES
 )
 
 add_test(NAME backend.et1 COMMAND backend_et1)
+
+add_executable(backend_emie1
+  unit/test_emie1.c
+)
+
+target_include_directories(backend_emie1 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_emie1 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.emie1 COMMAND backend_emie1)
 
 add_executable(backend_branko1
   unit/test_branko1.c
@@ -6545,6 +7259,47 @@ add_custom_target(backend-tests
     backend_block
     backend_suicide
     backend_taki
+    backend_tree
+    backend_special_sin
+    backend_special_bact
+    backend_special_fadein
+    backend_special_etc_s
+    backend_title_common_hmx_oeeactl
+    backend_title_ta_fadein
+    backend_title_ta_tacolor
+    backend_title_aviopen_aviopndo
+    backend_title_aviopen_aviopnen
+    backend_title_avigood_avigoddo
+    backend_title_avigood_avigoden
+    backend_title_besttime_bestpalt
+    backend_title_besttime_bestsprt
+    backend_title_besttime_bestdo
+    backend_title_besttime_besentry
+    backend_title_opening_opnpalt
+    backend_title_opening_opngrid
+    backend_title_opening_opnentry
+    backend_title_opening_opndo
+    backend_title_savedata_svdpalt
+    backend_title_savedata_svdgrid
+    backend_title_savedata_svdentry
+    backend_title_savedata_svdfile
+    backend_title_savedata_svdedit
+    backend_title_savedata_svddo
+    backend_title_savedata_svdmenu
+    backend_title_savedata_svdsprt
+    backend_title_soundtst_sndpalt
+    backend_title_soundtst_sndsprt
+    backend_title_soundtst_sndentry
+    backend_title_soundtst_snddo
+    backend_title_stagetst_stgpalt
+    backend_title_stagetst_stgdo
+    backend_title_stagetst_stgsprt
+    backend_title_stagetst_stgentry
+    backend_title_visualmd_vmdpalt
+    backend_title_visualmd_vmdgrid
+    backend_title_visualmd_vmddo
+    backend_title_visualmd_vmdentry
+    backend_title_visualmd_vmdsprt
     backend_plchg
     backend_plchg6
     backend_ring
@@ -6558,6 +7313,7 @@ add_custom_target(backend-tests
     backend_etc
     backend_edit
     backend_et1
+    backend_emie1
     backend_branko1
     backend_dai_rd1
     backend_dai_k

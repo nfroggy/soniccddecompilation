@@ -800,6 +800,21 @@ tests.
   is intentionally not fixed during characterization.
 - Related source location: `src/game.c`, line 181.
 
+## `src/title/opening/opngrid.c`: standalone comparison has no effect
+
+- Test case or snapshot path:
+  `tests/backend/unit/title/opening/test_opngrid.c`
+- Variant and build configuration: title opening grid include path, MSVC
+  19.51, Win32 Debug
+- Observed exact behavior: compiling the characterization test emits MSVC
+  warning C4552 for the statement `(Uint32)(indx ^ 2) < 1;` in
+  `OEGridDelete`. The comparison result is discarded and does not affect grid
+  cleanup.
+- Why the behavior looks suspicious: the expression looks like it may have
+  been intended to distinguish index `2`, but as written it is a no-op. This
+  is intentionally not fixed during characterization.
+- Related source location: `src/title/opening/opngrid.c`, line 129.
+
 ## `src/game.c`: `sdfdout` pause fade-out body is unreachable
 
 - Test case or snapshot path: `tests/backend/unit/test_game.c`
@@ -826,3 +841,63 @@ tests.
   or a missed write between the two checks. This is intentionally not fixed
   during characterization.
 - Related source location: `src/r6/shoot6.c`, lines 579 and 592-593.
+
+## `src/title/savedata/svdsprt.c`: block-number guard is always true
+
+- Test case or snapshot path:
+  `tests/backend/unit/title/savedata/test_svdsprt.c`
+- Variant and build configuration: savedata sprite include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `CreateCharSprt` and `DeleteCharSprt` use
+  `nBlockNo >= 2 || nBlockNo < 9` to select the file-sprite block path. That
+  expression is true for every integer, so the final `return 0` in
+  `CreateCharSprt` is unreachable and out-of-range `nBlockNo` values would index
+  outside `hSprFile[nBlockNo - 2]`.
+- Why the behavior looks suspicious: the condition looks like it may have meant
+  to require `2 <= nBlockNo < 9`, probably using `&&` rather than `||`. This is
+  intentionally not fixed during characterization.
+- Related source locations: `src/title/savedata/svdsprt.c`, lines 134, 155, and
+  181.
+
+## `src/title/opening/opndo.c`: `GetNextMenu` can fall through without returning
+
+- Test case or snapshot path: `tests/backend/unit/title/opening/test_opndo.c`
+- Variant and build configuration: opening title include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: compiling the characterization test emits MSVC
+  warning C4715 because `GetNextMenu` has no return after the forward/backward
+  seven-entry search loops. The tests cover enabled-entry searches and do not
+  call the all-disabled-table case because the returned value would be
+  undefined.
+- Why the behavior looks suspicious: callers appear to expect a valid menu
+  index, but the helper has no fallback when every menu entry is disabled. This
+  is intentionally not fixed during characterization.
+- Related source location: `src/title/opening/opndo.c`, line 320.
+
+## `src/title/opening/opndo.c`: planet table reset branch appears unreachable
+
+- Test case or snapshot path: `tests/backend/unit/title/opening/test_opndo.c`
+- Variant and build configuration: opening title include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `OEUpdatePlanet` advances through the `ptPlnt`
+  timing table and resets at the sentinel entry where `time == -1`. The
+  preceding `if ((Uint32)++num > 7)` reset does not appear reachable through the
+  table's normal timing values.
+- Why the behavior looks suspicious: the code has two reset mechanisms for the
+  same table, but the sentinel path seems to handle the terminal entry first.
+  This is intentionally not fixed during characterization.
+- Related source location: `src/title/opening/opndo.c`, line 144.
+
+## `src/title/common/hmx_oeeactl.c`: `ld_load_sprite2` loads one more bitmap than its clamped size
+
+- Test case or snapshot path: `tests/backend/unit/title/common/test_hmx_oeeactl.c`
+- Variant and build configuration: common title helper include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: after clamping `read_count` to the caller-provided
+  `size`, `ld_load_sprite2` increments `read_count` before the load loop. With
+  `header.count == 32` and `size == 32`, it returns `33` and writes
+  `bitmaps[32]`.
+- Why the behavior looks suspicious: the caller-provided size appears to be a
+  capacity, but this path writes one element past that capacity after clamping.
+  This is intentionally not fixed during characterization.
+- Related source location: `src/title/common/hmx_oeeactl.c`, lines 284-291.

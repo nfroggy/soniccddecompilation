@@ -36,6 +36,18 @@ mapping.
   suspicious hardcoded key state is recorded in
   `docs/backend_potential_bugs.md`.
 
+## `src/emie1.c`
+
+- `emie1_matu`, line 147: this is the brace-only `else` line for the
+  negative-speed branch. The branch body immediately below it is covered by
+  `tests/backend/unit/test_emie1.c`, including negative chase, clamp, and
+  boundary behavior, but MSVC coverage still reports the `else` source line as
+  uncovered.
+- `dakicheck`, line 405: the assignment/comparison in the `else if` is
+  reported as partial even after tests cover the cddat-facing path, the
+  nonnegative fallthrough, and the negative return path. The tested outcomes
+  document the existing distance guards without direct raw actor-storage reads.
+
 ## `src/ring.c`
 
 - `flyringinit`, line 292: `d4.w = 648` is guarded by
@@ -512,3 +524,21 @@ mapping.
   caller paths, pause toggles, `sdfdin`, DA selection, game init, flower setup,
   and normal/exit game loops are covered by `tests/backend/unit/test_game.c`;
   the suspicious condition is recorded in `docs/backend_potential_bugs.md`.
+
+## `src/title/savedata/svdsprt.c`
+
+- `CreateCharSprt`, lines 134 and 155, and `DeleteCharSprt`, line 181: the
+  block guard is `nBlockNo >= 2 || nBlockNo < 9`, which is true for every
+  integer value. The final `return 0` path cannot be reached through any input,
+  and tests avoid out-of-range block numbers because the guarded body indexes
+  `hSprFile[nBlockNo - 2]`.
+
+## `src/title/opening/opndo.c`
+
+- `GetNextMenu`, line 320: if all seven menu entries are disabled, the function
+  reaches the end without returning a value. The test suite covers forward and
+  backward searches with enabled entries and avoids the undefined no-entry
+  result.
+- `OEUpdatePlanet`, line 144: the `++num > 7` reset appears unreachable through
+  the `ptPlnt` table because entry `7` is the `time == -1` sentinel handled by
+  the following branch before `num` can be incremented past `7`.
