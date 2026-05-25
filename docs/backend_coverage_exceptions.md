@@ -26,6 +26,16 @@ mapping.
   `tests/backend/unit/test_suicide.c`, and the suspicious unsigned comparison is
   recorded in `docs/backend_potential_bugs.md`.
 
+## `src/edit.c`
+
+- `edit`, lines 84-95: the actor-spawn block is guarded by `if (CKey & 128)`
+  immediately after the local `CKey` has been assigned `0`. Under 32-bit MSVC
+  Win32, no caller-provided input can make that branch true. The disabled,
+  movement, map lookup, entry cycling, exit, display-field update, and
+  `CKeyTogle` behavior are covered by `tests/backend/unit/test_edit.c`, and the
+  suspicious hardcoded key state is recorded in
+  `docs/backend_potential_bugs.md`.
+
 ## `src/ring.c`
 
 - `flyringinit`, line 292: `d4.w = 648` is guarded by
@@ -71,6 +81,16 @@ mapping.
   The false branch, normal thunder path, null-table path, and `= 30`
   assignment are covered by `tests/backend/unit/r6/test_dev62c.c`.
 
+## `src/r6/shoot6.c`
+
+- `shootermove`, line 593: this repeats `if (actwk[0].r_no0 == 4)` after an
+  earlier identical check in the same function has already changed `r_no0` from
+  `4` to `2`. No intervening statement writes `r_no0`, so the second body does
+  not appear reachable under 32-bit MSVC Win32. The wrapper dispatch cases,
+  early returns, first `r_no0 == 4` adjustment, route movement, button gates,
+  and speed calculations are covered by `tests/backend/unit/r6/test_shoot6.c`;
+  the duplicated check is recorded in `docs/backend_potential_bugs.md`.
+
 ## `src/goal.c`
 
 - `gene_move0`, lines 69, 72, and 80-83: the horizontal bounce path repeats the
@@ -106,6 +126,9 @@ mapping.
 
 ## `src/r8/trap_r82.c`
 
+- `itaset_chk`, line 228: the switch line remains partial under MSVC coverage
+  even though `tests/backend/unit/r8/test_trap_r82.c` covers all four case
+  labels (`300`, `600`, `840`, and `1080`) and the default return path.
 - `togeitax`, lines 274-276: this is a duplicate guard immediately after an
   identical `if (actwk[ride_number].actno != 51)` that already calls
   `frameout` and returns. If the first guard is true, execution never reaches
@@ -240,3 +263,252 @@ mapping.
   The timed stop, child launch setup, stop-to-dash, dash, and child movement
   paths are covered by `tests/backend/unit/r4/test_tagameb4.c`, and the
   suspicious signedness check is recorded in `docs/backend_potential_bugs.md`.
+
+## `src/r4/coli4.c`
+
+- `pcolspecial`, line 335: `cColiNo` is computed as
+  `pColliAct->colino & 63`, so the subsequent `if (cColiNo > 63)` body is not
+  reachable under 32-bit MSVC Win32. The `bossstart == 1` below-60 and 60-63
+  paths are covered by `tests/backend/unit/r4/test_coli4.c`, and the redundant
+  range check is recorded in `docs/backend_potential_bugs.md`.
+
+## `src/r4/boss_4.c`
+
+- `egg4air_01`, line 263: `E4A_Y` is a `Sint16`, so the
+  `E4A_Y == 65344` fallback body does not appear reachable under 32-bit MSVC
+  Win32. The compiled default route tables also only select `E4A_VEC == 2`
+  with `E4A_Y == 1088`. Reachable route vectors, the dormant `E4A_VEC == 3`
+  branch via a temporary test-table mutation, table-boundary cases, hit
+  cooldowns, bomb spawning, air-head setup, gate cleanup, and boss escape/drop
+  paths are covered by `tests/backend/unit/r4/test_boss_4.c`.
+
+## `src/r4/boss_4_2.c`
+
+- `ychg_ret`, line 895: the condition is written as
+  `if (!(pEggwk->actfree[2]) & 8)`. Under 32-bit MSVC Win32, the logical-not
+  result is `0` or `1`, so bitwise-and with `8` is always zero and the body does
+  not appear reachable. The matching positive/negative rotation cases,
+  `actfree[2] & 8` priority toggle, radius end normalization, bubble deletion,
+  projectile cleanup, boss screen/demo/movement/damage/escape states, and mecha
+  follower path are covered by `tests/backend/unit/r4/test_boss_4_2.c`; the
+  suspicious condition is recorded in `docs/backend_potential_bugs.md`.
+
+## `src/r4/game4.c`
+
+- `sdfdout`, lines 605-614: the body is guarded by
+  `if (!(pauseflag.b.h | 128))`. Under 32-bit MSVC Win32, bitwise-or with `128`
+  is always nonzero, so logical-not always makes the condition false. The caller
+  paths, pause toggles, `sdfdin`, DA selection, game init, water movement, and
+  water collision behavior are covered by `tests/backend/unit/r4/test_game4.c`;
+  the suspicious condition is recorded in `docs/backend_potential_bugs.md`.
+
+## `src/r4/scr41a.c`
+
+- `scrollwrtb`, line 849: `WrtTblCnt` is assigned from
+  `(Uint16)(scrb_v_posit.w.h / 16)`, so the subsequent `if (WrtTblCnt < 0)`
+  guard does not appear reachable under 32-bit MSVC Win32. The high clamp and
+  active scroll-write paths are covered by `tests/backend/unit/r4/test_scr41a.c`.
+- `mapadrset99`, line 1002: `i` is calculated after unsigned offset clamping,
+  so the subsequent `if (i < 0)` guard does not appear reachable under 32-bit
+  MSVC Win32. Empty-screen, populated-screen, and high-offset clamp paths are
+  covered by `tests/backend/unit/r4/test_scr41a.c`.
+
+## `src/r4/scr41b.c`
+
+- `mapadrset99`, line 921: `i` is calculated after unsigned offset clamping,
+  so the subsequent `if (i < 0)` guard does not appear reachable under 32-bit
+  MSVC Win32. Empty-screen, populated-screen, `mapadrset1`, `mapadrset2`, and
+  high-offset clamp paths are covered by `tests/backend/unit/r4/test_scr41b.c`.
+
+## `src/r4/scr41c.c`
+
+- `mapadrset99`, line 925: `i` is calculated after unsigned offset clamping,
+  so the subsequent `if (i < 0)` guard does not appear reachable under 32-bit
+  MSVC Win32. Empty-screen, populated-screen, `mapadrset1`, `mapadrset2`, and
+  high-offset clamp paths are covered by `tests/backend/unit/r4/test_scr41c.c`.
+
+## `src/r4/scr41d.c`
+
+- `mapadrset99`, line 921: `i` is calculated after unsigned offset clamping,
+  so the subsequent `if (i < 0)` guard does not appear reachable under 32-bit
+  MSVC Win32. Empty-screen, populated-screen, `mapadrset1`, `mapadrset2`, and
+  high-offset clamp paths are covered by `tests/backend/unit/r4/test_scr41d.c`.
+
+## `src/r4/scr42a.c`
+
+- `mapadrset99`, line 916: `i` is calculated after unsigned offset clamping,
+  so the subsequent `if (i < 0)` guard does not appear reachable under 32-bit
+  MSVC Win32. Empty-screen, populated-screen, `mapadrset1`, `mapadrset2`, and
+  wrapped/high-offset clamp paths are covered by
+  `tests/backend/unit/r4/test_scr42a.c`.
+
+## `src/r4/scr42c.c`
+
+- `mapadrset99`, line 917: `i` is calculated after unsigned offset clamping,
+  so the subsequent `if (i < 0)` guard does not appear reachable under 32-bit
+  MSVC Win32. Empty-screen, populated-screen, `mapadrset1`, `mapadrset2`, and
+  wrapped/high-offset clamp paths are covered by
+  `tests/backend/unit/r4/test_scr42c.c`.
+
+## `src/r4/scr43c.c`
+
+- `mapadrset99`, line 912: `i` is calculated after unsigned offset clamping,
+  so the subsequent `if (i < 0)` guard does not appear reachable under 32-bit
+  MSVC Win32. Empty-screen, populated-screen, `mapadrset1`, `mapadrset2`,
+  saved-demo start-position, and wrapped/high-offset clamp paths are covered by
+  `tests/backend/unit/r4/test_scr43c.c`.
+
+## `src/r4/scr43d.c`
+
+- `mapadrset99`, line 916: `i` is calculated after unsigned offset clamping,
+  so the subsequent `if (i < 0)` guard does not appear reachable under 32-bit
+  MSVC Win32. Empty-screen, populated-screen, `mapadrset1`, `mapadrset2`, and
+  wrapped/high-offset clamp paths are covered by
+  `tests/backend/unit/r4/test_scr43d.c`.
+
+## `src/r5/game5.c`
+
+- `sdfdout`, lines 600-609: the body is guarded by
+  `if (!(pauseflag.b.h | 128))`. Under 32-bit MSVC Win32, bitwise-or with `128`
+  is always nonzero, so logical-not always makes the condition false. The
+  caller paths, pause toggles, `sdfdin`, DA selection, game init, flower setup,
+  and normal/exit game loops are covered by `tests/backend/unit/r5/test_game5.c`;
+  the suspicious condition is recorded in `docs/backend_potential_bugs.md`.
+
+## `src/r5/scr51a.c`
+
+- `scrollwrtb`, lines 890 and 892: `WrtTblCnt` is assigned from a `Uint16`
+  expression, so the negative clamp does not appear reachable under 32-bit MSVC
+  Win32. The high clamp starts a sixteen-entry walk at row `113`, beyond the
+  safe range of the 65-byte `z81awrttbl`, so the retained tests cover normal
+  write-table rows and avoid relying on the unsafe out-of-bounds table walk.
+- `mapadrset99`, line 1045: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+
+## `src/r5/scr51b.c`
+
+- `scrollwrtb`, lines 859 and 861: `WrtTblCnt` is assigned from a `Uint16`
+  expression, so the negative clamp does not appear reachable under 32-bit MSVC
+  Win32. The high clamp starts a sixteen-entry walk at row `113`, beyond the
+  safe range of the 65-byte `z81awrttbl`, so the retained tests cover normal
+  rows, including a test-owned nonzero row mutation, and avoid relying on the
+  unsafe out-of-bounds table walk.
+- `mapadrset99`, line 1010: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+
+## `src/r5/scr51c.c`
+
+- `scrollwrtb`, lines 771 and 773: `WrtTblCnt` is assigned from a `Uint16`
+  expression, so the negative clamp does not appear reachable under 32-bit MSVC
+  Win32. The high clamp starts a sixteen-entry walk at row `113`, beyond the
+  safe range of the 65-byte `z81awrttbl`, so the retained tests cover normal
+  rows, including a test-owned nonzero row mutation, and avoid relying on the
+  unsafe out-of-bounds table walk.
+- `mapadrset99`, line 922: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+
+## `src/r5/scr51d.c`
+
+- `scrollwrtb`, lines 832 and 834: `WrtTblCnt` is assigned from a `Uint16`
+  expression, so the negative clamp does not appear reachable under 32-bit MSVC
+  Win32. The high clamp starts a sixteen-entry walk at row `113`, beyond the
+  safe range of the 65-byte `z81awrttbl`, so the retained tests cover normal
+  rows, including a test-owned nonzero row mutation, and avoid relying on the
+  unsafe out-of-bounds table walk.
+- `mapadrset99`, line 983: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+
+## `src/r5/scr52a.c`
+
+- `scrollwrtb`, lines 883 and 885: `WrtTblCnt` is assigned from a `Uint16`
+  expression, so the negative clamp does not appear reachable under 32-bit MSVC
+  Win32. The high clamp starts a sixteen-entry walk at row `113`, beyond the
+  safe range of both `z81awrttbl` and `z81awrttbl2`, so the retained tests cover
+  normal write-table rows and avoid relying on the unsafe out-of-bounds table
+  walk.
+- `mapadrset99`, line 1038: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+
+## `src/r5/scr52b.c`
+
+- `scrollwrtb`, lines 858 and 860: `WrtTblCnt` is assigned from a `Uint16`
+  expression, so the negative clamp does not appear reachable under 32-bit MSVC
+  Win32. The high clamp starts a sixteen-entry walk at row `113`, beyond the
+  safe range of the 65-byte `z81awrttbl`, so the retained tests cover normal
+  rows, including a test-owned nonzero row mutation, and avoid relying on the
+  unsafe out-of-bounds table walk.
+- `mapadrset99`, line 1009: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+
+## `src/r5/scr52c.c`
+
+- `scrollwrtb`, lines 771 and 773: `WrtTblCnt` is assigned from a `Uint16`
+  expression, so the negative clamp does not appear reachable under 32-bit MSVC
+  Win32. The high clamp starts a sixteen-entry walk at row `113`, beyond the
+  safe range of the 65-byte `z81awrttbl`, so the retained tests cover normal
+  rows, including a test-owned nonzero row mutation, and avoid relying on the
+  unsafe out-of-bounds table walk.
+- `mapadrset99`, line 922: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+
+## `src/r5/scr52d.c`
+
+- `scrollwrtb`, lines 832 and 834: `WrtTblCnt` is assigned from a `Uint16`
+  expression, so the negative clamp does not appear reachable under 32-bit MSVC
+  Win32. The high clamp starts a sixteen-entry walk at row `113`, beyond the
+  safe range of the 65-byte `z81awrttbl`, so the retained tests cover normal
+  rows, including a test-owned nonzero row mutation, and avoid relying on the
+  unsafe out-of-bounds table walk.
+- `mapadrset99`, line 983: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+
+## `src/r5/scr53c.c`
+
+- `scrollwrtb`, lines 704 and 706: `WrtTblCnt` is assigned from a `Uint16`
+  expression, so the negative clamp does not appear reachable under 32-bit MSVC
+  Win32. The high clamp starts a sixteen-entry walk at row `113`, beyond the
+  safe range of the 65-byte `z81awrttbl`, so the retained tests cover normal
+  rows, including a test-owned nonzero row mutation, and avoid relying on the
+  unsafe out-of-bounds table walk.
+- `mapadrset99`, line 855: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+
+## `src/r5/scr53d.c`
+
+- `scrollwrtb`, lines 747 and 749: `WrtTblCnt` is assigned from a `Uint16`
+  expression, so the negative clamp does not appear reachable under 32-bit MSVC
+  Win32. The high clamp starts a sixteen-entry walk at row `113`, beyond the
+  safe range of the 65-byte `z81awrttbl`, so the retained tests cover normal
+  rows, including a test-owned nonzero row mutation, and avoid relying on the
+  unsafe out-of-bounds table walk.
+- `mapadrset99`, line 898: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+
+## `src/game.c`
+
+- `sdfdout`, lines 613-622: the body is guarded by
+  `if (!(pauseflag.b.h | 128))`. Under 32-bit MSVC Win32, bitwise-or with `128`
+  is always nonzero, so logical-not always makes the condition false. The
+  caller paths, pause toggles, `sdfdin`, DA selection, game init, flower setup,
+  and normal/exit game loops are covered by `tests/backend/unit/test_game.c`;
+  the suspicious condition is recorded in `docs/backend_potential_bugs.md`.

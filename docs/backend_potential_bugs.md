@@ -81,6 +81,20 @@ tests.
   This is intentionally not fixed during characterization.
 - Related source location: `src/suicide.c`, lines 21-23.
 
+## `src/edit.c`: actor spawn path is hardcoded unreachable
+
+- Test case or snapshot path: `tests/backend/unit/test_edit.c`
+- Variant and build configuration: `R11A`, MSVC 19.51, Win32 Debug
+- Observed exact behavior: `edit` always sets its local `CKey` value to `0`
+  before checking `if (CKey & 128)`, so the guarded `actwkchk`/actor-spawn
+  block is not reached. The trailing `CKeyTogle = CKey & 1` assignment stores
+  `0`.
+- Why the behavior looks suspicious: the block appears to preserve a key-gated
+  edit-mode spawn operation, but the current source discards any external key
+  state before the gate. This is intentionally not fixed during
+  characterization.
+- Related source location: `src/edit.c`, lines 82-99.
+
 ## `src/item.c`: `error_item` contains a no-effect comparison
 
 - Test case or snapshot path: `tests/backend/unit/test_item.c`
@@ -504,3 +518,311 @@ tests.
   intended to test bit 7 as a signed flag. This is intentionally not fixed
   during characterization.
 - Related source location: `src/r4/tagameb4.c`, line 220.
+
+## `src/r4/coli4.c`: masked collision id is checked for values above 63
+
+- Test case or snapshot path: `tests/backend/unit/r4/test_coli4.c`
+- Variant and build configuration: default/R4 include path, MSVC 19.51, Win32
+  Debug
+- Observed exact behavior: `pcolspecial` masks `colino` with `63`, then checks
+  `if (cColiNo > 63)` in the `bossstart == 1` path. The greater-than check is
+  not reachable after the mask.
+- Why the behavior looks suspicious: the condition is redundant and may be a
+  leftover range guard from before masking. This is intentionally not fixed
+  during characterization.
+- Related source location: `src/r4/coli4.c`, line 334.
+
+## `src/r4/boss_4_2.c`: logical-not is combined with a bit mask
+
+- Test case or snapshot path: `tests/backend/unit/r4/test_boss_4_2.c`
+- Variant and build configuration: default/R4 boss 2 include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `ychg_ret` uses
+  `if (!(pEggwk->actfree[2]) & 8)` before optionally negating the bubble's
+  angular speed. The condition never reaches its body because logical-not
+  produces only `0` or `1`, and neither value has bit `8` set.
+- Why the behavior looks suspicious: the expression looks like it may have
+  meant `if (!(pEggwk->actfree[2] & 8))`, matching nearby direction checks.
+  This is intentionally not fixed during characterization.
+- Related source location: `src/r4/boss_4_2.c`, line 894.
+
+## `src/r4/playsub4.c`: standalone pointer arithmetic has no effect
+
+- Test case or snapshot path: `tests/backend/unit/r4/test_playsub4.c`
+- Variant and build configuration: default/R4 playsub include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: compiling the characterization test emits MSVC
+  warning C4552 for the statement `pActwk + 1;` in `plawamaster_jump2`. The
+  statement does not change `pActwk` or any actor state.
+- Why the behavior looks suspicious: the expression looks like it may have been
+  intended to advance the pointer or was left behind during translation. This
+  is intentionally not fixed during characterization.
+- Related source location: `src/r4/playsub4.c`, line 709.
+
+## `src/r5/boss_5.c`: standalone pointer arithmetic has no effect
+
+- Test case or snapshot path: `tests/backend/unit/r5/test_boss_5.c`
+- Variant and build configuration: default/R5 boss include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: compiling the characterization test emits MSVC
+  warning C4552 for the statements `pActwk + 1;` in `egg5belt_3` and
+  `frameout_sp4`. The expression results are discarded and do not modify the
+  actor pointer or actor state.
+- Why the behavior looks suspicious: both expressions look like leftover
+  pointer advances from translation or editing. This is intentionally not fixed
+  during characterization.
+- Related source locations: `src/r5/boss_5.c`, lines 1164 and 1364.
+
+## `src/r4/game4.c`: standalone comparison has no effect
+
+- Test case or snapshot path: `tests/backend/unit/r4/test_game4.c`
+- Variant and build configuration: default/R4 game include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: compiling the characterization test emits MSVC
+  warning C4552 for the statement `((Uint32)demo_cnt ^ 2048) < 1;` in
+  `game`. The comparison result is discarded and does not affect control flow.
+- Why the behavior looks suspicious: the expression looks like it may have
+  been intended to guard demo timing logic, but as written it is a no-op. This
+  is intentionally not fixed during characterization.
+- Related source location: `src/r4/game4.c`, line 170.
+
+## `src/r4/game4.c`: `sdfdout` pause fade-out body is unreachable
+
+- Test case or snapshot path: `tests/backend/unit/r4/test_game4.c`
+- Variant and build configuration: default/R4 game include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `sdfdout` always calls `soundset(171)`, but the
+  body guarded by `if (!(pauseflag.b.h | 128))` is not reached because
+  bitwise-or with `128` always produces a nonzero value.
+- Why the behavior looks suspicious: the condition looks like it may have meant
+  to check whether bit `128` was absent, for example `!(pauseflag.b.h & 128)`.
+  This is intentionally not fixed during characterization.
+- Related source location: `src/r4/game4.c`, line 603.
+
+## `src/r5/game5.c`: `sdfdout` pause fade-out body is unreachable
+
+- Test case or snapshot path: `tests/backend/unit/r5/test_game5.c`
+- Variant and build configuration: R5 game include path, MSVC 19.51, Win32
+  Debug
+- Observed exact behavior: `sdfdout` always calls `soundset(171)`, but the
+  body guarded by `if (!(pauseflag.b.h | 128))` is not reached because
+  bitwise-or with `128` always produces a nonzero value.
+- Why the behavior looks suspicious: the condition looks like it may have meant
+  to check whether bit `128` was absent, for example `!(pauseflag.b.h & 128)`.
+  This is intentionally not fixed during characterization.
+- Related source location: `src/r5/game5.c`, line 598.
+
+## `src/r5/scr51a.c`: `scrollwrtb` can read past its write table
+
+- Test case or snapshot path: discovered while expanding
+  `tests/backend/unit/r5/test_scr51a.c`; the unsafe cases are not retained as
+  unit tests.
+- Variant and build configuration: R5 scroll include path, MSVC 19.51, Win32
+  Debug
+- Observed exact behavior: setting the upward update bit with
+  `scrb_v_posit.w.h == 0` makes the first `z81awrttbl` lookup use index `128`
+  on a 65-byte table. Forcing the later high-row clamp to `113` also starts a
+  sixteen-entry loop beyond the safe range of the same table.
+- Why the behavior looks suspicious: the clamp protects only some row values
+  and does not keep all subsequent table reads inside `z81awrttbl`. This is
+  intentionally not fixed during characterization.
+- Related source location: `src/r5/scr51a.c`, lines 850-856 and 887-899.
+
+## `src/r5/scr51b.c`: `scrollwrtb` can read past its write table
+
+- Test case or snapshot path: discovered while expanding
+  `tests/backend/unit/r5/test_scr51b.c`; the unsafe cases are not retained as
+  unit tests.
+- Variant and build configuration: R5 scroll 1B include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: setting the upward update bit with
+  `scrb_v_posit.w.h == 0` makes the first `z81awrttbl` lookup use index `128`
+  on a 65-byte table. Forcing the later high-row clamp to `113` also starts a
+  sixteen-entry loop beyond the safe range of the same table.
+- Why the behavior looks suspicious: the clamp protects only some row values
+  and does not keep all subsequent table reads inside `z81awrttbl`. This is
+  intentionally not fixed during characterization.
+- Related source location: `src/r5/scr51b.c`, lines 824-827 and 856-864.
+
+## `src/r5/scr51c.c`: `scrollwrtb` can read past its write table
+
+- Test case or snapshot path: discovered while expanding
+  `tests/backend/unit/r5/test_scr51c.c`; the unsafe cases are not retained as
+  unit tests.
+- Variant and build configuration: R5 scroll 1C include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: setting the upward update bit with
+  `scrb_v_posit.w.h == 0` makes the first `z81awrttbl` lookup use index `128`
+  on a 65-byte table. Forcing the later high-row clamp to `113` also starts a
+  sixteen-entry loop beyond the safe range of the same table.
+- Why the behavior looks suspicious: the clamp protects only some row values
+  and does not keep all subsequent table reads inside `z81awrttbl`. This is
+  intentionally not fixed during characterization.
+- Related source location: `src/r5/scr51c.c`, lines 736-739 and 768-776.
+
+## `src/r5/scr51d.c`: `scrollwrtb` can read past its write table
+
+- Test case or snapshot path: discovered while expanding
+  `tests/backend/unit/r5/test_scr51d.c`; the unsafe cases are not retained as
+  unit tests.
+- Variant and build configuration: R5 scroll 1D include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: setting the upward update bit with
+  `scrb_v_posit.w.h == 0` makes the first `z81awrttbl` lookup use index `128`
+  on a 65-byte table. Forcing the later high-row clamp to `113` also starts a
+  sixteen-entry loop beyond the safe range of the same table.
+- Why the behavior looks suspicious: the clamp protects only some row values
+  and does not keep all subsequent table reads inside `z81awrttbl`. This is
+  intentionally not fixed during characterization.
+- Related source location: `src/r5/scr51d.c`, lines 797-800 and 829-837.
+
+## `src/r5/scr52a.c`: `scrollwrtb` can read past its write tables
+
+- Test case or snapshot path: discovered while expanding
+  `tests/backend/unit/r5/test_scr52a.c`; the unsafe cases are not retained as
+  unit tests.
+- Variant and build configuration: R5 scroll 2A include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: setting the upward update bit with
+  `scrb_v_posit.w.h == 0` makes the first lookup use index `128` into either
+  `z81awrttbl` or `z81awrttbl2`, depending on `enkeino`. Forcing the later
+  high-row clamp to `113` also starts a sixteen-entry loop beyond the safe range
+  of both write tables.
+- Why the behavior looks suspicious: the clamp protects only some row values
+  and does not keep all subsequent table reads inside the write table selected
+  by `enkeino`. This is intentionally not fixed during characterization.
+- Related source location: `src/r5/scr52a.c`, lines 843-849 and 880-891.
+
+## `src/r5/scr52b.c`: `scrollwrtb` can read past its write table
+
+- Test case or snapshot path: discovered while expanding
+  `tests/backend/unit/r5/test_scr52b.c`; the unsafe cases are not retained as
+  unit tests.
+- Variant and build configuration: R5 scroll 2B include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: setting the upward update bit with
+  `scrb_v_posit.w.h == 0` makes the first `z81awrttbl` lookup use index `128`
+  on a 65-byte table. Forcing the later high-row clamp to `113` also starts a
+  sixteen-entry loop beyond the safe range of the same table.
+- Why the behavior looks suspicious: the clamp protects only some row values
+  and does not keep all subsequent table reads inside `z81awrttbl`. This is
+  intentionally not fixed during characterization.
+- Related source location: `src/r5/scr52b.c`, lines 823-825 and 855-863.
+
+## `src/r5/scr52c.c`: `scrollwrtb` can read past its write table
+
+- Test case or snapshot path: discovered while expanding
+  `tests/backend/unit/r5/test_scr52c.c`; the unsafe cases are not retained as
+  unit tests.
+- Variant and build configuration: R5 scroll 2C include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: setting the upward update bit with
+  `scrb_v_posit.w.h == 0` makes the first `z81awrttbl` lookup use index `128`
+  on a 65-byte table. Forcing the later high-row clamp to `113` also starts a
+  sixteen-entry loop beyond the safe range of the same table.
+- Why the behavior looks suspicious: the clamp protects only some row values
+  and does not keep all subsequent table reads inside `z81awrttbl`. This is
+  intentionally not fixed during characterization.
+- Related source location: `src/r5/scr52c.c`, lines 736-738 and 768-776.
+
+## `src/r5/scr52d.c`: `scrollwrtb` can read past its write table
+
+- Test case or snapshot path: discovered while expanding
+  `tests/backend/unit/r5/test_scr52d.c`; the unsafe cases are not retained as
+  unit tests.
+- Variant and build configuration: R5 scroll 2D include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: setting the upward update bit with
+  `scrb_v_posit.w.h == 0` makes the first `z81awrttbl` lookup use index `128`
+  on a 65-byte table. Forcing the later high-row clamp to `113` also starts a
+  sixteen-entry loop beyond the safe range of the same table.
+- Why the behavior looks suspicious: the clamp protects only some row values
+  and does not keep all subsequent table reads inside `z81awrttbl`. This is
+  intentionally not fixed during characterization.
+- Related source location: `src/r5/scr52d.c`, lines 797-799 and 829-837.
+
+## `src/r5/scr53c.c`: `scrollwrtb` can read past its write table
+
+- Test case or snapshot path: discovered while expanding
+  `tests/backend/unit/r5/test_scr53c.c`; the unsafe cases are not retained as
+  unit tests.
+- Variant and build configuration: R5 scroll 3C include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: setting the upward update bit with
+  `scrb_v_posit.w.h == 0` makes the first `z81awrttbl` lookup use index `128`
+  on a 65-byte table. Forcing the later high-row clamp to `113` also starts a
+  sixteen-entry loop beyond the safe range of the same table.
+- Why the behavior looks suspicious: the clamp protects only some row values
+  and does not keep all subsequent table reads inside `z81awrttbl`. This is
+  intentionally not fixed during characterization.
+- Related source location: `src/r5/scr53c.c`, lines 669-671 and 701-709.
+
+## `src/r5/scr53d.c`: `scrollwrtb` can read past its write table
+
+- Test case or snapshot path: discovered while expanding
+  `tests/backend/unit/r5/test_scr53d.c`; the unsafe cases are not retained as
+  unit tests.
+- Variant and build configuration: R5 scroll 3D include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: setting the upward update bit with
+  `scrb_v_posit.w.h == 0` makes the first `z81awrttbl` lookup use index `128`
+  on a 65-byte table. Forcing the later high-row clamp to `113` also starts a
+  sixteen-entry loop beyond the safe range of the same table.
+- Why the behavior looks suspicious: the clamp protects only some row values
+  and does not keep all subsequent table reads inside `z81awrttbl`. This is
+  intentionally not fixed during characterization.
+- Related source location: `src/r5/scr53d.c`, lines 712-714 and 744-752.
+
+## `src/r4/scr41a.c`: negative guards follow unsigned-derived values
+
+- Test case or snapshot path: `tests/backend/unit/r4/test_scr41a.c`
+- Variant and build configuration: default/R4 scroll include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `scrollwrtb` assigns `WrtTblCnt` from a `Uint16`
+  expression before checking `if (WrtTblCnt < 0)`, and `mapadrset99` checks
+  `if (i < 0)` after clamping unsigned offsets. The guarded bodies do not
+  appear reachable under the test build.
+- Why the behavior looks suspicious: both checks look like defensive clamps
+  left over from a signed-offset implementation. This is intentionally not
+  fixed during characterization.
+- Related source locations: `src/r4/scr41a.c`, lines 849 and 1002.
+
+## `src/game.c`: standalone comparison has no effect
+
+- Test case or snapshot path: `tests/backend/unit/test_game.c`
+- Variant and build configuration: default/common game include path, MSVC
+  19.51, Win32 Debug
+- Observed exact behavior: compiling the characterization test emits MSVC
+  warning C4552 for the statement `(Uint32)(demo_cnt ^ 2048) < 1;` in `game`.
+  The comparison result is discarded and does not affect control flow.
+- Why the behavior looks suspicious: the expression looks like it may have
+  been intended to guard demo timing logic, but as written it is a no-op. This
+  is intentionally not fixed during characterization.
+- Related source location: `src/game.c`, line 181.
+
+## `src/game.c`: `sdfdout` pause fade-out body is unreachable
+
+- Test case or snapshot path: `tests/backend/unit/test_game.c`
+- Variant and build configuration: default/common game include path, MSVC
+  19.51, Win32 Debug
+- Observed exact behavior: `sdfdout` always calls `soundset(171)`, but the
+  body guarded by `if (!(pauseflag.b.h | 128))` is not reached because
+  bitwise-or with `128` always produces a nonzero value.
+- Why the behavior looks suspicious: the condition looks like it may have meant
+  to check whether bit `128` was absent, for example `!(pauseflag.b.h & 128)`.
+  This is intentionally not fixed during characterization.
+- Related source location: `src/game.c`, line 611.
+
+## `src/r6/shoot6.c`: duplicate `r_no0 == 4` check appears unreachable
+
+- Test case or snapshot path: `tests/backend/unit/r6/test_shoot6.c`
+- Variant and build configuration: R6 shooter include path, MSVC 19.51, Win32
+  Debug
+- Observed exact behavior: `shootermove` checks `if (actwk[0].r_no0 == 4)` and
+  changes it to `2`, then later checks the same value again without any
+  intervening write to `r_no0`. The second guarded body does not appear
+  reachable through normal state setup.
+- Why the behavior looks suspicious: this looks like duplicated state cleanup,
+  or a missed write between the two checks. This is intentionally not fixed
+  during characterization.
+- Related source location: `src/r6/shoot6.c`, lines 579 and 592-593.

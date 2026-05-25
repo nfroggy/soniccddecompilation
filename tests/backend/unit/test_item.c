@@ -242,6 +242,14 @@ static void test_timedisp_and_time_item_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 0, actionsub_count);
 
     reset_item_state();
+    actwk[1].r_no0 = 4;
+    time_item = 1;
+    gametimer.b.l = 0;
+    timedisp(&actwk[1]);
+    TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
+    TEST_ASSERT_EQ_INT(ctx, 0, actwk[1].patno);
+
+    reset_item_state();
     ta_flag = 1;
     t_item(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
@@ -645,6 +653,13 @@ static void test_item2_powerup_cases(test_context *ctx) {
     powerup_init(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[1].r_no0);
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[1].mstno.w);
+
+    reset_item_state();
+    actwk[1].r_no0 = 6;
+    actwk[1].patno = 11;
+    item2(&actwk[1]);
+    TEST_ASSERT_EQ_INT(ctx, 11, actwk[1].patno);
+    TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 }
 
 TEST_MAIN_BEGIN;

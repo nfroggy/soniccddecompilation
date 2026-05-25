@@ -495,6 +495,13 @@ static void test_togeita_move2_periodically_spawns_extra_piece(
 
     togeita(main);
 
+    TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
+    TEST_ASSERT_EQ_INT(ctx, 51, extra->actno);
+    TEST_ASSERT_EQ_INT(ctx, 300, extra->xposi.w.h);
+    TEST_ASSERT_EQ_INT(ctx, 72, extra->yposi.w.h);
+    TEST_ASSERT_EQ_INT(ctx, 3, extra->userflag.b.h);
+    TEST_ASSERT_EQ_INT(ctx, 4, main->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 1, emycol_d_count);
 }
 
 static void test_togeita_move2_extra_piece_later_tick_cases(test_context *ctx) {
@@ -522,7 +529,42 @@ static void test_togeita_move2_extra_piece_later_tick_cases(test_context *ctx) {
 
         togeita(main);
 
+        TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
+        TEST_ASSERT_EQ_INT(ctx, 51, extra->actno);
+        TEST_ASSERT_EQ_INT(ctx, 300, extra->xposi.w.h);
+        TEST_ASSERT_EQ_INT(ctx, 88, extra->yposi.w.h);
+        TEST_ASSERT_EQ_INT(ctx, 2, extra->userflag.b.h);
+        TEST_ASSERT_EQ_INT(ctx, 3, main->actfree[17]);
+        TEST_ASSERT_EQ_INT(ctx, 1, emycol_d_count);
     }
+}
+
+static void test_togeita_move2_extra_piece_default_tick_returns(
+    test_context *ctx) {
+    sprite_status *main = &actwk[2];
+    sprite_status *extra = &actwk[9];
+
+    reset_trap_state();
+    main->actno = 51;
+    main->r_no0 = 4;
+    main->xposi.w.h = 244;
+    main->yposi.w.h = 120;
+    main->userflag.b.h = 0;
+    main->actfree[17] = 3;
+    set_actfree_word(main, 6, 300);
+    set_actfree_word(main, 8, 120);
+    set_actfree_word(main, 12, 300);
+    actwk[0].xposi.w.h = 300;
+    actwk[0].yposi.w.h = 120;
+    queue_actwk(extra);
+    emycol_d_result = 0;
+
+    togeita(main);
+
+    TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
+    TEST_ASSERT_EQ_INT(ctx, 0, extra->actno);
+    TEST_ASSERT_EQ_INT(ctx, 3, main->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 1, emycol_d_count);
 }
 
 static void test_togeita_move2_skips_extra_piece_for_far_above_player(
@@ -1012,6 +1054,7 @@ TEST_MAIN_BEGIN;
     test_togeita_move2_existing_stop_skips_collision(&ctx);
     test_togeita_move2_periodically_spawns_extra_piece(&ctx);
     test_togeita_move2_extra_piece_later_tick_cases(&ctx);
+    test_togeita_move2_extra_piece_default_tick_returns(&ctx);
     test_togeita_move2_skips_extra_piece_for_far_above_player(&ctx);
     test_togeita_move2_skips_extra_piece_for_outside_x(&ctx);
     test_togeita_move2_extra_piece_allocation_failure_is_ignored(&ctx);
