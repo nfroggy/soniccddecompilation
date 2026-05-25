@@ -901,3 +901,30 @@ tests.
   capacity, but this path writes one element past that capacity after clamping.
   This is intentionally not fixed during characterization.
 - Related source location: `src/title/common/hmx_oeeactl.c`, lines 284-291.
+
+## `src/player6.c`: standalone comparison has no effect
+
+- Test case or snapshot path: `tests/backend/unit/test_player6.c`
+- Variant and build configuration: common stage-6 player helper, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: compiling the characterization test emits MSVC
+  warning C4553 for `generate_flag == 0;`. The expression is evaluated as a
+  comparison and the result is discarded.
+- Why the behavior looks suspicious: this may have been intended to assign
+  `generate_flag = 0`. This is intentionally not fixed during characterization.
+- Related source location: `src/player6.c`, line 272.
+
+## `src/title/thanks/sprmove.c`: `sonicinit` forces the right-facing branch
+
+- Test case or snapshot path:
+  `tests/backend/unit/title/thanks/test_sprmove.c`
+- Variant and build configuration: thanks title include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `sonicinit` reads a random value and masks it to one
+  bit, then immediately assigns `ld0.w.l = 1` before the branch. The `else`
+  branch that would place Sonic at `XPOSI == 496` and give him positive X speed
+  is not reachable through that code path.
+- Why the behavior looks suspicious: the random bit appears intended to choose
+  Sonic's starting side, but the explicit assignment makes the branch
+  deterministic. This is intentionally not fixed during characterization.
+- Related source location: `src/title/thanks/sprmove.c`, lines 132-142.

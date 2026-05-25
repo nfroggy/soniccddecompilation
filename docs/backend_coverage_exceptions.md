@@ -136,6 +136,25 @@ mapping.
   negative. The surrounding air-control, time-attack gate, camera return, and
   drag behavior are covered by `tests/backend/unit/test_player.c`.
 
+## `src/player6.c`
+
+- `lmovecol`, line 988: this matches the `src/player.c` `lmovecol`
+  sign-extension shape. `add_speed` is assigned from `(char)dircolm(...)`, and
+  the function returns immediately when that value is nonnegative. Any value
+  that reaches the shift is therefore sign-extended negative under 32-bit MSVC
+  Win32, so the plain left-shift branch does not appear reachable. The visible
+  return, X/Y adjustment, and side-stop paths are covered by
+  `tests/backend/unit/test_player6.c`.
+- `jumpmove`, lines 1290 and 1294: these match the `src/player.c` drag clamps.
+  After `cal_speed = cal_speed - cal_speed / 32`, integer truncation keeps
+  positive speeds positive and negative speeds negative under 32-bit MSVC
+  Win32. The air-control, camera-return, drag, and small-speed return paths are
+  covered by `tests/backend/unit/test_player6.c`.
+- `patchgmain2`, line 1871: MSVC reports the `switch` line as partial even
+  though `tests/backend/unit/test_player6.c` covers all three case labels
+  reachable from this switch (`253`, `254`, and `255`) and the direct
+  `pat_no < 253` path.
+
 ## `src/r8/trap_r82.c`
 
 - `itaset_chk`, line 228: the switch line remains partial under MSVC coverage
@@ -542,3 +561,12 @@ mapping.
 - `OEUpdatePlanet`, line 144: the `++num > 7` reset appears unreachable through
   the `ptPlnt` table because entry `7` is the `time == -1` sentinel handled by
   the following branch before `num` can be incremented past `7`.
+
+## `src/title/thanks/sprmove.c`
+
+- `sonicinit`, lines 140-142: the preceding code forces `ld0.w.l = 1`, so the
+  `else` branch cannot be reached under 32-bit MSVC Win32. The forced branch is
+  also recorded in `docs/backend_potential_bugs.md`.
+- `s_metalchk`, line 252: MSVC coverage does not credit the bare `} else {`
+  line even though the tests cover the positive-speed path body at lines
+  253-254 and the fallthrough continuation at line 256.

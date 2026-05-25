@@ -969,6 +969,159 @@ set_target_properties(backend_title_visualmd_vmdsprt PROPERTIES
 
 add_test(NAME backend.title.visualmd.vmdsprt COMMAND backend_title_visualmd_vmdsprt)
 
+add_executable(backend_title_thanks_fade
+  unit/title/thanks/test_fade.c
+)
+
+target_include_directories(backend_title_thanks_fade PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_thanks_fade PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.thanks.fade COMMAND backend_title_thanks_fade)
+
+add_executable(backend_title_thanks_io
+  unit/title/thanks/test_io.c
+)
+
+target_include_directories(backend_title_thanks_io PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_thanks_io PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.thanks.io COMMAND backend_title_thanks_io)
+
+add_executable(backend_title_thanks_spm
+  unit/title/thanks/test_spm.c
+)
+
+target_include_directories(backend_title_thanks_spm PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_thanks_spm PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.thanks.spm COMMAND backend_title_thanks_spm)
+
+add_executable(backend_title_thanks_etc_m
+  unit/title/thanks/test_etc_m.c
+)
+
+target_include_directories(backend_title_thanks_etc_m PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_thanks_etc_m PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.thanks.etc_m COMMAND backend_title_thanks_etc_m)
+
+add_executable(backend_title_thanks_chrset
+  unit/title/thanks/test_chrset.c
+)
+
+target_include_directories(backend_title_thanks_chrset PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_thanks_chrset PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.thanks.chrset COMMAND backend_title_thanks_chrset)
+
+add_executable(backend_title_thanks_bm_m
+  unit/title/thanks/test_bm_m.c
+)
+
+target_include_directories(backend_title_thanks_bm_m PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_thanks_bm_m PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.thanks.bm_m COMMAND backend_title_thanks_bm_m)
+
+add_executable(backend_title_thanks_act
+  unit/title/thanks/test_act.c
+)
+
+target_include_directories(backend_title_thanks_act PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_thanks_act PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.thanks.act COMMAND backend_title_thanks_act)
+
+add_executable(backend_title_thanks_game
+  unit/title/thanks/test_game.c
+)
+
+target_include_directories(backend_title_thanks_game PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_thanks_game PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.thanks.game COMMAND backend_title_thanks_game)
+
+add_executable(backend_title_thanks_sprmove
+  unit/title/thanks/test_sprmove.c
+)
+
+target_include_directories(backend_title_thanks_sprmove PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_thanks_sprmove PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.thanks.sprmove COMMAND backend_title_thanks_sprmove)
+
 add_executable(backend_plchg
   unit/test_plchg.c
 )
@@ -5330,6 +5483,23 @@ set_target_properties(backend_r7_kabasira PROPERTIES
 
 add_test(NAME backend.r7.kabasira COMMAND backend_r7_kabasira)
 
+add_executable(backend_r7_hotaru7
+  unit/r7/test_hotaru7.c
+)
+
+target_include_directories(backend_r7_hotaru7 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r7_hotaru7 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r7.hotaru7 COMMAND backend_r7_hotaru7)
+
 add_executable(backend_r7_tekkyu7
   unit/r7/test_tekkyu7.c
 )
@@ -7241,6 +7411,25 @@ set_target_properties(backend_player PROPERTIES
 
 add_test(NAME backend.player COMMAND backend_player)
 
+add_executable(backend_player6
+  unit/test_player6.c
+  ${PROJECT_SOURCE_DIR}/src/equ.c
+  ${PROJECT_SOURCE_DIR}/src/player6.c
+)
+
+target_include_directories(backend_player6 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_player6 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.player6 COMMAND backend_player6)
+
 add_custom_target(backend-tests
   DEPENDS
     backend_smoke_dllmain
@@ -7300,6 +7489,15 @@ add_custom_target(backend-tests
     backend_title_visualmd_vmddo
     backend_title_visualmd_vmdentry
     backend_title_visualmd_vmdsprt
+    backend_title_thanks_fade
+    backend_title_thanks_io
+    backend_title_thanks_spm
+    backend_title_thanks_etc_m
+    backend_title_thanks_chrset
+    backend_title_thanks_bm_m
+    backend_title_thanks_act
+    backend_title_thanks_game
+    backend_title_thanks_sprmove
     backend_plchg
     backend_plchg6
     backend_ring
@@ -7556,6 +7754,7 @@ add_custom_target(backend-tests
     backend_r7_friend7
     backend_r7_kanabun
     backend_r7_kabasira
+    backend_r7_hotaru7
     backend_r7_tekkyu7
     backend_r7_tekkyu7j
     backend_r7_gaitou73
@@ -7670,6 +7869,7 @@ add_custom_target(backend-tests
     backend_r8_scr83d
     backend_r8_shoot
     backend_player
+    backend_player6
 )
 
 find_program(SONICCD_POWERSHELL NAMES pwsh powershell)
