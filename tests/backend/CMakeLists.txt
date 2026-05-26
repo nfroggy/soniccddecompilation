@@ -1411,6 +1411,23 @@ set_target_properties(backend_dai_k PROPERTIES
 
 add_test(NAME backend.dai_k COMMAND backend_dai_k)
 
+add_executable(backend_r1_boss_1
+  unit/r1/test_boss_1.c
+)
+
+target_include_directories(backend_r1_boss_1 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r1_boss_1 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r1.boss_1 COMMAND backend_r1_boss_1)
+
 add_executable(backend_r1_act11a
   unit/r1/test_act11a.c
 )
@@ -1683,6 +1700,57 @@ set_target_properties(backend_r1_scr13c PROPERTIES
 
 add_test(NAME backend.r1.scr13c COMMAND backend_r1_scr13c)
 
+add_executable(backend_r1_scr11a
+  unit/r1/test_scr11a.c
+)
+
+target_include_directories(backend_r1_scr11a PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${PROJECT_SOURCE_DIR}/tests/backend
+)
+
+set_target_properties(backend_r1_scr11a PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r1.scr11a COMMAND backend_r1_scr11a)
+
+add_executable(backend_r1_scr11b
+  unit/r1/test_scr11b.c
+)
+
+target_include_directories(backend_r1_scr11b PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${PROJECT_SOURCE_DIR}/tests/backend
+)
+
+set_target_properties(backend_r1_scr11b PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r1.scr11b COMMAND backend_r1_scr11b)
+
+add_executable(backend_r1_scr11c
+  unit/r1/test_scr11c.c
+)
+
+target_include_directories(backend_r1_scr11c PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${PROJECT_SOURCE_DIR}/tests/backend
+)
+
+set_target_properties(backend_r1_scr11c PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r1.scr11c COMMAND backend_r1_scr11c)
+
 add_executable(backend_r1_scr13d
   unit/r1/test_scr13d.c
 )
@@ -1852,6 +1920,40 @@ set_target_properties(backend_r3_banpa PROPERTIES
 )
 
 add_test(NAME backend.r3.banpa COMMAND backend_r3_banpa)
+
+add_executable(backend_r3_boss_3
+  unit/r3/test_boss_3.c
+)
+
+target_include_directories(backend_r3_boss_3 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r3_boss_3 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r3.boss_3 COMMAND backend_r3_boss_3)
+
+add_executable(backend_r3_trap_r3
+  unit/r3/test_trap_r3.c
+)
+
+target_include_directories(backend_r3_trap_r3 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${PROJECT_SOURCE_DIR}/tests/backend
+)
+
+set_target_properties(backend_r3_trap_r3 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r3.trap_r3 COMMAND backend_r3_trap_r3)
 
 add_executable(backend_r3_bobinb
   unit/r3/test_bobinb.c
@@ -5500,6 +5602,23 @@ set_target_properties(backend_r7_hotaru7 PROPERTIES
 
 add_test(NAME backend.r7.hotaru7 COMMAND backend_r7_hotaru7)
 
+add_executable(backend_r7_boss_7
+  unit/r7/test_boss_7.c
+)
+
+target_include_directories(backend_r7_boss_7 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r7_boss_7 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r7.boss_7 COMMAND backend_r7_boss_7)
+
 add_executable(backend_r7_tekkyu7
   unit/r7/test_tekkyu7.c
 )
@@ -6166,6 +6285,57 @@ set_target_properties(backend_r7_slight7 PROPERTIES
 )
 
 add_test(NAME backend.r7.slight7 COMMAND backend_r7_slight7)
+
+add_executable(backend_r7_scr71a
+  unit/r7/test_scr71a.c
+)
+
+target_include_directories(backend_r7_scr71a PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r7_scr71a PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r7.scr71a COMMAND backend_r7_scr71a)
+
+add_executable(backend_r7_scr71b
+  unit/r7/test_scr71b.c
+)
+
+target_include_directories(backend_r7_scr71b PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r7_scr71b PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r7.scr71b COMMAND backend_r7_scr71b)
+
+add_executable(backend_r7_scr71c
+  unit/r7/test_scr71c.c
+)
+
+target_include_directories(backend_r7_scr71c PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r7_scr71c PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r7.scr71c COMMAND backend_r7_scr71c)
 
 add_executable(backend_r8_et8
   unit/r8/test_et8.c
@@ -7515,6 +7685,7 @@ add_custom_target(backend-tests
     backend_branko1
     backend_dai_rd1
     backend_dai_k
+    backend_r1_boss_1
     backend_r1_act11a
     backend_r1_act11b
     backend_r1_act12a
@@ -7531,6 +7702,9 @@ add_custom_target(backend-tests
     backend_r1_coli1
     backend_r1_kuzure
     backend_r1_scr13c
+    backend_r1_scr11a
+    backend_r1_scr11b
+    backend_r1_scr11c
     backend_r1_scr13d
     backend_r1_scr11d
     backend_r3_playsp3
@@ -7556,6 +7730,8 @@ add_custom_target(backend-tests
     backend_r3_act32a
     backend_r3_act33c
     backend_r3_banpa
+    backend_r3_boss_3
+    backend_r3_trap_r3
     backend_r3_bobin
     backend_r3_bobinb
     backend_r3_col3a
@@ -7755,6 +7931,7 @@ add_custom_target(backend-tests
     backend_r7_kanabun
     backend_r7_kabasira
     backend_r7_hotaru7
+    backend_r7_boss_7
     backend_r7_tekkyu7
     backend_r7_tekkyu7j
     backend_r7_gaitou73
@@ -7796,6 +7973,9 @@ add_custom_target(backend-tests
     backend_r7_dango7
     backend_r7_branko7
     backend_r7_slight7
+    backend_r7_scr71a
+    backend_r7_scr71b
+    backend_r7_scr71c
     backend_r8_et8
     backend_r8_friend8
     backend_r8_konbea83

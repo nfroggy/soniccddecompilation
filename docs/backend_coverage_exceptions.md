@@ -535,6 +535,78 @@ mapping.
   negative-index correction does not appear reachable through the public map
   address helpers.
 
+## `src/r7/scr71a.c`
+
+- `scrollwrtb`, line 843: `WrtTblCnt` is assigned from a `Uint16` expression,
+  so the negative clamp does not appear reachable under 32-bit MSVC Win32. The
+  retained tests cover zero flags, top/bottom row writes, nonzero write-table
+  rows, shifted row flags, and the high clamp.
+- `mapadrset99`, line 996: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+
+## `src/r1/scr11a.c`
+
+- `scrollwrtb`, line 914: `WrtTblCnt` is assigned from `scrb_v_posit.w.h / 16`,
+  so the negative clamp does not appear reachable under 32-bit MSVC Win32. The
+  retained tests cover zero flags, top/bottom row writes, nonzero write-table
+  rows, shifted row flags, and the high clamp.
+- `mapadrset99`, line 1067: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+
+## `src/r1/scr11b.c`
+
+- `scrollwrtb`, line 661: `WrtTblCnt` is assigned from `scrb_v_posit.w.h / 16`,
+  so the negative clamp does not appear reachable under 32-bit MSVC Win32.
+- `scrollwrtb`, line 663: forcing the high clamp requires a starting
+  `WrtTblCnt` greater than the 33-entry `z11bwrttbl` table can support during
+  the following 16-entry walk. The retained tests cover zero flags, top/bottom
+  row writes, nonzero write-table rows, and shifted row flags without driving
+  the source into that out-of-bounds table walk.
+- `mapadrset99`, line 809: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+
+## `src/r1/scr11c.c`
+
+- `scrollwrtb`, line 673: `WrtTblCnt` is assigned from `scrb_v_posit.w.h / 16`,
+  so the negative clamp does not appear reachable under 32-bit MSVC Win32.
+- `scrollwrtb`, line 675: forcing the high clamp requires a starting
+  `WrtTblCnt` greater than the 33-entry `z11cwrttbl` table can support during
+  the following 16-entry walk. The retained tests cover zero flags, both
+  initial horizontal write variants, nonzero write-table rows, and shifted row
+  flags without driving the source into that out-of-bounds table walk.
+- `mapadrset99`, line 821: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+
+## `src/r7/scr71b.c`
+
+- `scrollwrtb`, line 842: `WrtTblCnt` is assigned from a `Uint16` expression,
+  so the negative clamp does not appear reachable under 32-bit MSVC Win32. The
+  retained tests cover zero flags, top/bottom row writes, nonzero write-table
+  rows, shifted row flags, and the high clamp.
+- `mapadrset99`, line 995: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+
+## `src/r7/scr71c.c`
+
+- `scrollwrtb`, line 814: `WrtTblCnt` is assigned from a `Uint16` expression,
+  so the negative clamp does not appear reachable under 32-bit MSVC Win32. The
+  retained tests cover zero flags, top/bottom row writes, seeded nonzero
+  write-table rows, shifted row flags, and the high clamp.
+- `mapadrset99`, line 967: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+
 ## `src/game.c`
 
 - `sdfdout`, lines 613-622: the body is guarded by

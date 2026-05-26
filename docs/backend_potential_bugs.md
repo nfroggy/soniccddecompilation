@@ -914,6 +914,20 @@ tests.
   `generate_flag = 0`. This is intentionally not fixed during characterization.
 - Related source location: `src/player6.c`, line 272.
 
+## `src/r1/boss_1.c`: `egg1arm3_01` can fall through without returning
+
+- Test case or snapshot path: `tests/backend/unit/r1/test_boss_1.c`
+- Variant and build configuration: round-1 boss include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: compiling the characterization test emits MSVC
+  warning C4715 because `egg1arm3_01` only returns from the branch where
+  `actfree[2] & 128` is clear. If that bit is set, the function can fall through
+  without returning a `Sint32` value.
+- Why the behavior looks suspicious: callers use the return value to decide
+  whether to draw/update the part, but one branch leaves that value undefined.
+  This is intentionally not fixed during characterization.
+- Related source location: `src/r1/boss_1.c`, line 1523.
+
 ## `src/title/thanks/sprmove.c`: `sonicinit` forces the right-facing branch
 
 - Test case or snapshot path:
