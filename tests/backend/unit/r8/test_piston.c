@@ -99,11 +99,11 @@ static void test_piston_patterns_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, pis00.cnt);
     TEST_ASSERT_EQ_INT(ctx, -32, pis00.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -31, pis00.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 308, pis00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_PISTON_BASE, pis00.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, 3, pis01.cnt);
     TEST_ASSERT_EQ_INT(ctx, -95, pis01.spra[0].yoff);
     TEST_ASSERT_EQ_INT(ctx, 33, pis01.spra[2].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 309, pis02.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_PISTON_BASE + 1, pis02.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, 0, pis03.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, 4, spd_tbl[0]);
     TEST_ASSERT_EQ_INT(ctx, 32, spd_tbl[3]);

@@ -156,10 +156,10 @@ static void test_pocket_tables_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, pat_pocket[0] == &pat_pocket5);
     TEST_ASSERT_EQ_INT(ctx, -24, pat_pocket2.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -8, pat_pocket2.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 505, pat_pocket2.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_POCKET_BASE, pat_pocket2.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, -16, pat_pocket3.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -24, pat_pocket3.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 506, pat_pocket3.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_POCKET_BASE + 1, pat_pocket3.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, 3, pchg0[0]);
     TEST_ASSERT_EQ_INT(ctx, -1, pchg0[3]);
     TEST_ASSERT_TRUE(ctx, pocket_move_tbl[0] == &a_init);

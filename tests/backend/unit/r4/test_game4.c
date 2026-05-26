@@ -39,6 +39,7 @@ static int mapinit_count;
 static int scr_set_count;
 static int scoreset_count;
 static int scrinit_count;
+static int cg_change_count;
 static int colorset_count;
 static int colorset2_count;
 static int colorset3_count;
@@ -103,6 +104,7 @@ void mapinit(void);
 void scr_set(void);
 void scoreset(void);
 void scrinit(void);
+void cg_change(void);
 void colorset(Sint32 ColorNo);
 void colorset2(Sint32 ColorNo);
 void colorset3(Sint32 ColorNo);
@@ -216,6 +218,7 @@ void mapinit(void) { ++mapinit_count; }
 void scr_set(void) { ++scr_set_count; }
 void scoreset(void) { ++scoreset_count; }
 void scrinit(void) { ++scrinit_count; }
+void cg_change(void) { ++cg_change_count; }
 void colorset(Sint32 ColorNo) {
     (void)ColorNo;
     ++colorset_count;
@@ -336,6 +339,7 @@ static void reset_game4_state(void) {
     clchgctr_count = scroll_count = scrollwrt_count = mapwrt_count = 0;
     mapwrtb_count = enkeichg_count = 0;
     mapinit_count = scr_set_count = scoreset_count = scrinit_count = 0;
+    cg_change_count = 0;
     colorset_count = colorset2_count = colorset3_count = 0;
     scdcnv_count = flashin_count = fadein0_count = 0;
     sinset_count = 0;

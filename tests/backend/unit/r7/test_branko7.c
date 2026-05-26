@@ -123,9 +123,9 @@ static void test_branko7_tables_and_patterns(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, branko7pat[2] == &pat2);
     TEST_ASSERT_EQ_INT(ctx, 1, pat0.cnt);
     TEST_ASSERT_EQ_INT(ctx, -8, pat0.spra[0].xoff);
-    TEST_ASSERT_EQ_INT(ctx, 404, pat0.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 405, pat1.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 406, pat2.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_BRANKO7_BASE, pat0.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_BRANKO7_BASE + 1, pat1.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_BRANKO7_BASE + 2, pat2.spra[0].index);
 }
 
 static void test_branko7_initializes_master_and_children(test_context *ctx) {

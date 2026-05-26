@@ -193,10 +193,10 @@ static void test_chgban_tables_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, chgbanpat[3] == &chgbanpat4);
     TEST_ASSERT_TRUE(ctx, spr_rpat[4] == &spr_rpat4);
     TEST_ASSERT_TRUE(ctx, hibanapat[1] == &hibanapat1);
-    TEST_ASSERT_EQ_INT(ctx, 442, amipat0.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 443, chgbanpat0.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 450, spr_rpat2.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 453, hibanapat0.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_CHGBAN_BASE, amipat0.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_CHGBAN_BASE + 1, chgbanpat0.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_CHGBAN_BASE + 8, spr_rpat2.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_CHGBAN_BASE + 11, hibanapat0.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, 4, chgbanchg0[0]);
     TEST_ASSERT_EQ_INT(ctx, 252, chgbanchg0[10]);
     TEST_ASSERT_EQ_INT(ctx, 5, spr_rchg0[0]);

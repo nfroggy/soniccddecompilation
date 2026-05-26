@@ -113,8 +113,8 @@ static void test_batta_tables_and_patterns(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, batta_tbl[3] == &batta_up);
     TEST_ASSERT_TRUE(ctx, pat_batta_e[0] == &ep_batta0);
     TEST_ASSERT_TRUE(ctx, pat_batta_b[1] == &bp_batta1);
-    TEST_ASSERT_EQ_INT(ctx, 483, ep_batta0.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 486, bp_batta1.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_BATTA_BASE, ep_batta0.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_BATTA_BASE + 3, bp_batta1.spra[0].index);
 }
 
 static void test_batta_main_dispatch_and_initialization(test_context *ctx) {

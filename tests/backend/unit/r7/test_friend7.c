@@ -163,10 +163,10 @@ static void test_friend7_tables_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, pat_friend1[4] == &spr_ricky4);
     TEST_ASSERT_EQ_INT(ctx, -8, spr_flicky1.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -8, spr_flicky1.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 462, spr_flicky1.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_FRIEND7_BASE, spr_flicky1.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, -8, spr_ricky4.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -4, spr_ricky4.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 467, spr_ricky4.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_FRIEND7_BASE + 5, spr_ricky4.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, 0, spr_friend0.cnt);
     TEST_ASSERT_TRUE(ctx, pchg0[0] == pchg00);
     TEST_ASSERT_TRUE(ctx, pchg0[1] == pchg01);

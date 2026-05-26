@@ -190,10 +190,10 @@ static void test_tables_capture_pattern_contract(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, pat00.cnt);
     TEST_ASSERT_EQ_INT(ctx, -16, pat00.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -16, pat00.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 468, pat00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_DAIRD5_BASE, pat00.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, 2, pat05.cnt);
-    TEST_ASSERT_EQ_INT(ctx, 475, pat05.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 476, pat05.spra[1].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_DAIRD5_BASE + 7, pat05.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_DAIRD5_BASE + 8, pat05.spra[1].index);
 }
 
 static void test_init_sets_shape_and_spawns_springs(test_context *ctx) {

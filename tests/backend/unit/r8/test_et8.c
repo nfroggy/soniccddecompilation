@@ -159,10 +159,10 @@ static void test_et8_tables_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, tpat00.cnt);
     TEST_ASSERT_EQ_INT(ctx, -40, tpat00.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, 15, tpat00.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 481, tpat00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_ET8_BASE, tpat00.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, 4, tpat04.cnt);
-    TEST_ASSERT_EQ_INT(ctx, 491, tpat04.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 494, tpat04.spra[1].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_ET8_BASE + 10, tpat04.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_ET8_BASE + 13, tpat04.spra[1].index);
     TEST_ASSERT_EQ_INT(ctx, 1087, tbl0sproffset[0]);
     TEST_ASSERT_EQ_INT(ctx, 1033, tbl0sproffset[1]);
     TEST_ASSERT_EQ_INT(ctx, 1108, tbl0sproffset[4]);

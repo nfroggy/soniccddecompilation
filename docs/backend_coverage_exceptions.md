@@ -187,6 +187,16 @@ mapping.
   depending on the documented nibble-index out-of-bounds read in
   `docs/backend_potential_bugs.md`.
 
+## `src/r8/boss_8.c`
+
+- `egg8_spin_r`, line 679: this increment branch is guarded by
+  `if (pActwk->actfree[3] & 1)` immediately after `actfree[3]` is assigned the
+  constant value `133`. Under 32-bit MSVC Win32 that value is always odd, so the
+  decrement branch is covered but the increment branch does not appear
+  reachable. The surrounding spin stop-point cases are covered by
+  `tests/backend/unit/r8/test_boss_8.c`, and the suspicious assignment/check
+  shape is recorded in `docs/backend_potential_bugs.md`.
+
 ## `src/r1/shoot1.c`
 
 - `mspd_set`, line 353: this matches the `src/r8/shoot.c` behavior above. The
@@ -557,6 +567,84 @@ mapping.
   negative-index correction does not appear reachable through the public map
   address helpers.
 
+## `src/r1/scr12a.c`
+
+- `scrollwrtb`, lines 782-783: `WrtTblCnt` is assigned from
+  `scrb_v_posit.w.h / 16`, so the negative clamp does not appear reachable
+  under 32-bit MSVC Win32.
+- `scrollwrtb`, lines 784-785: forcing the high clamp requires a starting
+  `WrtTblCnt` greater than the 33-entry `z12awrttbl` table can support during
+  the following 16-entry walk. The retained tests cover zero flags, top/bottom
+  row writes, nonzero write-table rows, and shifted row flags without driving
+  the source into that out-of-bounds table walk.
+- `mapadrset99`, lines 933-934: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+- MSVC reports partial coverage on the `scrbinit` sequential zero-initializers,
+  map block modulo lines, and the four `SetGrid` callback lines even though the
+  tests exercise the visible initialized values, return values, block pointer
+  outputs, flip orders, and callback arguments.
+
+## `src/r1/scr12b.c`
+
+- `scrollc_h`, lines 319-321, and `scrollz_h`, lines 337-339: `lXsv` is set
+  from the same post-addition expression as `lXwk`, so `lXwk - lXsv` is always
+  zero under 32-bit MSVC Win32. The positive flag branch is covered; the
+  negative branch does not appear reachable through these helpers.
+- `scrollwrtb`, lines 699-700: `WrtTblCnt` is assigned from
+  `scrb_v_posit.w.h / 16`, so the negative clamp does not appear reachable
+  under 32-bit MSVC Win32.
+- `scrollwrtb`, lines 701-702: forcing the high clamp requires a starting
+  `WrtTblCnt` greater than the 33-entry `z12bwrttbl` table can support during
+  the following 16-entry walk. The retained tests cover zero flags, top/bottom
+  row writes, nonzero write-table rows, and shifted row flags without driving
+  the source into that out-of-bounds table walk.
+- `mapadrset99`, lines 843-844: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+- MSVC reports partial coverage on the map block modulo lines and the four
+  `SetGrid` callback lines even though the tests exercise the visible return
+  values, block pointer outputs, flip orders, and callback arguments.
+
+## `src/r1/scr12c.c`
+
+- `scrollwrtb`, lines 692-693: `WrtTblCnt` is assigned from
+  `scrb_v_posit.w.h / 16`, so the negative clamp does not appear reachable
+  under 32-bit MSVC Win32.
+- `scrollwrtb`, lines 694-695: forcing the high clamp requires a starting
+  `WrtTblCnt` greater than the 33-entry `z12cwrttbl` table can support during
+  the following 16-entry walk. The retained tests cover zero flags, top/bottom
+  row writes, nonzero write-table rows, shifted row flags, and the high
+  hscroll-fill branch without driving the source into that out-of-bounds table
+  walk.
+- `mapadrset99`, lines 837-838: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+- MSVC reports partial coverage on the map block modulo lines and the four
+  `SetGrid` callback lines even though the tests exercise the visible return
+  values, block pointer outputs, flip orders, and callback arguments.
+
+## `src/r1/scr12d.c`
+
+- `scrollwrtb`, lines 658-659: `WrtTblCnt` is assigned from
+  `scrb_v_posit.w.h / 16`, so the negative clamp does not appear reachable
+  under 32-bit MSVC Win32.
+- `scrollwrtb`, lines 660-661: forcing the high clamp requires a starting
+  `WrtTblCnt` greater than the 33-entry `z12dwrttbl` table can support during
+  the following 16-entry walk. The retained tests cover zero flags, top/bottom
+  row writes, nonzero write-table rows, shifted row flags, and hscroll-fill
+  behavior without driving the source into that out-of-bounds table walk.
+- `mapadrset99`, lines 803-804: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+- MSVC reports partial coverage on the map block modulo lines and the four
+  `SetGrid` callback lines even though the tests exercise the visible return
+  values, block pointer outputs, flip orders, and callback arguments.
+
 ## `src/r1/scr11b.c`
 
 - `scrollwrtb`, line 661: `WrtTblCnt` is assigned from `scrb_v_posit.w.h / 16`,
@@ -607,6 +695,223 @@ mapping.
   negative-index correction does not appear reachable through the public map
   address helpers.
 
+## `src/r7/scr71d.c`
+
+- `scrollwrtb`, line 821: `WrtTblCnt` is assigned from a `Uint16` expression,
+  so the negative clamp does not appear reachable under 32-bit MSVC Win32. The
+  retained tests cover zero flags, top/bottom row writes, seeded nonzero
+  write-table rows, shifted row flags, and the high clamp.
+- `mapadrset99`, line 974: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+
+## `src/r7/scr72a.c`
+
+- `scrollwrtb`, line 843: `WrtTblCnt` is assigned from a `Uint16` expression,
+  so the negative clamp does not appear reachable under 32-bit MSVC Win32. The
+  retained tests cover zero flags, top/bottom row writes, nonzero write-table
+  rows, shifted row flags, and the high clamp.
+- `mapadrset99`, line 996: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+
+## `src/r7/scr72b.c`
+
+- `scrollwrtb`, line 842: `WrtTblCnt` is assigned from a `Uint16` expression,
+  so the negative clamp does not appear reachable under 32-bit MSVC Win32. The
+  retained tests cover zero flags, top/bottom row writes, nonzero write-table
+  rows, shifted row flags, and the high clamp.
+- `mapadrset99`, line 995: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+
+## `src/r7/scr72c.c`
+
+- `scrollwrtb`, line 814: `WrtTblCnt` is assigned from a `Uint16` expression,
+  so the negative clamp does not appear reachable under 32-bit MSVC Win32. The
+  retained tests cover zero flags, top/bottom row writes, seeded nonzero
+  write-table rows, shifted row flags, and the high clamp.
+- `mapadrset99`, line 967: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+
+## `src/r7/scr72d.c`
+
+- `scrollwrtb`, line 821: `WrtTblCnt` is assigned from a `Uint16` expression,
+  so the negative clamp does not appear reachable under 32-bit MSVC Win32. The
+  retained tests cover zero flags, top/bottom row writes, nonzero write-table
+  rows, shifted row flags, and the high clamp.
+- `mapadrset99`, line 974: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+
+## `src/r7/scr73c.c`
+
+- `scrollwrtb`, line 813: `WrtTblCnt` is assigned from a `Uint16` expression,
+  so the negative clamp does not appear reachable under 32-bit MSVC Win32. The
+  retained tests cover zero flags, top/bottom row writes, seeded nonzero
+  write-table rows, shifted row flags, and the high clamp.
+- `mapadrset99`, line 966: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+
+## `src/r7/scr73d.c`
+
+- `scrollwrtb`, line 820: `WrtTblCnt` is assigned from a `Uint16` expression,
+  so the negative clamp does not appear reachable under 32-bit MSVC Win32. The
+  retained tests cover zero flags, top/bottom row writes, nonzero write-table
+  rows, shifted row flags, and the high clamp.
+- `mapadrset99`, line 973: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+
+## `src/r6/scr61a.c`
+
+- `scrollwrtb`, line 712: `WrtTblCnt` is assigned from a `Uint16` expression,
+  so the negative clamp does not appear reachable under 32-bit MSVC Win32. The
+  retained tests cover zero flags, top/bottom row writes, nonzero write-table
+  rows, shifted row flags, and the high clamp.
+- `mapadrset99`, line 862: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+- MSVC reports partial coverage on the map block modulo lines and the four
+  `SetGrid` callback lines even though the tests exercise the visible return
+  values, block pointer outputs, flip orders, and callback arguments.
+
+## `src/r6/scr61b.c`
+
+- `scrollwrtb`, line 753: `WrtTblCnt` is assigned from a `Uint16` expression,
+  so the negative clamp does not appear reachable under 32-bit MSVC Win32. The
+  retained tests cover zero flags, top/bottom row writes, nonzero write-table
+  rows, shifted row flags, and the high clamp.
+- `mapadrset99`, line 903: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+- MSVC reports partial coverage on the map block modulo lines and the four
+  `SetGrid` callback lines even though the tests exercise the visible return
+  values, block pointer outputs, flip orders, and callback arguments.
+
+## `src/r6/scr61c.c`
+
+- `scrollwrtb`, line 710: `WrtTblCnt` is assigned from a `Uint16` expression,
+  so the negative clamp does not appear reachable under 32-bit MSVC Win32. The
+  retained tests cover zero flags, top/bottom row writes, nonzero write-table
+  rows, shifted row flags, and the high clamp.
+- `mapadrset99`, line 860: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+- MSVC reports partial coverage on the map block modulo lines and the four
+  `SetGrid` callback lines even though the tests exercise the visible return
+  values, block pointer outputs, flip orders, and callback arguments.
+
+## `src/r6/scr61d.c`
+
+- `scrollwrtb`, line 712: `WrtTblCnt` is assigned from a `Uint16` expression,
+  so the negative clamp does not appear reachable under 32-bit MSVC Win32. The
+  retained tests cover zero flags, top/bottom row writes, nonzero write-table
+  rows, shifted row flags, and the high clamp.
+- `mapadrset99`, line 862: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+- MSVC reports partial coverage on the map block modulo lines and the four
+  `SetGrid` callback lines even though the tests exercise the visible return
+  values, block pointer outputs, flip orders, and callback arguments.
+
+## `src/r6/scr62a.c`
+
+- `scrollwrtb`, line 696: `WrtTblCnt` is assigned from a `Uint16` expression,
+  so the negative clamp does not appear reachable under 32-bit MSVC Win32. The
+  retained tests cover zero flags, top/bottom row writes, nonzero write-table
+  rows, shifted row flags, and the high clamp.
+- `mapadrset99`, line 846: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+- MSVC reports partial coverage on the map block modulo lines and the four
+  `SetGrid` callback lines even though the tests exercise the visible return
+  values, block pointer outputs, flip orders, and callback arguments.
+
+## `src/r6/scr62b.c`
+
+- `scrollwrtb`, line 741: `WrtTblCnt` is assigned from a `Uint16` expression,
+  so the negative clamp does not appear reachable under 32-bit MSVC Win32. The
+  retained tests cover zero flags, top/bottom row writes, nonzero write-table
+  rows, shifted row flags, and the high clamp.
+- `mapadrset99`, line 891: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+- MSVC reports partial coverage on the map block modulo lines and the four
+  `SetGrid` callback lines even though the tests exercise the visible return
+  values, block pointer outputs, flip orders, and callback arguments.
+
+## `src/r6/scr62c.c`
+
+- `scrollwrtb`, line 696: `WrtTblCnt` is assigned from a `Uint16` expression,
+  so the negative clamp does not appear reachable under 32-bit MSVC Win32. The
+  retained tests cover zero flags, top/bottom row writes, nonzero write-table
+  rows, shifted row flags, and the high clamp.
+- `mapadrset99`, line 846: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+- MSVC reports partial coverage on the map block modulo lines and the four
+  `SetGrid` callback lines even though the tests exercise the visible return
+  values, block pointer outputs, flip orders, and callback arguments.
+
+## `src/r6/scr62d.c`
+
+- `scrollwrtb`, line 696: `WrtTblCnt` is assigned from a `Uint16` expression,
+  so the negative clamp does not appear reachable under 32-bit MSVC Win32. The
+  retained tests cover zero flags, top/bottom row writes, nonzero write-table
+  rows, shifted row flags, and the high clamp.
+- `mapadrset99`, line 846: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+- MSVC reports partial coverage on the map block modulo lines and the four
+  `SetGrid` callback lines even though the tests exercise the visible return
+  values, block pointer outputs, flip orders, and callback arguments.
+
+## `src/r6/scr63c.c`
+
+- `scrollwrtb`, line 712: `WrtTblCnt` is assigned from a `Uint16` expression,
+  so the negative clamp does not appear reachable under 32-bit MSVC Win32. The
+  retained tests cover zero flags, top/bottom row writes, nonzero write-table
+  rows, shifted row flags, and the high clamp.
+- `mapadrset99`, line 862: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+- MSVC reports partial coverage on the map block modulo lines and the four
+  `SetGrid` callback lines even though the tests exercise the visible return
+  values, block pointer outputs, flip orders, and callback arguments.
+
+## `src/r6/scr63d.c`
+
+- `scrollwrtb`, line 710: `WrtTblCnt` is assigned from a `Uint16` expression,
+  so the negative clamp does not appear reachable under 32-bit MSVC Win32. The
+  retained tests cover zero flags, top/bottom row writes, nonzero write-table
+  rows, shifted row flags, and the high clamp.
+- `mapadrset99`, line 860: `xOffs` and `yOffs` are unsigned inputs and are
+  clamped to nonnegative map ranges before `i` is calculated, so the
+  negative-index correction does not appear reachable through the public map
+  address helpers.
+- MSVC reports partial coverage on the map block modulo lines and the four
+  `SetGrid` callback lines even though the tests exercise the visible return
+  values, block pointer outputs, flip orders, and callback arguments.
+
 ## `src/game.c`
 
 - `sdfdout`, lines 613-622: the body is guarded by
@@ -634,6 +939,15 @@ mapping.
   the `ptPlnt` table because entry `7` is the `time == -1` sentinel handled by
   the following branch before `num` can be incremented past `7`.
 
+## `src/title/common/hmx_oeeactl.c`
+
+- `ld_load_sprite1`, lines 394-395 and 404: `wx` is assigned from
+  `(s->wx + 7) / 8 * 8` immediately before the `if (wx & 4)` guard, so under
+  32-bit MSVC Win32 the checked value is always a multiple of 8. The width
+  adjustment and corresponding reversal remain unreachable through the loader
+  entry point. `ld_load_sprite2` retains the analogous branch coverage through
+  its `i == 3` special case, which uses the raw sprite width instead.
+
 ## `src/title/thanks/sprmove.c`
 
 - `sonicinit`, lines 140-142: the preceding code forces `ld0.w.l = 1`, so the
@@ -642,3 +956,261 @@ mapping.
 - `s_metalchk`, line 252: MSVC coverage does not credit the bare `} else {`
   line even though the tests cover the positive-speed path body at lines
   253-254 and the fallthrough continuation at line 256.
+
+## `src/warp/warp.c`
+
+- `clchg`, line 307: MSVC reports the counter-reset assignment as partial even
+  though `tests/backend/unit/warp/test_warp.c` drives `clchg_cnt[1]` through
+  the `>= 14` wrap case and verifies that the counter returns to zero.
+
+## `src/title/planet/pls.c`
+
+- `play1`, lines 39 and 43: MSVC reports the key-up assignments as partial even
+  though `tests/backend/unit/title/planet/test_pls.c` drives both button-down
+  and button-up controller states through the `sPeriPadGet` callback and
+  verifies the resulting `keyBuf` values.
+
+## `src/title/planet/plm.c`
+
+- Lines 82, 184, 224, 330, and 366: MSVC reports the modulo assignment lines as
+  partial. `tests/backend/unit/title/planet/test_plm.c` drives the visible
+  branch outcomes and verifies the resulting actor positions, speeds, flags,
+  timers, and pattern selections under 32-bit MSVC Win32.
+
+## `src/title/planet/chamov.c`
+
+- Lines 293, 315, 339, 451, 453, and 646: MSVC reports the modulo or
+  fixed-point assignment lines as partial. `tests/backend/unit/title/planet/test_chamov.c`
+  drives the surrounding branches and verifies the resulting actor positions,
+  speeds, flags, timers, pattern selections, endpoint targets, and state
+  transitions under 32-bit MSVC Win32.
+
+## `src/title/planet/lplmain.c`
+
+- `game_init`, lines 251-254: the body after `if (init_dsp() == 0)` is not
+  reachable because `init_dsp()` always returns `0` under 32-bit MSVC Win32.
+  `tests/backend/unit/title/planet/test_lplmain.c` covers the normal startup
+  cases and direct display initialization behavior.
+- `cgdata_change`, line 590, and the partial switch at line 576: the default
+  case would require an invalid `comdata_m5` value, but the function indexes
+  `ScrAMapFileName[comdata_m5]` before the switch. Tests cover the valid map
+  indices `0`, `1`, and `2`, plus the explicit `3` no-change path.
+
+## `src/special/act_s.c`
+
+- `n_patset`, lines 179-180: the switch expression is `sprdat.etc & 24`, so
+  the only possible values are `0`, `8`, `16`, and `24`. The default case is
+  not reachable through any `sprite_data` value.
+- `zbuf_init`, line 52, and `zbuf_set`, line 67: MSVC reports the loop body and
+  sentinel write as partial even though `tests/backend/unit/special/test_act_s.c`
+  covers empty buckets, occupied buckets, clamped depth, full-bucket insertion,
+  and the z-buffer pattern traversal paths under 32-bit MSVC Win32.
+
+## `src/special/ens.c`
+
+- `ptset_ufo`, line 646: `d0l` is clamped to `1280` immediately before it is
+  shifted right by four bits, so the following `if (d0l > 80)` guard does not
+  appear reachable under 32-bit MSVC Win32. The surrounding distance clamp,
+  pattern update, unchanged-pattern return, and z-buffer/scaling side effects
+  are covered by `tests/backend/unit/special/test_ens.c`.
+- Lines 254, 302, 333, 428, 727, 756, 792, and 950: MSVC reports the actor
+  dispatch `switch` lines as partial. The test covers every listed case for
+  those dispatchers; the source does not provide default arms for out-of-range
+  state values.
+
+## `src/title/ta/ta.c`
+
+- `game_init`, line 391: MSVC does not credit the bare `} else {` line even
+  though `tests/backend/unit/title/ta/test_ta.c` covers the special-stage
+  record insertion path at lines 392-394 and verifies the resulting inserted
+  time/name state under 32-bit MSVC Win32.
+
+## `src/title/ta/taeactrl.c`
+
+- `CreatePic`, line 576: the failure return after `if (LoadPicBmp() != 0)` is
+  not reachable because `LoadPicBmp()` always returns `0` under 32-bit MSVC
+  Win32. `tests/backend/unit/title/ta/test_taeactrl.c` covers successful
+  picture allocation/loading/copying plus the direct allocation-failure returns
+  before that guard.
+
+## `src/r3/scr31a.c`
+
+- `scroll`, line 323: the `else` after the water setup range check does not
+  appear reachable through `scroll()` because `scrollb_v()` is recomputed just
+  before the check and keeps the derived `wD3` value at or below the `87`
+  threshold under the characterized 32-bit MSVC Win32 paths.
+- `scrollwrtb`, line 991: `WrtTblCnt` is computed from an unsigned scroll
+  position divided by 16, so the `< 0` clamp is not reachable.
+- `scrollwrtb`, line 993: the `> 113` clamp would leave `WrtTblCnt` pointing
+  beyond the 49-byte `z31awrttbl` before the following loop reads it, so the
+  test avoids forcing that unsafe table-read path.
+- `mapadrset99`, line 1141: `i` is computed from clamped unsigned tile offsets,
+  so the `< 0` clamp is not reachable.
+- Lines 1104-1107, 1151, 1154, 1181, and 1184: MSVC reports these block-write
+  and modulo assignment lines as partial. `tests/backend/unit/r3/test_scr31a.c`
+  drives all block flip modes, visible and hidden block writes, normal and
+  clamped map lookups, and `mapadrset2` block-pointer lookup behavior.
+
+## `src/r3/scr31b.c`
+
+- `scroll`, line 329: the `else` after the water setup range check does not
+  appear reachable through `scroll()` because `scrollb_v()` is recomputed just
+  before the check and keeps the derived `wD3` value at or below the `91`
+  threshold under the characterized 32-bit MSVC Win32 paths.
+- `zonescrsetsub0`, line 424: this fall-through writer branch is not reached
+  by the safe table-boundary cases covered by the shared R31 scroll harness.
+- `scrollwrtb`, line 995: `WrtTblCnt` is computed from an unsigned scroll
+  position divided by 16, so the `< 0` clamp is not reachable.
+- `scrollwrtb`, line 997: the `> 113` clamp would leave `WrtTblCnt` pointing
+  beyond the 49-byte `z31bwrttbl` before the following loop reads it, so the
+  test avoids forcing that unsafe table-read path.
+- `mapadrset99`, line 1145: `i` is computed from clamped unsigned tile offsets,
+  so the `< 0` clamp is not reachable.
+- Lines 1108-1111, 1155, 1158, 1185, and 1188: MSVC reports these block-write
+  and modulo assignment lines as partial. `tests/backend/unit/r3/test_scr31b.c`
+  runs the shared R31 scroll harness against `src/r3/scr31b.c`, driving all
+  block flip modes, visible and hidden block writes, normal and clamped map
+  lookups, and `mapadrset2` block-pointer lookup behavior.
+
+## `src/r3/scr31c.c`
+
+- `scroll`, line 320: the `else` after the water setup range check does not
+  appear reachable through `scroll()` because `scrollb_v()` is recomputed just
+  before the check and keeps the derived `wD3` value at or below the `87`
+  threshold under the characterized 32-bit MSVC Win32 paths.
+- `scrollwrtb`, line 986: `WrtTblCnt` is computed from an unsigned scroll
+  position divided by 16, so the `< 0` clamp is not reachable.
+- `scrollwrtb`, line 988: the `> 113` clamp would leave `WrtTblCnt` pointing
+  beyond the 49-byte `z31cwrttbl` before the following loop reads it, so the
+  test avoids forcing that unsafe table-read path.
+- `mapadrset99`, line 1136: `i` is computed from clamped unsigned tile offsets,
+  so the `< 0` clamp is not reachable.
+- Lines 1099-1102, 1146, 1149, 1176, and 1179: MSVC reports these block-write
+  and modulo assignment lines as partial. `tests/backend/unit/r3/test_scr31c.c`
+  runs the shared R31 scroll harness against `src/r3/scr31c.c`, driving all
+  block flip modes, visible and hidden block writes, normal and clamped map
+  lookups, and `mapadrset2` block-pointer lookup behavior.
+
+## `src/r3/scr31d.c`
+
+- `scroll`, line 304: the `else` after the water setup range check does not
+  appear reachable through `scroll()` because `scrollb_v()` is recomputed just
+  before the check and keeps the derived `wD3` value at or below the `29`
+  threshold under the characterized 32-bit MSVC Win32 paths.
+- `scrollwrtb`, line 970: `WrtTblCnt` is computed from an unsigned scroll
+  position divided by 16, so the `< 0` clamp is not reachable.
+- `scrollwrtb`, line 972: the `> 113` clamp would leave `WrtTblCnt` pointing
+  beyond the 49-byte `z31dwrttbl` before the following loop reads it, so the
+  test avoids forcing that unsafe table-read path.
+- `mapadrset99`, line 1120: `i` is computed from clamped unsigned tile offsets,
+  so the `< 0` clamp is not reachable.
+- Lines 1083-1086, 1130, 1133, 1160, and 1163: MSVC reports these block-write
+  and modulo assignment lines as partial. `tests/backend/unit/r3/test_scr31d.c`
+  runs the shared R31 scroll harness against `src/r3/scr31d.c`, driving all
+  block flip modes, visible and hidden block writes, normal and clamped map
+  lookups, and `mapadrset2` block-pointer lookup behavior.
+
+## `src/r3/scr32a.c`
+
+- `scroll`, line 320: the `else` after the water setup range check does not
+  appear reachable through `scroll()` because `scrollb_v()` is recomputed just
+  before the check and keeps the derived `wD3` value at or below the `87`
+  threshold under the characterized 32-bit MSVC Win32 paths.
+- `scrollwrtb`, line 986: `WrtTblCnt` is computed from an unsigned scroll
+  position divided by 16, so the `< 0` clamp is not reachable.
+- `scrollwrtb`, line 988: the `> 113` clamp would leave `WrtTblCnt` pointing
+  beyond the 49-byte `z32awrttbl` before the following loop reads it, so the
+  test avoids forcing that unsafe table-read path.
+- `mapadrset99`, line 1136: `i` is computed from clamped unsigned tile offsets,
+  so the `< 0` clamp is not reachable.
+- Lines 1099-1102, 1146, 1149, 1176, and 1179: MSVC reports these block-write
+  and modulo assignment lines as partial. `tests/backend/unit/r3/test_scr32a.c`
+  runs the shared scroll harness with the R32 map layout and stage limits.
+
+## `src/r3/scr32b.c`
+
+- `scroll`, line 329: the `else` after the water setup range check does not
+  appear reachable through `scroll()` because `scrollb_v()` is recomputed just
+  before the check and keeps the derived `wD3` value at or below the `91`
+  threshold under the characterized 32-bit MSVC Win32 paths.
+- `zonescrsetsub0`, lines 414 and 424: these fall-through writer branches are
+  not reached by the safe table-boundary cases covered by the shared scroll
+  harness.
+- `scrollwrtb`, line 995: `WrtTblCnt` is computed from an unsigned scroll
+  position divided by 16, so the `< 0` clamp is not reachable.
+- `scrollwrtb`, line 997: the `> 113` clamp would leave `WrtTblCnt` pointing
+  beyond the 49-byte `z32bwrttbl` before the following loop reads it, so the
+  test avoids forcing that unsafe table-read path.
+- `mapadrset99`, line 1145: `i` is computed from clamped unsigned tile offsets,
+  so the `< 0` clamp is not reachable.
+- Lines 1108-1111, 1155, 1158, 1185, and 1188: MSVC reports these block-write
+  and modulo assignment lines as partial. `tests/backend/unit/r3/test_scr32b.c`
+  runs the shared scroll harness with the R32 map layout and stage limits.
+
+## `src/r3/scr32c.c`
+
+- `scroll`, line 320: the `else` after the water setup range check does not
+  appear reachable through `scroll()` because `scrollb_v()` is recomputed just
+  before the check and keeps the derived `wD3` value at or below the `87`
+  threshold under the characterized 32-bit MSVC Win32 paths.
+- `scrollwrtb`, line 986: `WrtTblCnt` is computed from an unsigned scroll
+  position divided by 16, so the `< 0` clamp is not reachable.
+- `scrollwrtb`, line 988: the `> 113` clamp would leave `WrtTblCnt` pointing
+  beyond the 49-byte `z32cwrttbl` before the following loop reads it, so the
+  test avoids forcing that unsafe table-read path.
+- `mapadrset99`, line 1136: `i` is computed from clamped unsigned tile offsets,
+  so the `< 0` clamp is not reachable.
+- Lines 1099-1102, 1146, 1149, 1176, and 1179: MSVC reports these block-write
+  and modulo assignment lines as partial. `tests/backend/unit/r3/test_scr32c.c`
+  runs the shared scroll harness with the R32 map layout and stage limits.
+
+## `src/r3/scr32d.c`
+
+- `scroll`, line 304: the `else` after the water setup range check does not
+  appear reachable through `scroll()` because `scrollb_v()` is recomputed just
+  before the check and keeps the derived `wD3` value at or below the `29`
+  threshold under the characterized 32-bit MSVC Win32 paths.
+- `scrollwrtb`, line 970: `WrtTblCnt` is computed from an unsigned scroll
+  position divided by 16, so the `< 0` clamp is not reachable.
+- `scrollwrtb`, line 972: the `> 113` clamp would leave `WrtTblCnt` pointing
+  beyond the 49-byte `z32dwrttbl` before the following loop reads it, so the
+  test avoids forcing that unsafe table-read path.
+- `mapadrset99`, line 1120: `i` is computed from clamped unsigned tile offsets,
+  so the `< 0` clamp is not reachable.
+- Lines 1083-1086, 1130, 1133, 1160, and 1163: MSVC reports these block-write
+  and modulo assignment lines as partial. `tests/backend/unit/r3/test_scr32d.c`
+  runs the shared scroll harness with the R32 map layout and stage limits.
+
+## `src/r3/scr33c.c`
+
+- `scroll`, line 320: the `else` after the water setup range check does not
+  appear reachable through `scroll()` because `scrollb_v()` is recomputed just
+  before the check and keeps the derived `wD3` value at or below the `87`
+  threshold under the characterized 32-bit MSVC Win32 paths.
+- `scrollwrtb`, line 986: `WrtTblCnt` is computed from an unsigned scroll
+  position divided by 16, so the `< 0` clamp is not reachable.
+- `scrollwrtb`, line 988: the `> 113` clamp would leave `WrtTblCnt` pointing
+  beyond the 49-byte `z33cwrttbl` before the following loop reads it, so the
+  test avoids forcing that unsafe table-read path.
+- `mapadrset99`, line 1136: `i` is computed from clamped unsigned tile offsets,
+  so the `< 0` clamp is not reachable.
+- Lines 1099-1102, 1146, 1149, 1176, and 1179: MSVC reports these block-write
+  and modulo assignment lines as partial. `tests/backend/unit/r3/test_scr33c.c`
+  runs the shared scroll harness with the R33 map layout and stage limits.
+
+## `src/r3/scr33d.c`
+
+- `scroll`, line 306: the `else` after the water setup range check does not
+  appear reachable through `scroll()` because `scrollb_v()` is recomputed just
+  before the check and keeps the derived `wD3` value at or below the `29`
+  threshold under the characterized 32-bit MSVC Win32 paths.
+- `scrollwrtb`, line 972: `WrtTblCnt` is computed from an unsigned scroll
+  position divided by 16, so the `< 0` clamp is not reachable.
+- `scrollwrtb`, line 974: the `> 113` clamp would leave `WrtTblCnt` pointing
+  beyond the 49-byte `z33dwrttbl` before the following loop reads it, so the
+  test avoids forcing that unsafe table-read path.
+- `mapadrset99`, line 1122: `i` is computed from clamped unsigned tile offsets,
+  so the `< 0` clamp is not reachable.
+- Lines 1085-1088, 1132, 1135, 1162, and 1165: MSVC reports these block-write
+  and modulo assignment lines as partial. `tests/backend/unit/r3/test_scr33d.c`
+  runs the shared scroll harness with the R33 map layout and stage limits.

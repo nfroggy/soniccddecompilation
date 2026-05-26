@@ -168,11 +168,11 @@ static void test_kuzure4_patterns_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, pat_kuzure_a[8] == &pat_kuzure_08);
     TEST_ASSERT_EQ_INT(ctx, -8, pat_kuzure_00.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -16, pat_kuzure_00.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 475, pat_kuzure_00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_KUZURE4_BASE, pat_kuzure_00.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, -64, pat_kuzure_07.spra[0].xoff);
-    TEST_ASSERT_EQ_INT(ctx, 482, pat_kuzure_07.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_KUZURE4_BASE + 7, pat_kuzure_07.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, -8, pat_kuzure_08.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 483, pat_kuzure_08.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_KUZURE4_BASE + 8, pat_kuzure_08.spra[0].index);
 }
 
 static void test_kuzure4_init_without_ride_sets_platform_shape(

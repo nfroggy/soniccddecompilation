@@ -146,11 +146,11 @@ static void test_tobira_patterns_capture_default_literal_data(test_context *ctx)
     TEST_ASSERT_TRUE(ctx, pat_tobira1[1] == &pat02);
     TEST_ASSERT_TRUE(ctx, pat_tobira2[0] == &pat03);
     TEST_ASSERT_TRUE(ctx, pat_tobira2[1] == &pat04);
-    TEST_ASSERT_EQ_INT(ctx, 464, pat00.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 465, pat01.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 466, pat02.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 467, pat03.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 468, pat04.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TOBIRA_BASE, pat00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TOBIRA_BASE + 1, pat01.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TOBIRA_BASE + 2, pat02.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TOBIRA_BASE + 3, pat03.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TOBIRA_BASE + 4, pat04.spra[0].index);
 }
 
 static void test_tobira_init_sets_type0_master_and_slave(test_context *ctx) {

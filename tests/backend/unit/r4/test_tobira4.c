@@ -88,9 +88,9 @@ static void test_tobira4_patterns_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, tobira4pat[0] == &pat0);
     TEST_ASSERT_TRUE(ctx, tobira4pat[1] == &pat1);
     TEST_ASSERT_TRUE(ctx, tobira4pat[2] == &pat2);
-    TEST_ASSERT_EQ_INT(ctx, 506, pat0.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 507, pat1.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 508, pat2.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TOBIRA4_BASE, pat0.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TOBIRA4_BASE + 1, pat1.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TOBIRA4_BASE + 2, pat2.spra[0].index);
 }
 
 static void test_tobira4_init_captures_position_and_vertical_layout(

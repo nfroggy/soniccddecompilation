@@ -111,12 +111,12 @@ static void test_okusieso_patterns_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 2, spr_sieso_00.cnt);
     TEST_ASSERT_EQ_INT(ctx, -40, spr_sieso_00.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -56, spr_sieso_00.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 414, spr_sieso_00.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 424, spr_sieso_01.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 418, spr_sieso_04.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 419, spr_ball_00.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 421, spr_ball_02.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 422, spr_dai_00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_OKUSIESO_BASE, spr_sieso_00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_OKUSIESO_BASE + 10, spr_sieso_01.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_OKUSIESO_BASE + 4, spr_sieso_04.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_OKUSIESO_BASE + 5, spr_ball_00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_OKUSIESO_BASE + 7, spr_ball_02.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_OKUSIESO_BASE + 8, spr_dai_00.spra[0].index);
 }
 
 static void test_okusieso_initializes_parent_and_children(test_context *ctx) {

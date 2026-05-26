@@ -184,12 +184,12 @@ static void test_shut_tables_capture_render_patterns(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 6, shu00.cnt);
     TEST_ASSERT_EQ_INT(ctx, -8, shu00.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -96, shu00.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 308, shu00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_SHUT_BASE + 4, shu00.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, 3, kai00.cnt);
     TEST_ASSERT_EQ_INT(ctx, -40, kai00.spra[0].xoff);
-    TEST_ASSERT_EQ_INT(ctx, 304, kai00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_SHUT_BASE, kai00.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, 5, kai02.cnt);
-    TEST_ASSERT_EQ_INT(ctx, 307, kai02.spra[4].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_SHUT_BASE + 3, kai02.spra[4].index);
 }
 
 static void test_shut_init_spawns_partner_and_runs_outer_callbacks(

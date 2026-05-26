@@ -108,10 +108,10 @@ static void test_togebl3b_tables_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, togeball_pat[0] == &spat_chg1);
     TEST_ASSERT_EQ_INT(ctx, -8, spat_chg0.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -8, spat_chg0.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 550, spat_chg0.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TOGEBL3B_BASE, spat_chg0.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, -8, spat_chg1.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -8, spat_chg1.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 551, spat_chg1.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TOGEBL3B_BASE + 1, spat_chg1.spra[0].index);
 }
 
 static void test_togebl3b_main_initializes_and_spawns_options(

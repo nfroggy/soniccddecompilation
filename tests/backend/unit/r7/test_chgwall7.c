@@ -72,7 +72,7 @@ static void test_chgwall7_patterns_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, pat01.cnt);
     TEST_ASSERT_EQ_INT(ctx, -32, pat01.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -16, pat01.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 403, pat01.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_CHGWALL7_BASE, pat01.spra[0].index);
 }
 
 static void test_chgwall7_initializes_and_draws(test_context *ctx) {

@@ -77,11 +77,11 @@ static void test_jettoge8_patterns_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, -16, pat00.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -76, pat00.spra[0].yoff);
     TEST_ASSERT_EQ_INT(ctx, 0, pat00.spra[0].etc);
-    TEST_ASSERT_EQ_INT(ctx, 475, pat00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_JETTOGE8_BASE, pat00.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, 1, pat01.cnt);
     TEST_ASSERT_EQ_INT(ctx, -16, pat01.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -76, pat01.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 476, pat01.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_JETTOGE8_BASE + 1, pat01.spra[0].index);
 }
 
 static void test_jettoge8_initial_call_initializes_moves_and_flips(

@@ -323,6 +323,57 @@ set_target_properties(backend_special_bact PROPERTIES
 
 add_test(NAME backend.special.bact COMMAND backend_special_bact)
 
+add_executable(backend_special_act_s
+  unit/special/test_act_s.c
+)
+
+target_include_directories(backend_special_act_s PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_special_act_s PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.special.act_s COMMAND backend_special_act_s)
+
+add_executable(backend_special_coli_s
+  unit/special/test_coli_s.c
+)
+
+target_include_directories(backend_special_coli_s PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_special_coli_s PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.special.coli_s COMMAND backend_special_coli_s)
+
+add_executable(backend_special_ens
+  unit/special/test_ens.c
+)
+
+target_include_directories(backend_special_ens PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_special_ens PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.special.ens COMMAND backend_special_ens)
+
 add_executable(backend_special_fadein
   unit/special/test_fadein.c
 )
@@ -407,6 +458,40 @@ set_target_properties(backend_title_ta_tacolor PROPERTIES
 )
 
 add_test(NAME backend.title.ta.tacolor COMMAND backend_title_ta_tacolor)
+
+add_executable(backend_title_ta_ta
+  unit/title/ta/test_ta.c
+)
+
+target_include_directories(backend_title_ta_ta PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_ta_ta PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.ta.ta COMMAND backend_title_ta_ta)
+
+add_executable(backend_title_ta_taeactrl
+  unit/title/ta/test_taeactrl.c
+)
+
+target_include_directories(backend_title_ta_taeactrl PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_ta_taeactrl PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.ta.taeactrl COMMAND backend_title_ta_taeactrl)
 
 add_executable(backend_title_aviopen_aviopndo
   unit/title/aviopen/test_aviopndo.c
@@ -527,6 +612,23 @@ set_target_properties(backend_title_besttime_bestdo PROPERTIES
 
 add_test(NAME backend.title.besttime.bestdo COMMAND backend_title_besttime_bestdo)
 
+add_executable(backend_title_besttime_bestgrid
+  unit/title/besttime/test_bestgrid.c
+)
+
+target_include_directories(backend_title_besttime_bestgrid PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_besttime_bestgrid PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.besttime.bestgrid COMMAND backend_title_besttime_bestgrid)
+
 add_executable(backend_title_besttime_besentry
   unit/title/besttime/test_besentry.c
 )
@@ -611,6 +713,176 @@ set_target_properties(backend_title_opening_opndo PROPERTIES
 )
 
 add_test(NAME backend.title.opening.opndo COMMAND backend_title_opening_opndo)
+
+add_executable(backend_title_planet_etc
+  unit/title/planet/test_etc.c
+)
+
+target_include_directories(backend_title_planet_etc PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_planet_etc PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.planet.etc COMMAND backend_title_planet_etc)
+
+add_executable(backend_title_planet_spm_equ
+  unit/title/planet/test_spm_equ.c
+)
+
+target_include_directories(backend_title_planet_spm_equ PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_planet_spm_equ PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.planet.spm_equ COMMAND backend_title_planet_spm_equ)
+
+add_executable(backend_title_planet_pls
+  unit/title/planet/test_pls.c
+)
+
+target_include_directories(backend_title_planet_pls PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_planet_pls PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.planet.pls COMMAND backend_title_planet_pls)
+
+add_executable(backend_title_planet_kaiten
+  unit/title/planet/test_kaiten.c
+)
+
+target_include_directories(backend_title_planet_kaiten PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_planet_kaiten PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.planet.kaiten COMMAND backend_title_planet_kaiten)
+
+add_executable(backend_title_planet_flash
+  unit/title/planet/test_flash.c
+)
+
+target_include_directories(backend_title_planet_flash PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_planet_flash PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.planet.flash COMMAND backend_title_planet_flash)
+
+add_executable(backend_title_planet_actm
+  unit/title/planet/test_actm.c
+)
+
+target_include_directories(backend_title_planet_actm PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_planet_actm PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.planet.actm COMMAND backend_title_planet_actm)
+
+add_executable(backend_title_planet_asciiset
+  unit/title/planet/test_asciiset.c
+)
+
+target_include_directories(backend_title_planet_asciiset PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_planet_asciiset PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.planet.asciiset COMMAND backend_title_planet_asciiset)
+
+add_executable(backend_title_planet_plm
+  unit/title/planet/test_plm.c
+)
+
+target_include_directories(backend_title_planet_plm PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_planet_plm PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.planet.plm COMMAND backend_title_planet_plm)
+
+add_executable(backend_title_planet_chamov
+  unit/title/planet/test_chamov.c
+)
+
+target_include_directories(backend_title_planet_chamov PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_planet_chamov PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.planet.chamov COMMAND backend_title_planet_chamov)
+
+add_executable(backend_title_planet_lplmain
+  unit/title/planet/test_lplmain.c
+)
+
+target_include_directories(backend_title_planet_lplmain PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_planet_lplmain PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.planet.lplmain COMMAND backend_title_planet_lplmain)
 
 add_executable(backend_title_savedata_svdpalt
   unit/title/savedata/test_svdpalt.c
@@ -799,6 +1071,23 @@ set_target_properties(backend_title_soundtst_sndentry PROPERTIES
 
 add_test(NAME backend.title.soundtst.sndentry COMMAND backend_title_soundtst_sndentry)
 
+add_executable(backend_title_soundtst_sndgrid
+  unit/title/soundtst/test_sndgrid.c
+)
+
+target_include_directories(backend_title_soundtst_sndgrid PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_soundtst_sndgrid PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.soundtst.sndgrid COMMAND backend_title_soundtst_sndgrid)
+
 add_executable(backend_title_soundtst_snddo
   unit/title/soundtst/test_snddo.c
 )
@@ -849,6 +1138,23 @@ set_target_properties(backend_title_stagetst_stgdo PROPERTIES
 )
 
 add_test(NAME backend.title.stagetst.stgdo COMMAND backend_title_stagetst_stgdo)
+
+add_executable(backend_title_stagetst_stggrid
+  unit/title/stagetst/test_stggrid.c
+)
+
+target_include_directories(backend_title_stagetst_stggrid PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_title_stagetst_stggrid PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.title.stagetst.stggrid COMMAND backend_title_stagetst_stggrid)
 
 add_executable(backend_title_stagetst_stgsprt
   unit/title/stagetst/test_stgsprt.c
@@ -1717,6 +2023,40 @@ set_target_properties(backend_r1_scr11a PROPERTIES
 
 add_test(NAME backend.r1.scr11a COMMAND backend_r1_scr11a)
 
+add_executable(backend_r1_scr12a
+  unit/r1/test_scr12a.c
+)
+
+target_include_directories(backend_r1_scr12a PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${PROJECT_SOURCE_DIR}/tests/backend
+)
+
+set_target_properties(backend_r1_scr12a PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r1.scr12a COMMAND backend_r1_scr12a)
+
+add_executable(backend_r1_scr12b
+  unit/r1/test_scr12b.c
+)
+
+target_include_directories(backend_r1_scr12b PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${PROJECT_SOURCE_DIR}/tests/backend
+)
+
+set_target_properties(backend_r1_scr12b PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r1.scr12b COMMAND backend_r1_scr12b)
+
 add_executable(backend_r1_scr11b
   unit/r1/test_scr11b.c
 )
@@ -1750,6 +2090,40 @@ set_target_properties(backend_r1_scr11c PROPERTIES
 )
 
 add_test(NAME backend.r1.scr11c COMMAND backend_r1_scr11c)
+
+add_executable(backend_r1_scr12c
+  unit/r1/test_scr12c.c
+)
+
+target_include_directories(backend_r1_scr12c PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${PROJECT_SOURCE_DIR}/tests/backend
+)
+
+set_target_properties(backend_r1_scr12c PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r1.scr12c COMMAND backend_r1_scr12c)
+
+add_executable(backend_r1_scr12d
+  unit/r1/test_scr12d.c
+)
+
+target_include_directories(backend_r1_scr12d PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${PROJECT_SOURCE_DIR}/tests/backend
+)
+
+set_target_properties(backend_r1_scr12d PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r1.scr12d COMMAND backend_r1_scr12d)
 
 add_executable(backend_r1_scr13d
   unit/r1/test_scr13d.c
@@ -1954,6 +2328,176 @@ set_target_properties(backend_r3_trap_r3 PROPERTIES
 )
 
 add_test(NAME backend.r3.trap_r3 COMMAND backend_r3_trap_r3)
+
+add_executable(backend_r3_scr31a
+  unit/r3/test_scr31a.c
+)
+
+target_include_directories(backend_r3_scr31a PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${PROJECT_SOURCE_DIR}/tests/backend
+)
+
+set_target_properties(backend_r3_scr31a PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r3.scr31a COMMAND backend_r3_scr31a)
+
+add_executable(backend_r3_scr31b
+  unit/r3/test_scr31b.c
+)
+
+target_include_directories(backend_r3_scr31b PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${PROJECT_SOURCE_DIR}/tests/backend
+)
+
+set_target_properties(backend_r3_scr31b PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r3.scr31b COMMAND backend_r3_scr31b)
+
+add_executable(backend_r3_scr31c
+  unit/r3/test_scr31c.c
+)
+
+target_include_directories(backend_r3_scr31c PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${PROJECT_SOURCE_DIR}/tests/backend
+)
+
+set_target_properties(backend_r3_scr31c PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r3.scr31c COMMAND backend_r3_scr31c)
+
+add_executable(backend_r3_scr31d
+  unit/r3/test_scr31d.c
+)
+
+target_include_directories(backend_r3_scr31d PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${PROJECT_SOURCE_DIR}/tests/backend
+)
+
+set_target_properties(backend_r3_scr31d PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r3.scr31d COMMAND backend_r3_scr31d)
+
+add_executable(backend_r3_scr32a
+  unit/r3/test_scr32a.c
+)
+
+target_include_directories(backend_r3_scr32a PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${PROJECT_SOURCE_DIR}/tests/backend
+)
+
+set_target_properties(backend_r3_scr32a PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r3.scr32a COMMAND backend_r3_scr32a)
+
+add_executable(backend_r3_scr32b
+  unit/r3/test_scr32b.c
+)
+
+target_include_directories(backend_r3_scr32b PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${PROJECT_SOURCE_DIR}/tests/backend
+)
+
+set_target_properties(backend_r3_scr32b PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r3.scr32b COMMAND backend_r3_scr32b)
+
+add_executable(backend_r3_scr32c
+  unit/r3/test_scr32c.c
+)
+
+target_include_directories(backend_r3_scr32c PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${PROJECT_SOURCE_DIR}/tests/backend
+)
+
+set_target_properties(backend_r3_scr32c PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r3.scr32c COMMAND backend_r3_scr32c)
+
+add_executable(backend_r3_scr32d
+  unit/r3/test_scr32d.c
+)
+
+target_include_directories(backend_r3_scr32d PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${PROJECT_SOURCE_DIR}/tests/backend
+)
+
+set_target_properties(backend_r3_scr32d PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r3.scr32d COMMAND backend_r3_scr32d)
+
+add_executable(backend_r3_scr33c
+  unit/r3/test_scr33c.c
+)
+
+target_include_directories(backend_r3_scr33c PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${PROJECT_SOURCE_DIR}/tests/backend
+)
+
+set_target_properties(backend_r3_scr33c PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r3.scr33c COMMAND backend_r3_scr33c)
+
+add_executable(backend_r3_scr33d
+  unit/r3/test_scr33d.c
+)
+
+target_include_directories(backend_r3_scr33d PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${PROJECT_SOURCE_DIR}/tests/backend
+)
+
+set_target_properties(backend_r3_scr33d PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r3.scr33d COMMAND backend_r3_scr33d)
 
 add_executable(backend_r3_bobinb
   unit/r3/test_bobinb.c
@@ -5415,6 +5959,176 @@ set_target_properties(backend_r6_boss_6 PROPERTIES
 
 add_test(NAME backend.r6.boss_6 COMMAND backend_r6_boss_6)
 
+add_executable(backend_r6_scr61a
+  unit/r6/test_scr61a.c
+)
+
+target_include_directories(backend_r6_scr61a PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r6_scr61a PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r6.scr61a COMMAND backend_r6_scr61a)
+
+add_executable(backend_r6_scr61b
+  unit/r6/test_scr61b.c
+)
+
+target_include_directories(backend_r6_scr61b PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r6_scr61b PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r6.scr61b COMMAND backend_r6_scr61b)
+
+add_executable(backend_r6_scr61c
+  unit/r6/test_scr61c.c
+)
+
+target_include_directories(backend_r6_scr61c PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r6_scr61c PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r6.scr61c COMMAND backend_r6_scr61c)
+
+add_executable(backend_r6_scr61d
+  unit/r6/test_scr61d.c
+)
+
+target_include_directories(backend_r6_scr61d PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r6_scr61d PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r6.scr61d COMMAND backend_r6_scr61d)
+
+add_executable(backend_r6_scr62a
+  unit/r6/test_scr62a.c
+)
+
+target_include_directories(backend_r6_scr62a PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r6_scr62a PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r6.scr62a COMMAND backend_r6_scr62a)
+
+add_executable(backend_r6_scr62b
+  unit/r6/test_scr62b.c
+)
+
+target_include_directories(backend_r6_scr62b PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r6_scr62b PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r6.scr62b COMMAND backend_r6_scr62b)
+
+add_executable(backend_r6_scr62c
+  unit/r6/test_scr62c.c
+)
+
+target_include_directories(backend_r6_scr62c PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r6_scr62c PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r6.scr62c COMMAND backend_r6_scr62c)
+
+add_executable(backend_r6_scr62d
+  unit/r6/test_scr62d.c
+)
+
+target_include_directories(backend_r6_scr62d PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r6_scr62d PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r6.scr62d COMMAND backend_r6_scr62d)
+
+add_executable(backend_r6_scr63c
+  unit/r6/test_scr63c.c
+)
+
+target_include_directories(backend_r6_scr63c PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r6_scr63c PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r6.scr63c COMMAND backend_r6_scr63c)
+
+add_executable(backend_r6_scr63d
+  unit/r6/test_scr63d.c
+)
+
+target_include_directories(backend_r6_scr63d PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r6_scr63d PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r6.scr63d COMMAND backend_r6_scr63d)
+
 add_executable(backend_r7_chgwall7
   unit/r7/test_chgwall7.c
 )
@@ -6336,6 +7050,142 @@ set_target_properties(backend_r7_scr71c PROPERTIES
 )
 
 add_test(NAME backend.r7.scr71c COMMAND backend_r7_scr71c)
+
+add_executable(backend_r7_scr71d
+  unit/r7/test_scr71d.c
+)
+
+target_include_directories(backend_r7_scr71d PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r7_scr71d PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r7.scr71d COMMAND backend_r7_scr71d)
+
+add_executable(backend_r7_scr72a
+  unit/r7/test_scr72a.c
+)
+
+target_include_directories(backend_r7_scr72a PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r7_scr72a PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r7.scr72a COMMAND backend_r7_scr72a)
+
+add_executable(backend_r7_scr72b
+  unit/r7/test_scr72b.c
+)
+
+target_include_directories(backend_r7_scr72b PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r7_scr72b PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r7.scr72b COMMAND backend_r7_scr72b)
+
+add_executable(backend_r7_scr72c
+  unit/r7/test_scr72c.c
+)
+
+target_include_directories(backend_r7_scr72c PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r7_scr72c PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r7.scr72c COMMAND backend_r7_scr72c)
+
+add_executable(backend_r7_scr72d
+  unit/r7/test_scr72d.c
+)
+
+target_include_directories(backend_r7_scr72d PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r7_scr72d PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r7.scr72d COMMAND backend_r7_scr72d)
+
+add_executable(backend_r7_scr73c
+  unit/r7/test_scr73c.c
+)
+
+target_include_directories(backend_r7_scr73c PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r7_scr73c PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r7.scr73c COMMAND backend_r7_scr73c)
+
+add_executable(backend_r7_scr73d
+  unit/r7/test_scr73d.c
+)
+
+target_include_directories(backend_r7_scr73d PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r7_scr73d PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r7.scr73d COMMAND backend_r7_scr73d)
+
+add_executable(backend_r8_boss_8
+  unit/r8/test_boss_8.c
+)
+
+target_include_directories(backend_r8_boss_8 PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_r8_boss_8 PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.r8.boss_8 COMMAND backend_r8_boss_8)
 
 add_executable(backend_r8_et8
   unit/r8/test_et8.c
@@ -7561,6 +8411,24 @@ set_target_properties(backend_r8_shoot PROPERTIES
 
 add_test(NAME backend.r8.shoot COMMAND backend_r8_shoot)
 
+add_executable(backend_warp_warp
+  unit/warp/test_warp.c
+  ${PROJECT_SOURCE_DIR}/src/equ.c
+)
+
+target_include_directories(backend_warp_warp PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(backend_warp_warp PROPERTIES
+  C_STANDARD 17
+  C_STANDARD_REQUIRED ON
+)
+
+add_test(NAME backend.warp.warp COMMAND backend_warp_warp)
+
 add_executable(backend_player
   unit/test_player.c
   ${PROJECT_SOURCE_DIR}/src/equ.c
@@ -7621,11 +8489,16 @@ add_custom_target(backend-tests
     backend_tree
     backend_special_sin
     backend_special_bact
+    backend_special_act_s
+    backend_special_coli_s
+    backend_special_ens
     backend_special_fadein
     backend_special_etc_s
     backend_title_common_hmx_oeeactl
     backend_title_ta_fadein
     backend_title_ta_tacolor
+    backend_title_ta_ta
+    backend_title_ta_taeactrl
     backend_title_aviopen_aviopndo
     backend_title_aviopen_aviopnen
     backend_title_avigood_avigoddo
@@ -7633,11 +8506,22 @@ add_custom_target(backend-tests
     backend_title_besttime_bestpalt
     backend_title_besttime_bestsprt
     backend_title_besttime_bestdo
+    backend_title_besttime_bestgrid
     backend_title_besttime_besentry
     backend_title_opening_opnpalt
     backend_title_opening_opngrid
     backend_title_opening_opnentry
     backend_title_opening_opndo
+    backend_title_planet_etc
+    backend_title_planet_spm_equ
+    backend_title_planet_pls
+    backend_title_planet_kaiten
+    backend_title_planet_flash
+    backend_title_planet_actm
+    backend_title_planet_asciiset
+    backend_title_planet_plm
+    backend_title_planet_chamov
+    backend_title_planet_lplmain
     backend_title_savedata_svdpalt
     backend_title_savedata_svdgrid
     backend_title_savedata_svdentry
@@ -7649,9 +8533,11 @@ add_custom_target(backend-tests
     backend_title_soundtst_sndpalt
     backend_title_soundtst_sndsprt
     backend_title_soundtst_sndentry
+    backend_title_soundtst_sndgrid
     backend_title_soundtst_snddo
     backend_title_stagetst_stgpalt
     backend_title_stagetst_stgdo
+    backend_title_stagetst_stggrid
     backend_title_stagetst_stgsprt
     backend_title_stagetst_stgentry
     backend_title_visualmd_vmdpalt
@@ -7668,6 +8554,7 @@ add_custom_target(backend-tests
     backend_title_thanks_act
     backend_title_thanks_game
     backend_title_thanks_sprmove
+    backend_warp_warp
     backend_plchg
     backend_plchg6
     backend_ring
@@ -7703,8 +8590,12 @@ add_custom_target(backend-tests
     backend_r1_kuzure
     backend_r1_scr13c
     backend_r1_scr11a
+    backend_r1_scr12a
+    backend_r1_scr12b
     backend_r1_scr11b
     backend_r1_scr11c
+    backend_r1_scr12c
+    backend_r1_scr12d
     backend_r1_scr13d
     backend_r1_scr11d
     backend_r3_playsp3
@@ -7732,6 +8623,16 @@ add_custom_target(backend-tests
     backend_r3_banpa
     backend_r3_boss_3
     backend_r3_trap_r3
+    backend_r3_scr31a
+    backend_r3_scr31b
+    backend_r3_scr31c
+    backend_r3_scr31d
+    backend_r3_scr32a
+    backend_r3_scr32b
+    backend_r3_scr32c
+    backend_r3_scr32d
+    backend_r3_scr33c
+    backend_r3_scr33d
     backend_r3_bobin
     backend_r3_bobinb
     backend_r3_col3a
@@ -7920,6 +8821,16 @@ add_custom_target(backend-tests
     backend_r6_seesaw6
     backend_r6_shoot6
     backend_r6_boss_6
+    backend_r6_scr61a
+    backend_r6_scr61b
+    backend_r6_scr61c
+    backend_r6_scr61d
+    backend_r6_scr62a
+    backend_r6_scr62b
+    backend_r6_scr62c
+    backend_r6_scr62d
+    backend_r6_scr63c
+    backend_r6_scr63d
     backend_r7_chgwall7
     backend_r7_chgban
     backend_r7_hari73
@@ -7976,6 +8887,14 @@ add_custom_target(backend-tests
     backend_r7_scr71a
     backend_r7_scr71b
     backend_r7_scr71c
+    backend_r7_scr71d
+    backend_r7_scr72a
+    backend_r7_scr72b
+    backend_r7_scr72c
+    backend_r7_scr72d
+    backend_r7_scr73c
+    backend_r7_scr73d
+    backend_r8_boss_8
     backend_r8_et8
     backend_r8_friend8
     backend_r8_konbea83
@@ -8062,4 +8981,202 @@ if(SONICCD_POWERSHELL)
     COMMENT "Inventory backend DLL sources"
     VERBATIM
   )
+endif()
+
+option(SONICCD_BUILD_TEST_DEFINE_MATRIX
+  "Build backend unit test clones for each production backend compile-definition combination"
+  ON)
+
+set(SONICCD_EMPTY_DEFINE_SET "__SONICCD_EMPTY_DEFINE_SET__")
+
+function(soniccd_normalize_backend_source out_var source_path)
+  file(TO_CMAKE_PATH "${source_path}" normalized_source)
+  if(IS_ABSOLUTE "${normalized_source}")
+    file(RELATIVE_PATH normalized_source "${PROJECT_SOURCE_DIR}" "${normalized_source}")
+  endif()
+  set(${out_var} "${normalized_source}" PARENT_SCOPE)
+endfunction()
+
+function(soniccd_collect_target_backend_sources out_var target_name)
+  get_target_property(target_sources ${target_name} SOURCES)
+  if(NOT target_sources)
+    set(${out_var} "" PARENT_SCOPE)
+    return()
+  endif()
+
+  set(backend_sources)
+  foreach(target_source IN LISTS target_sources)
+    soniccd_normalize_backend_source(normalized_source "${target_source}")
+    if(normalized_source MATCHES "^src/.+\\.c$")
+      list(APPEND backend_sources "${normalized_source}")
+    endif()
+
+    if(IS_ABSOLUTE "${target_source}")
+      set(test_source "${target_source}")
+    else()
+      set(test_source "${CMAKE_CURRENT_SOURCE_DIR}/${target_source}")
+    endif()
+
+    if(EXISTS "${test_source}")
+      file(STRINGS "${test_source}" include_lines
+        REGEX "^[ \t]*#[ \t]*(include|define)[ \t]+.*src/.+\\.c")
+      foreach(include_line IN LISTS include_lines)
+        string(REGEX MATCHALL "src/[^\" >)]+\\.c" included_sources "${include_line}")
+        foreach(included_source IN LISTS included_sources)
+          list(APPEND backend_sources "${included_source}")
+        endforeach()
+      endforeach()
+    endif()
+  endforeach()
+
+  if(backend_sources)
+    list(REMOVE_DUPLICATES backend_sources)
+    list(SORT backend_sources)
+  endif()
+  set(${out_var} "${backend_sources}" PARENT_SCOPE)
+endfunction()
+
+function(soniccd_backend_common_defines out_var)
+  set(common_defines)
+  if(MSVC)
+    set(common_defines _CRT_SECURE_NO_WARNINGS WIN32 _WINDOWS)
+  endif()
+  set(${out_var} "${common_defines}" PARENT_SCOPE)
+endfunction()
+
+function(soniccd_variant_define_key out_var variant)
+  soniccd_backend_common_defines(common_defines)
+  set(variant_defines ${common_defines} ${${variant}_DEFINES})
+  if(variant_defines)
+    list(SORT variant_defines)
+    string(REPLACE ";" "|" define_key "${variant_defines}")
+  else()
+    set(define_key "${SONICCD_EMPTY_DEFINE_SET}")
+  endif()
+  set(${out_var} "${define_key}" PARENT_SCOPE)
+endfunction()
+
+function(soniccd_collect_define_keys_for_sources out_var)
+  set(source_set ${ARGN})
+  set(define_keys)
+
+  foreach(variant IN LISTS SONICCD_ALL_VARIANTS)
+    set(variant_sources ${${variant}_SOURCES})
+    set(variant_uses_source OFF)
+    foreach(variant_source IN LISTS variant_sources)
+      soniccd_normalize_backend_source(normalized_variant_source "${variant_source}")
+      list(FIND source_set "${normalized_variant_source}" source_index)
+      if(NOT source_index EQUAL -1)
+        set(variant_uses_source ON)
+        break()
+      endif()
+    endforeach()
+
+    if(variant_uses_source)
+      soniccd_variant_define_key(define_key "${variant}")
+      list(APPEND define_keys "${define_key}")
+    endif()
+  endforeach()
+
+  if(define_keys)
+    list(REMOVE_DUPLICATES define_keys)
+    list(SORT define_keys)
+  endif()
+  set(${out_var} "${define_keys}" PARENT_SCOPE)
+endfunction()
+
+function(soniccd_expand_define_key out_var define_key)
+  if(define_key STREQUAL "${SONICCD_EMPTY_DEFINE_SET}")
+    set(expanded_defines)
+  else()
+    string(REPLACE "|" ";" expanded_defines "${define_key}")
+  endif()
+  set(${out_var} "${expanded_defines}" PARENT_SCOPE)
+endfunction()
+
+function(soniccd_copy_target_property source_target dest_target property_name)
+  get_target_property(property_value ${source_target} ${property_name})
+  if(property_value)
+    set_target_properties(${dest_target} PROPERTIES ${property_name} "${property_value}")
+  endif()
+endfunction()
+
+function(soniccd_copy_target_usage_property source_target dest_target property_name command_name)
+  get_target_property(property_value ${source_target} ${property_name})
+  if(property_value)
+    cmake_language(CALL ${command_name} ${dest_target} PRIVATE ${property_value})
+  endif()
+endfunction()
+
+function(soniccd_add_define_matrix_clone source_target clone_index define_key)
+  get_target_property(target_sources ${source_target} SOURCES)
+  if(NOT target_sources)
+    return()
+  endif()
+
+  set(clone_target "${source_target}__defs_${clone_index}")
+
+  add_executable(${clone_target} EXCLUDE_FROM_ALL ${target_sources})
+
+  soniccd_copy_target_usage_property(${source_target} ${clone_target}
+    INCLUDE_DIRECTORIES target_include_directories)
+  soniccd_copy_target_usage_property(${source_target} ${clone_target}
+    COMPILE_OPTIONS target_compile_options)
+  soniccd_copy_target_usage_property(${source_target} ${clone_target}
+    COMPILE_DEFINITIONS target_compile_definitions)
+  soniccd_copy_target_usage_property(${source_target} ${clone_target}
+    LINK_LIBRARIES target_link_libraries)
+  soniccd_copy_target_usage_property(${source_target} ${clone_target}
+    LINK_OPTIONS target_link_options)
+
+  soniccd_copy_target_property(${source_target} ${clone_target} C_STANDARD)
+  soniccd_copy_target_property(${source_target} ${clone_target} C_STANDARD_REQUIRED)
+
+  soniccd_expand_define_key(matrix_defines "${define_key}")
+  if(matrix_defines)
+    target_compile_definitions(${clone_target} PRIVATE ${matrix_defines})
+  endif()
+
+  add_test(NAME matrix.${source_target}.defs${clone_index} COMMAND ${clone_target})
+  set_tests_properties(matrix.${source_target}.defs${clone_index} PROPERTIES
+    LABELS "backend;define-matrix")
+  add_dependencies(backend-tests ${clone_target})
+endfunction()
+
+if(SONICCD_BUILD_TEST_DEFINE_MATRIX)
+  get_property(backend_build_targets DIRECTORY PROPERTY BUILDSYSTEM_TARGETS)
+  set(backend_define_matrix_clone_count 0)
+
+  foreach(backend_target IN LISTS backend_build_targets)
+    if(backend_target STREQUAL "backend-tests" OR
+        backend_target STREQUAL "backend-source-inventory" OR
+        backend_target MATCHES "__defs_")
+      continue()
+    endif()
+
+    get_target_property(backend_target_type ${backend_target} TYPE)
+    if(NOT backend_target_type STREQUAL "EXECUTABLE")
+      continue()
+    endif()
+
+    soniccd_collect_target_backend_sources(target_backend_sources ${backend_target})
+    if(NOT target_backend_sources)
+      continue()
+    endif()
+
+    soniccd_collect_define_keys_for_sources(define_keys ${target_backend_sources})
+    set(define_index 0)
+    foreach(define_key IN LISTS define_keys)
+      if(define_key STREQUAL "${SONICCD_EMPTY_DEFINE_SET}")
+        continue()
+      endif()
+
+      math(EXPR define_index "${define_index} + 1")
+      soniccd_add_define_matrix_clone(${backend_target} ${define_index} "${define_key}")
+      math(EXPR backend_define_matrix_clone_count "${backend_define_matrix_clone_count} + 1")
+    endforeach()
+  endforeach()
+
+  message(STATUS
+    "Generated ${backend_define_matrix_clone_count} backend define-matrix test targets")
 endif()

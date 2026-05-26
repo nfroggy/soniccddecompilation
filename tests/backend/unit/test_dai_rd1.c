@@ -196,15 +196,17 @@ static void test_dodai_tables_capture_literal_contract(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, dai11a_pattbl[2] == &dai11a_pat3);
     TEST_ASSERT_EQ_INT(ctx, 1, dai11a_pat1.cnt);
     TEST_ASSERT_EQ_INT(ctx, -16, dai11a_pat1.spra[0].xoff);
-    TEST_ASSERT_EQ_INT(ctx, 533, dai11a_pat1.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 535, dai11a_pat3.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_DAI11A_BASE,
+                       dai11a_pat1.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_DAI11A_BASE + 2,
+                       dai11a_pat3.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, 16, dai_hstbl[0]);
     TEST_ASSERT_EQ_INT(ctx, 48, dai_hstbl[2]);
     TEST_ASSERT_EQ_INT(ctx, 2, dai_mcnttbl[0]);
     TEST_ASSERT_EQ_INT(ctx, 6, dai_mcnttbl[3]);
     TEST_ASSERT_TRUE(ctx, vfutapat[0] == &vfuta_pat0);
-    TEST_ASSERT_EQ_INT(ctx, 548, vfuta_pat0.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 549, vfuta_pat1.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_VFUTA_BASE, vfuta_pat0.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_VFUTA_BASE + 1, vfuta_pat1.spra[0].index);
 }
 
 static void test_dodai_init_sets_shape_and_spawns_child(test_context *ctx) {

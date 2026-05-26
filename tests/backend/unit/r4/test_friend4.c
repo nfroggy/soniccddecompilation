@@ -181,8 +181,10 @@ static void test_tables_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, pat_friend1[1] == &spr_friend4_11);
     TEST_ASSERT_EQ_INT(ctx, -8, spr_friend4_00.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -12, spr_friend4_00.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 435, spr_friend4_00.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 438, spr_friend4_11.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_FRIEND4_BASE,
+                       spr_friend4_00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_FRIEND4_BASE + 3,
+                       spr_friend4_11.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, 1104, tbl0sproffset[0]);
     TEST_ASSERT_EQ_INT(ctx, 0, tbl0sproffset[3]);
     TEST_ASSERT_EQ_INT(ctx, 1104, tbl0sproffset[10]);
@@ -307,6 +309,16 @@ static void test_movie_init_and_parent_paths(test_context *ctx) {
 
     reset_logs();
     actwk[0].actno = 82;
+    actwk[0].actfree[21] = 1;
+
+    friend4(actor);
+
+    TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
+    TEST_ASSERT_TRUE(ctx, frameout_actor == actor);
+    TEST_ASSERT_EQ_INT(ctx, 0, patchg_count);
+
+    reset_logs();
+    actwk[0].actfree[21] = 0;
     actor->actfree[9] = 7;
     set_actor_long_alias(actor, 13, -512);
     actor->sprpri = 5;

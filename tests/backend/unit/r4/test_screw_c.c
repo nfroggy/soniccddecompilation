@@ -50,13 +50,13 @@ static void test_screw_c_patterns_capture_horizontal_and_vertical_tiles(
     TEST_ASSERT_EQ_INT(ctx, 1, pat_screw00.cnt);
     TEST_ASSERT_EQ_INT(ctx, -16, pat_screw00.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -8, pat_screw00.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 432, pat_screw00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_SCREWC_BASE, pat_screw00.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, -16, pat_screw01.spra[0].xoff);
-    TEST_ASSERT_EQ_INT(ctx, 433, pat_screw01.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_SCREWC_BASE + 1, pat_screw01.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, -8, pat_screw02.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -16, pat_screw02.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 434, pat_screw02.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 435, pat_screw03.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_SCREWC_BASE + 2, pat_screw02.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_SCREWC_BASE + 3, pat_screw03.spra[0].index);
 }
 
 static void test_screw_c_initializes_horizontal_screw(test_context *ctx) {

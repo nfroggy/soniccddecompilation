@@ -190,8 +190,8 @@ static void test_koma8_patterns_capture_default_literal_data(test_context *ctx) 
     TEST_ASSERT_EQ_INT(ctx, 1, kom00.cnt);
     TEST_ASSERT_EQ_INT(ctx, -8, kom00.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -8, kom00.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 304, kom00.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 305, kom01.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_KOMA8_BASE, kom00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_KOMA8_BASE + 1, kom01.spra[0].index);
 }
 
 static void test_koma8_initializes_main_actor_and_spawned_spark(

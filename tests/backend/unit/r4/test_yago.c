@@ -183,8 +183,10 @@ static void test_yago_tables_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 255, pat_chg0[3]);
     TEST_ASSERT_TRUE(ctx, pat_yago_e[0] == &spr_yago_e_00);
     TEST_ASSERT_TRUE(ctx, pat_yago_b[1] == &spr_yago_b_01);
-    TEST_ASSERT_EQ_INT(ctx, 455, spr_yago_e_00.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 454, spr_yago_b_01.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_YAGO_BASE + 2,
+                       spr_yago_e_00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_YAGO_BASE + 1,
+                       spr_yago_b_01.spra[0].index);
 }
 
 static void test_suicide_gates_skip_both_variants(test_context *ctx) {

@@ -143,14 +143,14 @@ static void test_nokogiri_patterns_capture_default_literal_data(
     TEST_ASSERT_EQ_INT(ctx, 1, pat00.cnt);
     TEST_ASSERT_EQ_INT(ctx, -32, pat00.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -34, pat00.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 425, pat00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_NOKOGIRI_BASE, pat00.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, -112, pat17.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -114, pat17.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 442, pat17.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_NOKOGIRI_BASE + 17, pat17.spra[0].index);
     TEST_ASSERT_TRUE(ctx, pat_bar[0] == &pat_bar0);
     TEST_ASSERT_EQ_INT(ctx, -41, pat_bar0.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -43, pat_bar0.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 443, pat_bar0.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_NOKOGIRI_BASE + 18, pat_bar0.spra[0].index);
 }
 
 static void test_nokogiri_initializes_body_spawns_bar_and_falls_through_open(

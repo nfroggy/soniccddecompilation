@@ -78,12 +78,12 @@ static void test_screw_patterns_capture_all_animation_tiles(test_context *ctx) {
 
     TEST_ASSERT_EQ_INT(ctx, -16, screw0_pat00.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -8, screw0_pat00.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 488, screw0_pat00.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 492, screw0_pat04.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_SCREWA_BASE, screw0_pat00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_SCREWA_BASE + 4, screw0_pat04.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, -8, screw1_pat00.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -16, screw1_pat00.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 493, screw1_pat00.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 497, screw1_pat04.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_SCREWA_BASE + 5, screw1_pat00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_SCREWA_BASE + 9, screw1_pat04.spra[0].index);
 }
 
 static void test_screw_initializes_inactive_horizontal_screw(test_context *ctx) {

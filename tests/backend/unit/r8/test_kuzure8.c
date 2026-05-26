@@ -192,12 +192,12 @@ static void test_kuzure8_patterns_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, pat00.cnt);
     TEST_ASSERT_EQ_INT(ctx, -8, pat00.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -16, pat00.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 444, pat00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_KUZURE8_BASE, pat00.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, -64, pat07.spra[0].xoff);
-    TEST_ASSERT_EQ_INT(ctx, 451, pat07.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_KUZURE8_BASE + 7, pat07.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, -8, pat08.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 452, pat08.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 453, pat09.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_KUZURE8_BASE + 8, pat08.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_KUZURE8_BASE + 9, pat09.spra[0].index);
 }
 
 static void test_kuzure8_main_ini_positive_stage_sets_wait_state(

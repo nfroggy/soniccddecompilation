@@ -170,8 +170,8 @@ static void test_rblk4_patterns_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 2, pat00.cnt);
     TEST_ASSERT_EQ_INT(ctx, -48, pat00.spra[1].xoff);
     TEST_ASSERT_EQ_INT(ctx, -48, pat00.spra[1].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 506, pat00.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 522, pat08.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_RBLK4_BASE, pat00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_RBLK4_BASE + 16, pat08.spra[0].index);
 }
 
 static void test_rblk4_initializes_main_and_spawned_actors(test_context *ctx) {

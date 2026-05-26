@@ -43,7 +43,7 @@ static void test_tekkyu7_tables_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, -16, tekkyu7_pat0.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -16, tekkyu7_pat0.spra[0].yoff);
     TEST_ASSERT_EQ_INT(ctx, 0, tekkyu7_pat0.spra[0].etc);
-    TEST_ASSERT_EQ_INT(ctx, 462, tekkyu7_pat0.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TEKKYU7_BASE, tekkyu7_pat0.spra[0].index);
 }
 
 static void test_tekkyu7_init_uses_horizontal_fast_table(test_context *ctx) {

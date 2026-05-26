@@ -159,10 +159,10 @@ static void test_harid4_patterns_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 2, pat00.cnt);
     TEST_ASSERT_EQ_INT(ctx, -16, pat00.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -64, pat00.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 468, pat00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_HARID4_BASE + 1, pat00.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, -16, pat00.spra[1].xoff);
     TEST_ASSERT_EQ_INT(ctx, 32, pat00.spra[1].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 467, pat00.spra[1].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_HARID4_BASE, pat00.spra[1].index);
 }
 
 static void test_harid4_init_above_water_spawns_child(test_context *ctx) {

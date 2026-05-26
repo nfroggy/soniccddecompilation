@@ -1,4 +1,16 @@
 #include <string.h>
+#ifdef SAVEDATA
+#ifdef _MSC_VER
+#pragma comment(linker, "/BASE:0x02000000")
+__declspec(dllimport) void *__stdcall VirtualAlloc(void *lpAddress,
+                                                   unsigned long dwSize,
+                                                   unsigned long flAllocationType,
+                                                   unsigned long flProtect);
+#define MEM_COMMIT 0x00001000
+#define MEM_RESERVE 0x00002000
+#define PAGE_READWRITE 0x04
+#endif
+#endif
 
 #include "support/test_runner.h"
 #include "src/title/common/hmx_types.h"
@@ -48,6 +60,20 @@ static hmx_grid *release_grid;
 
 #include "src/title/savedata/svdgrid.c"
 
+#ifdef SAVEDATA
+static int ensure_savedata_back_index_mapping(void) {
+    void *base = (void *)0x01009000;
+    void *mapped;
+
+    mapped = VirtualAlloc(base, 0x1000, MEM_RESERVE | MEM_COMMIT,
+                          PAGE_READWRITE);
+    if (!mapped) {
+        mapped = VirtualAlloc(base, 0x1000, MEM_COMMIT, PAGE_READWRITE);
+    }
+    return mapped == base;
+}
+#endif
+
 static hmx_grid *fake_grid_create(hmx_environment *env, Sint32 a, Sint32 b,
                                   Sint32 c, Sint32 d) {
     create_env = env;
@@ -92,8 +118,14 @@ static void fake_grid_release(hmx_environment *env, hmx_grid *grid) {
     ++release_call_count;
 }
 
-static void reset_fixture(void) {
+static int reset_fixture(void) {
     int i;
+
+#ifdef SAVEDATA
+    if (!ensure_savedata_back_index_mapping()) {
+        return 0;
+    }
+#endif
 
     memset(&context, 0, sizeof(context));
     memset(infoGridBmp, 0, sizeof(infoGridBmp));
@@ -135,11 +167,14 @@ static void reset_fixture(void) {
     release_call_count = 0;
     release_env = 0;
     release_grid = 0;
+    return 1;
 }
 
 static void test_oegridcreate_back_index_builds_grid_tiles_position_and_view(
     test_context *ctx) {
-    reset_fixture();
+    if (!reset_fixture()) {
+        return;
+    }
 
     TEST_ASSERT_EQ_INT(ctx, 0, OEGridCreate(1));
 
@@ -180,7 +215,9 @@ static void test_oegridcreate_back_index_builds_grid_tiles_position_and_view(
 
 static void test_oegridcreate_other_index_returns_without_side_effects(
     test_context *ctx) {
-    reset_fixture();
+    if (!reset_fixture()) {
+        return;
+    }
     context.grids[0] = (hmx_grid *)&grid_storage[0];
 
     TEST_ASSERT_EQ_INT(ctx, 0, OEGridCreate(0));
@@ -194,7 +231,9 @@ static void test_oegridcreate_other_index_returns_without_side_effects(
 
 static void test_oegriddelete_back_index_releases_and_clears_tile_handle(
     test_context *ctx) {
-    reset_fixture();
+    if (!reset_fixture()) {
+        return;
+    }
     context.grids[1] = (hmx_grid *)&grid_storage[1];
     grid_handles[1] = 78;
     tile_handles[1] = 90;
@@ -210,7 +249,9 @@ static void test_oegriddelete_back_index_releases_and_clears_tile_handle(
 }
 
 static void test_oegriddelete_other_index_keeps_tile_handle(test_context *ctx) {
-    reset_fixture();
+    if (!reset_fixture()) {
+        return;
+    }
     context.grids[0] = (hmx_grid *)&grid_storage[0];
     grid_handles[0] = 12;
     tile_handles[0] = 34;
@@ -224,7 +265,9 @@ static void test_oegriddelete_other_index_keeps_tile_handle(test_context *ctx) {
 }
 
 static void test_oegriddelete_empty_grid_keeps_empty_state(test_context *ctx) {
-    reset_fixture();
+    if (!reset_fixture()) {
+        return;
+    }
 
     OEGridDelete(1);
 
@@ -234,7 +277,9 @@ static void test_oegriddelete_empty_grid_keeps_empty_state(test_context *ctx) {
 }
 
 static void test_oeallgriddelete_uses_back_index(test_context *ctx) {
-    reset_fixture();
+    if (!reset_fixture()) {
+        return;
+    }
     context.grids[1] = (hmx_grid *)&grid_storage[1];
     grid_handles[1] = 44;
     tile_handles[1] = 55;

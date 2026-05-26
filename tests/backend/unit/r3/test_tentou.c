@@ -184,9 +184,9 @@ static void test_tentou_tables_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, pat_ten_b_tentou[0] == &ten_b_tentou0);
     TEST_ASSERT_TRUE(ctx, pat_e_tentou[2] == &e_tentou2);
     TEST_ASSERT_TRUE(ctx, tentou_bomten_b_pat[1] == &bomten_b_1);
-    TEST_ASSERT_EQ_INT(ctx, 474, ten_b_tentou0.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 479, e_tentou2.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 481, bomten_b_1.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TENTOU_BASE, ten_b_tentou0.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TENTOU_BASE + 5, e_tentou2.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TENTOU_BASE + 7, bomten_b_1.spra[0].index);
 }
 
 static void test_tentou_wrapper_routes_and_obeys_suicide(test_context *ctx) {

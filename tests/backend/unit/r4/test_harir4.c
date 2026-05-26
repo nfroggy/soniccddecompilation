@@ -136,8 +136,8 @@ static void test_harir4_patterns_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, harir4_pat0.cnt);
     TEST_ASSERT_EQ_INT(ctx, -16, harir4_pat0.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -16, harir4_pat0.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 429, harir4_pat0.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 430, harir4_pat1.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_HARIR4_BASE, harir4_pat0.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_HARIR4_BASE + 1, harir4_pat1.spra[0].index);
 }
 
 static void test_harir4_init_sets_flat_spike_defaults(test_context *ctx) {

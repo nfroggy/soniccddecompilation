@@ -37,7 +37,7 @@ static void test_tekkyu1_patterns_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, -16, pat0.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -16, pat0.spra[0].yoff);
     TEST_ASSERT_EQ_INT(ctx, 0, pat0.spra[0].etc);
-    TEST_ASSERT_EQ_INT(ctx, 505, pat0.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TEKKYU1_BASE, pat0.spra[0].index);
 }
 
 static void test_tekkyu1_initializes_then_renders(test_context *ctx) {

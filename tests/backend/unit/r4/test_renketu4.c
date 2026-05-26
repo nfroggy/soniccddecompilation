@@ -134,9 +134,9 @@ static void test_renketu4_patterns_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, renketu4_pat0.cnt);
     TEST_ASSERT_EQ_INT(ctx, -32, renketu4_pat0.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -8, renketu4_pat0.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 496, renketu4_pat0.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_RENKETU4_BASE, renketu4_pat0.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, -8, renketu4_pat1.spra[0].xoff);
-    TEST_ASSERT_EQ_INT(ctx, 497, renketu4_pat1.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_RENKETU4_BASE + 1, renketu4_pat1.spra[0].index);
 }
 
 static void test_renketu4_init_spawns_linked_children_and_moves(

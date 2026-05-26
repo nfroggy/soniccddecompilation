@@ -181,8 +181,8 @@ static void test_et4_tables_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, pat_et[7] == &et_pat07);
     TEST_ASSERT_EQ_INT(ctx, -40, et_pat00.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, 16, et_pat00.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 431, et_pat00.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 437, et_pat06.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_ET4_BASE, et_pat00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_ET4_BASE + 6, et_pat06.spra[0].index);
     TEST_ASSERT_TRUE(ctx, pchg[0] == p_a);
     TEST_ASSERT_EQ_INT(ctx, 3, p_a[0]);
     TEST_ASSERT_EQ_INT(ctx, -1, p_a[5]);

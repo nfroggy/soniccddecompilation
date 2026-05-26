@@ -68,7 +68,7 @@ static void test_wall4_pattern_captures_tile_and_offsets(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, wall4_pat0.cnt);
     TEST_ASSERT_EQ_INT(ctx, -64, wall4_pat0.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -64, wall4_pat0.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 492, wall4_pat0.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_WALL4_BASE, wall4_pat0.spra[0].index);
 }
 
 static void test_wall4_initial_clear_flag_path_runs_callbacks(

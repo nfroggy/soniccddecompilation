@@ -178,8 +178,8 @@ static void test_movie4_tables_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, movie1_pchg[1] == movie1_pchg01);
     TEST_ASSERT_TRUE(ctx, pat_movie[0] == &spr_movie1);
     TEST_ASSERT_TRUE(ctx, pat_movie[5] == &spr_movie5);
-    TEST_ASSERT_EQ_INT(ctx, 487, spr_movie1.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 491, spr_movie5.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_MOVIE4_BASE, spr_movie1.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_MOVIE4_BASE + 4, spr_movie5.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, 1, tbl0[0]);
     TEST_ASSERT_EQ_INT(ctx, -18, tbl0[4]);
     TEST_ASSERT_EQ_INT(ctx, -1, tbl0[36]);

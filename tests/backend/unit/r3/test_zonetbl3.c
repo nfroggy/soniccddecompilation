@@ -34,15 +34,15 @@ static void test_zonetbl3_title_patterns_match_existing_sprites(
     test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 9, (int)(sizeof(title_pat) / sizeof(title_pat[0])));
 
-    assert_title_pattern(ctx, 0, -16, -112, 0, 360);
-    assert_title_pattern(ctx, 1, -24, -8, 0, 361);
-    assert_title_pattern(ctx, 2, -4, -24, 0, 362);
-    assert_title_pattern(ctx, 3, -80, -8, 0, 363);
-    assert_title_pattern(ctx, 4, -24, -24, 0, 364);
-    assert_title_pattern(ctx, 5, -24, -24, 0, 365);
-    assert_title_pattern(ctx, 6, -24, -24, 0, 366);
-    assert_title_pattern(ctx, 7, 0, -56, 0, 367);
-    assert_title_pattern(ctx, 8, 0, 0, 0, 368);
+    assert_title_pattern(ctx, 0, -16, -112, 0, SPRITE_TITLE_BASE);
+    assert_title_pattern(ctx, 1, -24, -8, 0, SPRITE_TITLE_BASE + 1);
+    assert_title_pattern(ctx, 2, -4, -24, 0, SPRITE_TITLE_BASE + 2);
+    assert_title_pattern(ctx, 3, -80, -8, 0, SPRITE_TITLE_BASE + 3);
+    assert_title_pattern(ctx, 4, -24, -24, 0, SPRITE_TITLE_BASE + 4);
+    assert_title_pattern(ctx, 5, -24, -24, 0, SPRITE_TITLE_BASE + 5);
+    assert_title_pattern(ctx, 6, -24, -24, 0, SPRITE_TITLE_BASE + 6);
+    assert_title_pattern(ctx, 7, 0, -56, 0, SPRITE_TITLE_BASE + 7);
+    assert_title_pattern(ctx, 8, 0, 0, 0, SPRITE_TITLE_BASE + 8);
 }
 
 TEST_MAIN_BEGIN;

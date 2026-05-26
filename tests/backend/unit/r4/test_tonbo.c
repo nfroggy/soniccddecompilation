@@ -139,12 +139,18 @@ static void test_tonbo_patterns_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, pat_tonbo_b[0] == &spr_tonbo_b_00);
     TEST_ASSERT_TRUE(ctx, pat_tonbo_b[1] == &spr_tonbo_b_01);
     TEST_ASSERT_TRUE(ctx, pat_tonbo_b[2] == &spr_tonbo_b_02);
-    TEST_ASSERT_EQ_INT(ctx, 439, spr_tonbo_e_00.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 440, spr_tonbo_e_01.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 441, spr_tonbo_e_02.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 436, spr_tonbo_b_00.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 437, spr_tonbo_b_01.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 438, spr_tonbo_b_02.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TONBO_BASE + 3,
+                       spr_tonbo_e_00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TONBO_BASE + 4,
+                       spr_tonbo_e_01.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TONBO_BASE + 5,
+                       spr_tonbo_e_02.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TONBO_BASE,
+                       spr_tonbo_b_00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TONBO_BASE + 1,
+                       spr_tonbo_b_01.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TONBO_BASE + 2,
+                       spr_tonbo_b_02.spra[0].index);
     TEST_ASSERT_TRUE(ctx, pchg[0] == pchg0);
     TEST_ASSERT_TRUE(ctx, pchg[1] == pchg1);
 }

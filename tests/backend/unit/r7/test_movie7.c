@@ -167,14 +167,16 @@ static void test_movie7_tables_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, pat_movie[5] == &spr_movie5);
     TEST_ASSERT_EQ_INT(ctx, -12, spr_movie1.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -12, spr_movie1.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 462, spr_movie1.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_MOVIE7_BASE, spr_movie1.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, 0, spr_movie0.cnt);
     TEST_ASSERT_EQ_INT(ctx, -20, spr_movie0.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -24, spr_movie0.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 466, spr_movie0.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_MOVIE7_BASE + 4,
+                       spr_movie0.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, -20, spr_movie5.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -24, spr_movie5.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 466, spr_movie5.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_MOVIE7_BASE + 4,
+                       spr_movie5.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, 1, tbl0[0]);
     TEST_ASSERT_EQ_INT(ctx, -1, tbl0[36]);
 }

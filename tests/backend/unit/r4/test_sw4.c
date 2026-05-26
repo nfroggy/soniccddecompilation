@@ -146,9 +146,9 @@ static void test_sw4_patterns_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, pat00.cnt);
     TEST_ASSERT_EQ_INT(ctx, -16, pat00.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -8, pat00.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 472, pat00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_SW4_BASE, pat00.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, -4, pat01.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 473, pat01.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_SW4_BASE + 1, pat01.spra[0].index);
 }
 
 static void test_sw4_initializes_and_clears_switch_when_not_pressed(

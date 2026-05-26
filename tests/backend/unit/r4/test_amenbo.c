@@ -147,8 +147,8 @@ static void test_amenbo_tables_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 5, pchg_e1[0]);
     TEST_ASSERT_TRUE(ctx, pat_amenbo_b[0] == &spr_amenbo_b_00);
     TEST_ASSERT_TRUE(ctx, pat_amenbo_e[3] == &spr_amenbo_e_03);
-    TEST_ASSERT_EQ_INT(ctx, 442, spr_amenbo_b_00.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 447, spr_amenbo_e_03.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_AMENBO_BASE, spr_amenbo_b_00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_AMENBO_BASE + 5, spr_amenbo_e_03.spra[0].index);
 }
 
 static void test_projectile_branch_uses_parent_speed_and_palette(

@@ -155,10 +155,10 @@ static void test_tobiras4_patterns_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, pat00.cnt);
     TEST_ASSERT_EQ_INT(ctx, -64, pat00.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -64, pat00.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 509, pat00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TOBIRAS4_BASE, pat00.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, -16, pat01.spra[0].xoff);
-    TEST_ASSERT_EQ_INT(ctx, 510, pat01.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 511, pat02.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TOBIRAS4_BASE + 1, pat01.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TOBIRAS4_BASE + 2, pat02.spra[0].index);
 }
 
 static void test_tobiras4_init_frames_out_when_switch_already_set(

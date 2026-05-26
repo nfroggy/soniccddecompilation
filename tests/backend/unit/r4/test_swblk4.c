@@ -143,14 +143,14 @@ static void test_swblk4_patterns_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, switchr4pat[1] == &switchr4_pat1);
     TEST_ASSERT_EQ_INT(ctx, -16, switchr4_pat0.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -12, switchr4_pat0.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 472, switchr4_pat0.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 473, switchr4_pat1.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_SWBLK4_BASE, switchr4_pat0.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_SWBLK4_BASE + 1, switchr4_pat1.spra[0].index);
     TEST_ASSERT_TRUE(ctx, swblkr4pat[0] == &swblkr4_pat0);
     TEST_ASSERT_TRUE(ctx, swblkr4pat[1] == &swblkr4_pat1);
     TEST_ASSERT_TRUE(ctx, swblkr4pat[2] == &swblkr4_pat2);
-    TEST_ASSERT_EQ_INT(ctx, 474, swblkr4_pat0.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 475, swblkr4_pat1.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 476, swblkr4_pat2.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_SWBLK4_BASE + 2, swblkr4_pat0.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_SWBLK4_BASE + 3, swblkr4_pat1.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_SWBLK4_BASE + 4, swblkr4_pat2.spra[0].index);
 }
 
 static void test_switchr4_init_pressed_by_player(test_context *ctx) {

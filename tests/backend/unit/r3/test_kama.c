@@ -198,9 +198,9 @@ static void test_kama_tables_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, kamapat[0] == &kama_patA);
     TEST_ASSERT_TRUE(ctx, bkamapat[7] == &bkama_patH);
     TEST_ASSERT_TRUE(ctx, wpkamapat[5] == &bu5);
-    TEST_ASSERT_EQ_INT(ctx, 424, kama_patA.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 473, bkama_patH.spra[2].index);
-    TEST_ASSERT_EQ_INT(ctx, 423, bu5.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_KAMA_BASE + 6, kama_patA.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_KAMA_BASE + 55, bkama_patH.spra[2].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_KAMA_BASE + 5, bu5.spra[0].index);
 }
 
 static void test_ene_kama_wrapper_and_initialization(test_context *ctx) {

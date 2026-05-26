@@ -213,13 +213,13 @@ static void test_bobin_tables_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, frippat[2] == &fripsp2);
     TEST_ASSERT_EQ_INT(ctx, -16, bobinsp0.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -16, bobinsp0.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 497, bobinsp0.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_BOBIN_BASE, bobinsp0.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, -24, bobinsp2.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -20, bobinsp2.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 499, bobinsp2.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_BOBIN_BASE + 2, bobinsp2.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, -32, fripsp0.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -12, fripsp0.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 500, fripsp0.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_BOBIN_BASE + 3, fripsp0.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, 14, frip_posi[0]);
     TEST_ASSERT_EQ_INT(ctx, -4, frip_posi[63]);
     TEST_ASSERT_EQ_INT(ctx, 18, frip_posi_r[0]);

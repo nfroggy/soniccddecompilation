@@ -127,9 +127,9 @@ static void test_tekkyu_patterns_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, pat_tyuusin == pat_tekkyu);
     TEST_ASSERT_TRUE(ctx, pat_kusari[0] == &kusari_pat00);
     TEST_ASSERT_TRUE(ctx, pat_tekkyu1[0] == &tekkyu1_pat00);
-    TEST_ASSERT_EQ_INT(ctx, 493, tekkyu_pat00.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 494, kusari_pat00.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 495, tekkyu1_pat00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TEKKYU_BASE, tekkyu_pat00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TEKKYU_BASE + 1, kusari_pat00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TEKKYU_BASE + 2, tekkyu1_pat00.spra[0].index);
 }
 
 static void test_tekkyu_main_init_spawns_chain_and_moves(test_context *ctx) {

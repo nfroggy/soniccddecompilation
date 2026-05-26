@@ -116,13 +116,13 @@ static void test_ga3_tables_capture_literal_sprite_data(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, spat_b3.cnt);
     TEST_ASSERT_EQ_INT(ctx, -16, spat_b3.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -10, spat_b3.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 482, spat_b3.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_GA3_BASE, spat_b3.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, -16, spat_e3.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -12, spat_e3.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 485, spat_e3.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_GA3_BASE + 3, spat_e3.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, -12, spat_2.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -16, spat_2.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 490, spat_2.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_GA3_BASE + 8, spat_2.spra[0].index);
 }
 
 static void test_ga_enemy_suicide_short_circuits_main_enemy(test_context *ctx) {

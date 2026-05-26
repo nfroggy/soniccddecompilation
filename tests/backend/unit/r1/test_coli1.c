@@ -31,6 +31,10 @@ void jumpcolsub(void);
 Uint8 CCset(Sint32 lSrc, Sint32 lDst);
 Uint8 CSset(Uint16 wSrc, Uint16 wDst);
 
+#ifdef R11A
+Uint8 bCarry;
+#endif
+
 #include "src/r1/coli1.c"
 
 void scoreup(Uint32 updata) {

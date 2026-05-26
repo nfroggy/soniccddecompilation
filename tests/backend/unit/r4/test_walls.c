@@ -124,10 +124,10 @@ static void test_walls_tables_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, pat_walls[2] == &pat02);
     TEST_ASSERT_TRUE(ctx, pat_walls[3] == &pat03);
     TEST_ASSERT_TRUE(ctx, pat_walls[4] == &pat04);
-    TEST_ASSERT_EQ_INT(ctx, 477, pat00.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 478, pat01.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 479, pat02.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 480, pat03.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_WALLS_BASE, pat00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_WALLS_BASE + 1, pat01.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_WALLS_BASE + 2, pat02.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_WALLS_BASE + 3, pat03.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, 2, patno_tbl[0][0]);
     TEST_ASSERT_EQ_INT(ctx, 0, patno_tbl[1][0]);
     TEST_ASSERT_EQ_INT(ctx, 1, patno_tbl[8][7]);

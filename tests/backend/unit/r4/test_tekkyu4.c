@@ -143,7 +143,7 @@ static void test_tekkyu4_patterns_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, -16, tekkyu4_pat0.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -16, tekkyu4_pat0.spra[0].yoff);
     TEST_ASSERT_EQ_INT(ctx, 0, tekkyu4_pat0.spra[0].etc);
-    TEST_ASSERT_EQ_INT(ctx, 474, tekkyu4_pat0.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TEKKYU4_BASE, tekkyu4_pat0.spra[0].index);
 }
 
 static void test_tekkyu4_init_builds_four_link_chain(test_context *ctx) {

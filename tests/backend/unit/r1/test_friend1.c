@@ -158,8 +158,9 @@ static void test_friend1_tables_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, pat_friend1[5] == &spr_ricky5);
     TEST_ASSERT_TRUE(ctx, pchg0[0] == pchg00);
     TEST_ASSERT_TRUE(ctx, pchg1[0] == pchg10);
-    TEST_ASSERT_EQ_INT(ctx, 536, spr_flicky1.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 542, spr_ricky5.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_FRIEND_BASE, spr_flicky1.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_FRIEND_BASE + 6,
+                       spr_ricky5.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, 1271, tbl0sproffset[0]);
     TEST_ASSERT_EQ_INT(ctx, 975, tbl0sproffset[10]);
 }

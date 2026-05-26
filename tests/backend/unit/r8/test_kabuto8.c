@@ -164,7 +164,7 @@ static void test_kabuto8_patterns_capture_default_literal_data(
     TEST_ASSERT_EQ_INT(ctx, 1, cub00.cnt);
     TEST_ASSERT_EQ_INT(ctx, -24, cub00.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -16, cub00.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 300, cub00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_KABUTO8_BASE, cub00.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, 2, p00[0]);
     TEST_ASSERT_EQ_INT(ctx, 0, p00[1]);
     TEST_ASSERT_EQ_INT(ctx, 1, p00[2]);
@@ -176,9 +176,9 @@ static void test_kabuto8_patterns_capture_default_literal_data(
     TEST_ASSERT_TRUE(ctx, pchg[1] == p01);
     TEST_ASSERT_TRUE(ctx, pat[0] == &hea00);
     TEST_ASSERT_TRUE(ctx, pat[3] == &hea03);
-    TEST_ASSERT_EQ_INT(ctx, 302, hea00.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 301, hea00.spra[1].index);
-    TEST_ASSERT_EQ_INT(ctx, 303, hea02.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_KABUTO8_BASE + 2, hea00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_KABUTO8_BASE + 1, hea00.spra[1].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_KABUTO8_BASE + 3, hea02.spra[0].index);
 }
 
 static void test_kabuto_body_suicide_return_skips_work(test_context *ctx) {

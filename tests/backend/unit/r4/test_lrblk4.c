@@ -139,8 +139,8 @@ static void test_tables_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, lrblk4pat8[0] == &pat10);
     TEST_ASSERT_EQ_INT(ctx, -64, pat10.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -16, pat10.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 491, pat10.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 499, pat63.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_LRBLK4_BASE, pat10.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_LRBLK4_BASE + 8, pat63.spra[0].index);
 }
 
 static void test_type1_master_child_and_fout_paths(test_context *ctx) {

@@ -82,10 +82,10 @@ static void test_wall7_patterns_and_static_wall_init(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, pat_wall7[5] == &wall7_pat5);
     TEST_ASSERT_EQ_INT(ctx, 1, wall7_pat0.cnt);
     TEST_ASSERT_EQ_INT(ctx, -16, wall7_pat0.spra[0].xoff);
-    TEST_ASSERT_EQ_INT(ctx, 428, wall7_pat0.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_WALL7_BASE, wall7_pat0.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, -16, wall7_pat5.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -48, wall7_pat5.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 433, wall7_pat5.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_WALL7_BASE + 5, wall7_pat5.spra[0].index);
 
     reset_wall7_state();
     wall->userflag.b.h = 2;

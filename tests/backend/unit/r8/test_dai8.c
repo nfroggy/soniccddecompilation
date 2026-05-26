@@ -155,8 +155,8 @@ static void test_dai8_patterns_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, pat_dai8[0] == &pat00);
     TEST_ASSERT_TRUE(ctx, pat_dai8[6] == &patnull);
     TEST_ASSERT_TRUE(ctx, pat_dai8[7] == &pat00);
-    TEST_ASSERT_EQ_INT(ctx, 433, pat00.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 438, pat05.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_DAI8_BASE, pat00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_DAI8_BASE + 5, pat05.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, 0, patnull.spra[0].index);
 }
 

@@ -151,10 +151,10 @@ static void test_brunko4_patterns_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, pat0.cnt);
     TEST_ASSERT_EQ_INT(ctx, -8, pat0.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -8, pat0.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 470, pat0.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_BRUNKO4_BASE, pat0.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, -32, pat1.spra[0].xoff);
-    TEST_ASSERT_EQ_INT(ctx, 471, pat1.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 472, pat2.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_BRUNKO4_BASE + 1, pat1.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_BRUNKO4_BASE + 2, pat2.spra[0].index);
 }
 
 static void test_brunko4_init_spawns_chain_links(test_context *ctx) {

@@ -211,10 +211,10 @@ static void test_ring_tables_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, ringsp0.cnt);
     TEST_ASSERT_EQ_INT(ctx, -8, ringsp0.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -8, ringsp0.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 362, ringsp0.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_RING_BASE, ringsp0.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, -4, ringsp2.spra[0].xoff);
-    TEST_ASSERT_EQ_INT(ctx, 364, ringsp2.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 369, ringsp7.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_RING_BASE + 2, ringsp2.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_RING_BASE + 7, ringsp7.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, 5, ringchg0[0]);
     TEST_ASSERT_EQ_INT(ctx, 4, ringchg0[1]);
     TEST_ASSERT_EQ_INT(ctx, 5, ringchg0[2]);

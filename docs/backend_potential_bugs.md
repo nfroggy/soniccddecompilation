@@ -490,6 +490,99 @@ tests.
   characterization.
 - Related source location: `src/r1/scr11d.c`, lines 603-605.
 
+## `src/r1/scr12a.c`: high `scrollwrtb` clamp can walk past the write table
+
+- Test case or snapshot path: `tests/backend/unit/r1/test_scr12a.c`
+- Variant and build configuration: round-1 scroll 2A include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `scrollwrtb` assigns `WrtTblCnt` from
+  `scrb_v_posit.w.h / 16`. If that value is high enough, it clamps to `113`,
+  but the following loop still reads sixteen entries starting at
+  `z12awrttbl[113]` even though `z12awrttbl` has 33 entries. The retained tests
+  cover normal and shifted write-table rows and avoid forcing this
+  out-of-bounds table walk.
+- Why the behavior looks suspicious: the clamp protects the starting value from
+  growing indefinitely, but not from exceeding the table used immediately
+  afterward. This is intentionally not fixed during characterization.
+- Related source location: `src/r1/scr12a.c`, lines 780-788.
+
+## `src/r1/scr12b.c`: high `scrollwrtb` clamp can walk past the write table
+
+- Test case or snapshot path: `tests/backend/unit/r1/test_scr12b.c`
+- Variant and build configuration: round-1 scroll 2B include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `scrollwrtb` assigns `WrtTblCnt` from
+  `scrb_v_posit.w.h / 16`. If that value is high enough, it clamps to `113`,
+  but the following loop still reads sixteen entries starting at
+  `z12bwrttbl[113]` even though `z12bwrttbl` has 33 entries. The retained tests
+  cover normal and shifted write-table rows and avoid forcing this
+  out-of-bounds table walk.
+- Why the behavior looks suspicious: the clamp protects the starting value from
+  growing indefinitely, but not from exceeding the table used immediately
+  afterward. This is intentionally not fixed during characterization.
+- Related source location: `src/r1/scr12b.c`, lines 697-705.
+
+## `src/r1/scr12b.c`: parallax flag helpers compare a value to itself
+
+- Test case or snapshot path: `tests/backend/unit/r1/test_scr12b.c`
+- Variant and build configuration: round-1 scroll 2B include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `scrollc_h` and `scrollz_h` assign both `lXwk` and
+  `lXsv` from the post-addition position expression before checking
+  `lXwk - lXsv < 0`. The difference is therefore zero, so the positive flag
+  branch is selected whenever the count gate allows an update.
+- Why the behavior looks suspicious: the helpers appear to intend comparing
+  the new position against the saved previous position, as sibling scroll code
+  does, but the saved value is overwritten before the comparison. This is
+  intentionally not fixed during characterization.
+- Related source locations: `src/r1/scr12b.c`, lines 313-322 and 331-340.
+
+## `src/r1/scr12b.c`: `scra_h_keep` uses the down-limit table entry
+
+- Test case or snapshot path: `tests/backend/unit/r1/test_scr12b.c`
+- Variant and build configuration: round-1 scroll 2B include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `scr_set` reads `scralim_down` from `scr_dir_tbl`
+  and immediately assigns `scra_h_keep = *pScrTbl + 576` before advancing the
+  pointer. With the current table, this sets `scra_h_keep` to `1360`.
+- Why the behavior looks suspicious: sibling scroll setup code derives
+  `scra_h_keep` from the horizontal limit side of the table, while this path
+  uses the vertical down-limit entry. This is intentionally not fixed during
+  characterization.
+- Related source location: `src/r1/scr12b.c`, lines 70-72.
+
+## `src/r1/scr12c.c`: high `scrollwrtb` clamp can walk past the write table
+
+- Test case or snapshot path: `tests/backend/unit/r1/test_scr12c.c`
+- Variant and build configuration: round-1 scroll 2C include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `scrollwrtb` assigns `WrtTblCnt` from
+  `scrb_v_posit.w.h / 16`. If that value is high enough, it clamps to `113`,
+  but the following loop still reads sixteen entries starting at
+  `z12cwrttbl[113]` even though `z12cwrttbl` has 33 entries. The retained tests
+  cover normal and shifted write-table rows and avoid forcing this
+  out-of-bounds table walk.
+- Why the behavior looks suspicious: the clamp protects the starting value from
+  growing indefinitely, but not from exceeding the table used immediately
+  afterward. This is intentionally not fixed during characterization.
+- Related source location: `src/r1/scr12c.c`, lines 690-698.
+
+## `src/r1/scr12d.c`: high `scrollwrtb` clamp can walk past the write table
+
+- Test case or snapshot path: `tests/backend/unit/r1/test_scr12d.c`
+- Variant and build configuration: round-1 scroll 2D include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `scrollwrtb` assigns `WrtTblCnt` from
+  `scrb_v_posit.w.h / 16`. If that value is high enough, it clamps to `113`,
+  but the following loop still reads sixteen entries starting at
+  `z12dwrttbl[113]` even though `z12dwrttbl` has 33 entries. The retained tests
+  cover normal and shifted write-table rows and avoid forcing this
+  out-of-bounds table walk.
+- Why the behavior looks suspicious: the clamp protects the starting value from
+  growing indefinitely, but not from exceeding the table used immediately
+  afterward. This is intentionally not fixed during characterization.
+- Related source location: `src/r1/scr12d.c`, lines 656-664.
+
 ## `src/r4/walls.c`: child pattern setup reads before the selected row
 
 - Test case or snapshot path: `tests/backend/unit/r4/test_walls.c`
@@ -787,6 +880,422 @@ tests.
   fixed during characterization.
 - Related source locations: `src/r4/scr41a.c`, lines 849 and 1002.
 
+## `src/r7/scr71d.c`: negative guards follow unsigned-derived values
+
+- Test case or snapshot path: `tests/backend/unit/r7/test_scr71d.c`
+- Variant and build configuration: R7 scroll 1D include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `scrollwrtb` assigns `WrtTblCnt` from a `Uint16`
+  expression before checking `if (WrtTblCnt < 0)`, and `mapadrset99` checks
+  `if (i < 0)` after clamping unsigned offsets. The guarded bodies do not
+  appear reachable under the test build.
+- Why the behavior looks suspicious: both checks look like defensive clamps
+  left over from a signed-offset implementation. This is intentionally not
+  fixed during characterization.
+- Related source locations: `src/r7/scr71d.c`, lines 820-821 and 973-974.
+
+## `src/r7/scr72a.c`: negative guards follow unsigned-derived values
+
+- Test case or snapshot path: `tests/backend/unit/r7/test_scr72a.c`
+- Variant and build configuration: R7 scroll 2A include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `scrollwrtb` assigns `WrtTblCnt` from a `Uint16`
+  expression before checking `if (WrtTblCnt < 0)`, and `mapadrset99` checks
+  `if (i < 0)` after clamping unsigned offsets. The guarded bodies do not
+  appear reachable under the test build.
+- Why the behavior looks suspicious: both checks look like defensive clamps
+  left over from a signed-offset implementation. This is intentionally not
+  fixed during characterization.
+- Related source locations: `src/r7/scr72a.c`, lines 842-843 and 995-996.
+
+## `src/r7/scr72b.c`: negative guards follow unsigned-derived values
+
+- Test case or snapshot path: `tests/backend/unit/r7/test_scr72b.c`
+- Variant and build configuration: R7 scroll 2B include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `scrollwrtb` assigns `WrtTblCnt` from a `Uint16`
+  expression before checking `if (WrtTblCnt < 0)`, and `mapadrset99` checks
+  `if (i < 0)` after clamping unsigned offsets. The guarded bodies do not
+  appear reachable under the test build.
+- Why the behavior looks suspicious: both checks look like defensive clamps
+  left over from a signed-offset implementation. This is intentionally not
+  fixed during characterization.
+- Related source locations: `src/r7/scr72b.c`, lines 841-842 and 994-995.
+
+## `src/r7/scr72c.c`: negative guards follow unsigned-derived values
+
+- Test case or snapshot path: `tests/backend/unit/r7/test_scr72c.c`
+- Variant and build configuration: R7 scroll 2C include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `scrollwrtb` assigns `WrtTblCnt` from a `Uint16`
+  expression before checking `if (WrtTblCnt < 0)`, and `mapadrset99` checks
+  `if (i < 0)` after clamping unsigned offsets. The guarded bodies do not
+  appear reachable under the test build.
+- Why the behavior looks suspicious: both checks look like defensive clamps
+  left over from a signed-offset implementation. This is intentionally not
+  fixed during characterization.
+- Related source locations: `src/r7/scr72c.c`, lines 813-814 and 966-967.
+
+## `src/r7/scr72d.c`: negative guards follow unsigned-derived values
+
+- Test case or snapshot path: `tests/backend/unit/r7/test_scr72d.c`
+- Variant and build configuration: R7 scroll 2D include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `scrollwrtb` assigns `WrtTblCnt` from a `Uint16`
+  expression before checking `if (WrtTblCnt < 0)`, and `mapadrset99` checks
+  `if (i < 0)` after clamping unsigned offsets. The guarded bodies do not
+  appear reachable under the test build.
+- Why the behavior looks suspicious: both checks look like defensive clamps
+  left over from a signed-offset implementation. This is intentionally not
+  fixed during characterization.
+- Related source locations: `src/r7/scr72d.c`, lines 820-821 and 973-974.
+
+## `src/r7/scr73c.c`: negative guards follow unsigned-derived values
+
+- Test case or snapshot path: `tests/backend/unit/r7/test_scr73c.c`
+- Variant and build configuration: R7 scroll 3C include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `scrollwrtb` assigns `WrtTblCnt` from a `Uint16`
+  expression before checking `if (WrtTblCnt < 0)`, and `mapadrset99` checks
+  `if (i < 0)` after clamping unsigned offsets. The guarded bodies do not
+  appear reachable under the test build.
+- Why the behavior looks suspicious: both checks look like defensive clamps
+  left over from a signed-offset implementation. This is intentionally not
+  fixed during characterization.
+- Related source locations: `src/r7/scr73c.c`, lines 812-813 and 965-966.
+
+## `src/r7/scr73d.c`: negative guards follow unsigned-derived values
+
+- Test case or snapshot path: `tests/backend/unit/r7/test_scr73d.c`
+- Variant and build configuration: R7 scroll 3D include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `scrollwrtb` assigns `WrtTblCnt` from a `Uint16`
+  expression before checking `if (WrtTblCnt < 0)`, and `mapadrset99` checks
+  `if (i < 0)` after clamping unsigned offsets. The guarded bodies do not
+  appear reachable under the test build.
+- Why the behavior looks suspicious: both checks look like defensive clamps
+  left over from a signed-offset implementation. This is intentionally not
+  fixed during characterization.
+- Related source locations: `src/r7/scr73d.c`, lines 819-820 and 972-973.
+
+## `src/r6/scr61a.c`: negative guards follow unsigned-derived values
+
+- Test case or snapshot path: `tests/backend/unit/r6/test_scr61a.c`
+- Variant and build configuration: R6 scroll 1A include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `scrollwrtb` assigns `WrtTblCnt` from a `Uint16`
+  expression before checking `if (WrtTblCnt < 0)`, and `mapadrset99` checks
+  `if (i < 0)` after clamping unsigned offsets. The guarded bodies do not
+  appear reachable under the test build.
+- Why the behavior looks suspicious: both checks look like defensive clamps
+  left over from a signed-offset implementation. This is intentionally not
+  fixed during characterization.
+- Related source locations: `src/r6/scr61a.c`, lines 711-712 and 861-862.
+
+## `src/r6/scr61a.c`: top-row background write can index past `z81awrttbl`
+
+- Test case or snapshot path: `tests/backend/unit/r6/test_scr61a.c`
+- Variant and build configuration: R6 scroll 1A include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: when `scrollwrtb` is entered with the top-row flag
+  bit set and `scrb_v_posit.w.h` below `16`, the calculation
+  `(scrb_v_posit.w.h - 16) / 16 & 127` can produce `127`, and the subsequent
+  `z81awrttbl[wD0 + 1]` read addresses index `128` of a 49-byte table. The unit
+  test covers the same branch with `scrb_v_posit.w.h == 16` to avoid the
+  out-of-bounds read during characterization.
+- Why the behavior looks suspicious: the table is far smaller than the masked
+  row range used by this path. This is intentionally not fixed during
+  characterization.
+- Related source location: `src/r6/scr61a.c`, lines 677-679.
+
+## `src/r6/scr61b.c`: negative guards follow unsigned-derived values
+
+- Test case or snapshot path: `tests/backend/unit/r6/test_scr61b.c`
+- Variant and build configuration: R6 scroll 1B include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `scrollwrtb` assigns `WrtTblCnt` from a `Uint16`
+  expression before checking `if (WrtTblCnt < 0)`, and `mapadrset99` checks
+  `if (i < 0)` after clamping unsigned offsets. The guarded bodies do not
+  appear reachable under the test build.
+- Why the behavior looks suspicious: both checks look like defensive clamps
+  left over from a signed-offset implementation. This is intentionally not
+  fixed during characterization.
+- Related source locations: `src/r6/scr61b.c`, lines 752-753 and 902-903.
+
+## `src/r6/scr61b.c`: top-row background write can index past `z81awrttbl`
+
+- Test case or snapshot path: `tests/backend/unit/r6/test_scr61b.c`
+- Variant and build configuration: R6 scroll 1B include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: when `scrollwrtb` is entered with the top-row flag
+  bit set and `scrb_v_posit.w.h` below `16`, the calculation
+  `(scrb_v_posit.w.h - 16) / 16 & 127` can produce `127`, and the subsequent
+  `z81awrttbl[wD0 + 1]` read addresses index `128` of a 49-byte table. The unit
+  test covers the same branch with `scrb_v_posit.w.h == 16` to avoid the
+  out-of-bounds read during characterization.
+- Why the behavior looks suspicious: the table is far smaller than the masked
+  row range used by this path. This is intentionally not fixed during
+  characterization.
+- Related source location: `src/r6/scr61b.c`, lines 718-720.
+
+## `src/r6/scr61c.c`: negative guards follow unsigned-derived values
+
+- Test case or snapshot path: `tests/backend/unit/r6/test_scr61c.c`
+- Variant and build configuration: R6 scroll 1C include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `scrollwrtb` assigns `WrtTblCnt` from a `Uint16`
+  expression before checking `if (WrtTblCnt < 0)`, and `mapadrset99` checks
+  `if (i < 0)` after clamping unsigned offsets. The guarded bodies do not
+  appear reachable under the test build.
+- Why the behavior looks suspicious: both checks look like defensive clamps
+  left over from a signed-offset implementation. This is intentionally not
+  fixed during characterization.
+- Related source locations: `src/r6/scr61c.c`, lines 709-710 and 859-860.
+
+## `src/r6/scr61c.c`: top-row background write can index past `z81awrttbl`
+
+- Test case or snapshot path: `tests/backend/unit/r6/test_scr61c.c`
+- Variant and build configuration: R6 scroll 1C include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: when `scrollwrtb` is entered with the top-row flag
+  bit set and `scrb_v_posit.w.h` below `16`, the calculation
+  `(scrb_v_posit.w.h - 16) / 16 & 127` can produce `127`, and the subsequent
+  `z81awrttbl[wD0 + 1]` read addresses index `128` of a 49-byte table. The unit
+  test covers the same branch with `scrb_v_posit.w.h == 16` to avoid the
+  out-of-bounds read during characterization.
+- Why the behavior looks suspicious: the table is far smaller than the masked
+  row range used by this path. This is intentionally not fixed during
+  characterization.
+- Related source location: `src/r6/scr61c.c`, lines 675-677.
+
+## `src/r6/scr61d.c`: negative guards follow unsigned-derived values
+
+- Test case or snapshot path: `tests/backend/unit/r6/test_scr61d.c`
+- Variant and build configuration: R6 scroll 1D include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `scrollwrtb` assigns `WrtTblCnt` from a `Uint16`
+  expression before checking `if (WrtTblCnt < 0)`, and `mapadrset99` checks
+  `if (i < 0)` after clamping unsigned offsets. The guarded bodies do not
+  appear reachable under the test build.
+- Why the behavior looks suspicious: both checks look like defensive clamps
+  left over from a signed-offset implementation. This is intentionally not
+  fixed during characterization.
+- Related source locations: `src/r6/scr61d.c`, lines 711-712 and 861-862.
+
+## `src/r6/scr61d.c`: top-row background write can index past `z81awrttbl`
+
+- Test case or snapshot path: `tests/backend/unit/r6/test_scr61d.c`
+- Variant and build configuration: R6 scroll 1D include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: when `scrollwrtb` is entered with the top-row flag
+  bit set and `scrb_v_posit.w.h` below `16`, the calculation
+  `(scrb_v_posit.w.h - 16) / 16 & 127` can produce `127`, and the subsequent
+  `z81awrttbl[wD0 + 1]` read addresses index `128` of a 49-byte table. The unit
+  test covers the same branch with `scrb_v_posit.w.h == 16` to avoid the
+  out-of-bounds read during characterization.
+- Why the behavior looks suspicious: the table is far smaller than the masked
+  row range used by this path. This is intentionally not fixed during
+  characterization.
+- Related source location: `src/r6/scr61d.c`, lines 677-679.
+
+## `src/r6/scr62a.c`: negative guards follow unsigned-derived values
+
+- Test case or snapshot path: `tests/backend/unit/r6/test_scr62a.c`
+- Variant and build configuration: R6 scroll 2A include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `scrollwrtb` assigns `WrtTblCnt` from a `Uint16`
+  expression before checking `if (WrtTblCnt < 0)`, and `mapadrset99` checks
+  `if (i < 0)` after clamping unsigned offsets. The guarded bodies do not
+  appear reachable under the test build.
+- Why the behavior looks suspicious: both checks look like defensive clamps
+  left over from a signed-offset implementation. This is intentionally not
+  fixed during characterization.
+- Related source locations: `src/r6/scr62a.c`, lines 695-696 and 845-846.
+
+## `src/r6/scr62a.c`: top-row background write can index past `z81awrttbl`
+
+- Test case or snapshot path: `tests/backend/unit/r6/test_scr62a.c`
+- Variant and build configuration: R6 scroll 2A include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: when `scrollwrtb` is entered with the top-row flag
+  bit set and `scrb_v_posit.w.h` below `16`, the calculation
+  `(scrb_v_posit.w.h - 16) / 16 & 127` can produce `127`, and the subsequent
+  `z81awrttbl[wD0 + 1]` read addresses index `128` of a 49-byte table. The unit
+  test covers the same branch with `scrb_v_posit.w.h == 16` to avoid the
+  out-of-bounds read during characterization.
+- Why the behavior looks suspicious: the table is far smaller than the masked
+  row range used by this path. This is intentionally not fixed during
+  characterization.
+- Related source location: `src/r6/scr62a.c`, lines 661-663.
+
+## `src/r6/scr62b.c`: negative guards follow unsigned-derived values
+
+- Test case or snapshot path: `tests/backend/unit/r6/test_scr62b.c`
+- Variant and build configuration: R6 scroll 2B include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `scrollwrtb` assigns `WrtTblCnt` from a `Uint16`
+  expression before checking `if (WrtTblCnt < 0)`, and `mapadrset99` checks
+  `if (i < 0)` after clamping unsigned offsets. The guarded bodies do not
+  appear reachable under the test build.
+- Why the behavior looks suspicious: both checks look like defensive clamps
+  left over from a signed-offset implementation. This is intentionally not
+  fixed during characterization.
+- Related source locations: `src/r6/scr62b.c`, lines 740-741 and 890-891.
+
+## `src/r6/scr62b.c`: top-row background write can index past `z81awrttbl`
+
+- Test case or snapshot path: `tests/backend/unit/r6/test_scr62b.c`
+- Variant and build configuration: R6 scroll 2B include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: when `scrollwrtb` is entered with the top-row flag
+  bit set and `scrb_v_posit.w.h` below `16`, the calculation
+  `(scrb_v_posit.w.h - 16) / 16 & 127` can produce `127`, and the subsequent
+  `z81awrttbl[wD0 + 1]` read addresses index `128` of a 49-byte table. The unit
+  test covers the same branch with `scrb_v_posit.w.h == 16` to avoid the
+  out-of-bounds read during characterization.
+- Why the behavior looks suspicious: the table is far smaller than the masked
+  row range used by this path. This is intentionally not fixed during
+  characterization.
+- Related source location: `src/r6/scr62b.c`, lines 706-708.
+
+## `src/r6/scr62c.c`: negative guards follow unsigned-derived values
+
+- Test case or snapshot path: `tests/backend/unit/r6/test_scr62c.c`
+- Variant and build configuration: R6 scroll 2C include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `scrollwrtb` assigns `WrtTblCnt` from a `Uint16`
+  expression before checking `if (WrtTblCnt < 0)`, and `mapadrset99` checks
+  `if (i < 0)` after clamping unsigned offsets. The guarded bodies do not
+  appear reachable under the test build.
+- Why the behavior looks suspicious: both checks look like defensive clamps
+  left over from a signed-offset implementation. This is intentionally not
+  fixed during characterization.
+- Related source locations: `src/r6/scr62c.c`, lines 695-696 and 845-846.
+
+## `src/r6/scr62c.c`: top-row background write can index past `z81awrttbl`
+
+- Test case or snapshot path: `tests/backend/unit/r6/test_scr62c.c`
+- Variant and build configuration: R6 scroll 2C include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: when `scrollwrtb` is entered with the top-row flag
+  bit set and `scrb_v_posit.w.h` below `16`, the calculation
+  `(scrb_v_posit.w.h - 16) / 16 & 127` can produce `127`, and the subsequent
+  `z81awrttbl[wD0 + 1]` read addresses index `128` of a 49-byte table. The unit
+  test covers the same branch with `scrb_v_posit.w.h == 16` to avoid the
+  out-of-bounds read during characterization.
+- Why the behavior looks suspicious: the table is far smaller than the masked
+  row range used by this path. This is intentionally not fixed during
+  characterization.
+- Related source location: `src/r6/scr62c.c`, lines 661-663.
+
+## `src/r6/scr62d.c`: negative guards follow unsigned-derived values
+
+- Test case or snapshot path: `tests/backend/unit/r6/test_scr62d.c`
+- Variant and build configuration: R6 scroll 2D include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `scrollwrtb` assigns `WrtTblCnt` from a `Uint16`
+  expression before checking `if (WrtTblCnt < 0)`, and `mapadrset99` checks
+  `if (i < 0)` after clamping unsigned offsets. The guarded bodies do not
+  appear reachable under the test build.
+- Why the behavior looks suspicious: both checks look like defensive clamps
+  left over from a signed-offset implementation. This is intentionally not
+  fixed during characterization.
+- Related source locations: `src/r6/scr62d.c`, lines 695-696 and 845-846.
+
+## `src/r6/scr62d.c`: high `scrollwrtb` clamp can walk past `z81awrttbl`
+
+- Test case or snapshot path: discovered while running
+  `tests/backend/unit/r6/test_scr62d.c`; the unsafe case is not retained because
+  it crashes the characterization test process.
+- Variant and build configuration: R6 scroll 2D include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `scrollwrtb` assigns `WrtTblCnt` from
+  `scrb_v_posit.w.h / 16` and clamps high values to `113`, but the following
+  loop reads sixteen entries starting at that clamped index. `z81awrttbl` has
+  49 entries in this file, so a high scroll position can read beyond the table.
+  The retained unit test uses an in-range scroll position to cover the writer
+  branch without crashing.
+- Why the behavior looks suspicious: the clamp value is larger than the local
+  table and does not keep the full loop range in bounds. This is intentionally
+  not fixed during characterization.
+- Related source location: `src/r6/scr62d.c`, lines 693-701.
+
+## `src/r6/scr62d.c`: top-row background write can index past `z81awrttbl`
+
+- Test case or snapshot path: `tests/backend/unit/r6/test_scr62d.c`
+- Variant and build configuration: R6 scroll 2D include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: when `scrollwrtb` is entered with the top-row flag
+  bit set and `scrb_v_posit.w.h` below `16`, the calculation
+  `(scrb_v_posit.w.h - 16) / 16 & 127` can produce `127`, and the subsequent
+  `z81awrttbl[wD0 + 1]` read addresses index `128` of a 49-byte table. The unit
+  test covers the same branch with `scrb_v_posit.w.h == 16` to avoid the
+  out-of-bounds read during characterization.
+- Why the behavior looks suspicious: the table is far smaller than the masked
+  row range used by this path. This is intentionally not fixed during
+  characterization.
+- Related source location: `src/r6/scr62d.c`, lines 661-663.
+
+## `src/r6/scr63c.c`: negative guards follow unsigned-derived values
+
+- Test case or snapshot path: `tests/backend/unit/r6/test_scr63c.c`
+- Variant and build configuration: R6 scroll 3C include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `scrollwrtb` assigns `WrtTblCnt` from a `Uint16`
+  expression before checking `if (WrtTblCnt < 0)`, and `mapadrset99` checks
+  `if (i < 0)` after clamping unsigned offsets. The guarded bodies do not
+  appear reachable under the test build.
+- Why the behavior looks suspicious: both checks look like defensive clamps
+  left over from a signed-offset implementation. This is intentionally not
+  fixed during characterization.
+- Related source locations: `src/r6/scr63c.c`, lines 711-712 and 861-862.
+
+## `src/r6/scr63c.c`: top-row background write can index past `z81awrttbl`
+
+- Test case or snapshot path: `tests/backend/unit/r6/test_scr63c.c`
+- Variant and build configuration: R6 scroll 3C include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: when `scrollwrtb` is entered with the top-row flag
+  bit set and `scrb_v_posit.w.h` below `16`, the calculation
+  `(scrb_v_posit.w.h - 16) / 16 & 127` can produce `127`, and the subsequent
+  `z81awrttbl[wD0 + 1]` read addresses index `128` of a 49-byte table. The unit
+  test covers the same branch with `scrb_v_posit.w.h == 16` to avoid the
+  out-of-bounds read during characterization.
+- Why the behavior looks suspicious: the table is far smaller than the masked
+  row range used by this path. This is intentionally not fixed during
+  characterization.
+- Related source location: `src/r6/scr63c.c`, lines 677-679.
+
+## `src/r6/scr63d.c`: negative guards follow unsigned-derived values
+
+- Test case or snapshot path: `tests/backend/unit/r6/test_scr63d.c`
+- Variant and build configuration: R6 scroll 3D include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `scrollwrtb` assigns `WrtTblCnt` from a `Uint16`
+  expression before checking `if (WrtTblCnt < 0)`, and `mapadrset99` checks
+  `if (i < 0)` after clamping unsigned offsets. The guarded bodies do not
+  appear reachable under the test build.
+- Why the behavior looks suspicious: both checks look like defensive clamps
+  left over from a signed-offset implementation. This is intentionally not
+  fixed during characterization.
+- Related source locations: `src/r6/scr63d.c`, lines 709-710 and 859-860.
+
+## `src/r6/scr63d.c`: top-row background write can index past `z81awrttbl`
+
+- Test case or snapshot path: `tests/backend/unit/r6/test_scr63d.c`
+- Variant and build configuration: R6 scroll 3D include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: when `scrollwrtb` is entered with the top-row flag
+  bit set and `scrb_v_posit.w.h` below `16`, the calculation
+  `(scrb_v_posit.w.h - 16) / 16 & 127` can produce `127`, and the subsequent
+  `z81awrttbl[wD0 + 1]` read addresses index `128` of a 49-byte table. The unit
+  test covers the same branch with `scrb_v_posit.w.h == 16` to avoid the
+  out-of-bounds read during characterization.
+- Why the behavior looks suspicious: the table is far smaller than the masked
+  row range used by this path. This is intentionally not fixed during
+  characterization.
+- Related source location: `src/r6/scr63d.c`, lines 675-677.
+
 ## `src/game.c`: standalone comparison has no effect
 
 - Test case or snapshot path: `tests/backend/unit/test_game.c`
@@ -942,3 +1451,195 @@ tests.
   Sonic's starting side, but the explicit assignment makes the branch
   deterministic. This is intentionally not fixed during characterization.
 - Related source location: `src/title/thanks/sprmove.c`, lines 132-142.
+
+## `src/r8/boss_8.c`: `egg8_spin_r` assigns an odd state before checking parity
+
+- Test case or snapshot path: `tests/backend/unit/r8/test_boss_8.c`
+- Variant and build configuration: round-8 boss include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: in the spin stop-point path for
+  `(char)pActwk->actfree[3] >= 3`, the function assigns
+  `pActwk->actfree[3] = 133` and then immediately checks
+  `if (pActwk->actfree[3] & 1)`. The true/decrement branch is always selected
+  because `133` is odd.
+- Why the behavior looks suspicious: the `else` branch that increments
+  `actfree[1]` appears to be dead code unless the assignment was meant to
+  preserve or compute a parity bit differently. This is intentionally not fixed
+  during characterization.
+- Related source location: `src/r8/boss_8.c`, lines 673-679.
+
+## `src/title/planet/lplmain.c`: `game_init` has unreachable fallback after `init_dsp`
+
+- Test case or snapshot path: `tests/backend/unit/title/planet/test_lplmain.c`
+- Variant and build configuration: planet title include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `game_init` only executes the `comflag_m = 0` and
+  `ProcEnd = 1` fallback when `init_dsp()` returns nonzero, but `init_dsp()`
+  always returns `0`.
+- Why the behavior looks suspicious: the fallback appears intended to end the
+  procedure if display initialization fails, but the callee has no failing
+  return path. This is intentionally not fixed during characterization.
+- Related source location: `src/title/planet/lplmain.c`, lines 249-254 and
+  497-498.
+
+## `src/title/planet/lplmain.c`: `cgdata_change` default case requires an out-of-bounds map index
+
+- Test case or snapshot path: `tests/backend/unit/title/planet/test_lplmain.c`
+- Variant and build configuration: planet title include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: the switch default in `cgdata_change` can only be
+  reached with `comdata_m5` outside the handled values, but the function indexes
+  `ScrAMapFileName[comdata_m5]` before the switch.
+- Why the behavior looks suspicious: values greater than `2` and not equal to
+  the explicit `3` skip value read past the filename table before reaching the
+  default branch. This is intentionally not fixed during characterization.
+- Related source location: `src/title/planet/lplmain.c`, lines 573-590.
+
+## `src/title/planet/lplmain.c`: map read comparison result is discarded
+
+- Test case or snapshot path: `tests/backend/unit/title/planet/test_lplmain.c`
+- Variant and build configuration: planet title include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: compiling the characterization test emits MSVC
+  warning C4552 for `(sReadFile(hf, ScrBMap, sizeof(ScrBMap)) ^ sizeof(ScrBMap)) > 0;`.
+  The expression is evaluated and its result is discarded.
+- Why the behavior looks suspicious: the expression looks like it may have been
+  intended to test for a failed or partial read. This is intentionally not fixed
+  during characterization.
+- Related source location: `src/title/planet/lplmain.c`, line 203.
+
+## `src/special/ens.c`: `ptset_ufo` has a redundant distance clamp
+
+- Test case or snapshot path: `tests/backend/unit/special/test_ens.c`
+- Variant and build configuration: special stage helper include path,
+  MSVC 19.51, Win32 Debug
+- Observed exact behavior: `ptset_ufo` clamps `d0l` to `1280`, shifts it right
+  by four bits, and then checks whether the result is greater than `80`. After
+  the first clamp, the shifted value cannot exceed `80`.
+- Why the behavior looks suspicious: the second clamp looks like defensive code
+  for a value range that the previous assignment has already eliminated. This
+  is intentionally not fixed during characterization.
+- Related source location: `src/special/ens.c`, lines 642-646.
+
+## `src/title/ta/ta.c`: `game_init` computes an unused comparison
+
+- Test case or snapshot path: `tests/backend/unit/title/ta/test_ta.c`
+- Variant and build configuration: title TA include path, MSVC 19.51, Win32
+  Debug
+- Observed exact behavior: compiling the `backend_title_ta_ta` test target emits
+  MSVC warning C4552 for `Time < 108001;` because the comparison result is not
+  used.
+- Why the behavior looks suspicious: the expression looks like it may have been
+  intended to clamp, branch, or set a flag after recomputing the total
+  time-attack score. This is intentionally not fixed during characterization.
+- Related source location: `src/title/ta/ta.c`, line 434.
+
+## `src/title/ta/taeactrl.c`: `CreatePic` has an unused equality expression
+
+- Test case or snapshot path: `tests/backend/unit/title/ta/test_taeactrl.c`
+- Variant and build configuration: title TA EA-control include path, MSVC
+  19.51, Win32 Debug
+- Observed exact behavior: compiling the `backend_title_ta_taeactrl` test target
+  emits MSVC warning C4553 for `j == 0;` because the equality comparison result
+  is not used.
+- Why the behavior looks suspicious: the expression appears in the loop that
+  handles the special-mode round-zero picture alias, so it may have been
+  intended to assign or skip that iteration. This is intentionally not fixed
+  during characterization.
+- Related source location: `src/title/ta/taeactrl.c`, line 581.
+
+## `src/r3/scr31a.c`: scroll write table clamps can still read out of bounds
+
+- Test case or snapshot path: `tests/backend/unit/r3/test_scr31a.c`
+- Variant and build configuration: R31A scroll helper include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `scrollwrtb` indexes `z31awrttbl` with values derived
+  from `scrb_v_posit` and later clamps `WrtTblCnt` to `113`, but
+  `z31awrttbl` only contains 49 entries. The test covers the reachable safe
+  writer paths and avoids the unsafe high-index cases.
+- Why the behavior looks suspicious: the clamp limit appears to match a taller
+  table than the local write table in this file. Forcing the high-index path in
+  the characterization harness can read outside `z31awrttbl`. This is
+  intentionally not fixed during characterization.
+- Related source location: `src/r3/scr31a.c`, lines 956-958 and 988-996.
+
+## `src/r3/scr31b.c`: scroll write table clamps can still read out of bounds
+
+- Test case or snapshot path: `tests/backend/unit/r3/test_scr31b.c`
+- Variant and build configuration: R31B scroll helper include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `scrollwrtb` indexes `z31bwrttbl` with values derived
+  from `scrb_v_posit` and later clamps `WrtTblCnt` to `113`, but
+  `z31bwrttbl` only contains 49 entries. The shared R31 scroll harness covers
+  the reachable safe writer paths and avoids the unsafe high-index cases.
+- Why the behavior looks suspicious: the clamp limit appears to match a taller
+  table than the local write table in this file. Forcing the high-index path in
+  the characterization harness can read outside `z31bwrttbl`. This is
+  intentionally not fixed during characterization.
+- Related source location: `src/r3/scr31b.c`, lines 960-962 and 992-1000.
+
+## `src/r3/scr31c.c`: scroll write table clamps can still read out of bounds
+
+- Test case or snapshot path: `tests/backend/unit/r3/test_scr31c.c`
+- Variant and build configuration: R31C scroll helper include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `scrollwrtb` indexes `z31cwrttbl` with values derived
+  from `scrb_v_posit` and later clamps `WrtTblCnt` to `113`, but
+  `z31cwrttbl` only contains 49 entries. The shared R31 scroll harness covers
+  the reachable safe writer paths and avoids the unsafe high-index cases.
+- Why the behavior looks suspicious: the clamp limit appears to match a taller
+  table than the local write table in this file. Forcing the high-index path in
+  the characterization harness can read outside `z31cwrttbl`. This is
+  intentionally not fixed during characterization.
+- Related source location: `src/r3/scr31c.c`, lines 953-955 and 983-991.
+
+## `src/r3/scr31d.c`: scroll write table clamps can still read out of bounds
+
+- Test case or snapshot path: `tests/backend/unit/r3/test_scr31d.c`
+- Variant and build configuration: R31D scroll helper include path, MSVC 19.51,
+  Win32 Debug
+- Observed exact behavior: `scrollwrtb` indexes `z31dwrttbl` with values derived
+  from `scrb_v_posit` and later clamps `WrtTblCnt` to `113`, but
+  `z31dwrttbl` only contains 49 entries. The shared R31 scroll harness covers
+  the reachable safe writer paths and avoids the unsafe high-index cases.
+- Why the behavior looks suspicious: the clamp limit appears to match a taller
+  table than the local write table in this file. Forcing the high-index path in
+  the characterization harness can read outside `z31dwrttbl`. This is
+  intentionally not fixed during characterization.
+- Related source location: `src/r3/scr31d.c`, lines 937-939 and 967-975.
+
+## `src/r3/scr32*.c`: scroll write table clamps can still read out of bounds
+
+- Test case or snapshot path: `tests/backend/unit/r3/test_scr32a.c`,
+  `test_scr32b.c`, `test_scr32c.c`, and `test_scr32d.c`
+- Variant and build configuration: R32 scroll helper include paths,
+  MSVC 19.51, Win32 Debug
+- Observed exact behavior: each `scrollwrtb` indexes a 49-byte local write table
+  (`z32awrttbl`, `z32bwrttbl`, `z32cwrttbl`, or `z32dwrttbl`) with values derived
+  from `scrb_v_posit` and later clamps `WrtTblCnt` to `113`. The shared R32
+  scroll harness covers the reachable safe writer paths and avoids unsafe
+  high-index cases.
+- Why the behavior looks suspicious: the clamp limit appears to match a taller
+  table than the local write tables in these files. Forcing the high-index path
+  in the characterization harness can read outside the local table. This is
+  intentionally not fixed during characterization.
+- Related source location: `src/r3/scr32a.c`, lines 953-955 and 983-991;
+  `src/r3/scr32b.c`, lines 960-962 and 992-1000; `src/r3/scr32c.c`,
+  lines 953-955 and 983-991; `src/r3/scr32d.c`, lines 937-939 and 967-975.
+
+## `src/r3/scr33*.c`: scroll write table clamps can still read out of bounds
+
+- Test case or snapshot path: `tests/backend/unit/r3/test_scr33c.c` and
+  `test_scr33d.c`
+- Variant and build configuration: R33 scroll helper include paths,
+  MSVC 19.51, Win32 Debug
+- Observed exact behavior: each `scrollwrtb` indexes a 49-byte local write table
+  (`z33cwrttbl` or `z33dwrttbl`) with values derived from `scrb_v_posit` and
+  later clamps `WrtTblCnt` to `113`. The shared R33 scroll harness covers the
+  reachable safe writer paths and avoids unsafe high-index cases.
+- Why the behavior looks suspicious: the clamp limit appears to match a taller
+  table than the local write tables in these files. Forcing the high-index path
+  in the characterization harness can read outside the local table. This is
+  intentionally not fixed during characterization.
+- Related source location: `src/r3/scr33c.c`, lines 953-955 and 983-991;
+  `src/r3/scr33d.c`, lines 939-941 and 969-977.

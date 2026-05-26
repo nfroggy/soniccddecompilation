@@ -189,12 +189,12 @@ static void test_patterns_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, pat_00.cnt);
     TEST_ASSERT_EQ_INT(ctx, -8, pat_00.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -16, pat_00.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 477, pat_00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_KUZURE5_BASE, pat_00.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, -64, pat_07.spra[0].xoff);
-    TEST_ASSERT_EQ_INT(ctx, 484, pat_07.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_KUZURE5_BASE + 7, pat_07.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, -8, pat_08.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 485, pat_08.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 486, pat_09.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_KUZURE5_BASE + 8, pat_08.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_KUZURE5_BASE + 9, pat_09.spra[0].index);
 }
 
 static void test_main_ini_uses_default_stage_offset_without_ride(

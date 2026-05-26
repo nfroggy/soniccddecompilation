@@ -138,8 +138,8 @@ static void test_tables_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, udblk4patA[0] == &pat07);
     TEST_ASSERT_EQ_INT(ctx, -16, pat00.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -64, pat00.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 514, pat00.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 521, pat07.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_UDBLK4_BASE, pat00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_UDBLK4_BASE + 7, pat07.spra[0].index);
 }
 
 static void test_type1_type2_type3(test_context *ctx) {

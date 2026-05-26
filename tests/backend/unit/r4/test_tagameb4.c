@@ -175,8 +175,8 @@ static void test_tables_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, pat[0] == &spr_tagame_99);
     TEST_ASSERT_EQ_INT(ctx, -20, spr_tagame_b_00.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -12, spr_tagame_b_00.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 448, spr_tagame_b_00.spra[0].index);
-    TEST_ASSERT_EQ_INT(ctx, 452, spr_tagame_99.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TAGAMEB4_BASE, spr_tagame_b_00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TAGAMEB4_BASE + 4, spr_tagame_99.spra[0].index);
 }
 
 static void test_suicide_short_circuits_master(test_context *ctx) {

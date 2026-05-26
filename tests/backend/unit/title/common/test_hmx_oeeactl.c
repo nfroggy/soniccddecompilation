@@ -4,6 +4,10 @@
 #include "src/title/common/hmx_types.h"
 #include "src/types.h"
 
+#ifdef _MSC_VER
+#define __attribute__(x)
+#endif
+
 draw_context context;
 draw_context *s_ctx;
 sprite_bmp infoSprtBmp[64];
@@ -127,6 +131,10 @@ static hmx_bitmap *bitmap_handle(Sint32 handle) {
 
 static hmx_renderer_base *base_handle(Sint32 handle) {
     return (hmx_renderer_base *)&base_storage[handle];
+}
+
+static Sint32 expected_prio_max(void) {
+    return PRIO_MAX;
 }
 
 static Sint32 bitmap_handle_index(hmx_bitmap *bitmap) {
@@ -515,10 +523,31 @@ static void test_srfdraw_adds_grid_sprites_draws_and_flips(test_context *ctx) {
     EAError(1, 2, "ignored");
     context.spr_level[2] = 12;
     context.spr_level[10] = 4;
+#if defined(OPENING)
+    grid_handles[0] = 1;
+    grid_handles[1] = 1;
+    grid_handles[2] = 1;
+    infoGridBmp[0].order = 2;
+    infoGridBmp[1].order = 4;
+    infoGridBmp[2].order = 6;
+#endif
 
     srfDraw();
 
     TEST_ASSERT_EQ_INT(ctx, 1, clear_call_count);
+#if defined(OPENING)
+    TEST_ASSERT_EQ_INT(ctx, 5, add_call_count);
+    TEST_ASSERT_EQ_INT(ctx, expected_prio_max() - 2, add_priorities[0]);
+    TEST_ASSERT_TRUE(ctx, add_bases[0] == base_handle(2000));
+    TEST_ASSERT_EQ_INT(ctx, expected_prio_max() - 4, add_priorities[1]);
+    TEST_ASSERT_TRUE(ctx, add_bases[1] == base_handle(2001));
+    TEST_ASSERT_EQ_INT(ctx, expected_prio_max() - 6, add_priorities[2]);
+    TEST_ASSERT_TRUE(ctx, add_bases[2] == base_handle(2002));
+    TEST_ASSERT_EQ_INT(ctx, 4, add_priorities[3]);
+    TEST_ASSERT_TRUE(ctx, add_bases[3] == base_handle(1010));
+    TEST_ASSERT_EQ_INT(ctx, 12, add_priorities[4]);
+    TEST_ASSERT_TRUE(ctx, add_bases[4] == base_handle(1002));
+#else
     TEST_ASSERT_EQ_INT(ctx, 3, add_call_count);
     TEST_ASSERT_EQ_INT(ctx, 0, add_priorities[0]);
     TEST_ASSERT_TRUE(ctx, add_bases[0] == base_handle(2000));
@@ -526,6 +555,7 @@ static void test_srfdraw_adds_grid_sprites_draws_and_flips(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, add_bases[1] == base_handle(1010));
     TEST_ASSERT_EQ_INT(ctx, 12, add_priorities[2]);
     TEST_ASSERT_TRUE(ctx, add_bases[2] == base_handle(1002));
+#endif
     TEST_ASSERT_EQ_INT(ctx, 1, draw_call_count);
     TEST_ASSERT_EQ_INT(ctx, 1, flip_call_count);
 
@@ -550,6 +580,13 @@ static void test_bitmap_4to8_conversion_variants(test_context *ctx) {
     memset(dst, 99, sizeof(dst));
     ld_bitmap_4to8_1(dst, src, 4, 1, 16, 0, 0);
     TEST_ASSERT_EQ_INT(ctx, 0, dst[2]);
+
+    memset(dst, 99, sizeof(dst));
+    ld_bitmap_4to8_1(dst, src, 8, 1, 16, 1, 1);
+    TEST_ASSERT_EQ_INT(ctx, 17, dst[0]);
+    TEST_ASSERT_EQ_INT(ctx, 18, dst[1]);
+    TEST_ASSERT_EQ_INT(ctx, 19, dst[3]);
+    TEST_ASSERT_EQ_INT(ctx, 99, dst[4]);
 
     memset(dst, 99, sizeof(dst));
     ld_bitmap_4to8_2(dst, src, 4, 1, 16, 1, 0);
@@ -585,6 +622,13 @@ static void test_bitmap_file_loads_rows_palette_and_cleanup(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 255, dst[3]);
     TEST_ASSERT_EQ_INT(ctx, 1, close_call_count);
     TEST_ASSERT_EQ_INT(ctx, 1, free_call_count);
+
+    reset_fixture();
+    prepare_bmp(2, 1, 0, 5, 0, 0);
+    memset(dst, 0, sizeof(dst));
+    ld_bitmap_file("ZERO.BMP", dst, 2, 1, 16, 0);
+    TEST_ASSERT_EQ_INT(ctx, 255, dst[0]);
+    TEST_ASSERT_EQ_INT(ctx, 255, dst[1]);
 
     reset_fixture();
     prepare_bmp(4, 1, 0, 5, 6, 7);
@@ -661,7 +705,11 @@ static void test_load_sprite1_success_failure_and_sprite_bitmap_create(
     reset_fixture();
     load_cmp_return = prepare_sprite_cmp(2);
     TEST_ASSERT_EQ_INT(ctx, 0, OESprBmpCreate());
+#if defined(OPENING)
+    TEST_ASSERT_EQ_INT(ctx, 3, context.spr_bitmap_count);
+#else
     TEST_ASSERT_EQ_INT(ctx, 2, context.spr_bitmap_count);
+#endif
     TEST_ASSERT_TRUE(ctx, infoSprtBmp[0].hBmp == (Uint32 *)context.spr_bitmaps[0]);
 
     reset_fixture();
@@ -670,9 +718,13 @@ static void test_load_sprite1_success_failure_and_sprite_bitmap_create(
 
 static void test_load_sprite2_opening_variant_paths(test_context *ctx) {
     hmx_bitmap *bitmaps[40];
+    ld_sprite_header *header;
 
     reset_fixture();
-    load_cmp_return = prepare_sprite_cmp_in(sprite_cmp_storage, 32);
+    header = prepare_sprite_cmp_in(sprite_cmp_storage, 32);
+    header->spr[3].wx = 12;
+    header->spr[3].wy = 2;
+    load_cmp_return = header;
     file_read_return = -1;
 
     TEST_ASSERT_EQ_INT(ctx, 33,
@@ -684,6 +736,14 @@ static void test_load_sprite2_opening_variant_paths(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, bitmaps[32] == bitmap_handle(33));
     TEST_ASSERT_EQ_INT(ctx, 33, transparency_call_count);
     TEST_ASSERT_EQ_INT(ctx, 2, open_call_count);
+
+    reset_fixture();
+    load_cmp_return = prepare_sprite_cmp_in(sprite_cmp_storage, 5);
+    TEST_ASSERT_EQ_INT(ctx, 3,
+                       ld_load_sprite2(g_loader_module, "small", g_env_module,
+                                       bitmaps, 2));
+    TEST_ASSERT_EQ_INT(ctx, 3, bitmap_create_call_count);
+    TEST_ASSERT_TRUE(ctx, bitmaps[2] == bitmap_handle(3));
 }
 
 static void test_load_grid_success_failure_and_grid_bitmap_create_delete(
@@ -739,7 +799,8 @@ static void test_sprite_create_delete_and_handle_reuse(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, sprite_handles[0]);
     TEST_ASSERT_EQ_INT(ctx, 2, sprite_handles[2]);
     TEST_ASSERT_TRUE(ctx, set_bitmap_values[0] == bitmap_handle(10));
-    TEST_ASSERT_EQ_INT(ctx, 60 - infoSprtBmp[0].order, context.spr_level[1]);
+    TEST_ASSERT_EQ_INT(ctx, expected_prio_max() - infoSprtBmp[0].order,
+                       context.spr_level[1]);
 
     OESprCreate(9);
     TEST_ASSERT_EQ_INT(ctx, 2, position_call_count);
@@ -756,7 +817,11 @@ static void test_sprite_create_delete_and_handle_reuse(test_context *ctx) {
     OESprCreateIndx(3);
     TEST_ASSERT_EQ_INT(ctx, 3, position_call_count);
     OESprDeleteIndx(3);
+#if defined(OPENING)
+    TEST_ASSERT_EQ_INT(ctx, 1, sprite_handles[3]);
+#else
     TEST_ASSERT_EQ_INT(ctx, 0, sprite_handles[3]);
+#endif
     OESprDeleteIndx(3);
     TEST_ASSERT_EQ_INT(ctx, 3, position_call_count);
 
@@ -797,7 +862,11 @@ static void test_bitmap_delete_grid_delete_create_and_delete_ea(
     grid_cmp_return = prepare_grid_cmp_in(grid_cmp_storage, 3);
     TEST_ASSERT_EQ_INT(ctx, 1, OECreateEA());
     TEST_ASSERT_EQ_INT(ctx, 3, grid_release_call_count);
+#if defined(OPENING)
+    TEST_ASSERT_EQ_INT(ctx, 3, context.spr_bitmap_count);
+#else
     TEST_ASSERT_EQ_INT(ctx, 2, context.spr_bitmap_count);
+#endif
 
     reset_fixture();
     sprite_handles[0] = 1;

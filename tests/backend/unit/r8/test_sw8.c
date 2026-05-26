@@ -95,18 +95,18 @@ static void test_sw8_patterns_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, -16, sw00.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -8, sw00.spra[0].yoff);
     TEST_ASSERT_EQ_INT(ctx, 0, sw00.spra[0].etc);
-    TEST_ASSERT_EQ_INT(ctx, 306, sw00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_SW8_BASE, sw00.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, 0, sw00.spra[1].xoff);
     TEST_ASSERT_EQ_INT(ctx, -8, sw00.spra[1].yoff);
     TEST_ASSERT_EQ_INT(ctx, 8, sw00.spra[1].etc);
-    TEST_ASSERT_EQ_INT(ctx, 306, sw00.spra[1].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_SW8_BASE, sw00.spra[1].index);
     TEST_ASSERT_EQ_INT(ctx, 2, sw01.cnt);
     TEST_ASSERT_EQ_INT(ctx, -4, sw01.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 307, sw01.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_SW8_BASE + 1, sw01.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, 0, sw01.spra[1].xoff);
     TEST_ASSERT_EQ_INT(ctx, -4, sw01.spra[1].yoff);
     TEST_ASSERT_EQ_INT(ctx, 8, sw01.spra[1].etc);
-    TEST_ASSERT_EQ_INT(ctx, 307, sw01.spra[1].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_SW8_BASE + 1, sw01.spra[1].index);
 }
 
 static void test_sw8_initializes_without_running_move(test_context *ctx) {

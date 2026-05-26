@@ -102,15 +102,15 @@ static void test_tekkyu7j_tables_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, pat_tekkyu7j[3] == &tekkyu7j_pat3);
     TEST_ASSERT_EQ_INT(ctx, -16, tekkyu7j_pat0.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -16, tekkyu7j_pat0.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 423, tekkyu7j_pat0.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TEKKYU7J_BASE, tekkyu7j_pat0.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, -16, tekkyu7j_pat1.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, 0, tekkyu7j_pat1.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 424, tekkyu7j_pat1.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TEKKYU7J_BASE + 1, tekkyu7j_pat1.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, -16, tekkyu7j_pat2.spra[0].xoff);
-    TEST_ASSERT_EQ_INT(ctx, 425, tekkyu7j_pat2.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TEKKYU7J_BASE + 2, tekkyu7j_pat2.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, 0, tekkyu7j_pat3.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -16, tekkyu7j_pat3.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 426, tekkyu7j_pat3.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_TEKKYU7J_BASE + 3, tekkyu7j_pat3.spra[0].index);
 }
 
 static void test_launcher_initializes_and_counts_down(test_context *ctx) {

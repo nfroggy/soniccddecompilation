@@ -166,13 +166,13 @@ static void test_movie3_tables_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, pat_movie[5] == &mov04);
     TEST_ASSERT_EQ_INT(ctx, -12, mov00.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -12, mov00.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 316, mov00.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_MOVIE3_BASE, mov00.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, -16, pat00.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -20, pat00.spra[0].yoff);
     TEST_ASSERT_EQ_INT(ctx, 0, pat00.spra[0].index);
     TEST_ASSERT_EQ_INT(ctx, -20, mov04.spra[0].xoff);
     TEST_ASSERT_EQ_INT(ctx, -24, mov04.spra[0].yoff);
-    TEST_ASSERT_EQ_INT(ctx, 320, mov04.spra[0].index);
+    TEST_ASSERT_EQ_INT(ctx, SPRITE_MOVIE3_BASE + 4, mov04.spra[0].index);
 }
 
 static void test_movie_projector_flag_frameouts_main_actor(test_context *ctx) {
