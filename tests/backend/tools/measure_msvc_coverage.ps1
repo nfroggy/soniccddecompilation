@@ -4,6 +4,7 @@ param(
     [string]$Config = "Debug",
     [string]$Variants = "R11A",
     [string]$CoverageTool = "",
+    [int]$Jobs = 0,
     [switch]$SkipConfigure,
     [switch]$SkipBuild
 )
@@ -155,6 +156,15 @@ $buildPath = if ([System.IO.Path]::IsPathRooted($BuildDir)) {
 }
 $coveragePath = Join-Path $buildPath "backend-coverage.xml"
 $coverageToolPath = Find-CodeCoverageConsole -ExplicitPath $CoverageTool
+$parallelJobs = if ($Jobs -eq 0) {
+    [Math]::Min([Environment]::ProcessorCount, 8)
+} else {
+    $Jobs
+}
+if ($parallelJobs -lt 1) {
+    throw "-Jobs must be 0 for auto or a positive integer."
+}
+Write-Output "Using $parallelJobs parallel job(s)."
 
 if (-not $SkipConfigure) {
     & cmake -S $repoPath -B $buildPath -A Win32 -DSONICCD_BUILD_TESTS=ON "-DSONICCD_VARIANTS=$Variants"
@@ -164,13 +174,13 @@ if (-not $SkipConfigure) {
 }
 
 if (-not $SkipBuild) {
-    & cmake --build $buildPath --config $Config --target backend-tests
+    & cmake --build $buildPath --config $Config --target backend-tests --parallel $parallelJobs
     if ($LASTEXITCODE -ne 0) {
         exit $LASTEXITCODE
     }
 }
 
-& $coverageToolPath collect --nologo --output $coveragePath --output-format xml ctest --test-dir $buildPath -C $Config --output-on-failure
+& $coverageToolPath collect --nologo --output $coveragePath --output-format xml ctest --test-dir $buildPath -C $Config --output-on-failure --parallel $parallelJobs
 if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }

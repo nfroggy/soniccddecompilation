@@ -894,6 +894,18 @@ tests.
   fixed during characterization.
 - Related source locations: `src/r7/scr71d.c`, lines 820-821 and 973-974.
 
+## `src/r7/scr71d.c`: high `scrollwrtb` clamp can walk past `z81awrttbl`
+
+- Test case or snapshot path: `tests/backend/unit/r7/test_scr71d.c`; the unsafe
+  case is not retained because it can crash the characterization test.
+- Observed exact behavior: `scrollwrtb` assigns `WrtTblCnt` from
+  `scrb_v_posit.w.h / 16`, clamps high values to `113`, then reads sixteen
+  entries starting at that clamped index. `z81awrttbl` has 65 entries, so high
+  scroll positions can walk past the table.
+- Why the behavior looks suspicious: the clamp target is larger than the table.
+  This is intentionally not fixed during characterization.
+- Related source location: `src/r7/scr71d.c`, lines 818-826.
+
 ## `src/r7/scr72a.c`: negative guards follow unsigned-derived values
 
 - Test case or snapshot path: `tests/backend/unit/r7/test_scr72a.c`
@@ -1157,6 +1169,19 @@ tests.
   row range used by this path. This is intentionally not fixed during
   characterization.
 - Related source location: `src/r6/scr62b.c`, lines 706-708.
+
+## `src/r6/scr62b.c`: high `scrollwrtb` clamp can walk past `z81awrttbl`
+
+- Test case or snapshot path: `tests/backend/unit/r6/test_scr62b.c`; the unsafe
+  case is not retained because it can crash the characterization test under the
+  R62B define set.
+- Observed exact behavior: `scrollwrtb` assigns `WrtTblCnt` from
+  `scrb_v_posit.w.h / 16`, clamps high values to `113`, then reads sixteen
+  entries starting at that clamped index. `z81awrttbl` has 49 entries, so high
+  scroll positions can walk past the table.
+- Why the behavior looks suspicious: the clamp target is larger than the table.
+  This is intentionally not fixed during characterization.
+- Related source location: `src/r6/scr62b.c`, lines 738-746.
 
 ## `src/r6/scr62c.c`: negative guards follow unsigned-derived values
 
@@ -1643,3 +1668,28 @@ tests.
   intentionally not fixed during characterization.
 - Related source location: `src/r3/scr33c.c`, lines 953-955 and 983-991;
   `src/r3/scr33d.c`, lines 939-941 and 969-977.
+
+## `src/r7/scr71b.c`: high `scrollwrtb` clamp can walk past `z81awrttbl`
+
+- Test case or snapshot path: `tests/backend/unit/r7/test_scr71b.c`; the unsafe
+  case is not retained because it can crash the characterization test under the
+  R71B define set.
+- Observed exact behavior: `scrollwrtb` assigns `WrtTblCnt` from
+  `scrb_v_posit.w.h / 16`, clamps high values to `113`, then reads sixteen
+  entries starting at that clamped index. `z81awrttbl` has 65 entries, so high
+  scroll positions can walk past the table.
+- Source is intentionally left unchanged for the characterization pass.
+- Related source locations: `src/r7/scr71b.c`, lines 780-849.
+
+## `src/r7/scr72d.c` and `src/r7/scr73d.c`: high `scrollwrtb` clamp can walk past `z81awrttbl`
+
+- Test case or snapshot path: `tests/backend/unit/r7/test_scr72d.c` and
+  `tests/backend/unit/r7/test_scr73d.c`; the unsafe cases are not retained
+  because they can crash the characterization tests under their R7 define sets.
+- Observed exact behavior: `scrollwrtb` assigns `WrtTblCnt` from
+  `scrb_v_posit.w.h / 16`, clamps high values to `113`, then reads sixteen
+  entries starting at that clamped index. `z81awrttbl` has 65 entries in each
+  file, so high scroll positions can walk past the table.
+- Source is intentionally left unchanged for the characterization pass.
+- Related source locations: `src/r7/scr72d.c`, lines 817-826; and
+  `src/r7/scr73d.c`, lines 816-825.

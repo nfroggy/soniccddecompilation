@@ -562,6 +562,13 @@ static void test_hit_set_and_hit_clr_collision_ownership(test_context *ctx) {
     hit_set(platform, player);
     TEST_ASSERT_EQ_INT(ctx, 0, playdieset_count);
 
+#if defined(R41A)
+    platform->actno = 40;
+    actwk[7].actno = 39;
+    hit_set(platform, player);
+    TEST_ASSERT_EQ_INT(ctx, 0, playdieset_count);
+#endif
+
     platform->actno = 39;
     actwk[7].actno = 39;
     stageno.w = 768;

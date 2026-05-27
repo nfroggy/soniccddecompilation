@@ -952,7 +952,7 @@ static void test_scr62b_negative_parallax_and_writer_edges(test_context *ctx) {
     blockwk[0][1] = 126;
     blockwk[0][2] = 127;
     blockwk[0][3] = 128;
-    scrb_v_posit.w.h = 2000;
+    scrb_v_posit.w.h = 256;
     flag = 64;
 
     scrollwrtb(&flag, &mapwkb[0][0], 24576);

@@ -1011,7 +1011,7 @@ static void test_scr72d_map_writer_smoke_paths(test_context *ctx) {
     blockwk[0][1] = 42;
     blockwk[0][2] = 43;
     blockwk[0][3] = 44;
-    scrb_v_posit.w.h = 2000;
+    scrb_v_posit.w.h = 256;
     flag = 4;
     scrollwrtb(&flag, &mapwkb[0][0], 24576);
     TEST_ASSERT_EQ_INT(ctx, 0, flag);
