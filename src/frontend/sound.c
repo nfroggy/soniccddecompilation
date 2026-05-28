@@ -7,6 +7,7 @@
 static MIX_Mixer *mixer;
 static MIX_Track *musicTrack;
 static MIX_Audio *musicAudio;
+static Sint16 currTrack = -1;
 
 typedef struct {
 	char *filename;
@@ -70,7 +71,7 @@ void WaveRequest(Sint16 req_no) {
 
 void CDPlay(Sint16 track_number) {
 	SDL_Log("CDPlay(%d)", track_number);
-	if (track_number < 2 || track_number - 2 >= SDL_arraysize(musicTbl)) {
+	if (track_number < 2 || (track_number - 2 >= SDL_arraysize(musicTbl)) || (currTrack == track_number)) {
 		return;
 	}
 	MusicInfo *mi = &musicTbl[track_number - 2];
@@ -91,6 +92,7 @@ void CDPlay(Sint16 track_number) {
 		SDL_SetNumberProperty(options, MIX_PROP_PLAY_LOOPS_NUMBER, mi->loop ? -1 : 0);
 		MIX_PlayTrack(musicTrack, options);
 		SDL_DestroyProperties(options);
+		currTrack = track_number;
 	}
 
 }

@@ -27,6 +27,10 @@ static SDL_Texture *presentTexture;
 
 #define ASSET_HEADER_ENCODED_LEN 16
 #define ROTATE_TILE_EMPTY 0xffff
+#define PLANET_ROTATE_GRID_W 10
+#define PLANET_ROTATE_GRID_H 8
+#define PLANET_ROTATE_SCREEN_Y 24
+#define PLANET_ROTATE_SCREEN_H 176
 typedef struct {
 	char type[4];
 	Sint32 endOffset;
@@ -144,6 +148,8 @@ static std::vector<int> changeTiles;
 static std::vector<BitmapData> rotateTileBitmaps;
 static std::vector<Uint16> rotateTileLookup;
 static Uint16 rotateGrid[128][128];
+static Uint16 planetRotateGrid[PLANET_ROTATE_GRID_H][PLANET_ROTATE_GRID_W];
+static bool planetMode;
 static bool specialStageMode;
 static bool specialClearMode;
 static int specialStageIndex;
@@ -383,6 +389,8 @@ static int PositiveMod(int value, int divisor) {
 	return value;
 }
 
+static Uint16 GetRotateTileVariant(Uint16 block);
+
 static Uint16 GetTileVariant(Uint16 block, Uint16 frip) {
 	Uint16 index = block & 0x7ff;
 	if (!index) {
@@ -409,7 +417,18 @@ static Uint16 GetSpecialTileVariant(Uint16 block) {
 	return index * 4;
 }
 
+static void SetPlanetRotateGridTile(Sint32 x, Sint32 y, Sint32 block) {
+	if (x < 0 || x >= PLANET_ROTATE_GRID_W || y < 0 || y >= PLANET_ROTATE_GRID_H) {
+		return;
+	}
+	planetRotateGrid[y][x] = GetRotateTileVariant((Uint16)block);
+}
+
 Sint32 SetGrid(Sint32 base, Sint32 x, Sint32 y, Sint32 block, Sint32 frip) {
+	if (planetMode && base < 0) {
+		SetPlanetRotateGridTile(x, y, block);
+		return 0;
+	}
 	if (specialStageMode) {
 		Uint16 tile = GetSpecialTileVariant((Uint16)block);
 		x = PositiveMod(x, STAGE_GRID_W);
@@ -661,6 +680,22 @@ static void Graphics_SetRotateGrid(const Uint16 *map) {
 	}
 }
 
+static void Graphics_SetPlanetRotateGrid(const Uint16 *map) {
+	for (int y = 0; y < PLANET_ROTATE_GRID_H; y++) {
+		for (int x = 0; x < PLANET_ROTATE_GRID_W; x++) {
+			planetRotateGrid[y][x] = ROTATE_TILE_EMPTY;
+		}
+	}
+	if (!map) {
+		return;
+	}
+	for (int y = 0; y < 7; y++) {
+		for (int x = 0; x < PLANET_ROTATE_GRID_W; x++) {
+			planetRotateGrid[y][x] = GetRotateTileVariant(map[y * PLANET_ROTATE_GRID_W + x]);
+		}
+	}
+}
+
 static Uint16 GetTileHandle(Sint32 tileIndex, Uint16 flags) {
 	flags &= 0x1800;
 	if (tileIndex <= 0 || static_cast<size_t>(tileIndex) >= tileBitmaps.size()) {
@@ -763,7 +798,27 @@ int Graphics_LoadChangeTiles(const char *path) {
 	return static_cast<int>(changeTileBitmaps.size());
 }
 
+int Graphics_LoadPlanet(const Uint16 *rotateMap, bmp_info *spriteInfo, int spriteInfoCount) {
+	planetMode = true;
+	specialStageMode = false;
+	specialClearMode = false;
+	memset(tileGrids, 0, sizeof(tileGrids));
+	ClrSpriteDebug();
+	if (!Graphics_LoadTiles("TITLE/PLANET/CG/LPBS.CM_")) {
+		return 0;
+	}
+	if (!LoadRotateTileSet("TITLE/PLANET/CG/PLANET.CM_")) {
+		return 0;
+	}
+	Graphics_SetPlanetRotateGrid(rotateMap);
+	if (!Graphics_LoadSprites("TITLE/PLANET/CG/SCMPLP.CM_", spriteInfo, spriteInfoCount)) {
+		return 0;
+	}
+	return 1;
+}
+
 int Graphics_LoadSpecialStage(int stageNumber, const Uint16 *rotateMap, bmp_info *spriteInfo, int spriteInfoCount) {
+	planetMode = false;
 	specialStageMode = true;
 	specialClearMode = false;
 	specialStageIndex = stageNumber;
@@ -786,6 +841,7 @@ int Graphics_LoadSpecialStage(int stageNumber, const Uint16 *rotateMap, bmp_info
 }
 
 int Graphics_LoadSpecialClearScreen(void) {
+	planetMode = false;
 	specialStageMode = true;
 	specialClearMode = true;
 	ClrSpriteDebug();
@@ -1151,6 +1207,41 @@ static void DrawSpecialRotateGrid(SDL_Surface *target, const game_info *info) {
 	SDL_UnlockSurface(target);
 }
 
+static void DrawPlanetRotateGrid(SDL_Surface *target, const game_info *info) {
+	Sint16 *tv;
+	if (!info || !info->ptv_adr) {
+		return;
+	}
+	tv = (Sint16 *)info->ptv_adr;
+	if (!SDL_LockSurface(target)) {
+		return;
+	}
+	for (int screenY = PLANET_ROTATE_SCREEN_Y; screenY < SCREEN_HEIGHT; screenY++) {
+		int tvRow = screenY - PLANET_ROTATE_SCREEN_Y;
+		Sint16 *row = tv + tvRow * 4;
+		Sint32 srcXStart = row[0] * 8192;
+		Sint32 srcYStart = row[1] * 8192;
+		Sint32 srcXStep = row[2] * 32;
+		Sint32 srcYStep = row[3] * 32;
+		Uint8 *dst = (Uint8 *)target->pixels + screenY * target->pitch;
+		for (int screenX = 0; screenX < SCREEN_WIDTH; screenX++) {
+			Sint32 srcX = (srcXStart + srcXStep * screenX) >> 16;
+			Sint32 srcY = (srcYStart + srcYStep * screenX) >> 16;
+			Uint8 pixel;
+			if (srcX < 0 || srcX >= PLANET_ROTATE_GRID_W * 32 ||
+			    srcY < 0 || srcY >= PLANET_ROTATE_GRID_H * 32) {
+				continue;
+			}
+			Uint16 handle = planetRotateGrid[srcY / 32][srcX / 32];
+			pixel = SampleRotatePixel(handle, srcX & 31, srcY & 31);
+			if (pixel) {
+				dst[screenX] = pixel;
+			}
+		}
+	}
+	SDL_UnlockSurface(target);
+}
+
 static void PresentFrame(SDL_Renderer *renderer) {
 	SDL_BlitSurface(framebuffer, NULL, presentSurface, NULL);
 	Uint32 *srcPixels = (Uint32 *)presentSurface->pixels;
@@ -1187,6 +1278,18 @@ void Graphics_Draw(SDL_Renderer *renderer, Sint32 scraHPosiw, Sint32 scrbHPosiw,
 	DrawGridPlane(framebuffer, 1, fgViewX, fgViewY);
 	DrawSprites(framebuffer, false);
 	DrawGridPlane(framebuffer, 0, fgViewX, fgViewY);
+	DrawSprites(framebuffer, true);
+	PresentFrame(renderer);
+}
+
+void Graphics_DrawPlanet(SDL_Renderer *renderer, const game_info *info) {
+	UpdatePalette();
+	SDL_FillSurfaceRect(framebuffer, NULL, 48);
+	DrawGridPlane(framebuffer, 2, 0, 0);
+	DrawGridPlane(framebuffer, 1, 0, 0);
+	DrawPlanetRotateGrid(framebuffer, info);
+	DrawSprites(framebuffer, false);
+	DrawGridPlane(framebuffer, 0, 0, 0);
 	DrawSprites(framebuffer, true);
 	PresentFrame(renderer);
 }

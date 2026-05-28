@@ -20,6 +20,23 @@ score_data scoreData;
 ushort_union joy1;
 ushort_union joy2;
 
+typedef struct {
+    Uint32 On;
+    Uint32 Press;
+    Uint32 Release;
+    Sint16 X1;
+    Sint16 Y1;
+    Sint16 X2;
+    Sint16 Y2;
+} frontend_pad_status;
+
+static frontend_pad_status padStatus;
+
+static frontend_pad_status *FrontendPadGet(Uint32 padNo) {
+    (void)padNo;
+    return &padStatus;
+}
+
 Uint16 *pMapwk = mapwk;
 PALETTEENTRY *pColorwk = colorwk;
 PALETTEENTRY *pColorwk2 = colorwk2;
@@ -71,33 +88,33 @@ void *functionTbl[64] = {
 };
 
 int main(int argc, char **argv) {
-    const int specialStage = 0;
-    int clearGraphicsLoaded = 0;
-
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         fprintf(stderr, "Couldn't init SDL: %s\n", SDL_GetError());
         return -1;
     }
 
     if (!Graphics_Init(&window, &renderer)) {
+        fprintf(stderr, "Graphics_Init failed\n");
         return -1;
     }
 
     if (!Sound_Init()) {
+        fprintf(stderr, "Sound_Init failed\n");
         return -1;
     }
 
-    if (!DLL_Load("build/bin/Debug/special.dll")) {
+    if (!DLL_Load("build/bin/Debug/planet.dll")) {
+        fprintf(stderr, "DLL_Load planet failed\n");
         SDL_Log("Couldn't load DLL");
         return -1;
     }
-    gameInfo.stagenm = specialStage;
     gameInfo.pl_suu = 3;
-    gameInfo.SPEMode = 0;
+    functionTbl[54] = (void *)FrontendPadGet;
 
     DLL_meminit(memoryTbl, functionTbl);
-    if (!Graphics_LoadSpecialStage(gameInfo.stagenm, gameInfo.sm_adr0, (bmp_info *)gameInfo.pSprBmp, 700)) {
-        SDL_Log("Couldn't load special stage graphics");
+    if (!Graphics_LoadPlanet(gameInfo.sm_adr0, (bmp_info *)gameInfo.pSprBmp, 700)) {
+        fprintf(stderr, "Graphics_LoadPlanet failed\n");
+        SDL_Log("Couldn't load planet graphics");
         return -1;
     }
     if (SetDebugFlag) {
@@ -125,8 +142,14 @@ int main(int argc, char **argv) {
         if (keys[SDL_SCANCODE_L]) { pressed |= 0x40; }
         if (keys[SDL_SCANCODE_RETURN]) { pressed |= 0x80; }
         Uint8 lastPressed = joy1.b.h;
+        Uint32 lastPadOn = padStatus.On;
         joy1.b.h = pressed;
         joy1.b.l = (~lastPressed) & pressed;
+        padStatus.On = 0;
+        if (keys[SDL_SCANCODE_J]) { padStatus.On |= 0x02; }
+        if (keys[SDL_SCANCODE_K]) { padStatus.On |= 0x04; }
+        padStatus.Press = (~lastPadOn) & padStatus.On;
+        padStatus.Release = lastPadOn & ~padStatus.On;
         SWdataSet(joy1, joy2);
 
         if (fade_flag && FadeProc) {
@@ -135,32 +158,15 @@ int main(int argc, char **argv) {
             }
         }
         else {
-            if (gameInfo.SPEMode == 1 && !clearGraphicsLoaded) {
-                CDPause(0);
-                if (!Graphics_LoadSpecialClearScreen()) {
-                    SDL_Log("Couldn't load special stage clear graphics");
-                    running = 0;
-                    continue;
-                }
-                clearGraphicsLoaded = 1;
-            }
             if (game) {
                 Sint32 gameResult = game();
-                if (gameResult && gameInfo.SPEMode != 2 && gameInfo.SPEMode != 3) {
-                    SDL_Log("special stage mode result %d", gameResult);
+                if (gameResult) {
+                    SDL_Log("planet mode result %d", gameResult);
                 }
             }
         }
 
-        if (Special_block_chg && gameInfo.SPEMode == 0) {
-            Uint16 hane1;
-            Uint16 hane2;
-            Uint16 dmg1;
-            Uint16 dmg2;
-            Special_block_chg(&hane1, &hane2, &dmg1, &dmg2);
-            Graphics_UpdateSpecialGroundTiles(hane1, hane2, dmg1, dmg2);
-        }
-        Graphics_DrawSpecial(renderer, &gameInfo);
+        Graphics_DrawPlanet(renderer, &gameInfo);
     }
 
     DLL_memfree();
