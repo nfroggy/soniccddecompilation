@@ -11,6 +11,7 @@ void sMemCpy(void *dst, void *src, Sint32 size);
 Sint32 sMemCmp(void *lhs, void *rhs, Sint32 size);
 Sint32 sRandom(void);
 char *sStrcpy(char *dst, char *src);
+char *sStrncpy(char *dst, char *src, Sint32 size);
 Sint32 sStrncmp(char *lhs, char *rhs, Sint32 size);
 void sPrintf(char *dst, const char *format, ...);
 void sOutputDebugString(char *msg);

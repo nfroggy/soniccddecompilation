@@ -135,8 +135,9 @@ static void OEUpdatePlanet(void) {
             staTime = 0;
         }
 
-        hmx_sprite_set_position_module(s_ctx->sprites[14], ptPlnt[num].point.x,
-                                       ptPlnt[num].point.y);
+        hmx_sprite_set_position_module(
+            s_ctx->sprites[*infoSprtBmp[14].lphSpr], ptPlnt[num].point.x,
+            ptPlnt[num].point.y);
         if (ptPlnt[num].time == nTimerCunt - staTime) {
 
             if ((Uint32)++num > 7) {
@@ -149,7 +150,8 @@ static void OEUpdatePlanet(void) {
             staTime = nTimerCunt;
 
             hmx_sprite_set_position_module(
-                s_ctx->sprites[14], ptPlnt[num].point.x, ptPlnt[num].point.y);
+                s_ctx->sprites[*infoSprtBmp[14].lphSpr], ptPlnt[num].point.x,
+                ptPlnt[num].point.y);
         }
     }
 }

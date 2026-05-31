@@ -5,6 +5,9 @@ void (*game_init)(void);
 Sint32(*game)(void);
 void (*DLL_meminit)(char ***pBufTbl, void **pFuncTbl);
 void (*DLL_memfree)(void);
+void (*Title_DLLInit)(engine_dll *lpDllIn, char ***pBufTbl, void **pFuncTbl);
+Sint32(*Title_DLLMain)(void);
+void (*Title_DLLEnd)(void);
 void (*SWdataSet)(ushort_union sw1, ushort_union sw2);
 Sint32(*Get_vscroll)(void);
 Sint32(*Get_scra_h_posiw)(void);
@@ -16,7 +19,7 @@ void (*Special_block_chg)(Uint16 *hane1, Uint16 *hane2, Uint16 *dmg1, Uint16 *dm
 
 static SDL_SharedObject *currentDll = NULL;
 
-static inline void *loadFunction(SDL_SharedObject *dll, const char *name) {
+static void *loadFunction(SDL_SharedObject *dll, const char *name) {
     void *func = SDL_LoadFunction(dll, name);
     if (!func) {
         SDL_Log("missing export %s", name);
@@ -48,6 +51,30 @@ int DLL_Load(const char *path) {
 
     if (!game_init || !game || !DLL_meminit) {
         SDL_Log("Missing essential exports!");
+        SDL_UnloadObject(dll);
+        return 0;
+    }
+
+    currentDll = dll;
+    return 1;
+}
+
+int DLL_LoadTitle(const char *path) {
+    DLL_Unload();
+
+    SDL_SharedObject *dll = SDL_LoadObject(path);
+    if (!dll) {
+        SDL_Log("Failed to load %s: %s", path, SDL_GetError());
+        return 0;
+    }
+
+    Title_DLLInit = loadFunction(dll, "DLLInit");
+    Title_DLLMain = loadFunction(dll, "DLLMain");
+    Title_DLLEnd = loadFunction(dll, "DLLEnd");
+    SWdataSet = loadFunction(dll, "SWdataSet");
+
+    if (!Title_DLLInit || !Title_DLLMain || !Title_DLLEnd || !SWdataSet) {
+        SDL_Log("Missing essential title exports!");
         SDL_UnloadObject(dll);
         return 0;
     }

@@ -10,6 +10,7 @@
 #include "constants.h"
 #include "file.h"
 #include "graphics.h"
+#include "hmx.h"
 #include "szdd.hpp"
 
 Uint16 mapwk[32768];
@@ -390,6 +391,8 @@ static int PositiveMod(int value, int divisor) {
 }
 
 static Uint16 GetRotateTileVariant(Uint16 block);
+static void UpdatePalette(void);
+static void PresentFrame(SDL_Renderer *renderer);
 
 static Uint16 GetTileVariant(Uint16 block, Uint16 frip) {
 	Uint16 index = block & 0x7ff;
@@ -507,6 +510,7 @@ int Graphics_Init(SDL_Window **window, SDL_Renderer **renderer) {
 		return 0;
 	}
 	SDL_SetTextureScaleMode(presentTexture, SDL_SCALEMODE_PIXELART);
+	Hmx_Init(framebuffer, *renderer, UpdatePalette, PresentFrame);
 	return 1;
 }
 
@@ -792,16 +796,76 @@ int Graphics_LoadTiles(const char *path) {
 	return static_cast<int>(tileBitmaps.size());
 }
 
+void Graphics_BeginRound(void) {
+	planetMode = false;
+	specialStageMode = false;
+	specialClearMode = false;
+	Hmx_SetActive(0);
+	ClrSpriteDebug();
+}
+
 int Graphics_LoadChangeTiles(const char *path) {
 	DestroyChangeTileBitmaps();
 	LoadTileSet(path, changeTileBitmaps);
 	return static_cast<int>(changeTileBitmaps.size());
 }
 
+static int Graphics_LoadWarpGridRows(int dstY, int rows) {
+	Uint8 encoded[2];
+	FILE *file = File_Open("WARP/CGWARP.BIN", "rb");
+	if (!file) {
+		SDL_Log("couldn't open WARP/CGWARP.BIN");
+		return 0;
+	}
+
+	for (int y = 0; y < rows; y++) {
+		for (int x = 0; x < 40; x++) {
+			Uint16 block;
+			Uint16 low;
+			Uint16 tile = 0;
+			if (fread(encoded, 1, sizeof(encoded), file) != sizeof(encoded)) {
+				fclose(file);
+				return 0;
+			}
+			block = (Uint16)(encoded[0] | (encoded[1] << 8));
+			low = block & 0x7ff;
+			if (low) {
+				tile = GetTileHandle(low, block);
+			}
+			tileGrids[1][dstY + y][x] = tile;
+		}
+	}
+	fclose(file);
+	return 1;
+}
+
+static int Graphics_LoadWarpGrid(void) {
+	return Graphics_LoadWarpGridRows(0, 28) && Graphics_LoadWarpGridRows(28, 4);
+}
+
+int Graphics_LoadWarp(bmp_info *spriteInfo, int spriteInfoCount) {
+	planetMode = false;
+	specialStageMode = false;
+	specialClearMode = false;
+	Hmx_SetActive(0);
+	ClrSpriteDebug();
+	if (!Graphics_LoadTiles("WARP/TCMPWARP.CM_")) {
+		return 0;
+	}
+	if (!Graphics_LoadWarpGrid()) {
+		return 0;
+	}
+	if (!Graphics_LoadSprites("WARP/SCMPWARP.CM_", spriteInfo, spriteInfoCount)) {
+		return 0;
+	}
+	return 1;
+}
+
 int Graphics_LoadPlanet(const Uint16 *rotateMap, bmp_info *spriteInfo, int spriteInfoCount) {
 	planetMode = true;
 	specialStageMode = false;
 	specialClearMode = false;
+	Hmx_SetActive(0);
 	memset(tileGrids, 0, sizeof(tileGrids));
 	ClrSpriteDebug();
 	if (!Graphics_LoadTiles("TITLE/PLANET/CG/LPBS.CM_")) {
@@ -821,6 +885,7 @@ int Graphics_LoadSpecialStage(int stageNumber, const Uint16 *rotateMap, bmp_info
 	planetMode = false;
 	specialStageMode = true;
 	specialClearMode = false;
+	Hmx_SetActive(0);
 	specialStageIndex = stageNumber;
 	std::string fixedPath = std::format("SPECIAL/BMP/FIX/TCMPS{}.CM_", stageNumber + 1);
 	std::string rotatePath = std::format("SPECIAL/CG/SP{}CG32.CM_", stageNumber + 1);
@@ -844,6 +909,7 @@ int Graphics_LoadSpecialClearScreen(void) {
 	planetMode = false;
 	specialStageMode = true;
 	specialClearMode = true;
+	Hmx_SetActive(0);
 	ClrSpriteDebug();
 	if (!Graphics_LoadTiles("SPECIAL/BMP/FIX/SCLEAR.CM_")) {
 		return 0;
@@ -883,6 +949,7 @@ void Graphics_Shutdown(void) {
 	DestroyTileBitmaps();
 	DestroyChangeTileBitmaps();
 	DestroyRotateTileBitmaps();
+	Hmx_Shutdown();
 	SDL_DestroySurface(framebuffer);
 	framebuffer = NULL;
 	SDL_DestroySurface(presentSurface);
@@ -898,9 +965,12 @@ static void UpdatePalette(void) {
 	static PALETTEENTRY lastColorwk3[64];
 	static int paletteInitialized;
 	static bool lastSpecialStageMode;
+	static bool lastTitleMode;
+	bool titleMode = Hmx_IsActive() != 0;
 	SDL_Color colors[256];
 	if (paletteInitialized &&
 	    lastSpecialStageMode == specialStageMode &&
+	    lastTitleMode == titleMode &&
 	    memcmp(colorwk, lastColorwk, sizeof(colorwk)) == 0 &&
 	    memcmp(colorwk3, lastColorwk3, sizeof(colorwk3)) == 0) {
 		return;
@@ -908,20 +978,68 @@ static void UpdatePalette(void) {
 	memcpy(lastColorwk, colorwk, sizeof(colorwk));
 	memcpy(lastColorwk3, colorwk3, sizeof(colorwk3));
 	lastSpecialStageMode = specialStageMode;
+	lastTitleMode = titleMode;
 	for (int i = 0; i < SDL_arraysize(colors); i++) {
 		colors[i].r = 0;
 		colors[i].g = 0;
 		colors[i].b = 0;
 		colors[i].a = 255;
 	}
-	for (int i = 0; i < SDL_arraysize(colorwk); i++) {
-		colors[i].r = colorwk[i].peRed;
-		colors[i].g = colorwk[i].peGreen;
-		colors[i].b = colorwk[i].peBlue;
-		colors[i].a = 255;
+	if (titleMode) {
+		for (int i = 0; i < SDL_arraysize(colorwk); i++) {
+			colors[16 + i].r = colorwk[i].peRed;
+			colors[16 + i].g = colorwk[i].peGreen;
+			colors[16 + i].b = colorwk[i].peBlue;
+			colors[16 + i].a = 255;
+
+			colors[80 + i].r = colorwk[i].peRed;
+			colors[80 + i].g = colorwk[i].peGreen;
+			colors[80 + i].b = colorwk[i].peBlue;
+			colors[80 + i].a = 255;
+		}
+	} else {
+		for (int i = 0; i < SDL_arraysize(colorwk); i++) {
+			colors[i].r = colorwk[i].peRed;
+			colors[i].g = colorwk[i].peGreen;
+			colors[i].b = colorwk[i].peBlue;
+			colors[i].a = 255;
+
+			colors[64 + i].r = colorwk3[i].peRed;
+			colors[64 + i].g = colorwk3[i].peGreen;
+			colors[64 + i].b = colorwk3[i].peBlue;
+			colors[64 + i].a = 255;
+		}
 	}
 	SDL_SetPaletteColors(sharedPalette, colors, 0, SDL_arraysize(colors));
 	paletteInitialized = 1;
+}
+
+static void ApplyR4WaterPaletteSplit(const game_info *info) {
+	Uint16 splitY;
+	if (!info || info->stageno.b.h != 2) {
+		return;
+	}
+	if (info->waterflag) {
+		splitY = 0;
+	} else {
+		splitY = (Uint16)info->hintposi.w;
+		if (splitY >= SCREEN_HEIGHT - 1) {
+			return;
+		}
+	}
+	if (!SDL_LockSurface(framebuffer)) {
+		SDL_Log("couldn't lock framebuffer for R4 water palette split: %s", SDL_GetError());
+		return;
+	}
+	for (int y = splitY; y < SCREEN_HEIGHT; y++) {
+		Uint8 *row = (Uint8 *)framebuffer->pixels + y * framebuffer->pitch;
+		for (int x = 0; x < SCREEN_WIDTH; x++) {
+			if (row[x] < 64) {
+				row[x] += 64;
+			}
+		}
+	}
+	SDL_UnlockSurface(framebuffer);
 }
 
 static void DrawSprites(SDL_Surface *target, bool highPriority) {
@@ -1262,7 +1380,7 @@ static void PresentFrame(SDL_Renderer *renderer) {
 	SDL_RenderPresent(renderer);
 }
 
-void Graphics_Draw(SDL_Renderer *renderer, Sint32 scraHPosiw, Sint32 scrbHPosiw, Sint32 vscroll) {
+void Graphics_Draw(SDL_Renderer *renderer, Sint32 scraHPosiw, Sint32 scrbHPosiw, Sint32 vscroll, const game_info *info) {
 	int fgViewX = (scraHPosiw >> 16) & 0x1ff;
 	int bgViewX = (scrbHPosiw >> 16) & 0x1ff;
 	int fgViewY = (vscroll >> 16) & 0xff;
@@ -1275,6 +1393,22 @@ void Graphics_Draw(SDL_Renderer *renderer, Sint32 scraHPosiw, Sint32 scrbHPosiw,
 	else {
 		DrawGridPlane(framebuffer, 2, bgViewX, bgViewY);
 	}
+	DrawGridPlane(framebuffer, 1, fgViewX, fgViewY);
+	DrawSprites(framebuffer, false);
+	DrawGridPlane(framebuffer, 0, fgViewX, fgViewY);
+	DrawSprites(framebuffer, true);
+	ApplyR4WaterPaletteSplit(info);
+	PresentFrame(renderer);
+}
+
+void Graphics_DrawWarp(SDL_Renderer *renderer, Sint32 scraHPosiw, Sint32 scrbHPosiw, Sint32 vscroll) {
+	int fgViewX = (scraHPosiw >> 16) & 0x1ff;
+	int bgViewX = (scrbHPosiw >> 16) & 0x1ff;
+	int fgViewY = (vscroll >> 16) & 0xff;
+	int bgViewY = vscroll & 0xff;
+	UpdatePalette();
+	SDL_FillSurfaceRect(framebuffer, NULL, 16);
+	DrawGridPlane(framebuffer, 2, bgViewX, bgViewY);
 	DrawGridPlane(framebuffer, 1, fgViewX, fgViewY);
 	DrawSprites(framebuffer, false);
 	DrawGridPlane(framebuffer, 0, fgViewX, fgViewY);

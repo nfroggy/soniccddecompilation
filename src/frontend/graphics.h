@@ -19,14 +19,17 @@ void ClrSpriteDebug(void);
 void ChangeTileBmp(Sint32 tile_start, Sint32 bmp_no);
 
 int Graphics_Init(SDL_Window **window, SDL_Renderer **renderer);
+void Graphics_BeginRound(void);
 int Graphics_LoadTiles(const char *path);
 int Graphics_LoadChangeTiles(const char *path);
 int Graphics_LoadSprites(const char *path, bmp_info *spriteInfo, int spriteInfoCount);
+int Graphics_LoadWarp(bmp_info *spriteInfo, int spriteInfoCount);
 int Graphics_LoadPlanet(const Uint16 *rotateMap, bmp_info *spriteInfo, int spriteInfoCount);
 int Graphics_LoadSpecialStage(int stageNumber, const Uint16 *rotateMap, bmp_info *spriteInfo, int spriteInfoCount);
 int Graphics_LoadSpecialClearScreen(void);
 void Graphics_UpdateSpecialGroundTiles(Uint16 hane1, Uint16 hane2, Uint16 dmg1, Uint16 dmg2);
-void Graphics_Draw(SDL_Renderer *renderer, Sint32 scraHPosiw, Sint32 scrbHPosiw, Sint32 vscroll);
+void Graphics_Draw(SDL_Renderer *renderer, Sint32 scraHPosiw, Sint32 scrbHPosiw, Sint32 vscroll, const game_info *info);
+void Graphics_DrawWarp(SDL_Renderer *renderer, Sint32 scraHPosiw, Sint32 scrbHPosiw, Sint32 vscroll);
 void Graphics_DrawPlanet(SDL_Renderer *renderer, const game_info *info);
 void Graphics_DrawSpecial(SDL_Renderer *renderer, const game_info *info);
 void Graphics_Shutdown(void);

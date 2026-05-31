@@ -568,9 +568,9 @@ static void test_animation_update_helpers(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 2, spr_create_call_count);
 
     reset_fixture();
-    sprite_handles[14] = 14;
+    sprite_handles[14] = 9;
     OEUpdatePlanet();
-    TEST_ASSERT_TRUE(ctx, position_sprites[0] == sprite_handle(14));
+    TEST_ASSERT_TRUE(ctx, position_sprites[0] == sprite_handle(9));
     TEST_ASSERT_EQ_INT(ctx, 240, position_x[0]);
     TEST_ASSERT_EQ_INT(ctx, -33, position_y[0]);
     nTimerCunt = 16;

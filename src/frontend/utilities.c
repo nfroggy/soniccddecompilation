@@ -33,6 +33,10 @@ char *sStrcpy(char *dst, char *src) {
     return strcpy(dst, src);
 }
 
+char *sStrncpy(char *dst, char *src, Sint32 size) {
+    return strncpy(dst, src, (size_t)size);
+}
+
 Sint32 sStrncmp(char *lhs, char *rhs, Sint32 size) {
     return strncmp(lhs, rhs, (size_t)size);
 }

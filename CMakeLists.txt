@@ -4772,16 +4772,31 @@ add_executable(frontend
   src/frontend/dll.h
   src/frontend/file.c
   src/frontend/file.h
+  src/frontend/frontend_state.h
+  src/frontend/globals.c
+  src/frontend/globals.h
   src/frontend/graphics.cpp
   src/frontend/graphics.h
+  src/frontend/hmx.cpp
+  src/frontend/hmx.h
+  src/frontend/round.c
+  src/frontend/round.h
   src/frontend/score.c
   src/frontend/score.h
   src/frontend/sound.c
   src/frontend/sound.h
+  src/frontend/special.c
+  src/frontend/special.h
   src/frontend/szdd.cpp
   src/frontend/szdd.hpp
+  src/frontend/ta.c
+  src/frontend/ta.h
+  src/frontend/title.c
+  src/frontend/title.h
   src/frontend/utilities.c
   src/frontend/utilities.h
+  src/frontend/warp.c
+  src/frontend/warp.h
 )
 
 # language versions

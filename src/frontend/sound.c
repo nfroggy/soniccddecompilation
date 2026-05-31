@@ -71,7 +71,7 @@ void WaveRequest(Sint16 req_no) {
 
 void CDPlay(Sint16 track_number) {
 	SDL_Log("CDPlay(%d)", track_number);
-	if (track_number < 2 || (track_number - 2 >= SDL_arraysize(musicTbl)) || (currTrack == track_number)) {
+	if (track_number < 2 || (track_number - 2 >= SDL_arraysize(musicTbl))) {
 		return;
 	}
 	MusicInfo *mi = &musicTbl[track_number - 2];
@@ -99,7 +99,10 @@ void CDPlay(Sint16 track_number) {
 
 void CDPause(Sint16 mode) {
 	SDL_Log("CDPause(%d)", mode);
-	if (mode) {
+    if (mode == 2) {
+            MIX_StopTrack(musicTrack, MIX_TrackMSToFrames(musicTrack, 500));
+	}
+	else if (mode == 1) {
 		MIX_ResumeTrack(musicTrack);
 	}
 	else {

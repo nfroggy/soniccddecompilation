@@ -5,20 +5,30 @@
 #include <string.h>
 #include "dll.h"
 #include "file.h"
+#include "frontend_state.h"
+#include "globals.h"
 #include "graphics.h"
+#include "hmx.h"
+#include "round.h"
 #include "score.h"
 #include "sound.h"
+#include "special.h"
+#include "ta.h"
+#include "title.h"
+#include "warp.h"
 #include "utilities.h"
 
 #define MAX_SPRITES 256
 #define FUNC_TABLE_SIZE 64
 
-SDL_Window *window;
 SDL_Renderer *renderer;
-game_info gameInfo;
-score_data scoreData;
+SDL_Window *window;
 ushort_union joy1;
 ushort_union joy2;
+Uint32 fullScreen;
+Uint32 visualMode;
+Uint16 selectedStage;
+Uint16 userKeys[5];
 
 typedef struct {
     Uint32 On;
@@ -37,57 +47,9 @@ static frontend_pad_status *FrontendPadGet(Uint32 padNo) {
     return &padStatus;
 }
 
-Uint16 *pMapwk = mapwk;
-PALETTEENTRY *pColorwk = colorwk;
-PALETTEENTRY *pColorwk2 = colorwk2;
-PALETTEENTRY *pColorwk3 = colorwk3;
-PALETTEENTRY *pColorwk4 = colorwk4;
-int_union *pHscrollbuff = hscrollbuff;
-
-char **memoryTbl[11] = {
-    (char **)&pMapwk,
-    (char **)&pColorwk,
-    (char **)&pColorwk2,
-    (char **)&pColorwk3,
-    (char **)&pColorwk4,
-    (char **)&pHscrollbuff,
-    (char **)&fade_flag,
-    (char **)&gameInfo,
-    (char **)&renderer,
-    (char **)&window,
-    (char **)&scoreData,
-};
-
-void *functionTbl[64] = {
-    (void *)SetGrid,
-    (void *)EAsprset,
-    (void *)ClrSpriteDebug,
-    (void *)WaveRequest,
-    (void *)CDPlay,
-    (void *)CDPause,
-    (void *)ChangeTileBmp,
-    (void *)ReadScoreIndx,
-    (void *)WriteScoreData,
-    (void *)SetScoreDate,
-    (void *)WaveAllStop,
-    (void *)sMemAlloc,
-    (void *)sMemFree,
-    (void *)sMemSet,
-    (void *)sMemCpy,
-    (void *)sMemCmp,
-    (void *)sRandom,
-    (void *)sStrcpy,
-    (void *)sStrncmp,
-    NULL,
-    (void *)sPrintf,
-    (void *)sOutputDebugString,
-    (void *)sOpenFile,
-    (void *)sReadFile,
-    (void *)sCloseFile,
-    (void *)sGetFileSize,
-};
-
 int main(int argc, char **argv) {
+    frontend_state state = FRONTEND_STATE_TITLE;
+
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         fprintf(stderr, "Couldn't init SDL: %s\n", SDL_GetError());
         return -1;
@@ -97,30 +59,58 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Graphics_Init failed\n");
         return -1;
     }
+    Globals_Init(window, renderer);
 
     if (!Sound_Init()) {
         fprintf(stderr, "Sound_Init failed\n");
         return -1;
     }
 
-    if (!DLL_Load("build/bin/Debug/planet.dll")) {
-        fprintf(stderr, "DLL_Load planet failed\n");
-        SDL_Log("Couldn't load DLL");
-        return -1;
+    if (argc > 1 && strcmp(argv[1], "round") == 0) {
+        state = FRONTEND_STATE_ROUND;
+        if (argc > 2) {
+            char *end = NULL;
+            unsigned long stageMenuId = strtoul(argv[2], &end, 10);
+            if (end && *end == '\0') {
+                if (!Round_LoadStageByMenu((Uint32)stageMenuId)) {
+                    return -1;
+                }
+            } else if (!Round_LoadStageByName(argv[2])) {
+                return -1;
+            }
+        } else if (!Round_LoadStageByMenu(ROUND_STAGE_R11A)) {
+            return -1;
+        }
+    } else if (argc > 1 && strcmp(argv[1], "warp") == 0) {
+        state = FRONTEND_STATE_WARP;
+        if (!Warp_Load()) {
+            return -1;
+        }
+    } else if (argc > 1 && strcmp(argv[1], "special") == 0) {
+        state = FRONTEND_STATE_SPECIAL;
+        if (argc > 2) {
+            char *end = NULL;
+            unsigned long stageMenuId = strtoul(argv[2], &end, 10);
+            if (end && *end == '\0') {
+                if (!Special_LoadStage((Uint32)stageMenuId)) {
+                    return -1;
+                }
+            } else {
+                return -1;
+            }
+        } else if (!Special_LoadStage(0)) {
+            return -1;
+        }
+    } else if (argc > 1 && strcmp(argv[1], "ta") == 0) {
+        state = FRONTEND_STATE_TIME_ATTACK;
+        if (!TimeAttack_Load(1)) {
+            return -1;
+        }
+    } else {
+        if (!Title_LoadDLL("build/bin/Debug/opening.dll")) {
+            return -1;
+        }
     }
-    gameInfo.pl_suu = 3;
-    functionTbl[54] = (void *)FrontendPadGet;
-
-    DLL_meminit(memoryTbl, functionTbl);
-    if (!Graphics_LoadPlanet(gameInfo.sm_adr0, (bmp_info *)gameInfo.pSprBmp, 700)) {
-        fprintf(stderr, "Graphics_LoadPlanet failed\n");
-        SDL_Log("Couldn't load planet graphics");
-        return -1;
-    }
-    if (SetDebugFlag) {
-        SetDebugFlag(0);
-    }
-    game_init();
 
     int running = 1;
     while (running) {
@@ -152,25 +142,45 @@ int main(int argc, char **argv) {
         padStatus.Release = lastPadOn & ~padStatus.On;
         SWdataSet(joy1, joy2);
 
-        if (fade_flag && FadeProc) {
-            if (FadeProc()) {
-                fade_flag = 0;
-            }
+        switch (state) {
+        case FRONTEND_STATE_TITLE:
+            state = Title_Run();
+            break;
+        case FRONTEND_STATE_ROUND:
+            state = Round_Run(renderer);
+            break;
+        case FRONTEND_STATE_WARP:
+            state = Warp_Run(renderer);
+            break;
+        case FRONTEND_STATE_SPECIAL:
+            state = Special_Run(renderer);
+            break;
+        case FRONTEND_STATE_TIME_ATTACK:
+            state = TimeAttack_Run(renderer);
+            break;
+        case FRONTEND_STATE_EXIT:
+            running = 0;
+            break;
+        default:
+            running = 0;
+            break;
         }
-        else {
-            if (game) {
-                Sint32 gameResult = game();
-                if (gameResult) {
-                    SDL_Log("planet mode result %d", gameResult);
-                }
-            }
+        if (state == FRONTEND_STATE_EXIT) {
+            running = 0;
         }
-
-        Graphics_DrawPlanet(renderer, &gameInfo);
     }
 
-    DLL_memfree();
-    DLL_Unload();
+    if (state == FRONTEND_STATE_ROUND) {
+        Round_Unload();
+    } else if (state == FRONTEND_STATE_WARP) {
+        Warp_Unload();
+    } else if (state == FRONTEND_STATE_SPECIAL) {
+        Special_Unload();
+    } else if (state == FRONTEND_STATE_TIME_ATTACK) {
+        TimeAttack_Unload();
+    } else if (state == FRONTEND_STATE_TITLE) {
+        Title_Unload();
+    }
     Graphics_Shutdown();
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);

@@ -12,11 +12,7 @@ extern void (*hmx_grid_set_tile_module)(hmx_grid *, Sint32, Sint32,
 extern hmx_grid *(*hmx_grid_create_module)(hmx_environment *, Sint32, Sint32,
                                            Sint32, Sint32);
 extern hmx_environment *g_env_module;
-#ifdef SAVEDATA
-#define IDX_GDBMP_BACK (*(volatile Uint16 *)0x01009160)
-#else
-extern Uint16 IDX_GDBMP_BACK;
-#endif
+#define IDX_GDBMP_BACK 0
 extern void (*hmx_grid_release_module)(hmx_environment *, hmx_grid *);
 
 Sint32 OEGridCreate(Uint16 indx) {

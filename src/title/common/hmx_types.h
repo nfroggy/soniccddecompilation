@@ -20,7 +20,7 @@ typedef struct draw_context {
     Sint32 spr_bitmap_count;
     hmx_bitmap *spr_bitmaps[1000];
     Sint32 spr_level[1000];
-    hmx_grid *grids[3];
+    hmx_grid *grids[8];
     Sint32 grd_bitmap_count;
     hmx_bitmap *grd_bitmaps[2048];
     Sint32 grd_change_count;

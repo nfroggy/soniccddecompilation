@@ -900,11 +900,11 @@ void PrintTotalTime(Sint32 mode, Uint32 b) {
             fontno = GetLFont(32);
         }
         loc.nTile = 21;
-        hmx_grid_set_tile_module((hmx_grid *)s_ctx->grd_bitmap_count, loc.mTile,
-                                 loc.nTile, s_ctx->grd_bitmaps[fontno++], 0);
+        hmx_grid_set_tile_module(s_ctx->grids[3], loc.mTile, loc.nTile,
+                                 s_ctx->grd_bitmaps[fontno++], 0);
         loc.nTile = 22;
-        hmx_grid_set_tile_module((hmx_grid *)s_ctx->grd_bitmap_count, loc.mTile,
-                                 loc.nTile, s_ctx->grd_bitmaps[fontno], 0);
+        hmx_grid_set_tile_module(s_ctx->grids[3], loc.mTile, loc.nTile,
+                                 s_ctx->grd_bitmaps[fontno], 0);
         ++loc.mTile;
     }
 }
