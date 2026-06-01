@@ -148,6 +148,8 @@ void egg8(sprite_status *pActwk) {
     if ((idx = ((Sint16 *)pActwk)[25]) != 0) {
         pMecawk = &actwk[idx];
         pMecawk->actfree[2] &= 159;
+    } else {
+        pMecawk = NULL;
     }
 
     egg8_warai_chk(pActwk);

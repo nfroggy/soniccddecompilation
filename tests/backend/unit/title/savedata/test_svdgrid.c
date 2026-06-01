@@ -139,7 +139,6 @@ static int reset_fixture(void) {
 
     s_ctx = &context;
     g_env_module = (hmx_environment *)&env_storage;
-    IDX_GDBMP_BACK = 1;
     hmx_grid_create_module = fake_grid_create;
     hmx_grid_set_tile_module = fake_grid_set_tile;
     hmx_grid_set_position_module = fake_grid_set_position;
@@ -152,10 +151,10 @@ static int reset_fixture(void) {
         infoGridBmp[i].lphGrid = &grid_handles[i];
         infoGridBmp[i].lphTile = &tile_handles[i];
     }
-    infoGridBmp[1].w = 10;
-    infoGridBmp[1].h = 6;
-    infoGridBmp[1].point.x = 13;
-    infoGridBmp[1].point.y = 21;
+    infoGridBmp[IDX_GDBMP_BACK].w = 10;
+    infoGridBmp[IDX_GDBMP_BACK].h = 6;
+    infoGridBmp[IDX_GDBMP_BACK].point.x = 13;
+    infoGridBmp[IDX_GDBMP_BACK].point.y = 21;
 
     tile_call_count = 0;
     create_call_count = 0;
@@ -176,7 +175,7 @@ static void test_oegridcreate_back_index_builds_grid_tiles_position_and_view(
         return;
     }
 
-    TEST_ASSERT_EQ_INT(ctx, 0, OEGridCreate(1));
+    TEST_ASSERT_EQ_INT(ctx, 0, OEGridCreate(IDX_GDBMP_BACK));
 
     TEST_ASSERT_EQ_INT(ctx, 1, create_call_count);
     TEST_ASSERT_TRUE(ctx, create_env == g_env_module);
@@ -184,11 +183,13 @@ static void test_oegridcreate_back_index_builds_grid_tiles_position_and_view(
     TEST_ASSERT_EQ_INT(ctx, 8, create_args[1]);
     TEST_ASSERT_EQ_INT(ctx, 40, create_args[2]);
     TEST_ASSERT_EQ_INT(ctx, 28, create_args[3]);
-    TEST_ASSERT_TRUE(ctx, context.grids[1] == (hmx_grid *)&grid_storage[1]);
-    TEST_ASSERT_EQ_INT(ctx, (Uint32)context.grids[1], grid_handles[1]);
+    TEST_ASSERT_TRUE(ctx, context.grids[IDX_GDBMP_BACK] ==
+                              (hmx_grid *)&grid_storage[IDX_GDBMP_BACK]);
+    TEST_ASSERT_EQ_INT(ctx, (Uint32)context.grids[IDX_GDBMP_BACK],
+                       grid_handles[IDX_GDBMP_BACK]);
 
     TEST_ASSERT_EQ_INT(ctx, 1120, tile_call_count);
-    TEST_ASSERT_TRUE(ctx, tile_calls[0].grid == context.grids[1]);
+    TEST_ASSERT_TRUE(ctx, tile_calls[0].grid == context.grids[IDX_GDBMP_BACK]);
     TEST_ASSERT_EQ_INT(ctx, 0, tile_calls[0].x);
     TEST_ASSERT_EQ_INT(ctx, 0, tile_calls[0].y);
     TEST_ASSERT_TRUE(ctx, tile_calls[0].bitmap == (hmx_bitmap *)&bitmap_storage);
@@ -201,12 +202,12 @@ static void test_oegridcreate_back_index_builds_grid_tiles_position_and_view(
     TEST_ASSERT_EQ_INT(ctx, 27, tile_calls[1119].y);
 
     TEST_ASSERT_EQ_INT(ctx, 1, position_call_count);
-    TEST_ASSERT_TRUE(ctx, position_grid == context.grids[1]);
+    TEST_ASSERT_TRUE(ctx, position_grid == context.grids[IDX_GDBMP_BACK]);
     TEST_ASSERT_EQ_INT(ctx, 13, position_args[0]);
     TEST_ASSERT_EQ_INT(ctx, 21, position_args[1]);
 
     TEST_ASSERT_EQ_INT(ctx, 1, view_call_count);
-    TEST_ASSERT_TRUE(ctx, view_grid == context.grids[1]);
+    TEST_ASSERT_TRUE(ctx, view_grid == context.grids[IDX_GDBMP_BACK]);
     TEST_ASSERT_EQ_INT(ctx, 0, view_args[0]);
     TEST_ASSERT_EQ_INT(ctx, 0, view_args[1]);
     TEST_ASSERT_EQ_INT(ctx, 400, view_args[2]);
@@ -218,15 +219,15 @@ static void test_oegridcreate_other_index_returns_without_side_effects(
     if (!reset_fixture()) {
         return;
     }
-    context.grids[0] = (hmx_grid *)&grid_storage[0];
+    context.grids[1] = (hmx_grid *)&grid_storage[1];
 
-    TEST_ASSERT_EQ_INT(ctx, 0, OEGridCreate(0));
+    TEST_ASSERT_EQ_INT(ctx, 0, OEGridCreate(1));
 
     TEST_ASSERT_EQ_INT(ctx, 0, create_call_count);
     TEST_ASSERT_EQ_INT(ctx, 0, tile_call_count);
     TEST_ASSERT_EQ_INT(ctx, 0, position_call_count);
     TEST_ASSERT_EQ_INT(ctx, 0, view_call_count);
-    TEST_ASSERT_TRUE(ctx, context.grids[0] == (hmx_grid *)&grid_storage[0]);
+    TEST_ASSERT_TRUE(ctx, context.grids[1] == (hmx_grid *)&grid_storage[1]);
 }
 
 static void test_oegriddelete_back_index_releases_and_clears_tile_handle(
@@ -234,34 +235,36 @@ static void test_oegriddelete_back_index_releases_and_clears_tile_handle(
     if (!reset_fixture()) {
         return;
     }
-    context.grids[1] = (hmx_grid *)&grid_storage[1];
-    grid_handles[1] = 78;
-    tile_handles[1] = 90;
+    context.grids[IDX_GDBMP_BACK] =
+        (hmx_grid *)&grid_storage[IDX_GDBMP_BACK];
+    grid_handles[IDX_GDBMP_BACK] = 78;
+    tile_handles[IDX_GDBMP_BACK] = 90;
 
-    OEGridDelete(1);
+    OEGridDelete(IDX_GDBMP_BACK);
 
     TEST_ASSERT_EQ_INT(ctx, 1, release_call_count);
     TEST_ASSERT_TRUE(ctx, release_env == g_env_module);
-    TEST_ASSERT_TRUE(ctx, release_grid == (hmx_grid *)&grid_storage[1]);
-    TEST_ASSERT_TRUE(ctx, context.grids[1] == 0);
-    TEST_ASSERT_EQ_INT(ctx, 0, grid_handles[1]);
-    TEST_ASSERT_EQ_INT(ctx, 0, tile_handles[1]);
+    TEST_ASSERT_TRUE(ctx, release_grid ==
+                              (hmx_grid *)&grid_storage[IDX_GDBMP_BACK]);
+    TEST_ASSERT_TRUE(ctx, context.grids[IDX_GDBMP_BACK] == 0);
+    TEST_ASSERT_EQ_INT(ctx, 0, grid_handles[IDX_GDBMP_BACK]);
+    TEST_ASSERT_EQ_INT(ctx, 0, tile_handles[IDX_GDBMP_BACK]);
 }
 
 static void test_oegriddelete_other_index_keeps_tile_handle(test_context *ctx) {
     if (!reset_fixture()) {
         return;
     }
-    context.grids[0] = (hmx_grid *)&grid_storage[0];
-    grid_handles[0] = 12;
-    tile_handles[0] = 34;
+    context.grids[1] = (hmx_grid *)&grid_storage[1];
+    grid_handles[1] = 12;
+    tile_handles[1] = 34;
 
-    OEGridDelete(0);
+    OEGridDelete(1);
 
     TEST_ASSERT_EQ_INT(ctx, 1, release_call_count);
-    TEST_ASSERT_TRUE(ctx, context.grids[0] == 0);
-    TEST_ASSERT_EQ_INT(ctx, 0, grid_handles[0]);
-    TEST_ASSERT_EQ_INT(ctx, 34, tile_handles[0]);
+    TEST_ASSERT_TRUE(ctx, context.grids[1] == 0);
+    TEST_ASSERT_EQ_INT(ctx, 0, grid_handles[1]);
+    TEST_ASSERT_EQ_INT(ctx, 34, tile_handles[1]);
 }
 
 static void test_oegriddelete_empty_grid_keeps_empty_state(test_context *ctx) {
@@ -269,27 +272,28 @@ static void test_oegriddelete_empty_grid_keeps_empty_state(test_context *ctx) {
         return;
     }
 
-    OEGridDelete(1);
+    OEGridDelete(IDX_GDBMP_BACK);
 
     TEST_ASSERT_EQ_INT(ctx, 0, release_call_count);
-    TEST_ASSERT_EQ_INT(ctx, 0, grid_handles[1]);
-    TEST_ASSERT_EQ_INT(ctx, 0, tile_handles[1]);
+    TEST_ASSERT_EQ_INT(ctx, 0, grid_handles[IDX_GDBMP_BACK]);
+    TEST_ASSERT_EQ_INT(ctx, 0, tile_handles[IDX_GDBMP_BACK]);
 }
 
 static void test_oeallgriddelete_uses_back_index(test_context *ctx) {
     if (!reset_fixture()) {
         return;
     }
-    context.grids[1] = (hmx_grid *)&grid_storage[1];
-    grid_handles[1] = 44;
-    tile_handles[1] = 55;
+    context.grids[IDX_GDBMP_BACK] =
+        (hmx_grid *)&grid_storage[IDX_GDBMP_BACK];
+    grid_handles[IDX_GDBMP_BACK] = 44;
+    tile_handles[IDX_GDBMP_BACK] = 55;
 
     OEAllGridDelete();
 
     TEST_ASSERT_EQ_INT(ctx, 1, release_call_count);
-    TEST_ASSERT_TRUE(ctx, context.grids[1] == 0);
-    TEST_ASSERT_EQ_INT(ctx, 0, grid_handles[1]);
-    TEST_ASSERT_EQ_INT(ctx, 0, tile_handles[1]);
+    TEST_ASSERT_TRUE(ctx, context.grids[IDX_GDBMP_BACK] == 0);
+    TEST_ASSERT_EQ_INT(ctx, 0, grid_handles[IDX_GDBMP_BACK]);
+    TEST_ASSERT_EQ_INT(ctx, 0, tile_handles[IDX_GDBMP_BACK]);
 }
 
 TEST_MAIN_BEGIN;

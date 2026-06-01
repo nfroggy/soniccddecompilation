@@ -399,6 +399,7 @@ frontend_state Round_Run(SDL_Renderer *renderer) {
         return Round_HandlePlayerDeath();
     }
     if (gameResult & 0x100) {
+        CDPause(2);
         Round_Unload();
         if (!Warp_Load()) {
             return FRONTEND_STATE_EXIT;

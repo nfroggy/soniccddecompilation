@@ -148,6 +148,28 @@ function Get-BackendCoverageSummary {
     return @($rows)
 }
 
+function Stop-StaleBackendTestProcesses {
+    param(
+        [string]$BuildRoot,
+        [string]$BuildConfig
+    )
+
+    $testOutputPath = (Join-Path $BuildRoot "tests\backend\$BuildConfig").TrimEnd('\')
+    $stale = @(Get-CimInstance Win32_Process -Filter "Name LIKE 'backend_%.exe'" |
+        Where-Object {
+            $_.ExecutablePath -and
+            $_.ExecutablePath.StartsWith($testOutputPath, [System.StringComparison]::OrdinalIgnoreCase)
+        })
+
+    foreach ($process in $stale) {
+        Stop-Process -Id $process.ProcessId -Force
+    }
+
+    if ($stale.Count -ne 0) {
+        Write-Output "Stopped $($stale.Count) stale backend test process(es) from $testOutputPath."
+    }
+}
+
 $repoPath = (Resolve-Path -LiteralPath $RepoRoot).Path
 $buildPath = if ([System.IO.Path]::IsPathRooted($BuildDir)) {
     $BuildDir
@@ -174,6 +196,7 @@ if (-not $SkipConfigure) {
 }
 
 if (-not $SkipBuild) {
+    Stop-StaleBackendTestProcesses -BuildRoot $buildPath -BuildConfig $Config
     & cmake --build $buildPath --config $Config --target backend-tests --parallel $parallelJobs
     if ($LASTEXITCODE -ne 0) {
         exit $LASTEXITCODE
