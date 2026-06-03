@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "boss_7.h"
 #include "../action.h"
@@ -213,12 +215,90 @@ Sint16 QuickReturn;
 extern Uint16 scr_dir_tbl[];
 extern sprite_pattern *bakupat[7];
 
+#pragma pack(push, 1)
+typedef struct {
+    union {
+        Sint16 timer;
+        struct {
+            Uint8 timer_low;
+            Uint8 byte_timer;
+        };
+    };
+    Uint8 flags;
+    Uint8 step;
+    Sint16 parent_index;
+    Sint16 accel_x;
+    Sint16 accel_y;
+    Sint16 max_xspeed;
+    union {
+        Sint16 x_offset;
+        struct {
+            Uint8 attack_mode;
+            Uint8 unused13;
+        };
+    };
+    union {
+        Sint16 y_offset;
+        struct {
+            Uint8 hscroll_state;
+            Uint8 goal_state;
+        };
+    };
+    union {
+        Sint16 owner_index;
+        Sint16 approach_counter;
+    };
+    Sint16 close_counter;
+    Sint16 boost_timer;
+} boss7_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(boss7_work, timer) == 0, "boss7_work.timer offset");
+_Static_assert(offsetof(boss7_work, timer_low) == 0,
+               "boss7_work.timer_low offset");
+_Static_assert(offsetof(boss7_work, byte_timer) == 1,
+               "boss7_work.byte_timer offset");
+_Static_assert(offsetof(boss7_work, flags) == 2, "boss7_work.flags offset");
+_Static_assert(offsetof(boss7_work, step) == 3, "boss7_work.step offset");
+_Static_assert(offsetof(boss7_work, parent_index) == 4,
+               "boss7_work.parent_index offset");
+_Static_assert(offsetof(boss7_work, accel_x) == 6,
+               "boss7_work.accel_x offset");
+_Static_assert(offsetof(boss7_work, accel_y) == 8,
+               "boss7_work.accel_y offset");
+_Static_assert(offsetof(boss7_work, max_xspeed) == 10,
+               "boss7_work.max_xspeed offset");
+_Static_assert(offsetof(boss7_work, x_offset) == 12,
+               "boss7_work.x_offset offset");
+_Static_assert(offsetof(boss7_work, attack_mode) == 12,
+               "boss7_work.attack_mode offset");
+_Static_assert(offsetof(boss7_work, y_offset) == 14,
+               "boss7_work.y_offset offset");
+_Static_assert(offsetof(boss7_work, hscroll_state) == 14,
+               "boss7_work.hscroll_state offset");
+_Static_assert(offsetof(boss7_work, goal_state) == 15,
+               "boss7_work.goal_state offset");
+_Static_assert(offsetof(boss7_work, owner_index) == 16,
+               "boss7_work.owner_index offset");
+_Static_assert(offsetof(boss7_work, approach_counter) == 16,
+               "boss7_work.approach_counter offset");
+_Static_assert(offsetof(boss7_work, close_counter) == 18,
+               "boss7_work.close_counter offset");
+_Static_assert(offsetof(boss7_work, boost_timer) == 20,
+               "boss7_work.boost_timer offset");
+_Static_assert(sizeof(boss7_work) <= sizeof(((sprite_status *)0)->actfree),
+               "boss7_work fits in actfree");
+
+static boss7_work *boss7_get_work(sprite_status *pActwk) {
+    return (boss7_work *)pActwk->actfree;
+}
+
 void msnc(sprite_status *pActwk) {
     void (*tbl[10])(sprite_status *) = {
         &msnc_ini, &msnc_demo1, &msnc_demo2, &msnc_low_move, &msnc_low_move,
         &msnc_atc, &msnc_f_atc, &msnc_b_atc, &msnc_win,      &msnc_lose};
 
-    pEggman = &actwk[((Sint16 *)pActwk)[25]];
+    pEggman = &actwk[boss7_get_work(pActwk)->parent_index];
     goal_chk(pActwk);
     msnc_egg_chk(pActwk);
 
@@ -254,14 +334,14 @@ static void msnc_demo1(sprite_status *pActwk) {
         goto label1;
     if (!(pPlayerwk->cddat & 4))
         goto label1;
-    if (pActwk->actfree[3])
+    if (boss7_get_work(pActwk)->step)
         return;
-    pActwk->actfree[3] = 1;
+    boss7_get_work(pActwk)->step = 1;
     pActwk->mstno.b.h = 1;
     return;
 
 label1:
-    pActwk->actfree[3] = 0;
+    boss7_get_work(pActwk)->step = 0;
 }
 
 static void msnc_demo2(sprite_status *pActwk) {
@@ -269,12 +349,12 @@ static void msnc_demo2(sprite_status *pActwk) {
         &msnc_demo2_ini, &kamae_anime, &w_timer, &fire_start,
         &w_timer,        &door_open,   &w_timer, &msnc_demo2_next};
 
-    demo2_jmp[pActwk->actfree[3]](pActwk);
+    demo2_jmp[boss7_get_work(pActwk)->step](pActwk);
 }
 
 static void msnc_demo2_ini(sprite_status *pActwk) {
     pActwk->mstno.b.h = 2;
-    ++pActwk->actfree[3];
+    ++boss7_get_work(pActwk)->step;
     pActwk->patno = 0;
 
     kamae_anime(pActwk);
@@ -283,25 +363,25 @@ static void msnc_demo2_ini(sprite_status *pActwk) {
 static void kamae_anime(sprite_status *pActwk) {
     if (pActwk->patno == 6) {
         pActwk->mstno.b.h = 3;
-        ++pActwk->actfree[3];
-        ((Sint16 *)pActwk)[23] = 120;
+        ++boss7_get_work(pActwk)->step;
+        boss7_get_work(pActwk)->timer = 120;
     }
 }
 
 static void fire_start(sprite_status *pActwk) {
-    ++pActwk->actfree[3];
+    ++boss7_get_work(pActwk)->step;
     pActwk->mstno.b.h = 4;
-    ((Sint16 *)pActwk)[23] = 150;
+    boss7_get_work(pActwk)->timer = 150;
 }
 
 static void door_open(sprite_status *pActwk) {
     Sint16 d0;
 
-    pEggman->actfree[14] = 130;
+    boss7_get_work(pEggman)->hscroll_state = 130;
 
     bossflag |= 128;
-    ++pActwk->actfree[3];
-    ((Sint16 *)pActwk)[23] = 60;
+    ++boss7_get_work(pActwk)->step;
+    boss7_get_work(pActwk)->timer = 60;
     d0 = 32;
     if (generate_flag) {
         d0 = 31;
@@ -310,14 +390,14 @@ static void door_open(sprite_status *pActwk) {
 }
 
 static void msnc_demo2_next(sprite_status *pActwk) {
-    pActwk->actfree[2] |= 32;
+    boss7_get_work(pActwk)->flags |= 32;
     msnc_low_set(pActwk);
 }
 
 static void msnc_egg_chk(sprite_status *pActwk) {
     Sint16 d0;
 
-    if (!(pActwk->actfree[2] & 32))
+    if (!(boss7_get_work(pActwk)->flags & 32))
         return;
     d0 = pActwk->xposi.w.h;
     d0 -= pEggman->xposi.w.h;
@@ -326,16 +406,16 @@ static void msnc_egg_chk(sprite_status *pActwk) {
 
     if (pActwk->xposi.w.h >= 13568) {
         pActwk->xspeed.w = pEggman->xspeed.w;
-        ((Sint16 *)pActwk)[26] = 8;
-        ((Sint16 *)pActwk)[28] = 1536;
+        boss7_get_work(pActwk)->accel_x = 8;
+        boss7_get_work(pActwk)->max_xspeed = 1536;
         return;
     }
 
     d0 = pActwk->xspeed.w;
     if (d0 < pEggman->xspeed.w) {
         pActwk->xspeed.w = pEggman->xspeed.w;
-        ((Sint16 *)pActwk)[26] = 8;
-        ((Sint16 *)pActwk)[28] = 1536;
+        boss7_get_work(pActwk)->accel_x = 8;
+        boss7_get_work(pActwk)->max_xspeed = 1536;
     }
 
     pActwk->r_no0 = 12;
@@ -345,9 +425,9 @@ static void msnc_egg_chk(sprite_status *pActwk) {
 static void goal_chk(sprite_status *pActwk) {
     Sint16 d0;
 
-    if (pEggman->actfree[15] & 128)
+    if (boss7_get_work(pEggman)->goal_state & 128)
         return;
-    if (pEggman->actfree[15]) {
+    if (boss7_get_work(pEggman)->goal_state) {
         goal_chk_snc_win(pActwk);
         return;
     }
@@ -363,37 +443,37 @@ static void goal_chk(sprite_status *pActwk) {
 }
 
 static void goal_chk_snc_win(sprite_status *pActwk) {
-    if (pEggman->actfree[15] == 0) {
-        pEggman->actfree[15] = 1;
+    if (boss7_get_work(pEggman)->goal_state == 0) {
+        boss7_get_work(pEggman)->goal_state = 1;
         bossflag |= 128;
         soundset(187);
         loser_posiset(pActwk);
-        ((Sint16 *)pActwk)[28] = 2048;
-        ((Sint16 *)pActwk)[26] = 16;
+        boss7_get_work(pActwk)->max_xspeed = 2048;
+        boss7_get_work(pActwk)->accel_x = 16;
     }
     if (pActwk->xposi.w.h >= 15944) {
-        pEggman->actfree[15] |= 128;
-        pActwk->actfree[2] &= 223;
+        boss7_get_work(pEggman)->goal_state |= 128;
+        boss7_get_work(pActwk)->flags &= 223;
         pActwk->r_no0 = 18;
         make_bara(pActwk);
-        ((Sint16 *)pActwk)[23] = 0;
-        pActwk->actfree[3] = 0;
+        boss7_get_work(pActwk)->timer = 0;
+        boss7_get_work(pActwk)->step = 0;
     }
 }
 
 static void goal_chk_msnc_win(sprite_status *pActwk) {
     pActwk->xposi.w.h = 16016;
-    pEggman->actfree[15] = 130;
+    boss7_get_work(pEggman)->goal_state = 130;
     bossflag |= 128;
 
     soundset(187);
 
     loser_posiset(pPlayerwk);
 
-    pActwk->actfree[2] &= 223;
+    boss7_get_work(pActwk)->flags &= 223;
     pActwk->r_no0 = 16;
-    ((Sint16 *)pActwk)[23] = 0;
-    pActwk->actfree[3] = 0;
+    boss7_get_work(pActwk)->timer = 0;
+    boss7_get_work(pActwk)->step = 0;
 }
 
 static void loser_posiset(sprite_status *pActwk) {
@@ -412,11 +492,11 @@ static void msnc_low_move(sprite_status *pActwk) {
 
     add_spd3(pActwk);
     msnc_hight(pActwk);
-    if (pEggman->actfree[15])
+    if (boss7_get_work(pEggman)->goal_state)
         return;
 
-    ++((Sint16 *)pActwk)[30];
-    if (pActwk->actfree[12]) {
+    ++boss7_get_work(pActwk)->y_offset;
+    if (boss7_get_work(pActwk)->attack_mode) {
         baisoku_mode(pActwk);
         return;
     }
@@ -425,32 +505,32 @@ static void msnc_low_move(sprite_status *pActwk) {
     GL_d5 -= pActwk->xposi.w.h;
     d4 = GL_d5;
     if (d4 >= 0) {
-        pActwk->actfree[2] |= 64;
+        boss7_get_work(pActwk)->flags |= 64;
     } else {
-        pActwk->actfree[2] &= 191;
+        boss7_get_work(pActwk)->flags &= 191;
         d4 *= -1;
     }
 
     if (d4 < 160) {
-        if (((Sint16 *)pActwk)[31] < 0) {
-            ((Sint16 *)pActwk)[31] = 0;
+        if (boss7_get_work(pActwk)->owner_index < 0) {
+            boss7_get_work(pActwk)->owner_index = 0;
         }
 
-        ++((Sint16 *)pActwk)[31];
+        ++boss7_get_work(pActwk)->owner_index;
         if (d4 < 16) {
-            ((Sint16 *)pActwk)[32] = 0;
+            boss7_get_work(pActwk)->close_counter = 0;
         } else {
-            ++((Sint16 *)pActwk)[32];
+            ++boss7_get_work(pActwk)->close_counter;
         }
     } else {
-        if (((Sint16 *)pActwk)[31] >= 0) {
-            ((Sint16 *)pActwk)[31] = 0;
+        if (boss7_get_work(pActwk)->owner_index >= 0) {
+            boss7_get_work(pActwk)->owner_index = 0;
         }
 
-        --((Sint16 *)pActwk)[31];
+        --boss7_get_work(pActwk)->owner_index;
     }
 
-    if (((Sint16 *)pActwk)[32] >= 50) {
+    if (boss7_get_work(pActwk)->close_counter >= 50) {
         msnc_atc_move(pActwk);
     } else {
         msnc_normal_move(pActwk);
@@ -464,29 +544,29 @@ static void msnc_atc_move(sprite_status *pActwk) {
         return;
     }
 
-    if (!(pActwk->actfree[2] & 64)) {
+    if (!(boss7_get_work(pActwk)->flags & 64)) {
         msnc_wk_clr(pActwk);
-        pActwk->actfree[12] = 2;
+        boss7_get_work(pActwk)->attack_mode = 2;
 
-        ((Sint16 *)pActwk)[33] = 240;
+        boss7_get_work(pActwk)->boost_timer = 240;
         msnc_normal_move(pActwk);
     } else {
         msnc_wk_clr(pActwk);
-        pActwk->actfree[12] = 1;
+        boss7_get_work(pActwk)->attack_mode = 1;
 
-        ((Sint16 *)pActwk)[33] = 240;
+        boss7_get_work(pActwk)->boost_timer = 240;
         msnc_normal_move(pActwk);
     }
 }
 
 static void baisoku_mode(sprite_status *pActwk) {
 
-    if (((Sint16 *)pActwk)[33] < 2) {
-        --((Sint16 *)pActwk)[33];
-        pActwk->actfree[12] = 0;
-        ((Sint16 *)pActwk)[33] = 0;
+    if (boss7_get_work(pActwk)->boost_timer < 2) {
+        --boss7_get_work(pActwk)->boost_timer;
+        boss7_get_work(pActwk)->attack_mode = 0;
+        boss7_get_work(pActwk)->boost_timer = 0;
     } else {
-        --((Sint16 *)pActwk)[33];
+        --boss7_get_work(pActwk)->boost_timer;
     }
 
     msnc_normal_move(pActwk);
@@ -495,9 +575,9 @@ static void baisoku_mode(sprite_status *pActwk) {
 static void msnc_normal_move(sprite_status *pActwk) {
     Sint16 d0;
 
-    if (((Sint16 *)pActwk)[33])
+    if (boss7_get_work(pActwk)->boost_timer)
         goto label1;
-    if (((Sint16 *)pActwk)[31] > -120)
+    if (boss7_get_work(pActwk)->owner_index > -120)
         goto label1;
 
     if (GL_d5 < 0)
@@ -505,7 +585,7 @@ static void msnc_normal_move(sprite_status *pActwk) {
     msnc_atc_move(pActwk);
     return;
 label1:
-    d0 = ((Sint16 *)pActwk)[30];
+    d0 = boss7_get_work(pActwk)->y_offset;
     d0 = (Uint16)d0 % 60;
     if (d0 >= 30)
         goto label2;
@@ -523,18 +603,18 @@ label2:
 static void msnc_hi_set(sprite_status *pActwk) {
     Sint16 d0;
 
-    if (pActwk->actfree[12] == 1)
+    if (boss7_get_work(pActwk)->attack_mode == 1)
         d0 = 2048;
-    else if (pActwk->actfree[12] == 2)
+    else if (boss7_get_work(pActwk)->attack_mode == 2)
         d0 = 682;
     else
         d0 = 1024;
 
-    ((Sint16 *)pActwk)[28] = d0;
+    boss7_get_work(pActwk)->max_xspeed = d0;
     if (d0 >= pActwk->xspeed.w) {
         d0 *= -1;
     }
-    ((Sint16 *)pActwk)[26] = d0;
+    boss7_get_work(pActwk)->accel_x = d0;
     pActwk->r_no0 = 8;
     pActwk->mstno.b.h = 6;
     msnc_wk_clr2(pActwk);
@@ -543,31 +623,31 @@ static void msnc_hi_set(sprite_status *pActwk) {
 static void msnc_low_set(sprite_status *pActwk) {
     Sint16 d0;
 
-    if (pActwk->actfree[12] == 1)
+    if (boss7_get_work(pActwk)->attack_mode == 1)
         d0 = 1280;
-    else if (pActwk->actfree[12] == 2)
+    else if (boss7_get_work(pActwk)->attack_mode == 2)
         d0 = 426;
     else
         d0 = 640;
 
-    ((Sint16 *)pActwk)[28] = d0;
+    boss7_get_work(pActwk)->max_xspeed = d0;
     if (d0 >= pActwk->xspeed.w) {
         d0 *= -1;
     }
-    ((Sint16 *)pActwk)[26] = d0;
+    boss7_get_work(pActwk)->accel_x = d0;
     pActwk->r_no0 = 6;
     pActwk->mstno.b.h = 5;
     msnc_wk_clr2(pActwk);
 }
 
 static void msnc_wk_clr(sprite_status *pActwk) {
-    ((Sint16 *)pActwk)[32] = 0;
+    boss7_get_work(pActwk)->close_counter = 0;
     msnc_wk_clr2(pActwk);
 }
 
 static void msnc_wk_clr2(sprite_status *pActwk) {
-    pActwk->actfree[3] = 0;
-    ((Sint16 *)pActwk)[23] = 0;
+    boss7_get_work(pActwk)->step = 0;
+    boss7_get_work(pActwk)->timer = 0;
 }
 
 static void msnc_atc(sprite_status *pActwk) {
@@ -590,12 +670,12 @@ static void msnc_act_next(sprite_status *pActwk) {
     GL_d5 = pPlayerwk->xposi.w.h;
     GL_d5 -= pActwk->xposi.w.h;
     if (GL_d5 >= 0) {
-        pActwk->actfree[2] |= 64;
+        boss7_get_work(pActwk)->flags |= 64;
 
         pActwk->r_no0 = 12;
         msnc_wk_clr(pActwk);
     } else {
-        pActwk->actfree[2] &= 191;
+        boss7_get_work(pActwk)->flags &= 191;
 
         pActwk->r_no0 = 14;
         msnc_wk_clr(pActwk);
@@ -617,8 +697,8 @@ static void msnc_f_atc_tobi(sprite_status *pActwk) {
         pActwk->xposi.w.h < scra_h_posit.w.h + 320)
         soundset(202);
 
-    ((Sint16 *)pActwk)[26] = 8;
-    ((Sint16 *)pActwk)[28] = 1536;
+    boss7_get_work(pActwk)->accel_x = 8;
+    boss7_get_work(pActwk)->max_xspeed = 1536;
     pActwk->mstno.b.h = 8;
 }
 
@@ -652,8 +732,8 @@ static void msnc_b_atc(sprite_status *pActwk) {
 }
 
 static void msnc_b_atc_atack(sprite_status *pActwk) {
-    ((Sint16 *)pActwk)[26] = -8;
-    ((Sint16 *)pActwk)[28] = 512;
+    boss7_get_work(pActwk)->accel_x = -8;
+    boss7_get_work(pActwk)->max_xspeed = 512;
     make_ele(pActwk);
     pActwk->mstno.b.h = 10;
 
@@ -674,7 +754,7 @@ static void msnc_b_atc_kill(sprite_status *pActwk) {
 void msnc_ele(sprite_status *pActwk) {
     void (*act_tbl[2])(sprite_status *) = {&msnc_ele_ini, &msnc_ele_01};
 
-    pMsnc = &actwk[((Sint16 *)pActwk)[25]];
+    pMsnc = &actwk[boss7_get_work(pActwk)->parent_index];
     act_tbl[pActwk->r_no0 / 2](pActwk);
 }
 
@@ -698,12 +778,12 @@ static void msnc_ele_01(sprite_status *pActwk) {
     pActwk->xposi.w.h = pMsnc->xposi.w.h;
     pActwk->yposi.w.h = pMsnc->yposi.w.h;
 
-    ++pActwk->actfree[1];
-    if (pActwk->actfree[1] != 5) {
+    ++boss7_get_work(pActwk)->byte_timer;
+    if (boss7_get_work(pActwk)->byte_timer != 5) {
         actionsub(pActwk);
         return;
     }
-    pActwk->actfree[1] = 0;
+    boss7_get_work(pActwk)->byte_timer = 0;
     ++pActwk->patno;
     if (pActwk->patno == 2) {
         pActwk->patno = 0;
@@ -716,20 +796,20 @@ static void msnc_win(sprite_status *pActwk) {
 
     loser_posiset(pPlayerwk);
 
-    jmp[pActwk->actfree[3]](pActwk);
+    jmp[boss7_get_work(pActwk)->step](pActwk);
 }
 
 static void msnc_win_ini(sprite_status *pActwk) {
     pActwk->mstno.b.h = 11;
     pActwk->xposi.w.h = 16016;
     pActwk->yposi.w.h = 460;
-    ++pActwk->actfree[3];
+    ++boss7_get_work(pActwk)->step;
 }
 
 static void msnc_win_wait(sprite_status *pActwk) {
     if (pPlayerwk->xposi.w.h >= 15824) {
-        ++pActwk->actfree[3];
-        pActwk->actfree[1] = 30;
+        ++boss7_get_work(pActwk)->step;
+        boss7_get_work(pActwk)->byte_timer = 30;
     }
 }
 
@@ -738,24 +818,24 @@ static void msnc_win_timer(sprite_status *pActwk) { b_timer(pActwk); }
 static void msnc_win_chichi(sprite_status *pActwk) { pActwk->mstno.b.h = 12; }
 
 static void msnc_lose(sprite_status *pActwk) {
-    if (pActwk->actfree[3] == 0) {
+    if (boss7_get_work(pActwk)->step == 0) {
         scoreup(100);
 
-        pActwk->actfree[3] = 1;
+        boss7_get_work(pActwk)->step = 1;
         pActwk->mstno.b.h = 13;
         pActwk->xspeed.w = 0;
-        ((Sint16 *)pActwk)[26] = 0;
+        boss7_get_work(pActwk)->accel_x = 0;
         pActwk->yspeed.w = -1280;
-        ((Sint16 *)pActwk)[27] = 40;
+        boss7_get_work(pActwk)->accel_y = 40;
         make_bakuha(pActwk);
     }
-    if (((Sint16 *)pActwk)[23] == 240) {
+    if (boss7_get_work(pActwk)->timer == 240) {
         QuickReturn = 1;
         frameout(pActwk);
         return;
     }
     add_spd2(pActwk);
-    ++((Sint16 *)pActwk)[23];
+    ++boss7_get_work(pActwk)->timer;
 }
 
 void egg7(sprite_status *pActwk) {
@@ -788,7 +868,7 @@ static void egg7_ini(sprite_status *pActwk) {
     colorset2(6);
     pActwk->r_no0 = 2;
     make_jet(pActwk);
-    pActwk->actfree[2] |= 8;
+    boss7_get_work(pActwk)->flags |= 8;
 
     make_msnc(pActwk);
     make_beam(pActwk);
@@ -800,18 +880,18 @@ static void egg7_demo1(sprite_status *pActwk) {
 
     egg_hight(pActwk);
 
-    demo1_jmp[pActwk->actfree[3]](pActwk);
+    demo1_jmp[boss7_get_work(pActwk)->step](pActwk);
 }
 
 static void snc_wait(sprite_status *pActwk) {
     Sint16 d0;
 
-    pActwk->actfree[14] &= 240;
-    ++pActwk->actfree[14];
+    boss7_get_work(pActwk)->hscroll_state &= 240;
+    ++boss7_get_work(pActwk)->hscroll_state;
     if (pPlayerwk->xposi.w.h >= 3040) {
         pActwk->xspeed.w = -1536;
-        ((Sint16 *)pActwk)[26] = 0;
-        ++pActwk->actfree[3];
+        boss7_get_work(pActwk)->accel_x = 0;
+        ++boss7_get_work(pActwk)->step;
         pActwk->cddat |= 1;
 
         d0 = 2880;
@@ -842,10 +922,10 @@ static void r_l(sprite_status *pActwk) {
         return;
     pActwk->xposi.w.h = d0;
     pActwk->xspeed.w = 1536;
-    ((Sint16 *)pActwk)[26] = 0;
-    ++pActwk->actfree[3];
+    boss7_get_work(pActwk)->accel_x = 0;
+    ++boss7_get_work(pActwk)->step;
     pActwk->cddat &= 254;
-    ((Sint16 *)pActwk)[23] = 120;
+    boss7_get_work(pActwk)->timer = 120;
 }
 
 static void l_r(sprite_status *pActwk) {
@@ -857,10 +937,10 @@ static void l_r(sprite_status *pActwk) {
         return;
     pActwk->xposi.w.h = d0;
     pActwk->xspeed.w = -1536;
-    ((Sint16 *)pActwk)[26] = 0;
+    boss7_get_work(pActwk)->accel_x = 0;
     pActwk->cddat |= 1;
-    ++pActwk->actfree[3];
-    ((Sint16 *)pActwk)[23] = 120;
+    ++boss7_get_work(pActwk)->step;
+    boss7_get_work(pActwk)->timer = 120;
 }
 
 static void r_l2(sprite_status *pActwk) {
@@ -872,10 +952,10 @@ static void r_l2(sprite_status *pActwk) {
         return;
     pActwk->xposi.w.h = d0;
     pActwk->xspeed.w = 0;
-    ((Sint16 *)pActwk)[26] = 0;
-    pActwk->actfree[3] = 0;
-    ((Sint16 *)pActwk)[23] = 0;
-    pActwk->actfree[2] &= 247;
+    boss7_get_work(pActwk)->accel_x = 0;
+    boss7_get_work(pActwk)->step = 0;
+    boss7_get_work(pActwk)->timer = 0;
+    boss7_get_work(pActwk)->flags &= 247;
     pActwk->r_no0 = 4;
 }
 
@@ -901,48 +981,48 @@ static void egg7_demo2(sprite_status *pActwk) {
 static void msnc_turn(sprite_status *pActwk) {
     sprite_status *a2;
 
-    a2 = &actwk[((Sint16 *)pActwk)[25]];
+    a2 = &actwk[boss7_get_work(pActwk)->parent_index];
     a2->r_no0 = 4;
-    ((Sint16 *)a2)[23] = 0;
-    a2->actfree[3] = 0;
+    boss7_get_work(a2)->timer = 0;
+    boss7_get_work(a2)->step = 0;
 }
 
 static void beam_on(sprite_status *pActwk) {
-    pActwk->actfree[2] |= 64;
-    pActwk->actfree[2] |= 32;
+    boss7_get_work(pActwk)->flags |= 64;
+    boss7_get_work(pActwk)->flags |= 32;
 }
 
 static void beam_on2(sprite_status *pActwk) {
-    pActwk->actfree[2] |= 64;
-    pActwk->actfree[2] &= 223;
+    boss7_get_work(pActwk)->flags |= 64;
+    boss7_get_work(pActwk)->flags &= 223;
 }
 
 static void beam_off(sprite_status *pActwk) {
-    pActwk->actfree[2] &= 191;
-    pActwk->actfree[2] &= 223;
+    boss7_get_work(pActwk)->flags &= 191;
+    boss7_get_work(pActwk)->flags &= 223;
 }
 
 static void move_start(sprite_status *pActwk) {
-    pActwk->actfree[2] |= 8;
+    boss7_get_work(pActwk)->flags |= 8;
     pActwk->xspeed.w = -512;
-    ((Sint16 *)pActwk)[26] = 0;
+    boss7_get_work(pActwk)->accel_x = 0;
 }
 
 static void beam_next(sprite_status *pActwk) {
     beam_on2(pActwk);
 
     pActwk->r_no0 = 6;
-    pActwk->actfree[2] |= 16;
+    boss7_get_work(pActwk)->flags |= 16;
 
     pActwk->xspeed.w = 512;
-    ((Sint16 *)pActwk)[28] = 512;
-    ((Sint16 *)pActwk)[26] = 2;
+    boss7_get_work(pActwk)->max_xspeed = 512;
+    boss7_get_work(pActwk)->accel_x = 2;
     pActwk->xspeed.w = 0;
-    ((Sint16 *)pActwk)[27] = 0;
+    boss7_get_work(pActwk)->accel_y = 0;
 
     pActwk->cddat &= 254;
-    pActwk->actfree[3] = 0;
-    ((Sint16 *)pActwk)[23] = 0;
+    boss7_get_work(pActwk)->step = 0;
+    boss7_get_work(pActwk)->timer = 0;
 }
 
 static void egg7_move(sprite_status *pActwk) {
@@ -956,7 +1036,7 @@ static void egg7_move(sprite_status *pActwk) {
     } else {
         pActwk->xposi.w.h = d0;
         pActwk->r_no0 = 8;
-        pActwk->actfree[3] = 0;
+        boss7_get_work(pActwk)->step = 0;
         pActwk->xspeed.w = 0;
         pActwk->yspeed.w = 0;
     }
@@ -968,13 +1048,13 @@ static void egg7_goal(sprite_status *pActwk) {
         &w_timer,       &egg7_goal1,         &w_timer, &egg7_goal2,
         &w_timer,       &egg7_goal3};
 
-    jmp[pActwk->actfree[3]](pActwk);
+    jmp[boss7_get_work(pActwk)->step](pActwk);
 }
 
 static void egg7_goal_ini(sprite_status *pActwk) {
     Uint8 d0;
 
-    d0 = pActwk->actfree[15];
+    d0 = boss7_get_work(pActwk)->goal_state;
     d0 &= 15;
     if (d0 == 1) {
         egg7_goal_snc_win(pActwk);
@@ -986,32 +1066,32 @@ static void egg7_goal_ini(sprite_status *pActwk) {
 }
 
 static void egg7_goal_msnc_win(sprite_status *pActwk) {
-    pActwk->actfree[3] = 1;
+    boss7_get_work(pActwk)->step = 1;
 }
 
 static void egg7_goal_snc_win(sprite_status *pActwk) {
-    pActwk->actfree[2] &= 223;
-    pActwk->actfree[2] &= 239;
-    pActwk->actfree[14] &= 15;
+    boss7_get_work(pActwk)->flags &= 223;
+    boss7_get_work(pActwk)->flags &= 239;
+    boss7_get_work(pActwk)->hscroll_state &= 15;
 
-    pActwk->actfree[3] = 2;
-    ((Sint16 *)pActwk)[23] = 30;
+    boss7_get_work(pActwk)->step = 2;
+    boss7_get_work(pActwk)->timer = 30;
 }
 
 static void egg7_goal0(sprite_status *pActwk) {
     Sint16 d0;
 
-    ++((Sint16 *)pActwk)[23];
-    if (((Sint16 *)pActwk)[23] < 120) {
-        d0 = ((Sint16 *)pActwk)[23];
+    ++boss7_get_work(pActwk)->timer;
+    if (boss7_get_work(pActwk)->timer < 120) {
+        d0 = boss7_get_work(pActwk)->timer;
         d0 = (Uint16)d0 % 20;
         if (d0 == 0) {
-            pActwk->actfree[2] ^= 64;
+            boss7_get_work(pActwk)->flags ^= 64;
         }
     } else {
-        pActwk->actfree[2] &= 191;
-        ++pActwk->actfree[3];
-        ((Sint16 *)pActwk)[23] = 30;
+        boss7_get_work(pActwk)->flags &= 191;
+        ++boss7_get_work(pActwk)->step;
+        boss7_get_work(pActwk)->timer = 30;
         pActwk->xspeed.w = 0;
         pActwk->yspeed.w = 512;
     }
@@ -1022,16 +1102,16 @@ static void egg7_goal1(sprite_status *pActwk) {
     if (pActwk->yposi.w.h >= 400) {
         pActwk->xspeed.w = 1536;
         pActwk->yspeed.w = 0;
-        ++pActwk->actfree[3];
-        ((Sint16 *)pActwk)[23] = 60;
+        ++boss7_get_work(pActwk)->step;
+        boss7_get_work(pActwk)->timer = 60;
     }
 }
 
 static void egg7_goal2(sprite_status *pActwk) {
     add_spd(pActwk);
     if (pActwk->xposi.w.h >= 16224) {
-        ++pActwk->actfree[3];
-        ((Sint16 *)pActwk)[23] = 60;
+        ++boss7_get_work(pActwk)->step;
+        boss7_get_work(pActwk)->timer = 60;
     }
 }
 
@@ -1044,7 +1124,7 @@ static void egg7_goal3(sprite_status *pActwk) {
     }
     sub_sync(d0);
 
-    pActwk->actfree[14] = 3;
+    boss7_get_work(pActwk)->hscroll_state = 3;
     egg7_hscr(pActwk);
 
     genecolor();
@@ -1086,23 +1166,23 @@ static void egg7_spdset(sprite_status *pActwk) {
     d1 += d0;
     if (d1 < 0) {
 
-        ++((Sint16 *)pActwk)[32];
+        ++boss7_get_work(pActwk)->close_counter;
         egg7_maxspdset(pActwk, d1);
-        if (((Sint16 *)pActwk)[31]) {
-            --((Sint16 *)pActwk)[31];
+        if (boss7_get_work(pActwk)->owner_index) {
+            --boss7_get_work(pActwk)->owner_index;
             return;
         }
 
-        pActwk->actfree[2] &= 251;
+        boss7_get_work(pActwk)->flags &= 251;
 
     } else {
-        ((Sint16 *)pActwk)[32] = 0;
+        boss7_get_work(pActwk)->close_counter = 0;
 
         egg7_maxspdset(pActwk, d1);
 
-        if (!(pActwk->actfree[2] & 4)) {
-            pActwk->actfree[2] |= 4;
-            ((Sint16 *)pActwk)[31] = 240;
+        if (!(boss7_get_work(pActwk)->flags & 4)) {
+            boss7_get_work(pActwk)->flags |= 4;
+            boss7_get_work(pActwk)->owner_index = 240;
 
             d1 = 256;
             d0 = pPlayerwk->xspeed.w;
@@ -1111,7 +1191,7 @@ static void egg7_spdset(sprite_status *pActwk) {
             }
             pActwk->xspeed.w = d0;
         } else {
-            pActwk->actfree[2] |= 4;
+            boss7_get_work(pActwk)->flags |= 4;
         }
     }
 }
@@ -1133,15 +1213,15 @@ static void egg7_maxspdset(sprite_status *pActwk, Sint16 d1) {
         d0 = 12;
     }
 
-    ((Sint16 *)pActwk)[28] = spd_tbl[d0 / 2];
-    ((Sint16 *)pActwk)[26] = spd_tbl[d0 / 2 + 1];
+    boss7_get_work(pActwk)->max_xspeed = spd_tbl[d0 / 2];
+    boss7_get_work(pActwk)->accel_x = spd_tbl[d0 / 2 + 1];
 }
 
 static void egg_beamchk(sprite_status *pActwk) {
     sprite_status *a0;
     Sint16 d0;
 
-    if (!(pActwk->actfree[2] & 16))
+    if (!(boss7_get_work(pActwk)->flags & 16))
         return;
     if (pPlayerwk->actno == 0)
         return;
@@ -1161,7 +1241,7 @@ static void egg7_hscr(sprite_status *pActwk) {
                                    &egg7_hscr_pat2, &egg7_hscr_pat3};
     Sint16 d0;
 
-    if (pActwk->actfree[14] & 128) {
+    if (boss7_get_work(pActwk)->hscroll_state & 128) {
         d0 = pActwk->xposi.w.h;
         d0 -= 8;
         if (d0 > 15776) {
@@ -1179,7 +1259,7 @@ static void egg7_hscr(sprite_status *pActwk) {
             scra_hline = d0;
         }
     }
-    rlim_jmpd0[pActwk->actfree[14] & 15]();
+    rlim_jmpd0[boss7_get_work(pActwk)->hscroll_state & 15]();
 }
 
 static void egg7_hscr_pat0(void) {}
@@ -1293,7 +1373,7 @@ void egg7beam(sprite_status *pActwk) {
         &egg7beam_ini, &egg7beam_01, &egg7beam_kemuri1, &egg7beam_kemuri2};
     sprite_status *a2;
 
-    a2 = &actwk[((Sint16 *)pActwk)[25]];
+    a2 = &actwk[boss7_get_work(pActwk)->parent_index];
     if (a2->actno == 0) {
         frameout(pActwk);
         return;
@@ -1321,11 +1401,11 @@ static void egg7beam_ini(sprite_status *pActwk, sprite_status *a2) {
         if (pActwk->userflag.b.h != 2) {
             pActwk->r_no0 = 4;
 
-            pActwk->actfree[1] = 15;
+            boss7_get_work(pActwk)->byte_timer = 15;
         } else {
             pActwk->r_no0 = 6;
 
-            pActwk->actfree[1] = 30;
+            boss7_get_work(pActwk)->byte_timer = 30;
         }
     }
 }
@@ -1333,33 +1413,33 @@ static void egg7beam_ini(sprite_status *pActwk, sprite_status *a2) {
 static void egg7beam_01(sprite_status *pActwk, sprite_status *a2) {
     pActwk->colino = 0;
     pActwk->colicnt = 0;
-    if (a2->actfree[2] & 32) {
+    if (boss7_get_work(a2)->flags & 32) {
         pActwk->colino = 190;
         pActwk->colicnt = 2;
     }
     if (beam_posi(pActwk, a2)) {
         if (pActwk->userflag.b.l) {
-            if (pActwk->actfree[1] <= 0) {
-                --pActwk->actfree[1];
+            if (boss7_get_work(pActwk)->byte_timer <= 0) {
+                --boss7_get_work(pActwk)->byte_timer;
                 make_kemuri(pActwk);
-                pActwk->actfree[1] = 10;
+                boss7_get_work(pActwk)->byte_timer = 10;
             } else {
-                --pActwk->actfree[1];
+                --boss7_get_work(pActwk)->byte_timer;
             }
 
-            if (pActwk->actfree[0] <= 0) {
-                --pActwk->actfree[0];
+            if (boss7_get_work(pActwk)->timer_low <= 0) {
+                --boss7_get_work(pActwk)->timer_low;
                 make_hahen(pActwk);
-                pActwk->actfree[0] = 9;
+                boss7_get_work(pActwk)->timer_low = 9;
             } else {
-                --pActwk->actfree[0];
+                --boss7_get_work(pActwk)->timer_low;
             }
         }
 
         patchg(pActwk, egg7beam_pchg);
         actionsub(pActwk);
     } else {
-        ((Sint16 *)pActwk)[23] = 0;
+        boss7_get_work(pActwk)->timer = 0;
     }
 }
 
@@ -1368,8 +1448,8 @@ static Sint16 beam_posi(sprite_status *pActwk, sprite_status *a2) {
 
     pActwk->xposi.w.h = a2->xposi.w.h;
     pActwk->yposi.w.h = a2->yposi.w.h;
-    d0 = ((Sint16 *)pActwk)[29];
-    d1 = ((Sint16 *)pActwk)[30];
+    d0 = boss7_get_work(pActwk)->x_offset;
+    d1 = boss7_get_work(pActwk)->y_offset;
     pActwk->yposi.w.h += d1;
 
     if (!(a2->cddat & 1)) {
@@ -1380,17 +1460,17 @@ static Sint16 beam_posi(sprite_status *pActwk, sprite_status *a2) {
         pActwk->xposi.w.h -= d0;
     }
 
-    pActwk->actfree[2] &= 223;
+    boss7_get_work(pActwk)->flags &= 223;
 
-    if (a2->actfree[2] & 32) {
-        pActwk->actfree[2] |= 32;
+    if (boss7_get_work(a2)->flags & 32) {
+        boss7_get_work(pActwk)->flags |= 32;
     }
-    if (a2->actfree[2] & 64) {
-        pActwk->actfree[2] |= 64;
+    if (boss7_get_work(a2)->flags & 64) {
+        boss7_get_work(pActwk)->flags |= 64;
         return -1;
     }
 
-    pActwk->actfree[2] &= 191;
+    boss7_get_work(pActwk)->flags &= 191;
     return 0;
 }
 
@@ -1398,18 +1478,18 @@ static void egg7beam_kemuri1(sprite_status *pActwk, sprite_status *a2) {
     beam_posi(pActwk, a2);
 
     b_timer(pActwk);
-    if (pActwk->actfree[3]) {
-        pActwk->actfree[3] = 0;
+    if (boss7_get_work(pActwk)->step) {
+        boss7_get_work(pActwk)->step = 0;
         pActwk->r_no0 = 6;
 
-        pActwk->actfree[1] = 15;
+        boss7_get_work(pActwk)->byte_timer = 15;
     }
     kemuri_disp(pActwk);
 }
 
 static void egg7beam_kemuri2(sprite_status *pActwk, sprite_status *a2) {
     b_timer(pActwk);
-    if (pActwk->actfree[3] == 0)
+    if (boss7_get_work(pActwk)->step == 0)
         kemuri_disp(pActwk);
     else
         frameout(pActwk);
@@ -1449,10 +1529,10 @@ void hahen73(sprite_status *pActwk) {
 
         pActwk->yspeed.w = -384;
 
-        ((Sint16 *)pActwk)[27] = 16;
+        boss7_get_work(pActwk)->accel_y = 16;
         ld1.w.l = ld0.w.l;
         ld1.w.l &= 15;
-        ((Sint16 *)pActwk)[27] += ld1.w.l;
+        boss7_get_work(pActwk)->accel_y += ld1.w.l;
 
         ld0.w.l &= 3;
         pActwk->patno = ld0.w.l;
@@ -1488,11 +1568,11 @@ static void egg7jet_ini(sprite_status *pActwk) {
     pActwk->patbase = egg7jet_pat;
 
     if (pActwk->userflag.b.h == 0) {
-        ((Sint16 *)pActwk)[29] = -51;
-        ((Sint16 *)pActwk)[30] = 26;
+        boss7_get_work(pActwk)->x_offset = -51;
+        boss7_get_work(pActwk)->y_offset = 26;
     } else {
-        ((Sint16 *)pActwk)[29] = -48;
-        ((Sint16 *)pActwk)[30] = -14;
+        boss7_get_work(pActwk)->x_offset = -48;
+        boss7_get_work(pActwk)->y_offset = -14;
     }
     pActwk->r_no0 += 2;
 
@@ -1503,24 +1583,24 @@ static void egg7jet_01(sprite_status *pActwk) {
     sprite_status *a2;
     Sint16 d0;
 
-    a2 = &actwk[((Sint16 *)pActwk)[25]];
+    a2 = &actwk[boss7_get_work(pActwk)->parent_index];
     if (a2->actno == 0) {
         frameout(pActwk);
         return;
     }
-    if (!(a2->actfree[2] & 8))
+    if (!(boss7_get_work(a2)->flags & 8))
         return;
 
     pActwk->cddat = a2->cddat;
     pActwk->xposi.w.h = a2->xposi.w.h;
     pActwk->yposi.w.h = a2->yposi.w.h;
 
-    d0 = ((Sint16 *)pActwk)[29];
+    d0 = boss7_get_work(pActwk)->x_offset;
     if (pActwk->cddat & 1) {
         d0 *= -1;
     }
     pActwk->xposi.w.h += d0;
-    d0 = ((Sint16 *)pActwk)[30];
+    d0 = boss7_get_work(pActwk)->y_offset;
     pActwk->yposi.w.h += d0;
     patchg(pActwk, egg7jet_pchg);
     actionsub(pActwk);
@@ -1559,24 +1639,24 @@ static void msnc_bara_01(sprite_status *pActwk) {
 static void add_spd3(sprite_status *pActwk) {
     Sint16 d0;
 
-    d0 = ((Sint16 *)pActwk)[27];
+    d0 = boss7_get_work(pActwk)->accel_y;
     pActwk->yspeed.w += d0;
 
-    d0 = ((Sint16 *)pActwk)[26];
+    d0 = boss7_get_work(pActwk)->accel_x;
     pActwk->xspeed.w += d0;
 
-    if (((Sint16 *)pActwk)[26] == 0) {
+    if (boss7_get_work(pActwk)->accel_x == 0) {
         add_spd(pActwk);
         return;
     }
-    if (((Sint16 *)pActwk)[26] >= 0) {
-        d0 = ((Sint16 *)pActwk)[28];
+    if (boss7_get_work(pActwk)->accel_x >= 0) {
+        d0 = boss7_get_work(pActwk)->max_xspeed;
         if (d0 <= pActwk->xspeed.w) {
             pActwk->xspeed.w = d0;
         }
         add_spd(pActwk);
     } else {
-        d0 = ((Sint16 *)pActwk)[28];
+        d0 = boss7_get_work(pActwk)->max_xspeed;
         if (d0 >= pActwk->xspeed.w) {
             pActwk->xspeed.w = d0;
         }
@@ -1589,9 +1669,9 @@ void hari_spdadd(sprite_status *pActwk) { add_spd2(pActwk); }
 static void add_spd2(sprite_status *pActwk) {
     Sint16 d0;
 
-    d0 = ((Sint16 *)pActwk)[26];
+    d0 = boss7_get_work(pActwk)->accel_x;
     pActwk->xspeed.w += d0;
-    d0 = ((Sint16 *)pActwk)[27];
+    d0 = boss7_get_work(pActwk)->accel_y;
     pActwk->yspeed.w += d0;
 
     add_spd(pActwk);
@@ -1609,16 +1689,16 @@ static void add_spd(sprite_status *pActwk) {
 }
 
 static void w_timer(sprite_status *pActwk) {
-    --((Sint16 *)pActwk)[23];
-    if (((Sint16 *)pActwk)[23] == 0) {
-        ++pActwk->actfree[3];
+    --boss7_get_work(pActwk)->timer;
+    if (boss7_get_work(pActwk)->timer == 0) {
+        ++boss7_get_work(pActwk)->step;
     }
 }
 
 static void b_timer(sprite_status *pActwk) {
-    --pActwk->actfree[1];
-    if (pActwk->actfree[1] == 0) {
-        ++pActwk->actfree[3];
+    --boss7_get_work(pActwk)->byte_timer;
+    if (boss7_get_work(pActwk)->byte_timer == 0) {
+        ++boss7_get_work(pActwk)->step;
     }
 }
 
@@ -1626,15 +1706,15 @@ static void event_timer(sprite_status *pActwk, Sint16 *pTimer,
                         void (**func)(sprite_status *)) {
     Sint16 d0;
 
-    d0 = (Uint16)pActwk->actfree[3];
+    d0 = (Uint16)boss7_get_work(pActwk)->step;
     d0 = pTimer[d0];
-    if (d0 != ((Sint16 *)pActwk)[23]) {
-        ++((Sint16 *)pActwk)[23];
+    if (d0 != boss7_get_work(pActwk)->timer) {
+        ++boss7_get_work(pActwk)->timer;
     } else {
-        ++((Sint16 *)pActwk)[23];
+        ++boss7_get_work(pActwk)->timer;
 
-        d0 = (Uint16)pActwk->actfree[3];
-        ++pActwk->actfree[3];
+        d0 = (Uint16)boss7_get_work(pActwk)->step;
+        ++boss7_get_work(pActwk)->step;
         func[d0](pActwk);
     }
 }
@@ -1652,7 +1732,7 @@ static void make_bara(sprite_status *pActwk) {
         d0 = d0 % 5;
         pNewActwk->patno = (Uint16)d0;
 
-        ((Sint16 *)pNewActwk)[25] = (Uint16)(pActwk - actwk);
+        boss7_get_work(pNewActwk)->parent_index = (Uint16)(pActwk - actwk);
         pNewActwk->actno = 49;
         pNewActwk->xposi.w.h = pActwk->xposi.w.h;
         pNewActwk->yposi.w.h = pActwk->yposi.w.h;
@@ -1667,10 +1747,10 @@ static void make_bara(sprite_status *pActwk) {
 
         pNewActwk->yspeed.w = -512;
 
-        ((Sint16 *)pNewActwk)[27] = 12;
+        boss7_get_work(pNewActwk)->accel_y = 12;
         ld1.w.l = ld0.w.l;
         ld1.w.l &= 15;
-        ((Sint16 *)pNewActwk)[27] += ld1.w.l;
+        boss7_get_work(pNewActwk)->accel_y += ld1.w.l;
     } while (d3--);
 }
 
@@ -1678,7 +1758,7 @@ static void make_ele(sprite_status *pActwk) {
     sprite_status *pNewActwk;
 
     if (actwkchk2(pActwk, &pNewActwk) == 0) {
-        ((Sint16 *)pNewActwk)[25] = (Uint16)(pActwk - actwk);
+        boss7_get_work(pNewActwk)->parent_index = (Uint16)(pActwk - actwk);
         pNewActwk->actno = 48;
     }
 }
@@ -1687,8 +1767,8 @@ static void make_msnc(sprite_status *pActwk) {
     sprite_status *pNewActwk;
 
     if (actwkchk2(pActwk, &pNewActwk) == 0) {
-        ((Sint16 *)pNewActwk)[25] = (Uint16)(pActwk - actwk);
-        ((Sint16 *)pActwk)[25] = (Uint16)(pNewActwk - actwk);
+        boss7_get_work(pNewActwk)->parent_index = (Uint16)(pActwk - actwk);
+        boss7_get_work(pActwk)->parent_index = (Uint16)(pNewActwk - actwk);
         pNewActwk->actno = 47;
         pNewActwk->xposi.w.h = 3120;
         pNewActwk->yposi.w.h = 461;
@@ -1699,12 +1779,12 @@ static void make_jet(sprite_status *pActwk) {
     sprite_status *pNewActwk;
 
     if (actwkchk2(pActwk, &pNewActwk) == 0) {
-        ((Sint16 *)pNewActwk)[25] = (Uint16)(pActwk - actwk);
+        boss7_get_work(pNewActwk)->parent_index = (Uint16)(pActwk - actwk);
         pNewActwk->actno = 45;
         pNewActwk->userflag.b.h = 0;
         pNewActwk->mstno.b.h = 0;
         if (actwkchk2(pActwk, &pNewActwk) == 0) {
-            ((Sint16 *)pNewActwk)[25] = (Uint16)(pActwk - actwk);
+            boss7_get_work(pNewActwk)->parent_index = (Uint16)(pActwk - actwk);
             pNewActwk->actno = 45;
             pNewActwk->userflag.b.h = 1;
             pNewActwk->mstno.b.h = 1;
@@ -1722,8 +1802,8 @@ static void make_beam(sprite_status *pActwk) {
     do {
         if (actwkchk2(pActwk, &pNewActwk) != 0)
             break;
-        ((Sint16 *)pNewActwk)[25] = (Uint16)(a3 - actwk);
-        ((Sint16 *)pNewActwk)[31] = (Uint16)(pActwk - actwk);
+        boss7_get_work(pNewActwk)->parent_index = (Uint16)(a3 - actwk);
+        boss7_get_work(pNewActwk)->owner_index = (Uint16)(pActwk - actwk);
 
         pNewActwk->actno = 46;
         a3 = pNewActwk;
@@ -1733,12 +1813,12 @@ static void make_beam(sprite_status *pActwk) {
 
             pNewActwk->userflag.b.l = 1;
         }
-        ((Sint16 *)pNewActwk)[29] = 2;
-        ((Sint16 *)pNewActwk)[30] = 32;
+        boss7_get_work(pNewActwk)->x_offset = 2;
+        boss7_get_work(pNewActwk)->y_offset = 32;
         continue;
     label1:
-        ((Sint16 *)pNewActwk)[29] = 0;
-        ((Sint16 *)pNewActwk)[30] = 52;
+        boss7_get_work(pNewActwk)->x_offset = 0;
+        boss7_get_work(pNewActwk)->y_offset = 52;
     } while (d2--);
 }
 
@@ -1746,11 +1826,11 @@ static void make_kemuri(sprite_status *pActwk) {
     sprite_status *pNewActwk;
 
     if (actwkchk2(pActwk, &pNewActwk) == 0) {
-        ((Sint16 *)pNewActwk)[25] = (Uint16)(pActwk - actwk);
+        boss7_get_work(pNewActwk)->parent_index = (Uint16)(pActwk - actwk);
         pNewActwk->actno = 46;
         pNewActwk->userflag.b.h = 1;
-        ((Sint16 *)pNewActwk)[29] = 2;
-        ((Sint16 *)pNewActwk)[30] = 16;
+        boss7_get_work(pNewActwk)->x_offset = 2;
+        boss7_get_work(pNewActwk)->y_offset = 16;
     }
 }
 
@@ -1758,7 +1838,7 @@ static void make_bakuha(sprite_status *pActwk) {
     sprite_status *pNewActwk;
 
     if (actwkchk2(pActwk, &pNewActwk) == 0) {
-        ((Sint16 *)pNewActwk)[25] = (Uint16)(pActwk - actwk);
+        boss7_get_work(pNewActwk)->parent_index = (Uint16)(pActwk - actwk);
         pNewActwk->actno = 46;
         pNewActwk->userflag.b.h = 2;
         pNewActwk->xposi.w.h = pActwk->xposi.w.h;
@@ -1778,7 +1858,7 @@ static void make_hahen(sprite_status *pActwk) {
         pNewActwk->yposi.w.h = pActwk->yposi.w.h;
         pNewActwk->xposi.w.h += 2;
         pNewActwk->yposi.w.h += 16;
-        a2 = &actwk[((Sint16 *)pActwk)[31]];
+        a2 = &actwk[boss7_get_work(pActwk)->owner_index];
         pNewActwk->xspeed.w = a2->xspeed.w;
     }
 }

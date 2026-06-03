@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "tobidai6.h"
 #include "../action.h"
@@ -13,6 +15,30 @@
 #else
 #define SPRITE_TOBIDAI6_BASE 482
 #endif
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 unused0[4];
+    Uint8 ride_height_adjust;
+    Uint8 unused5;
+    Sint16 saved_player_yspeed;
+    Uint8 unused8[12];
+    Sint16 vertical_acceleration;
+} tobidai6_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(tobidai6_work, ride_height_adjust) == 4,
+               "tobidai6_work.ride_height_adjust offset");
+_Static_assert(offsetof(tobidai6_work, saved_player_yspeed) == 6,
+               "tobidai6_work.saved_player_yspeed offset");
+_Static_assert(offsetof(tobidai6_work, vertical_acceleration) == 20,
+               "tobidai6_work.vertical_acceleration offset");
+_Static_assert(sizeof(tobidai6_work) <= sizeof(((sprite_status *)0)->actfree),
+               "tobidai6_work fits in actfree");
+
+static tobidai6_work *tobidai6_get_work(sprite_status *actionwk) {
+    return (tobidai6_work *)actionwk->actfree;
+}
 
 static sprite_pattern tobidai6pat0 = {1, {{-32, -16, 0, SPRITE_TOBIDAI6_BASE}}};
 sprite_pattern *tobidai6pat[1] = {&tobidai6pat0};
@@ -48,9 +74,11 @@ void tobidai6_init(sprite_status *actionwk) {
 }
 
 void tobidai6_move0(sprite_status *actionwk) {
+    tobidai6_work *work = tobidai6_get_work(actionwk);
+
     if (yuka_chk() == 0) {
         actionwk->yspeed.w = -1536;
-        ((Sint16 *)actionwk)[33] = 16;
+        work->vertical_acceleration = 16;
         actionwk->r_no0 += 2;
     }
 
@@ -58,6 +86,7 @@ void tobidai6_move0(sprite_status *actionwk) {
 }
 
 void tobidai6_move1(sprite_status *actionwk) {
+    tobidai6_work *work = tobidai6_get_work(actionwk);
     Sint16 d1;
 
     tobidai6_speedset(actionwk);
@@ -69,7 +98,7 @@ void tobidai6_move1(sprite_status *actionwk) {
     if (d1 < 0) {
         if (yuka_chk() == 0) {
             actionwk->yspeed.w = -1536;
-            ((Sint16 *)actionwk)[33] = 16;
+            work->vertical_acceleration = 16;
             if (actionwk->actflg & 128) {
                 soundset(180);
                 goto label1;
@@ -77,7 +106,7 @@ void tobidai6_move1(sprite_status *actionwk) {
         }
 
         actionwk->yspeed.w = -384;
-        ((Sint16 *)actionwk)[33] = 16;
+        work->vertical_acceleration = 16;
         actionwk->r_no0 += 2;
     }
 label1:
@@ -85,6 +114,7 @@ label1:
 }
 
 void tobidai6_move2(sprite_status *actionwk) {
+    tobidai6_work *work = tobidai6_get_work(actionwk);
     Sint16 d1;
 
     tobidai6_speedset(actionwk);
@@ -92,7 +122,7 @@ void tobidai6_move2(sprite_status *actionwk) {
         d1 = emycol_d(actionwk);
         if (d1 < 0) {
             actionwk->yspeed.w = 0;
-            ((Sint16 *)actionwk)[33] = 0;
+            work->vertical_acceleration = 0;
             actionwk->r_no0 -= 4;
         }
     }
@@ -101,9 +131,10 @@ void tobidai6_move2(sprite_status *actionwk) {
 }
 
 void tobidai6_speedset(sprite_status *actionwk) {
+    tobidai6_work *work = tobidai6_get_work(actionwk);
     Sint16 d0;
 
-    d0 = actionwk->yspeed.w + ((Sint16 *)actionwk)[33];
+    d0 = actionwk->yspeed.w + work->vertical_acceleration;
     if (d0 >= 0) {
         if (d0 >= 1536)
             d0 = 1536;
@@ -128,6 +159,7 @@ Sint32 yuka_chk(void) {
 }
 
 void yuka_ridechk(sprite_status *actionwk) {
+    tobidai6_work *work = tobidai6_get_work(actionwk);
     Sint16 d0;
 
     d0 = actwk[0].yspeed.w;
@@ -139,17 +171,19 @@ void yuka_ridechk(sprite_status *actionwk) {
 
 label1:
     if (actionwk->yspeed.w == 0)
-        actionwk->actfree[4] = 0;
+        work->ride_height_adjust = 0;
     else
-        actionwk->actfree[4] = 4;
+        work->ride_height_adjust = 4;
 
-    actionwk->sprvsize += actionwk->actfree[4];
+    actionwk->sprvsize += work->ride_height_adjust;
     chk(actionwk, &actwk[0]);
-    actionwk->sprvsize -= actionwk->actfree[4];
+    actionwk->sprvsize -= work->ride_height_adjust;
 }
 
 void chk(sprite_status *actionwk, sprite_status *pw) {
-    ((Sint16 *)actionwk)[26] = pw->yspeed.w;
+    tobidai6_work *work = tobidai6_get_work(actionwk);
+
+    work->saved_player_yspeed = pw->yspeed.w;
     if (pw->cddat & 8) {
         if (!(pw->cddat & 2))
             pw->yspeed.w = 0;
@@ -159,7 +193,7 @@ void chk(sprite_status *actionwk, sprite_status *pw) {
         yuka_ride_on(actionwk, pw);
         return;
     }
-    pw->yspeed.w = ((Sint16 *)actionwk)[26];
+    pw->yspeed.w = work->saved_player_yspeed;
 }
 
 void yuka_ride_on(sprite_status *actionwk, sprite_status *pw) {

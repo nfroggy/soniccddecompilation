@@ -37,7 +37,7 @@ static Uint32 CreateCharSprt(Sint32 colom, char code) {
     else
         indx = code - 44;
 
-    sprCreate((Sint32 *)&hSprMenu[colom]);
+    sprCreate(&hSprMenu[colom]);
 
     s_ctx->spr_level[hSprMenu[colom]] = infoSprtBmp[indx].order;
     point.x = colom * 8 + 120;

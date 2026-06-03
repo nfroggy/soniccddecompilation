@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "tagameb4.h"
 #include "../action.h"
@@ -5,6 +7,65 @@
 #include "../loader2.h"
 #include "../suicide.h"
 #include "playsub4.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    union {
+        struct {
+            Sint16 timer;
+            Sint32 move_speed;
+            Sint16 spike_indices[3];
+            Sint16 timer_reset;
+            Sint16 origin_x;
+            Sint8 unused16[3];
+            Uint8 saved_cdsts;
+            Sint16 parent_index;
+        } master;
+        struct {
+            Sint32 x_speed;
+            Sint32 y_speed;
+            Sint32 x_accel;
+            Sint32 y_accel;
+            Sint8 unused16[3];
+            Uint8 saved_cdsts;
+            Sint16 parent_index;
+        } projectile;
+    };
+} tagameb4_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(tagameb4_work, master.timer) == 0,
+               "tagameb4_work.master.timer offset");
+_Static_assert(offsetof(tagameb4_work, projectile.x_speed) == 0,
+               "tagameb4_work.projectile.x_speed offset");
+_Static_assert(offsetof(tagameb4_work, master.move_speed) == 2,
+               "tagameb4_work.master.move_speed offset");
+_Static_assert(offsetof(tagameb4_work, projectile.y_speed) == 4,
+               "tagameb4_work.projectile.y_speed offset");
+_Static_assert(offsetof(tagameb4_work, master.spike_indices) == 6,
+               "tagameb4_work.master.spike_indices offset");
+_Static_assert(offsetof(tagameb4_work, projectile.x_accel) == 8,
+               "tagameb4_work.projectile.x_accel offset");
+_Static_assert(offsetof(tagameb4_work, master.timer_reset) == 12,
+               "tagameb4_work.master.timer_reset offset");
+_Static_assert(offsetof(tagameb4_work, projectile.y_accel) == 12,
+               "tagameb4_work.projectile.y_accel offset");
+_Static_assert(offsetof(tagameb4_work, master.origin_x) == 14,
+               "tagameb4_work.master.origin_x offset");
+_Static_assert(offsetof(tagameb4_work, master.saved_cdsts) == 19,
+               "tagameb4_work.master.saved_cdsts offset");
+_Static_assert(offsetof(tagameb4_work, master.parent_index) == 20,
+               "tagameb4_work.master.parent_index offset");
+_Static_assert(offsetof(tagameb4_work, projectile.saved_cdsts) == 19,
+               "tagameb4_work.projectile.saved_cdsts offset");
+_Static_assert(offsetof(tagameb4_work, projectile.parent_index) == 20,
+               "tagameb4_work.projectile.parent_index offset");
+_Static_assert(sizeof(tagameb4_work) <= sizeof(((sprite_status *)0)->actfree),
+               "tagameb4_work fits in actfree");
+
+static tagameb4_work *tagameb4_get_work(sprite_status *pActwk) {
+    return (tagameb4_work *)pActwk->actfree;
+}
 
 #if defined(R41A)
 #define SPRITE_TAGAMEB4_BASE 485
@@ -35,6 +96,8 @@ static void tagameb1(sprite_status *pActwk);
 static void b_init(sprite_status *pActwk);
 static void b_follow(sprite_status *pActwk);
 static void b_move(sprite_status *pActwk);
+static void set_projectile_motion(sprite_status *pActwk, Sint32 x_speed,
+                                  Sint32 y_speed);
 
 static Uint8 pchg0[4] = {30, 0, 1, 255};
 static Uint8 *pchg[1] = {pchg0};
@@ -71,7 +134,9 @@ static void tagameb0(sprite_status *pActwk) {
 }
 
 static void a_init(sprite_status *pActwk) {
-    ((Sint16 *)pActwk)[30] = pActwk->xposi.w.h;
+    tagameb4_work *pWork = tagameb4_get_work(pActwk);
+
+    pWork->master.origin_x = pActwk->xposi.w.h;
     pActwk->actflg |= 4;
     pActwk->sprpri = 3;
     pActwk->sproffset = 9168;
@@ -83,12 +148,12 @@ static void a_init(sprite_status *pActwk) {
 
     if (!pActwk->userflag.b.h) {
         pActwk->patbase = pat_tagameb_e;
-        ((Sint32 *)pActwk)[12] = -65536;
-        ((Sint16 *)pActwk)[29] = 200;
+        pWork->master.move_speed = -65536;
+        pWork->master.timer_reset = 200;
     } else {
         pActwk->patbase = pat_tagameb_b;
-        ((Sint32 *)pActwk)[12] = -32768;
-        ((Sint16 *)pActwk)[29] = 400;
+        pWork->master.move_speed = -32768;
+        pWork->master.timer_reset = 400;
         return;
     }
     make_toge(pActwk);
@@ -100,9 +165,11 @@ static void make_toge(sprite_status *pActwk) {
     if (actwkchk(&subActwk) == 0) {
         subActwk->actno = pActwk->actno;
         subActwk->userflag.b.h = -1;
-        subActwk->actfree[19] = pActwk->cdsts;
-        ((Sint16 *)subActwk)[33] = (Uint16)(Uint8)(pActwk - actwk);
-        ((Sint16 *)pActwk)[26] = (Uint16)(Uint8)(subActwk - actwk);
+        tagameb4_get_work(subActwk)->projectile.saved_cdsts = pActwk->cdsts;
+        tagameb4_get_work(subActwk)->projectile.parent_index =
+            (Uint16)(Uint8)(pActwk - actwk);
+        tagameb4_get_work(pActwk)->master.spike_indices[0] =
+            (Uint16)(Uint8)(subActwk - actwk);
     } else {
         frameout(pActwk);
         return;
@@ -110,9 +177,11 @@ static void make_toge(sprite_status *pActwk) {
     if (actwkchk(&subActwk) == 0) {
         subActwk->actno = pActwk->actno;
         subActwk->userflag.b.h = -1;
-        subActwk->actfree[19] = pActwk->cdsts;
-        ((Sint16 *)subActwk)[33] = (Uint16)(Uint8)(pActwk - actwk);
-        ((Sint16 *)pActwk)[27] = (Uint16)(Uint8)(subActwk - actwk);
+        tagameb4_get_work(subActwk)->projectile.saved_cdsts = pActwk->cdsts;
+        tagameb4_get_work(subActwk)->projectile.parent_index =
+            (Uint16)(Uint8)(pActwk - actwk);
+        tagameb4_get_work(pActwk)->master.spike_indices[1] =
+            (Uint16)(Uint8)(subActwk - actwk);
     } else {
         frameout(pActwk);
         return;
@@ -120,23 +189,25 @@ static void make_toge(sprite_status *pActwk) {
     if (actwkchk(&subActwk) == 0) {
         subActwk->actno = pActwk->actno;
         subActwk->userflag.b.h = -1;
-        subActwk->actfree[19] = pActwk->cdsts;
-        ((Sint16 *)subActwk)[33] = (Uint16)(Uint8)(pActwk - actwk);
-        ((Sint16 *)pActwk)[28] = (Uint16)(Uint8)(subActwk - actwk);
+        tagameb4_get_work(subActwk)->projectile.saved_cdsts = pActwk->cdsts;
+        tagameb4_get_work(subActwk)->projectile.parent_index =
+            (Uint16)(Uint8)(pActwk - actwk);
+        tagameb4_get_work(pActwk)->master.spike_indices[2] =
+            (Uint16)(Uint8)(subActwk - actwk);
     } else {
         frameout(pActwk);
         return;
     }
 
-    a_init_sub(((Sint16 *)pActwk)[26], pActwk);
-    actwk[((Sint16 *)pActwk)[26]].xposi.w.h += 2;
-    actwk[((Sint16 *)pActwk)[26]].yposi.w.h -= 10;
-    a_init_sub(((Sint16 *)pActwk)[27], pActwk);
-    actwk[((Sint16 *)pActwk)[27]].xposi.w.h -= 3;
-    actwk[((Sint16 *)pActwk)[27]].yposi.w.h -= 10;
-    a_init_sub(((Sint16 *)pActwk)[28], pActwk);
-    actwk[((Sint16 *)pActwk)[28]].xposi.w.h -= 7;
-    actwk[((Sint16 *)pActwk)[28]].yposi.w.h -= 9;
+    a_init_sub(tagameb4_get_work(pActwk)->master.spike_indices[0], pActwk);
+    actwk[tagameb4_get_work(pActwk)->master.spike_indices[0]].xposi.w.h += 2;
+    actwk[tagameb4_get_work(pActwk)->master.spike_indices[0]].yposi.w.h -= 10;
+    a_init_sub(tagameb4_get_work(pActwk)->master.spike_indices[1], pActwk);
+    actwk[tagameb4_get_work(pActwk)->master.spike_indices[1]].xposi.w.h -= 3;
+    actwk[tagameb4_get_work(pActwk)->master.spike_indices[1]].yposi.w.h -= 10;
+    a_init_sub(tagameb4_get_work(pActwk)->master.spike_indices[2], pActwk);
+    actwk[tagameb4_get_work(pActwk)->master.spike_indices[2]].xposi.w.h -= 7;
+    actwk[tagameb4_get_work(pActwk)->master.spike_indices[2]].yposi.w.h -= 9;
 }
 
 static void a_init_sub(Sint16 subact, sprite_status *pActwk) {
@@ -151,42 +222,50 @@ static void a_init_sub(Sint16 subact, sprite_status *pActwk) {
 }
 
 static void a_move(sprite_status *pActwk) {
+    tagameb4_work *pWork = tagameb4_get_work(pActwk);
+
     if (!pActwk->userflag.b.h) {
         if (a_check(pActwk) != 0) {
 
             pActwk->r_no0 += 2;
-            ((Sint16 *)pActwk)[23] = 60;
+            pWork->master.timer = 60;
             return;
         }
     }
 
-    pActwk->xposi.l += ((Sint32 *)pActwk)[12];
+    pActwk->xposi.l += pWork->master.move_speed;
 
     if (!pActwk->userflag.b.h) {
-        actwk[((Sint16 *)pActwk)[26]].xposi.l += ((Sint32 *)pActwk)[12];
-        actwk[((Sint16 *)pActwk)[27]].xposi.l += ((Sint32 *)pActwk)[12];
-        actwk[((Sint16 *)pActwk)[28]].xposi.l += ((Sint32 *)pActwk)[12];
+        actwk[pWork->master.spike_indices[0]].xposi.l +=
+            pWork->master.move_speed;
+        actwk[pWork->master.spike_indices[1]].xposi.l +=
+            pWork->master.move_speed;
+        actwk[pWork->master.spike_indices[2]].xposi.l +=
+            pWork->master.move_speed;
     }
 
-    --((Sint16 *)pActwk)[23];
-    if (((Sint16 *)pActwk)[23] < 0) {
-        ((Sint16 *)pActwk)[23] = ((Sint16 *)pActwk)[29];
-        ((Sint32 *)pActwk)[12] *= -1;
+    --pWork->master.timer;
+    if (pWork->master.timer < 0) {
+        pWork->master.timer = pWork->master.timer_reset;
+        pWork->master.move_speed *= -1;
         pActwk->actflg ^= 1;
         pActwk->cddat ^= 1;
 
         if (!pActwk->userflag.b.h) {
-            actwk[((Sint16 *)pActwk)[26]].xposi.w.h = pActwk->xposi.w.h;
-            actwk[((Sint16 *)pActwk)[27]].xposi.w.h = pActwk->xposi.w.h;
-            actwk[((Sint16 *)pActwk)[28]].xposi.w.h = pActwk->xposi.w.h;
+            actwk[pWork->master.spike_indices[0]].xposi.w.h =
+                pActwk->xposi.w.h;
+            actwk[pWork->master.spike_indices[1]].xposi.w.h =
+                pActwk->xposi.w.h;
+            actwk[pWork->master.spike_indices[2]].xposi.w.h =
+                pActwk->xposi.w.h;
             if (!(pActwk->actflg & 1)) {
-                actwk[((Sint16 *)pActwk)[26]].xposi.w.h -= 2;
-                actwk[((Sint16 *)pActwk)[27]].xposi.w.h += 3;
-                actwk[((Sint16 *)pActwk)[28]].xposi.w.h += 7;
+                actwk[pWork->master.spike_indices[0]].xposi.w.h -= 2;
+                actwk[pWork->master.spike_indices[1]].xposi.w.h += 3;
+                actwk[pWork->master.spike_indices[2]].xposi.w.h += 7;
             } else {
-                actwk[((Sint16 *)pActwk)[26]].xposi.w.h -= 1;
-                actwk[((Sint16 *)pActwk)[27]].xposi.w.h -= 6;
-                actwk[((Sint16 *)pActwk)[28]].xposi.w.h -= 10;
+                actwk[pWork->master.spike_indices[0]].xposi.w.h -= 1;
+                actwk[pWork->master.spike_indices[1]].xposi.w.h -= 6;
+                actwk[pWork->master.spike_indices[2]].xposi.w.h -= 10;
             }
         }
     }
@@ -214,67 +293,62 @@ static Sint32 a_check(sprite_status *pActwk) {
 
 static void a_stop(sprite_status *pActwk) {
     Sint16 subact;
+    tagameb4_work *pWork = tagameb4_get_work(pActwk);
 
-    --((Sint16 *)pActwk)[23];
-    if (((Sint16 *)pActwk)[23] < 0) {
+    --pWork->master.timer;
+    if (pWork->master.timer < 0) {
         if (pActwk->actflg < 0)
             soundset(179);
 
-        ((Sint16 *)pActwk)[23] = 60;
+        pWork->master.timer = 60;
         pActwk->r_no0 += 2;
 
         if (!pActwk->userflag.b.h) {
-            subact = ((Sint16 *)pActwk)[26];
-            *(Sint32 *)&actwk[subact].actfree[0] = -0x20000;
-            *(Sint32 *)&actwk[subact].actfree[4] = -196608;
-            *(Sint32 *)&actwk[subact].actfree[8] = 0;
-            *(Sint32 *)&actwk[subact].actfree[12] = 8192;
+            subact = pWork->master.spike_indices[0];
+            set_projectile_motion(&actwk[subact], -0x20000, -196608);
             actwk[subact].r_no0 += 2;
-            subact = ((Sint16 *)pActwk)[27];
-            *(Sint32 *)&actwk[subact].actfree[0] = 65536;
-            *(Sint32 *)&actwk[subact].actfree[4] = -196608;
-            *(Sint32 *)&actwk[subact].actfree[8] = 0;
-            *(Sint32 *)&actwk[subact].actfree[12] = 8192;
+            subact = pWork->master.spike_indices[1];
+            set_projectile_motion(&actwk[subact], 65536, -196608);
             actwk[subact].r_no0 += 2;
-            subact = ((Sint16 *)pActwk)[28];
-            *(Sint32 *)&actwk[subact].actfree[0] = 0x20000;
-            *(Sint32 *)&actwk[subact].actfree[4] = -196608;
-            *(Sint32 *)&actwk[subact].actfree[8] = 0;
-            *(Sint32 *)&actwk[subact].actfree[12] = 8192;
+            subact = pWork->master.spike_indices[2];
+            set_projectile_motion(&actwk[subact], 0x20000, -196608);
             actwk[subact].r_no0 += 2;
         }
     }
 }
 
 static void a_stop1(sprite_status *pActwk) {
-    --((Sint16 *)pActwk)[23];
-    if (((Sint16 *)pActwk)[23] < 0) {
+    tagameb4_work *pWork = tagameb4_get_work(pActwk);
+
+    --pWork->master.timer;
+    if (pWork->master.timer < 0) {
         pActwk->r_no0 += 2;
 
         if (!pActwk->userflag.b.h)
-            ((Sint32 *)pActwk)[12] = 0x40000;
+            pWork->master.move_speed = 0x40000;
         else
-            ((Sint32 *)pActwk)[12] = 98304;
+            pWork->master.move_speed = 98304;
 
         if (!(pActwk->actflg & 1))
-            ((Sint32 *)pActwk)[12] *= -1;
+            pWork->master.move_speed *= -1;
     }
 }
 
 static void a_dash(sprite_status *pActwk) {
-    pActwk->xposi.l += ((Sint32 *)pActwk)[12];
+    pActwk->xposi.l += tagameb4_get_work(pActwk)->master.move_speed;
 }
 
 static void tagameb1(sprite_status *pActwk) {
     Sint16 subact;
     static void (*tbl[3])(sprite_status *) = {&b_init, &b_follow, &b_move};
+    tagameb4_work *pWork = tagameb4_get_work(pActwk);
 
-    subact = ((Sint16 *)pActwk)[33];
+    subact = pWork->projectile.parent_index;
     if (actwk[subact].actno != 45) {
         frameout(pActwk);
         return;
     }
-    if (pActwk->actfree[19] != actwk[subact].cdsts) {
+    if (pWork->projectile.saved_cdsts != actwk[subact].cdsts) {
         frameout(pActwk);
         return;
     }
@@ -289,11 +363,21 @@ static void b_init(sprite_status *pActwk) {
 
 static void b_follow(sprite_status *pActwk) { actionsub(pActwk); }
 
+static void set_projectile_motion(sprite_status *pActwk, Sint32 x_speed,
+                                  Sint32 y_speed) {
+    tagameb4_get_work(pActwk)->projectile.x_speed = x_speed;
+    tagameb4_get_work(pActwk)->projectile.y_speed = y_speed;
+    tagameb4_get_work(pActwk)->projectile.x_accel = 0;
+    tagameb4_get_work(pActwk)->projectile.y_accel = 8192;
+}
+
 static void b_move(sprite_status *pActwk) {
-    pActwk->xposi.l += *(Sint32 *)&pActwk->actfree[0];
-    pActwk->yposi.l += *(Sint32 *)&pActwk->actfree[4];
-    *(Sint32 *)&pActwk->actfree[0] += *(Sint32 *)&pActwk->actfree[8];
-    *(Sint32 *)&pActwk->actfree[4] += *(Sint32 *)&pActwk->actfree[12];
+    tagameb4_work *pWork = tagameb4_get_work(pActwk);
+
+    pActwk->xposi.l += pWork->projectile.x_speed;
+    pActwk->yposi.l += pWork->projectile.y_speed;
+    pWork->projectile.x_speed += pWork->projectile.x_accel;
+    pWork->projectile.y_speed += pWork->projectile.y_accel;
 
     if (pActwk->yposi.w.h - actwk[0].yposi.w.h > 224) {
         frameout(pActwk);

@@ -1,7 +1,45 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "tekkyu7j.h"
 #include "../action.h"
 #include "../actset.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    union {
+        Sint16 launcher_timer;
+        Uint8 axis_is_vertical;
+    };
+    Sint16 origin_position;
+    Sint16 phase_timer;
+    Sint32 speed;
+    Sint32 acceleration;
+    Uint8 unused14[7];
+    Uint8 initial_side;
+} tekkyu7j_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(tekkyu7j_work, launcher_timer) == 0,
+               "tekkyu7j_work.launcher_timer offset");
+_Static_assert(offsetof(tekkyu7j_work, axis_is_vertical) == 0,
+               "tekkyu7j_work.axis_is_vertical offset");
+_Static_assert(offsetof(tekkyu7j_work, origin_position) == 2,
+               "tekkyu7j_work.origin_position offset");
+_Static_assert(offsetof(tekkyu7j_work, phase_timer) == 4,
+               "tekkyu7j_work.phase_timer offset");
+_Static_assert(offsetof(tekkyu7j_work, speed) == 6,
+               "tekkyu7j_work.speed offset");
+_Static_assert(offsetof(tekkyu7j_work, acceleration) == 10,
+               "tekkyu7j_work.acceleration offset");
+_Static_assert(offsetof(tekkyu7j_work, initial_side) == 21,
+               "tekkyu7j_work.initial_side offset");
+_Static_assert(sizeof(tekkyu7j_work) <= sizeof(((sprite_status *)0)->actfree),
+               "tekkyu7j_work fits in actfree");
+
+static tekkyu7j_work *tekkyu7j_get_work(sprite_status *pActwk) {
+    return (tekkyu7j_work *)pActwk->actfree;
+}
 
 #if defined(R73C) || defined(R73D)
 #define SPRITE_TEKKYU7J_BASE 406
@@ -28,6 +66,7 @@ sprite_pattern *pat_tekkyu7j[4] = {&tekkyu7j_pat0, &tekkyu7j_pat1,
 extern sprite_pattern *pat_tekkyu7[];
 
 void tekkyu7j(sprite_status *pActwk) {
+    tekkyu7j_work *work = tekkyu7j_get_work(pActwk);
     sprite_status *pNewactwk;
 
     if (pActwk->userflag.b.l) {
@@ -42,14 +81,14 @@ void tekkyu7j(sprite_status *pActwk) {
             pActwk->sproffset = 910;
             pActwk->patbase = pat_tekkyu7j;
             pActwk->patno = pActwk->userflag.b.h;
-            ((Sint16 *)pActwk)[23] = 150;
+            work->launcher_timer = 150;
             pActwk->sprhs = 16;
             pActwk->sprhsize = 16;
             pActwk->sprvsize = 16;
         }
 
-        if (!(--((Sint16 *)pActwk)[23])) {
-            ((Sint16 *)pActwk)[23] = 150;
+        if (!(--work->launcher_timer)) {
+            work->launcher_timer = 150;
             if (actwkchk(&pNewactwk) == 0) {
                 pNewactwk->actno = pActwk->actno;
                 pNewactwk->userflag.b.h = pActwk->userflag.b.h;
@@ -72,6 +111,7 @@ static void tekkyu7(sprite_status *pActwk) {
 }
 
 void tekkyu7_init(sprite_status *pActwk) {
+    tekkyu7j_work *work = tekkyu7j_get_work(pActwk);
     Sint16 wD0;
 
     pActwk->r_no0 += 2;
@@ -83,63 +123,68 @@ void tekkyu7_init(sprite_status *pActwk) {
     pActwk->sprvsize = 16;
     pActwk->sproffset = 902;
     pActwk->patbase = pat_tekkyu7;
-    ((Sint16 *)pActwk)[25] = 32;
+    work->phase_timer = 32;
 
-    ((Sint32 *)pActwk)[13] = 32768;
-    pActwk->actfree[21] = 0;
+    work->speed = 32768;
+    work->initial_side = 0;
     if (!(pActwk->userflag.b.h & 1)) {
-        pActwk->actfree[21] = 255;
-        ((Sint32 *)pActwk)[13] *= -1;
+        work->initial_side = 255;
+        work->speed *= -1;
     }
-    pActwk->actfree[0] = 0;
+    work->axis_is_vertical = 0;
     wD0 = pActwk->xposi.w.h;
     if (pActwk->userflag.b.h < 2) {
-        pActwk->actfree[0] = 1;
+        work->axis_is_vertical = 1;
         wD0 = pActwk->yposi.w.h;
     }
-    ((Sint16 *)pActwk)[24] = wD0;
+    work->origin_position = wD0;
 
     tekkyu7_move(pActwk);
 }
 
 void tekkyu7_move(sprite_status *pActwk) {
-    if (pActwk->actfree[0])
-        pActwk->yposi.l += ((Sint32 *)pActwk)[13];
+    tekkyu7j_work *work = tekkyu7j_get_work(pActwk);
+
+    if (work->axis_is_vertical)
+        pActwk->yposi.l += work->speed;
     else
-        pActwk->xposi.l += ((Sint32 *)pActwk)[13];
-    if (!(--((Sint16 *)pActwk)[25])) {
+        pActwk->xposi.l += work->speed;
+    if (!(--work->phase_timer)) {
         pActwk->r_no0 += 2;
-        ((Sint16 *)pActwk)[25] = 30;
+        work->phase_timer = 30;
     }
 }
 
 void tekkyu7_stop(sprite_status *pActwk) {
-    if (!(--((Sint16 *)pActwk)[25])) {
+    tekkyu7j_work *work = tekkyu7j_get_work(pActwk);
+
+    if (!(--work->phase_timer)) {
         pActwk->r_no0 += 2;
-        ((Sint32 *)pActwk)[13] = 393216;
-        ((Sint32 *)pActwk)[14] = -16384;
+        work->speed = 393216;
+        work->acceleration = -16384;
         if (!(pActwk->userflag.b.h & 1)) {
-            ((Sint32 *)pActwk)[13] *= -1;
-            ((Sint32 *)pActwk)[14] *= -1;
+            work->speed *= -1;
+            work->acceleration *= -1;
         }
     }
 }
 
 void tekkyu7_jump(sprite_status *pActwk) {
+    tekkyu7j_work *work = tekkyu7j_get_work(pActwk);
     Sint16 wD0;
     Uint8 bD0;
 
-    ((Sint32 *)pActwk)[13] += ((Sint32 *)pActwk)[14];
-    if (pActwk->actfree[0]) {
-        pActwk->yposi.l += ((Sint32 *)pActwk)[13];
+    work->speed += work->acceleration;
+    if (work->axis_is_vertical) {
+        pActwk->yposi.l += work->speed;
         wD0 = pActwk->yposi.w.h;
     } else {
-        pActwk->xposi.l += ((Sint32 *)pActwk)[13];
+        pActwk->xposi.l += work->speed;
         wD0 = pActwk->xposi.w.h;
     }
     bD0 = 0;
-    if (wD0 < ((Sint16 *)pActwk)[24])
+    if (wD0 < work->origin_position)
         bD0 = 255;
-    if (pActwk->actfree[21] != bD0)
+    if (work->initial_side != bD0)
         frameout(pActwk);
 }

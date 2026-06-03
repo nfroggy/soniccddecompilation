@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "seesaw6.h"
 #include "../action.h"
@@ -5,6 +7,36 @@
 #include "../dircol.h"
 #include "../playsub.h"
 #include "../ridechk.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    union {
+        Uint16 left_slave_index;
+        Uint16 parent_index;
+    };
+    Uint16 right_slave_index;
+    Sint16 timer;
+    Uint8 unused6[15];
+    Uint8 pressed;
+} seesaw6_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(seesaw6_work, left_slave_index) == 0,
+               "seesaw6_work.left_slave_index offset");
+_Static_assert(offsetof(seesaw6_work, parent_index) == 0,
+               "seesaw6_work.parent_index offset");
+_Static_assert(offsetof(seesaw6_work, right_slave_index) == 2,
+               "seesaw6_work.right_slave_index offset");
+_Static_assert(offsetof(seesaw6_work, timer) == 4,
+               "seesaw6_work.timer offset");
+_Static_assert(offsetof(seesaw6_work, pressed) == 21,
+               "seesaw6_work.pressed offset");
+_Static_assert(sizeof(seesaw6_work) <= sizeof(((sprite_status *)0)->actfree),
+               "seesaw6_work fits in actfree");
+
+static seesaw6_work *seesaw6_get_work(sprite_status *pActwk) {
+    return (seesaw6_work *)pActwk->actfree;
+}
 
 #if defined(R61B) || defined(R62B)
 #define SPRITE_SEESAW6_BASE 481
@@ -49,6 +81,7 @@ void seesaw6(sprite_status *pActwk) {
 }
 
 void m_init(sprite_status *pActwk) {
+    seesaw6_work *work = seesaw6_get_work(pActwk);
     sprite_status *pActfree;
 
     pActwk->r_no0 += 2;
@@ -66,7 +99,7 @@ void m_init(sprite_status *pActwk) {
     }
     m_ini_s(pActwk, pActfree);
 
-    ((Uint16 *)pActwk)[23] = pActfree - actwk;
+    work->left_slave_index = pActfree - actwk;
     pActfree->xposi.w.h -= 40;
     pActfree->yposi.w.h -= 24;
     if (actwkchk(&pActfree) != 0) {
@@ -75,7 +108,7 @@ void m_init(sprite_status *pActwk) {
     }
     m_ini_s(pActwk, pActfree);
 
-    ((Uint16 *)pActwk)[24] = pActfree - actwk;
+    work->right_slave_index = pActfree - actwk;
     pActfree->xposi.w.h += 40;
     pActfree->yposi.w.h += 24;
     pActfree->actflg |= 1;
@@ -96,11 +129,12 @@ void m_ini_s(sprite_status *pActwk, sprite_status *pActfree) {
     pActfree->sprvsize = 8;
     pActfree->patno = 9;
 
-    ((Uint16 *)pActfree)[23] = pActwk - actwk;
-    ((Sint16 *)pActwk)[25] = 120;
+    seesaw6_get_work(pActfree)->parent_index = pActwk - actwk;
+    seesaw6_get_work(pActwk)->timer = 120;
 }
 
 void m_move(sprite_status *pActwk) {
+    seesaw6_work *work = seesaw6_get_work(pActwk);
     Uint16 wActwkNo;
 
     if (pActwk->yspeed.w == 0)
@@ -108,37 +142,38 @@ void m_move(sprite_status *pActwk) {
     else
         m_fall(pActwk);
 
-    wActwkNo = ((Uint16 *)pActwk)[24];
+    wActwkNo = work->right_slave_index;
     ridechk(&actwk[wActwkNo], &actwk[0]);
     actionsub(&actwk[wActwkNo]);
 
-    wActwkNo = ((Uint16 *)pActwk)[23];
+    wActwkNo = work->left_slave_index;
     if (ridechk(&actwk[wActwkNo], &actwk[0]) != 0)
-        actwk[wActwkNo].actfree[21] = 255;
+        seesaw6_get_work(&actwk[wActwkNo])->pressed = 255;
     else
-        actwk[wActwkNo].actfree[21] = 0;
+        seesaw6_get_work(&actwk[wActwkNo])->pressed = 0;
     actionsub(&actwk[wActwkNo]);
 
-    if (actwk[wActwkNo].actfree[21] == 0) {
+    if (seesaw6_get_work(&actwk[wActwkNo])->pressed == 0) {
         patchg(pActwk, seesaw_pchg);
     } else {
         pActwk->r_no0 = 4;
-        ((Sint16 *)pActwk)[25] = 3;
+        work->timer = 3;
         pActwk->patno = 8;
     }
 }
 
 void m_stay(sprite_status *pActwk) {
+    seesaw6_work *work = seesaw6_get_work(pActwk);
     Sint16 iwk;
 
-    iwk = ((Sint16 *)pActwk)[25];
-    if (((Sint16 *)pActwk)[25] >= 0) {
+    iwk = work->timer;
+    if (work->timer >= 0) {
 
-        --((Sint16 *)pActwk)[25];
-        if (((Sint16 *)pActwk)[25] < 0) {
+        --work->timer;
+        if (work->timer < 0) {
             pActwk->yspeed.w = 256;
         } else {
-            if (((Sint16 *)pActwk)[25] != 60)
+            if (work->timer != 60)
                 return;
         }
 
@@ -147,13 +182,14 @@ void m_stay(sprite_status *pActwk) {
 }
 
 void m_fall(sprite_status *pActwk) {
+    seesaw6_work *work = seesaw6_get_work(pActwk);
     sprite_status *pActSu;
     sprite_status *pActSd;
     Uint16 wYspd;
     Sint16 iD0, iD1;
 
-    pActSu = &actwk[((Uint16 *)pActwk)[23]];
-    pActSd = &actwk[((Uint16 *)pActwk)[24]];
+    pActSu = &actwk[work->left_slave_index];
+    pActSd = &actwk[work->right_slave_index];
 
     wYspd = pActwk->yspeed.b.h;
     pActwk->yposi.w.h += wYspd;
@@ -176,21 +212,22 @@ void m_fall(sprite_status *pActwk) {
 }
 
 void m_up(sprite_status *pActwk) {
+    seesaw6_work *work = seesaw6_get_work(pActwk);
     sprite_status *pActSd, *pActSu;
     Uint16 wwk_u, wwk_d;
-    pActSd = &actwk[((Uint16 *)pActwk)[24]];
+    pActSd = &actwk[work->right_slave_index];
     pActSd->yposi.w.h -= 24;
     pActwk->yposi.w.h -= 12;
-    --((Sint16 *)pActwk)[25];
-    if (((Sint16 *)pActwk)[25] < 0) {
+    --work->timer;
+    if (work->timer < 0) {
 
         pActwk->r_no0 = 2;
         pActwk->yspeed.w = 0;
-        ((Sint16 *)pActwk)[25] = 120;
-        wwk_d = ((Uint16 *)pActwk)[24];
-        wwk_u = ((Uint16 *)pActwk)[23];
-        ((Uint16 *)pActwk)[24] = wwk_u;
-        ((Uint16 *)pActwk)[23] = wwk_d;
+        work->timer = 120;
+        wwk_d = work->right_slave_index;
+        wwk_u = work->left_slave_index;
+        work->right_slave_index = wwk_u;
+        work->left_slave_index = wwk_d;
         if (pActwk->mstno.b.h > 2)
             pActwk->mstno.b.h = 0;
         else
@@ -199,14 +236,14 @@ void m_up(sprite_status *pActwk) {
     }
 
     actionsub(pActSd);
-    pActSu = &actwk[((Uint16 *)pActwk)[23]];
+    pActSu = &actwk[work->left_slave_index];
     actionsub(pActSu);
 }
 
 void slave(sprite_status *pActwk) {
     sprite_status *pActwk2;
 
-    pActwk2 = &actwk[((Uint16 *)pActwk)[23]];
+    pActwk2 = &actwk[seesaw6_get_work(pActwk)->parent_index];
     if (pActwk2->actno != 44)
         frameout(pActwk);
 }

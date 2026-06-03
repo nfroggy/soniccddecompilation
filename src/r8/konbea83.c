@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "konbea83.h"
 #include "../action.h"
@@ -10,6 +12,34 @@ static void a_init_sub(sprite_status *pActwk, sprite_status *pNewact);
 static void a_stop(sprite_status *pActwk);
 static void a_stop1(sprite_status *pActwk);
 static void a_move(sprite_status *pActwk);
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint16 parent_index;
+    Sint16 segment_timer;
+    Sint16 origin_x;
+    Sint16 origin_y;
+    Uint8 unused8[12];
+    Uint8 ride_pressed;
+} konbea83_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(konbea83_work, parent_index) == 0,
+               "konbea83_work.parent_index offset");
+_Static_assert(offsetof(konbea83_work, segment_timer) == 2,
+               "konbea83_work.segment_timer offset");
+_Static_assert(offsetof(konbea83_work, origin_x) == 4,
+               "konbea83_work.origin_x offset");
+_Static_assert(offsetof(konbea83_work, origin_y) == 6,
+               "konbea83_work.origin_y offset");
+_Static_assert(offsetof(konbea83_work, ride_pressed) == 20,
+               "konbea83_work.ride_pressed offset");
+_Static_assert(sizeof(konbea83_work) <= sizeof(((sprite_status *)0)->actfree),
+               "konbea83_work fits in actfree");
+
+static konbea83_work *konbea83_get_work(sprite_status *pActwk) {
+    return (konbea83_work *)pActwk->actfree;
+}
 
 static Sint16 a_tbl_00[2] = {60, 0};
 static Sint16 a_tbl_01[5] = {60, 1, 60, 32, 0};
@@ -28,23 +58,25 @@ static void (*a_act_tbl[4])(sprite_status *) = {&a_init, &a_stop, &a_stop1,
                                                 &a_move};
 
 void konbea(sprite_status *pActwk) {
+    konbea83_work *work = konbea83_get_work(pActwk);
     sprite_status *pMainwk;
 
     if (pActwk->userflag.b.l) {
-        pMainwk = &actwk[((Sint16 *)pActwk)[23]];
+        pMainwk = &actwk[work->parent_index];
+        konbea83_work *main_work = konbea83_get_work(pMainwk);
 
         if (pMainwk->actno != 42) {
             frameout(pActwk);
             return;
         }
 
-        if (((Sint16 *)pActwk)[25] != ((Sint16 *)pMainwk)[25]) {
+        if (work->origin_x != main_work->origin_x) {
 
             frameout(pActwk);
             return;
         }
 
-        if (((Sint16 *)pActwk)[26] != ((Sint16 *)pMainwk)[26]) {
+        if (work->origin_y != main_work->origin_y) {
 
             frameout(pActwk);
             return;
@@ -55,7 +87,7 @@ void konbea(sprite_status *pActwk) {
     actionsub(pActwk);
 
     if (!(pActwk->userflag.b.l & 128)) {
-        frameout_s00(pActwk, ((Sint16 *)pActwk)[25]);
+        frameout_s00(pActwk, work->origin_x);
     }
 }
 
@@ -65,7 +97,7 @@ static void a_init(sprite_status *pActwk) {
 
     pTbl = a_tbl0[pActwk->userflag.b.l];
 
-    ((Sint16 *)pActwk)[24] = *pTbl++;
+    konbea83_get_work(pActwk)->segment_timer = *pTbl++;
     pNewact = pActwk;
     a_init_sub(pActwk, pNewact);
 
@@ -77,10 +109,10 @@ static void a_init(sprite_status *pActwk) {
         }
 
         pNewact->actno = pActwk->actno;
-        ((Sint16 *)pNewact)[23] = pActwk - actwk;
+        konbea83_get_work(pNewact)->parent_index = pActwk - actwk;
         pNewact->userflag.b.h = pActwk->userflag.b.h;
         pNewact->userflag.b.l = -1;
-        ((Sint16 *)pNewact)[24] = *pTbl++;
+        konbea83_get_work(pNewact)->segment_timer = *pTbl++;
         pNewact->xposi.w.h = pActwk->xposi.w.h + *pTbl++;
         pNewact->yposi.w.h = pActwk->yposi.w.h + *pTbl++;
         a_init_sub(pActwk, pNewact);
@@ -95,30 +127,32 @@ static void a_init_sub(sprite_status *pActwk, sprite_status *pNewact) {
     pNewact->sprvsize = 5;
     pNewact->sproffset = 844;
     pNewact->patbase = pat_konbea;
-    ((Sint16 *)pNewact)[25] = pActwk->xposi.w.h;
-    ((Sint16 *)pNewact)[26] = pActwk->yposi.w.h;
+    konbea83_get_work(pNewact)->origin_x = pActwk->xposi.w.h;
+    konbea83_get_work(pNewact)->origin_y = pActwk->yposi.w.h;
 }
 
 static void a_stop(sprite_status *pActwk) {
     pActwk->sprvsize = 5;
-    ((Sint16 *)pActwk)[24] = 120;
+    konbea83_get_work(pActwk)->segment_timer = 120;
     pActwk->r_no0 += 2;
     a_stop1(pActwk);
 }
 
 static void a_stop1(sprite_status *pActwk) {
+    konbea83_work *work = konbea83_get_work(pActwk);
+
     if (ridechk(pActwk, &actwk[0])) {
-        pActwk->actfree[20] = 255;
+        work->ride_pressed = 255;
     } else {
-        pActwk->actfree[20] = 0;
+        work->ride_pressed = 0;
     }
 
-    if (!(--((Sint16 *)pActwk)[24])) {
+    if (!(--work->segment_timer)) {
         pActwk->sprvsize = 16;
         pActwk->mstno.w = 255;
         pActwk->r_no0 += 2;
 
-        if (pActwk->actfree[20]) {
+        if (work->ride_pressed) {
             ride_on_clr(pActwk, &actwk[0]);
         }
     }

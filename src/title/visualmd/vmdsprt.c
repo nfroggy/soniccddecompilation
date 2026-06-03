@@ -19,7 +19,7 @@ Uint32 CreateCharSprt(Sint32 nMenuNum, Sint32 colom, Sint32 code) {
     if (hSprMenu[nMenuNum][colom] != 0)
         return 0;
 
-    sprCreate((Sint32 *)&hSprMenu[nMenuNum][colom]);
+    sprCreate(&hSprMenu[nMenuNum][colom]);
 
     point.x = colom * 8 + 192;
     point.y = nMenuPosiY[nMenuNum];

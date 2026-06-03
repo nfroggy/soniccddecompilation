@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../types.h"
 #include "common.h"
 #include "sps_equ.h"
@@ -7,6 +9,46 @@
 #include "etc_s.h"
 #include "game.h"
 #include "sin.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint16 timer;
+    Uint16 angle_x;
+    union {
+        Sint32 angle_z_accum;
+        struct {
+            Uint16 angle_z_fraction;
+            Uint16 angle_z;
+        };
+    };
+    Uint8 unused8[8];
+    Uint8 facing_frame;
+    Uint8 state_timer;
+    Sint16 speed_boost_timer;
+} special_player_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(special_player_work, timer) == 0,
+               "special_player_work.timer offset");
+_Static_assert(offsetof(special_player_work, angle_x) == 2,
+               "special_player_work.angle_x offset");
+_Static_assert(offsetof(special_player_work, angle_z_accum) == 4,
+               "special_player_work.angle_z_accum offset");
+_Static_assert(offsetof(special_player_work, angle_z) == 6,
+               "special_player_work.angle_z offset");
+_Static_assert(offsetof(special_player_work, facing_frame) == 16,
+               "special_player_work.facing_frame offset");
+_Static_assert(offsetof(special_player_work, state_timer) == 17,
+               "special_player_work.state_timer offset");
+_Static_assert(offsetof(special_player_work, speed_boost_timer) == 18,
+               "special_player_work.speed_boost_timer offset");
+_Static_assert(sizeof(special_player_work) <=
+                   sizeof(((sprite_status_sp *)0)->actfree),
+               "special_player_work fits in actfree");
+
+static special_player_work *special_player_get_work(sprite_status_sp *plwk) {
+    return (special_player_work *)plwk->actfree;
+}
 
 void (*pl_acttbl[24])(sprite_status_sp *) = {
     &play0,  &play1,  &play2,  &play3,  &play4,  &play5,  &play6,  &play7,
@@ -45,8 +87,8 @@ void player(sprite_status_sp *plwk) {
     zoomwk.x = plwk->x_posi.w.h;
     zoomwk.y = plwk->y_posi.w.h;
     zoomwk.z = plwk->z_posi.w.h;
-    zoomwk.ax = ((Sint16 *)plwk)[37];
-    zoomwk.az = ((Sint16 *)plwk)[39];
+    zoomwk.ax = special_player_get_work(plwk)->angle_x;
+    zoomwk.az = special_player_get_work(plwk)->angle_z;
     if (plwk->exeno != 7 && plwk->exeno != 19) {
         ptrlget(plwk);
         plptsel(plwk);
@@ -66,7 +108,7 @@ void play0(sprite_status_sp *plwk) {
     plwk->spdcnt = 0;
     init_xyget(plwk);
     plwk->z_posi.w.h = 352;
-    ((Sint16 *)plwk)[37] = 128;
+    special_player_get_work(plwk)->angle_x = 128;
 }
 
 void play20(sprite_status_sp *plwk) { plwk->actno = plwk->actno; }
@@ -74,11 +116,11 @@ void play20(sprite_status_sp *plwk) { plwk->actno = plwk->actno; }
 void play21(sprite_status_sp *plwk) {
     patinit(plwk, 44);
     plwk->exeno = 22;
-    plwk->actfree[17] = 5;
+    special_player_get_work(plwk)->state_timer = 5;
 }
 
 void play22(sprite_status_sp *plwk) {
-    if (--plwk->actfree[17] == 0) {
+    if (--special_player_get_work(plwk)->state_timer == 0) {
         patinit(plwk, 10);
         plwk->exeno = 23;
     }
@@ -148,7 +190,7 @@ void play5(sprite_status_sp *plwk) {
 void play6(sprite_status_sp *plwk) { plwk->actno = plwk->actno; }
 
 void play7(sprite_status_sp *plwk) {
-    if (--plwk->actfree[17] == 0) {
+    if (--special_player_get_work(plwk)->state_timer == 0) {
         plwk->exeno = 1;
         patinit(plwk, 0);
     }
@@ -156,7 +198,7 @@ void play7(sprite_status_sp *plwk) {
 
 void play8(sprite_status_sp *plwk) {
     if (plwk->sy_posi.w.h >= 344) {
-        plwk->actfree[17] = 60;
+        special_player_get_work(plwk)->state_timer = 60;
         patinit(plwk, 10);
         plwk->exeno = 9;
         game_start = 1;
@@ -168,86 +210,86 @@ void play8(sprite_status_sp *plwk) {
 }
 
 void play9(sprite_status_sp *plwk) {
-    if (--plwk->actfree[17] == 0) {
+    if (--special_player_get_work(plwk)->state_timer == 0) {
         actwk[5].actno = 14;
         actwk[6].actno = 15;
         actwk[7].actno = 16;
         plwk->exeno = 10;
-        plwk->actfree[17] = 6;
+        special_player_get_work(plwk)->state_timer = 6;
     }
 }
 
 void play10(sprite_status_sp *plwk) {
     rlscrflg |= 4;
-    ((Uint16 *)plwk)[39] -= 8;
-    ((Uint16 *)plwk)[39] &= 511;
-    if (--plwk->actfree[17] == 0) {
+    special_player_get_work(plwk)->angle_z -= 8;
+    special_player_get_work(plwk)->angle_z &= 511;
+    if (--special_player_get_work(plwk)->state_timer == 0) {
         plwk->exeno = 11;
-        plwk->actfree[17] = 4;
+        special_player_get_work(plwk)->state_timer = 4;
         patinit(plwk, 36);
     }
 }
 
 void play11(sprite_status_sp *plwk) {
     rlscrflg |= 4;
-    ((Uint16 *)plwk)[39] -= 8;
-    ((Uint16 *)plwk)[39] &= 511;
-    if (--plwk->actfree[17] == 0) {
+    special_player_get_work(plwk)->angle_z -= 8;
+    special_player_get_work(plwk)->angle_z &= 511;
+    if (--special_player_get_work(plwk)->state_timer == 0) {
         plwk->exeno = 12;
-        plwk->actfree[17] = 5;
+        special_player_get_work(plwk)->state_timer = 5;
         patinit(plwk, 37);
     }
 }
 
 void play12(sprite_status_sp *plwk) {
     rlscrflg |= 4;
-    ((Uint16 *)plwk)[39] -= 8;
-    ((Uint16 *)plwk)[39] &= 511;
-    if (--plwk->actfree[17] == 0) {
+    special_player_get_work(plwk)->angle_z -= 8;
+    special_player_get_work(plwk)->angle_z &= 511;
+    if (--special_player_get_work(plwk)->state_timer == 0) {
         plwk->exeno = 13;
-        plwk->actfree[17] = 4;
+        special_player_get_work(plwk)->state_timer = 4;
         patinit(plwk, 38);
     }
 }
 
 void play13(sprite_status_sp *plwk) {
     rlscrflg |= 4;
-    ((Uint16 *)plwk)[39] -= 8;
-    ((Uint16 *)plwk)[39] &= 511;
-    if (--plwk->actfree[17] == 0) {
+    special_player_get_work(plwk)->angle_z -= 8;
+    special_player_get_work(plwk)->angle_z &= 511;
+    if (--special_player_get_work(plwk)->state_timer == 0) {
         plwk->exeno = 14;
-        plwk->actfree[17] = 5;
+        special_player_get_work(plwk)->state_timer = 5;
         patinit(plwk, 39);
     }
 }
 
 void play14(sprite_status_sp *plwk) {
     rlscrflg |= 4;
-    ((Uint16 *)plwk)[39] -= 8;
-    ((Uint16 *)plwk)[39] &= 511;
-    if (--plwk->actfree[17] == 0) {
+    special_player_get_work(plwk)->angle_z -= 8;
+    special_player_get_work(plwk)->angle_z &= 511;
+    if (--special_player_get_work(plwk)->state_timer == 0) {
         plwk->exeno = 15;
-        plwk->actfree[17] = 4;
+        special_player_get_work(plwk)->state_timer = 4;
         patinit(plwk, 40);
     }
 }
 
 void play15(sprite_status_sp *plwk) {
     rlscrflg |= 4;
-    ((Uint16 *)plwk)[39] -= 8;
-    ((Uint16 *)plwk)[39] &= 511;
-    if (--plwk->actfree[17] == 0) {
+    special_player_get_work(plwk)->angle_z -= 8;
+    special_player_get_work(plwk)->angle_z &= 511;
+    if (--special_player_get_work(plwk)->state_timer == 0) {
         plwk->exeno = 16;
-        plwk->actfree[17] = 5;
+        special_player_get_work(plwk)->state_timer = 5;
         patinit(plwk, 41);
     }
 }
 
 void play16(sprite_status_sp *plwk) {
     rlscrflg |= 4;
-    ((Uint16 *)plwk)[39] -= 8;
-    ((Uint16 *)plwk)[39] &= 511;
-    if (--plwk->actfree[17] == 0) {
+    special_player_get_work(plwk)->angle_z -= 8;
+    special_player_get_work(plwk)->angle_z &= 511;
+    if (--special_player_get_work(plwk)->state_timer == 0) {
         plwk->exeno = 17;
         patinit(plwk, 42);
     }
@@ -277,7 +319,7 @@ void init_xyget(sprite_status_sp *plwk) {
 
     plwk->x_posi.w.h = tbl[stagenm * 3];
     plwk->y_posi.w.h = tbl[stagenm * 3 + 1];
-    ((Sint16 *)plwk)[39] = tbl[stagenm * 3 + 2];
+    special_player_get_work(plwk)->angle_z = tbl[stagenm * 3 + 2];
 }
 
 void clear_chk(void) {
@@ -349,7 +391,7 @@ void evt05(sprite_status_sp *plwk) {
 
     if (plwk->exeno == 4 || plwk->exeno == 7)
         return;
-    plwk->actfree[17] = 46;
+    special_player_get_work(plwk)->state_timer = 46;
     plwk->exeno = 7;
     patinit(plwk, 13);
     cal_ring = ringno - (ringno >> 1);
@@ -526,13 +568,13 @@ void rlmove(sprite_status_sp *plwk) {
     if (game_start != 0)
         return;
     if (swdata_pl.b.h & 8) {
-        ((Sint32 *)plwk)[19] -= 393216;
-        ((Sint32 *)plwk)[19] &= 33554431;
+        special_player_get_work(plwk)->angle_z_accum -= 393216;
+        special_player_get_work(plwk)->angle_z_accum &= 33554431;
         rlscrflg |= 8;
     }
     if (swdata_pl.b.h & 4) {
-        ((Sint32 *)plwk)[19] += 393216;
-        ((Sint32 *)plwk)[19] &= 33554431;
+        special_player_get_work(plwk)->angle_z_accum += 393216;
+        special_player_get_work(plwk)->angle_z_accum &= 33554431;
         rlscrflg |= 4;
     }
 }
@@ -541,13 +583,13 @@ void rlmove_j(sprite_status_sp *plwk) {
     if (game_start != 0)
         return;
     if (swdata_pl.b.h & 8) {
-        ((Sint32 *)plwk)[19] -= 0x40000;
-        ((Sint32 *)plwk)[19] &= 33554431;
+        special_player_get_work(plwk)->angle_z_accum -= 0x40000;
+        special_player_get_work(plwk)->angle_z_accum &= 33554431;
         rlscrflg |= 8;
     }
     if (swdata_pl.b.h & 4) {
-        ((Sint32 *)plwk)[19] += 0x40000;
-        ((Sint32 *)plwk)[19] &= 33554431;
+        special_player_get_work(plwk)->angle_z_accum += 0x40000;
+        special_player_get_work(plwk)->angle_z_accum &= 33554431;
         rlscrflg |= 4;
     }
 }
@@ -558,8 +600,8 @@ void speed_ud(sprite_status_sp *plwk) {
     if (game_start != 0)
         return;
     if ((swdata_pl.b.h & 15) != 2) {
-        if (((Sint16 *)plwk)[45] != 0) {
-            --((Sint16 *)plwk)[45];
+        if (special_player_get_work(plwk)->speed_boost_timer != 0) {
+            --special_player_get_work(plwk)->speed_boost_timer;
             max_speed = 3584;
         } else {
             if (plwk->exeno == 7)
@@ -594,7 +636,7 @@ void go_x_plus(sprite_status_sp *plwk, Uint16 cal_plus, Sint16 cal_speed) {
     Sint16 cal_z_kaku;
     Sint32 cal_plus_position;
 
-    cal_z_kaku = ((Uint16 *)plwk)[39] + cal_plus;
+    cal_z_kaku = special_player_get_work(plwk)->angle_z + cal_plus;
     cal_z_kaku &= 511;
     cal_plus_position = sp_cos(cal_z_kaku);
     cal_plus_position *= cal_speed;
@@ -608,17 +650,17 @@ void go_x_plus(sprite_status_sp *plwk, Uint16 cal_plus, Sint16 cal_speed) {
 
 void ptrlget(sprite_status_sp *plwk) {
     if (swdata_pl.b.h & 4) {
-        if ((char)--plwk->actfree[16] < 0)
-            plwk->actfree[16] = 0;
+        if ((Sint8)--special_player_get_work(plwk)->facing_frame < 0)
+            special_player_get_work(plwk)->facing_frame = 0;
         return;
     }
     if (swdata_pl.b.h & 8) {
-        if (++plwk->actfree[16] >= 10)
-            plwk->actfree[16] = 9;
+        if (++special_player_get_work(plwk)->facing_frame >= 10)
+            special_player_get_work(plwk)->facing_frame = 9;
         return;
     }
 
-    plwk->actfree[16] = 5;
+    special_player_get_work(plwk)->facing_frame = 5;
 }
 
 void plptsel(sprite_status_sp *plwk) {
@@ -637,16 +679,20 @@ void plptsel(sprite_status_sp *plwk) {
     cal_pattblno = 10;
     if (plwk->spdcnt == 0)
         goto label1;
-    cal_pattblno = tbl[(plwk->actfree[16] * 2 & 28) + 3];
+    cal_pattblno =
+        tbl[(special_player_get_work(plwk)->facing_frame * 2 & 28) + 3];
     if (plwk->spdcnt < 768)
         goto label3;
-    cal_pattblno = tbl[(plwk->actfree[16] * 2 & 28) + 2];
+    cal_pattblno =
+        tbl[(special_player_get_work(plwk)->facing_frame * 2 & 28) + 2];
     if (plwk->spdcnt < 1344)
         goto label3;
-    cal_pattblno = tbl[(plwk->actfree[16] * 2 & 28) + 1];
+    cal_pattblno =
+        tbl[(special_player_get_work(plwk)->facing_frame * 2 & 28) + 1];
     if (plwk->spdcnt < 1920)
         goto label3;
-    cal_pattblno = tbl[plwk->actfree[16] * 2 & 28];
+    cal_pattblno =
+        tbl[special_player_get_work(plwk)->facing_frame * 2 & 28];
     if (plwk->spdcnt < 2816)
         goto label3;
     cal_pattblno = 1;
@@ -684,7 +730,7 @@ void sibuki0(sprite_status_sp *sibukiwk) {
     sibukiwk->sx_posi.w.h = 256;
     sibukiwk->sy_posi.w.h = 344;
     patinit(sibukiwk, 0);
-    ((Sint16 *)sibukiwk)[36] = 14;
+    special_player_get_work(sibukiwk)->timer = 14;
     ++sibukiwk->exeno;
     key_set(162);
     if (!(spgmmode & 2))
@@ -693,7 +739,7 @@ void sibuki0(sprite_status_sp *sibukiwk) {
 }
 
 void sibuki1(sprite_status_sp *sibukiwk) {
-    if (--((Sint16 *)sibukiwk)[36] != 0)
+    if (--special_player_get_work(sibukiwk)->timer != 0)
         return;
     if (actwk[0].scno_ce != 3) {
         sibukiwk->actflg |= 1;
@@ -735,7 +781,7 @@ void kemuri0(sprite_status_sp *kemuriwk) {
     kemuriwk->sx_posi.w.h = 240;
     kemuriwk->sy_posi.w.h = 340;
     patinit(kemuriwk, 0);
-    ((Sint16 *)kemuriwk)[36] = 6;
+    special_player_get_work(kemuriwk)->timer = 6;
     ++kemuriwk->exeno;
     cal_random.l = random();
     kemuriwk->sx_posi.w.h += cal_random.w.l & 31;
@@ -750,7 +796,7 @@ void kemuri0(sprite_status_sp *kemuriwk) {
 }
 
 void kemuri1(sprite_status_sp *kemuriwk) {
-    if (--((Sint16 *)kemuriwk)[36] == 0)
+    if (--special_player_get_work(kemuriwk)->timer == 0)
         kemuriwk->actflg |= 1;
     kemuriwk->sx_posi.l += kemuriwk->sx_speed.l;
     --kemuriwk->sy_posi.l;
@@ -787,13 +833,13 @@ void t_stone0(sprite_status_sp *stonewk) {
     stonewk->sx_posi.w.h = 257;
     stonewk->sy_posi.w.h = 112;
     patinit(stonewk, 0);
-    ((Sint16 *)stonewk)[36] = 30;
+    special_player_get_work(stonewk)->timer = 30;
     ++stonewk->exeno;
     t_stone1(stonewk);
 }
 
 void t_stone1(sprite_status_sp *stonewk) {
-    if (--((Sint16 *)stonewk)[36] == 0)
+    if (--special_player_get_work(stonewk)->timer == 0)
         ++stonewk->exeno;
 }
 
@@ -804,13 +850,13 @@ void t_stone2(sprite_status_sp *stonewk) {
     ++stonewk->exeno;
     actwk[6].actflg |= 1;
     actwk[7].actflg |= 1;
-    ((Sint16 *)stonewk)[36] = 60;
+    special_player_get_work(stonewk)->timer = 60;
     actwk[0].exeno = 18;
     key_set(217);
 }
 
 void t_stone3(sprite_status_sp *stonewk) {
-    if (--((Sint16 *)stonewk)[36] == 0)
+    if (--special_player_get_work(stonewk)->timer == 0)
         gmclrflg = 1;
 }
 

@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "friend4.h"
 #include "../action.h"
@@ -5,6 +7,55 @@
 #include "../etc.h"
 #include "../suicide.h"
 #include "playsub4.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint32 x_speed;
+    Sint16 base_y;
+    union {
+        Sint32 phase;
+        struct {
+            Uint8 phase_lo;
+            Uint8 angle;
+            Uint8 phase_hi0;
+            Uint8 phase_hi1;
+        };
+    };
+    Sint32 phase_delta;
+    Sint16 base_x;
+    Uint8 unused16[4];
+    union {
+        Sint16 movie_parent_index;
+        struct {
+            Uint8 unused20;
+            Uint8 movie_done;
+        };
+    };
+} friend4_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(friend4_work, x_speed) == 0,
+               "friend4_work.x_speed offset");
+_Static_assert(offsetof(friend4_work, base_y) == 4,
+               "friend4_work.base_y offset");
+_Static_assert(offsetof(friend4_work, phase) == 6,
+               "friend4_work.phase offset");
+_Static_assert(offsetof(friend4_work, angle) == 7,
+               "friend4_work.angle offset");
+_Static_assert(offsetof(friend4_work, phase_delta) == 10,
+               "friend4_work.phase_delta offset");
+_Static_assert(offsetof(friend4_work, base_x) == 14,
+               "friend4_work.base_x offset");
+_Static_assert(offsetof(friend4_work, movie_parent_index) == 20,
+               "friend4_work.movie_parent_index offset");
+_Static_assert(offsetof(friend4_work, movie_done) == 21,
+               "friend4_work.movie_done offset");
+_Static_assert(sizeof(friend4_work) <= sizeof(((sprite_status *)0)->actfree),
+               "friend4_work fits in actfree");
+
+static friend4_work *friend4_get_work(sprite_status *pActwk) {
+    return (friend4_work *)pActwk->actfree;
+}
 
 #if defined(R41A)
 #define SPRITE_FRIEND4_BASE 494
@@ -64,6 +115,7 @@ void friend4(sprite_status *pActwk) {
 }
 
 static void m_init(sprite_status *pActwk) {
+    friend4_work *work = friend4_get_work(pActwk);
     short_union temp;
 
     pActwk->actflg |= 4;
@@ -85,48 +137,49 @@ static void m_init(sprite_status *pActwk) {
     pActwk->patbase = pat_friend0;
     if (pActwk->userflag.b.h & 1)
         pActwk->patbase = pat_friend1;
-    ((Sint16 *)pActwk)[25] = pActwk->yposi.w.h;
+    work->base_y = pActwk->yposi.w.h;
     if (pActwk->userflag.b.h < 0) {
 
         pActwk->r_no0 -= 2;
         pActwk->actflg ^= 1;
         pActwk->cddat ^= 1;
-        ((Sint16 *)pActwk)[30] = pActwk->xposi.w.h;
-        ((Sint32 *)pActwk)[14] = 512;
+        work->base_x = pActwk->xposi.w.h;
+        work->phase_delta = 512;
         if (pActwk->userflag.b.h & 1) {
 
             pActwk->actflg ^= 1;
             pActwk->cddat ^= 1;
-            ((Sint32 *)pActwk)[14] *= -1;
-            ((Sint32 *)pActwk)[13] = 12288;
+            work->phase_delta *= -1;
+            work->phase = 12288;
         }
     } else {
 
         pActwk->r_no0 += 2;
         pActwk->mstno.b.h = 1;
-        *(Sint32 *)&pActwk->actfree[0] = 65536;
-        ((Sint32 *)pActwk)[14] = 256;
+        work->x_speed = 65536;
+        work->phase_delta = 256;
     }
 }
 
 static void m0move(sprite_status *pActwk) {
+    friend4_work *work = friend4_get_work(pActwk);
     sprite_status *tempact;
     Uint16 sin, cos;
     Sint32 sinl, cosl;
 
-    tempact = &actwk[((Sint16 *)pActwk)[33]];
+    tempact = &actwk[work->movie_parent_index];
     if (tempact->actno != 82) {
 
         frameout(pActwk);
         return;
     }
-    if (((char *)tempact)[67]) {
+    if (friend4_get_work(tempact)->movie_done) {
 
         frameout(pActwk);
         return;
     }
 
-    sinset(((char *)pActwk)[53], (Sint16 *)&sin, (Sint16 *)&cos);
+    sinset(work->angle, (Sint16 *)&sin, (Sint16 *)&cos);
     cosl = 0, sinl = 0;
     cosl = cos;
     sinl = sin;
@@ -138,11 +191,11 @@ static void m0move(sprite_status *pActwk) {
     sinl = sinl + 32768;
     cosl = (Uint32)cosl >> 16 & 65535 | cosl << 16 & -65536;
     sinl = (Uint32)sinl >> 16 & 65535 | sinl << 16 & -65536;
-    pActwk->xposi.w.h = ((Sint16 *)pActwk)[30] + (Sint16)(cosl & 65535);
-    pActwk->yposi.w.h = ((Sint16 *)pActwk)[25] + (Sint16)(sinl & 65535);
+    pActwk->xposi.w.h = work->base_x + (Sint16)(cosl & 65535);
+    pActwk->yposi.w.h = work->base_y + (Sint16)(sinl & 65535);
 
-    ((Sint32 *)pActwk)[13] += ((Sint32 *)pActwk)[14];
-    if (!(((Sint32 *)pActwk)[13] & 32767)) {
+    work->phase += work->phase_delta;
+    if (!(work->phase & 32767)) {
 
         pActwk->actflg ^= 1;
         pActwk->cddat ^= 1;
@@ -160,33 +213,34 @@ static void m0move(sprite_status *pActwk) {
 }
 
 static void m1move(sprite_status *pActwk) {
+    friend4_work *work = friend4_get_work(pActwk);
     Uint16 sin, cos;
     Sint32 sinl;
 
-    pActwk->xposi.l += *(Sint32 *)&pActwk->actfree[0];
+    pActwk->xposi.l += work->x_speed;
 
-    sinset(((char *)pActwk)[53], (Sint16 *)&sin, (Sint16 *)&cos);
+    sinset(work->angle, (Sint16 *)&sin, (Sint16 *)&cos);
     sinl = 0;
     sinl = sin;
     sinl = (Uint32)sinl >> 16 & 65535 | sinl << 16 & -65536;
     sinl >>= 3;
     sinl = sinl + 32768;
     sinl = (Uint32)sinl >> 16 & 65535 | sinl << 16 & -65536;
-    pActwk->yposi.w.h = ((Sint16 *)pActwk)[25] + (Sint16)(sinl & 65535);
+    pActwk->yposi.w.h = work->base_y + (Sint16)(sinl & 65535);
 
-    ((Sint32 *)pActwk)[13] += ((Sint32 *)pActwk)[14];
-    if (((Sint32 *)pActwk)[13] < 0) {
+    work->phase += work->phase_delta;
+    if (work->phase < 0) {
 
-        ((Sint32 *)pActwk)[14] *= -1;
-        *(Sint32 *)&pActwk->actfree[0] *= -1;
+        work->phase_delta *= -1;
+        work->x_speed *= -1;
         pActwk->actflg ^= 1;
         pActwk->cddat ^= 1;
     } else {
 
-        if (((Sint32 *)pActwk)[13] >= 65536) {
+        if (work->phase >= 65536) {
 
-            ((Sint32 *)pActwk)[14] *= -1;
-            *(Sint32 *)&pActwk->actfree[0] *= -1;
+            work->phase_delta *= -1;
+            work->x_speed *= -1;
             pActwk->actflg ^= 1;
             pActwk->cddat ^= 1;
         }

@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "lrblk4.h"
 #include "../action.h"
@@ -22,6 +24,42 @@ typedef struct {
     Uint8 dummy;
     Sint16 speed;
 } move_data;
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 unused0[6];
+    Sint16 move_speed;
+    Sint16 wave_origin_x;
+    Uint8 unused10[2];
+    Sint16 base_x;
+    Uint8 unused14[2];
+    Uint8 phase;
+    Uint8 segment_index;
+    Uint8 child_index;
+    Uint8 variant;
+} lrblk4_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(lrblk4_work, move_speed) == 6,
+               "lrblk4_work.move_speed offset");
+_Static_assert(offsetof(lrblk4_work, wave_origin_x) == 8,
+               "lrblk4_work.wave_origin_x offset");
+_Static_assert(offsetof(lrblk4_work, base_x) == 12,
+               "lrblk4_work.base_x offset");
+_Static_assert(offsetof(lrblk4_work, phase) == 16,
+               "lrblk4_work.phase offset");
+_Static_assert(offsetof(lrblk4_work, segment_index) == 17,
+               "lrblk4_work.segment_index offset");
+_Static_assert(offsetof(lrblk4_work, child_index) == 18,
+               "lrblk4_work.child_index offset");
+_Static_assert(offsetof(lrblk4_work, variant) == 19,
+               "lrblk4_work.variant offset");
+_Static_assert(sizeof(lrblk4_work) <= sizeof(((sprite_status *)0)->actfree),
+               "lrblk4_work fits in actfree");
+
+static lrblk4_work *lrblk4_get_work(sprite_status *pActwk) {
+    return (lrblk4_work *)pActwk->actfree;
+}
 
 static void lrblk4_foutchk(sprite_status *pActwk);
 static void lrblk4_type1(sprite_status *pActwk);
@@ -74,8 +112,9 @@ void lrblk4(sprite_status *pActwk) {
 
 static void lrblk4_foutchk(sprite_status *pActwk) {
     Sint16 d0, d1;
+    lrblk4_work *pWork = lrblk4_get_work(pActwk);
 
-    d0 = ((Sint16 *)pActwk)[29];
+    d0 = pWork->base_x;
     d0 &= -128;
     d1 = scra_h_posit.w.h;
     d1 -= 128;
@@ -111,27 +150,27 @@ static void type1_init(sprite_status *pActwk) {
     pActwk->sproffset = 17514;
     pActwk->sprpri = 3;
     pActwk->patbase = lrblk4pat1;
-    ((Sint16 *)pActwk)[27] = pActwk->xposi.w.h;
+    lrblk4_get_work(pActwk)->wave_origin_x = pActwk->xposi.w.h;
     pActwk->sprhsize = 48;
     pActwk->sprvsize = 16;
     pActwk->patno = 1;
 
-    if (pActwk->actfree[18]) {
+    if (lrblk4_get_work(pActwk)->child_index) {
         type1_move(pActwk);
         return;
     }
 
-    ((Sint16 *)pActwk)[29] = pActwk->xposi.w.h;
-    if (pActwk->actfree[19] == 0) {
+    lrblk4_get_work(pActwk)->base_x = pActwk->xposi.w.h;
+    if (lrblk4_get_work(pActwk)->variant == 0) {
         d1 = 1;
         for (i = 0; i <= 4; ++i) {
             if (actwkchk(&pNewActwk) == 0) {
                 pNewActwk->actno = 36;
                 pNewActwk->userflag.b.h = 1;
-                pNewActwk->actfree[19] = d1;
+                lrblk4_get_work(pNewActwk)->variant = d1;
                 pNewActwk->xposi.w.h = pActwk->xposi.w.h;
 
-                pNewActwk->actfree[16] = (char)(d1 * 32) + 16;
+                lrblk4_get_work(pNewActwk)->phase = (char)(d1 * 32) + 16;
                 d0 = d1;
                 d0 *= 96;
                 d0 += pActwk->yposi.w.h;
@@ -144,24 +183,25 @@ static void type1_init(sprite_status *pActwk) {
     if (actwkchk(&pNewActwk) == 0) {
         pNewActwk->actno = 36;
         pNewActwk->userflag.b.h = 1;
-        pNewActwk->actfree[18] = 1;
+        lrblk4_get_work(pNewActwk)->child_index = 1;
 
-        ((Sint16 *)pNewActwk)[29] = ((Sint16 *)pActwk)[29];
+        lrblk4_get_work(pNewActwk)->base_x = lrblk4_get_work(pActwk)->base_x;
         pNewActwk->yposi.w.h = pActwk->yposi.w.h;
         pNewActwk->xposi.w.h = pActwk->xposi.w.h + 224;
-        pNewActwk->actfree[16] = pActwk->actfree[16];
+        lrblk4_get_work(pNewActwk)->phase = lrblk4_get_work(pActwk)->phase;
     }
     type1_move(pActwk);
 }
 
 static void type1_move(sprite_status *pActwk) {
     Sint16 d0, d1, stk;
+    lrblk4_work *pWork = lrblk4_get_work(pActwk);
 
     stk = pActwk->xposi.w.h;
-    sinset(pActwk->actfree[16], &d0, &d1);
+    sinset(pWork->phase, &d0, &d1);
     d0 >>= 3;
-    ++pActwk->actfree[16];
-    d0 += ((Sint16 *)pActwk)[27];
+    ++pWork->phase;
+    d0 += pWork->wave_origin_x;
     pActwk->xposi.w.h = d0;
     d1 = stk;
     d0 -= d1;
@@ -189,37 +229,38 @@ static void type2_init(sprite_status *pActwk) {
     pActwk->sprhsize = 32;
     pActwk->sprvsize = 16;
 
-    if (pActwk->actfree[18]) {
+    if (lrblk4_get_work(pActwk)->child_index) {
         type2_move(pActwk);
         return;
     }
 
-    ((Sint16 *)pActwk)[29] = pActwk->xposi.w.h;
+    lrblk4_get_work(pActwk)->base_x = pActwk->xposi.w.h;
 
-    ((Sint16 *)pActwk)[27] = pActwk->xposi.w.h - 32;
+    lrblk4_get_work(pActwk)->wave_origin_x = pActwk->xposi.w.h - 32;
 
     if (actwkchk(&pNewActwk) == 0) {
         pNewActwk->actno = 36;
         pNewActwk->userflag.b.h = 2;
-        pNewActwk->actfree[18] = 1;
+        lrblk4_get_work(pNewActwk)->child_index = 1;
 
-        ((Sint16 *)pNewActwk)[29] = ((Sint16 *)pActwk)[29];
+        lrblk4_get_work(pNewActwk)->base_x = lrblk4_get_work(pActwk)->base_x;
         pNewActwk->yposi.w.h = pActwk->yposi.w.h;
         pNewActwk->xposi.w.h = pActwk->xposi.w.h + 64;
-        ((Sint16 *)pNewActwk)[27] = pNewActwk->xposi.w.h + 32;
-        pNewActwk->actfree[16] = pActwk->actfree[16] - 128;
+        lrblk4_get_work(pNewActwk)->wave_origin_x = pNewActwk->xposi.w.h + 32;
+        lrblk4_get_work(pNewActwk)->phase = lrblk4_get_work(pActwk)->phase - 128;
     }
     type2_move(pActwk);
 }
 
 static void type2_move(sprite_status *pActwk) {
     Sint16 d0, d1, stk;
+    lrblk4_work *pWork = lrblk4_get_work(pActwk);
 
     stk = pActwk->xposi.w.h;
-    sinset(pActwk->actfree[16], &d0, &d1);
+    sinset(pWork->phase, &d0, &d1);
     d0 >>= 3;
-    ++pActwk->actfree[16];
-    d0 += ((Sint16 *)pActwk)[27];
+    ++pWork->phase;
+    d0 += pWork->wave_origin_x;
     pActwk->xposi.w.h = d0;
     d1 = stk;
     d0 -= d1;
@@ -252,22 +293,22 @@ static void type3_init(sprite_status *pActwk) {
     pActwk->sprhsize = 32;
     pActwk->sprvsize = 32;
 
-    if (pActwk->actfree[18] == 0) {
-        ((Sint16 *)pActwk)[29] = pActwk->xposi.w.h;
+    if (lrblk4_get_work(pActwk)->child_index == 0) {
+        lrblk4_get_work(pActwk)->base_x = pActwk->xposi.w.h;
         d1 = 1;
         for (i = 0; i <= 4; ++i) {
             if (actwkchk(&pNewActwk) == 0) {
                 pNewActwk->actno = 36;
                 pNewActwk->userflag.b.h = 3;
-                pNewActwk->actfree[18] = d1;
-                ((Sint16 *)pNewActwk)[29] = ((Sint16 *)pActwk)[29];
+                lrblk4_get_work(pNewActwk)->child_index = d1;
+                lrblk4_get_work(pNewActwk)->base_x = lrblk4_get_work(pActwk)->base_x;
                 pNewActwk->xposi.w.h = pActwk->xposi.w.h;
                 pNewActwk->yposi.w.h = pActwk->yposi.w.h;
             }
             ++d1;
         }
     }
-    d0 = pActwk->actfree[18] * 6;
+    d0 = lrblk4_get_work(pActwk)->child_index * 6;
     a2 = &tbl[d0 / 2];
     pActwk->xposi.w.h += *a2++;
     pActwk->yposi.w.h += *a2++;
@@ -278,27 +319,28 @@ static void type3_move(sprite_status *pActwk) {
     sprite_status *pPlayerwk;
     Sint32 ld0;
     Sint16 d0;
+    lrblk4_work *pWork = lrblk4_get_work(pActwk);
 
     ld0 = pActwk->xspeed.w;
     ld0 <<= 8;
     pActwk->xposi.l += ld0;
 
     if (pActwk->xspeed.w < 0) {
-        d0 = ((Sint16 *)pActwk)[29];
+        d0 = pWork->base_x;
         if ((Uint16)d0 >= (Uint16)pActwk->xposi.w.h) {
             d0 -= pActwk->xposi.w.h;
             if ((Uint16)d0 >= 224) {
-                d0 = ((Sint16 *)pActwk)[29];
+                d0 = pWork->base_x;
                 d0 += 224;
                 pActwk->xposi.w.h = d0;
             }
         }
     } else {
         d0 = pActwk->xposi.w.h;
-        if ((Uint16)d0 >= (Uint16)((Sint16 *)pActwk)[29]) {
-            d0 -= ((Sint16 *)pActwk)[29];
+        if ((Uint16)d0 >= (Uint16)pWork->base_x) {
+            d0 -= pWork->base_x;
             if ((Uint16)d0 >= 224) {
-                d0 = ((Sint16 *)pActwk)[29];
+                d0 = pWork->base_x;
                 d0 -= 224;
                 pActwk->xposi.w.h = d0;
             }
@@ -338,24 +380,24 @@ static void type4_init(sprite_status *pActwk) {
 
     pActwk->sprhsize = 64;
     pActwk->sprvsize = 64;
-    if (pActwk->actfree[19]) {
+    if (lrblk4_get_work(pActwk)->variant) {
         pActwk->patbase = lrblk4pat8;
         pActwk->sprvsize = 16;
     }
 
-    if (pActwk->actfree[18] == 0) {
-        ((Sint16 *)pActwk)[29] = pActwk->xposi.w.h;
+    if (lrblk4_get_work(pActwk)->child_index == 0) {
+        lrblk4_get_work(pActwk)->base_x = pActwk->xposi.w.h;
         if (actwkchk(&pNewActwk) == 0) {
             pNewActwk->actno = 36;
             pNewActwk->userflag.b.h = 4;
-            pNewActwk->actfree[18] = 1;
-            pNewActwk->actfree[19] = pActwk->actfree[19];
-            ((Sint16 *)pNewActwk)[29] = ((Sint16 *)pActwk)[29];
+            lrblk4_get_work(pNewActwk)->child_index = 1;
+            lrblk4_get_work(pNewActwk)->variant = lrblk4_get_work(pActwk)->variant;
+            lrblk4_get_work(pNewActwk)->base_x = lrblk4_get_work(pActwk)->base_x;
 
-            pNewActwk->xposi.w.h = ((Sint16 *)pActwk)[29] + 128;
+            pNewActwk->xposi.w.h = lrblk4_get_work(pActwk)->base_x + 128;
             pNewActwk->yposi.w.h = pActwk->yposi.w.h;
 
-            pActwk->xposi.w.h = ((Sint16 *)pActwk)[29] - 128;
+            pActwk->xposi.w.h = lrblk4_get_work(pActwk)->base_x - 128;
         }
     }
     pActwk->xspeed.w = -512;
@@ -363,14 +405,15 @@ static void type4_init(sprite_status *pActwk) {
 
 static void type4_move(sprite_status *pActwk) {
     Sint16 d0;
+    lrblk4_work *pWork = lrblk4_get_work(pActwk);
 
     pActwk->xposi.l += pActwk->xspeed.w << 8;
     hitchk(pActwk, &actwk[0]);
-    d0 = ((Sint16 *)pActwk)[29];
+    d0 = pWork->base_x;
     if (d0 >= pActwk->xposi.w.h) {
         d0 -= pActwk->xposi.w.h;
         if (d0 == 256) {
-            pActwk->xposi.w.h = ((Sint16 *)pActwk)[29] + 256;
+            pActwk->xposi.w.h = pWork->base_x + 256;
         }
     }
 }
@@ -396,17 +439,17 @@ static void type5_init(sprite_status *pActwk) {
     pActwk->sproffset = 17514;
     pActwk->sprpri = 3;
     pActwk->patbase = lrblk4pat5;
-    ((Sint16 *)pActwk)[29] = pActwk->xposi.w.h;
+    lrblk4_get_work(pActwk)->base_x = pActwk->xposi.w.h;
     pActwk->sprhsize = 32;
     pActwk->sprvsize = 32;
 
-    if (pActwk->actfree[18] == 0) {
+    if (lrblk4_get_work(pActwk)->child_index == 0) {
         d1 = 1;
         for (i = 0; i <= 3; ++i) {
             if (actwkchk(&pNewActwk) == 0) {
                 pNewActwk->actno = 36;
                 pNewActwk->userflag.b.h = 5;
-                pNewActwk->actfree[18] = d1;
+                lrblk4_get_work(pNewActwk)->child_index = d1;
                 pNewActwk->xposi.w.h = pActwk->xposi.w.h;
                 d0 = d1;
                 d0 *= 64;
@@ -415,34 +458,35 @@ static void type5_init(sprite_status *pActwk) {
             ++d1;
         }
     }
-    a1 = &tbl[pActwk->actfree[18] * 2];
+    a1 = &tbl[lrblk4_get_work(pActwk)->child_index * 2];
     pActwk->xposi.w.h += (Uint16)*a1++;
-    pActwk->actfree[17] = *a1++;
+    lrblk4_get_work(pActwk)->segment_index = *a1++;
 }
 
 static void type5_move(sprite_status *pActwk) {
     move_data *a1;
     Sint16 d0;
+    lrblk4_work *pWork = lrblk4_get_work(pActwk);
 
     move_data type5_mvtbl[6] = {{128, 0, 128},  {128, 0, 128},  {128, 0, 128},
                                 {128, 0, -128}, {128, 0, -128}, {128, 0, -128}};
 
 label1:
-    if (pActwk->actfree[16] == 0) {
-        a1 = &type5_mvtbl[pActwk->actfree[17]];
-        pActwk->actfree[16] = a1->cnt;
-        ((Sint16 *)pActwk)[26] = a1->speed;
+    if (pWork->phase == 0) {
+        a1 = &type5_mvtbl[pWork->segment_index];
+        pWork->phase = a1->cnt;
+        pWork->move_speed = a1->speed;
     } else {
-        d0 = ((Sint16 *)pActwk)[26];
+        d0 = pWork->move_speed;
         pActwk->xspeed.w = d0;
         pActwk->xposi.l += d0 << 8;
-        --pActwk->actfree[16];
-        if (pActwk->actfree[16] == 0) {
-            ++pActwk->actfree[17];
-            if (pActwk->actfree[17] != 6)
+        --pWork->phase;
+        if (pWork->phase == 0) {
+            ++pWork->segment_index;
+            if (pWork->segment_index != 6)
                 goto label1;
 
-            pActwk->actfree[17] = 0;
+            pWork->segment_index = 0;
             goto label1;
         }
     }
@@ -474,15 +518,15 @@ static void type6_init(sprite_status *pActwk) {
     pActwk->patbase = lrblk4pat6;
     pActwk->sprvsize = 16;
 
-    if (pActwk->actfree[18] == 0) {
-        ((Sint16 *)pActwk)[29] = pActwk->xposi.w.h;
+    if (lrblk4_get_work(pActwk)->child_index == 0) {
+        lrblk4_get_work(pActwk)->base_x = pActwk->xposi.w.h;
         d1 = 1;
         for (i = 0; i <= 2; ++i) {
             if (actwkchk(&pNewActwk) == 0) {
                 pNewActwk->actno = 36;
                 pNewActwk->userflag.b.h = 6;
-                pNewActwk->actfree[18] = d1;
-                ((Sint16 *)pNewActwk)[29] = ((Sint16 *)pActwk)[29];
+                lrblk4_get_work(pNewActwk)->child_index = d1;
+                lrblk4_get_work(pNewActwk)->base_x = lrblk4_get_work(pActwk)->base_x;
                 d0 = (char)d1 * 16;
                 d0 *= -1;
                 d0 += pActwk->xposi.w.h;
@@ -496,11 +540,11 @@ static void type6_init(sprite_status *pActwk) {
             ++d1;
         }
     }
-    bd0 = pActwk->actfree[18];
+    bd0 = lrblk4_get_work(pActwk)->child_index;
     pActwk->patno = bd0;
     ++bd0;
-    pActwk->actfree[17] = bd0;
-    bd0 = pActwk->actfree[18];
+    lrblk4_get_work(pActwk)->segment_index = bd0;
+    bd0 = lrblk4_get_work(pActwk)->child_index;
     d1 = 0;
     for (i = 0; i <= (Sint16)(Uint16)bd0; ++i) {
         d1 += 16;
@@ -508,8 +552,8 @@ static void type6_init(sprite_status *pActwk) {
     pActwk->sprhsize = d1;
     d0 = pActwk->xposi.w.h;
     d0 += (Uint16)d1;
-    ((Sint16 *)pActwk)[27] = d0;
-    pActwk->actfree[16] = 128;
+    lrblk4_get_work(pActwk)->wave_origin_x = d0;
+    lrblk4_get_work(pActwk)->phase = 128;
 
     type6_move(pActwk);
 }
@@ -517,12 +561,13 @@ static void type6_init(sprite_status *pActwk) {
 static void type6_move(sprite_status *pActwk) {
     Sint16 d0, d1, d3, stk;
     Uint8 d2;
+    lrblk4_work *pWork = lrblk4_get_work(pActwk);
 
     stk = pActwk->xposi.w.h;
-    sinset(pActwk->actfree[16], &d0, &d1);
+    sinset(pWork->phase, &d0, &d1);
 
     d3 = 0;
-    d2 = pActwk->actfree[17];
+    d2 = pWork->segment_index;
     if (d2) {
         do {
             d3 += d0;
@@ -532,14 +577,14 @@ static void type6_move(sprite_status *pActwk) {
 
     d3 >>= 4;
     d0 = d3;
-    d0 += ((Sint16 *)pActwk)[27];
+    d0 += pWork->wave_origin_x;
     pActwk->xposi.w.h = d0;
 
     d1 = stk;
     d0 -= d1;
     d0 <<= 8;
     pActwk->xspeed.w = d0;
-    ++pActwk->actfree[16];
+    ++pWork->phase;
     hitchk(pActwk, &actwk[0]);
 }
 
@@ -563,25 +608,25 @@ static void type8_init(sprite_status *pActwk) {
     pActwk->sprhsize = 64;
     pActwk->sprvsize = 16;
 
-    if (pActwk->actfree[18] == 0) {
-        ((Sint16 *)pActwk)[29] = pActwk->xposi.w.h;
+    if (lrblk4_get_work(pActwk)->child_index == 0) {
+        lrblk4_get_work(pActwk)->base_x = pActwk->xposi.w.h;
         if (actwkchk(&pNewActwk) == 0) {
             pNewActwk->actno = 36;
             pNewActwk->userflag.b.h = 4;
-            pNewActwk->actfree[19] = 8;
+            lrblk4_get_work(pNewActwk)->variant = 8;
             pNewActwk->xposi.w.h = pActwk->xposi.w.h;
             pNewActwk->yposi.w.h = pActwk->yposi.w.h - 96;
         }
         if (actwkchk(&pNewActwk) == 0) {
             pNewActwk->actno = 36;
             pNewActwk->userflag.b.h = 8;
-            pNewActwk->actfree[18] = 1;
-            ((Sint16 *)pNewActwk)[29] = ((Sint16 *)pActwk)[29];
-            d0 = ((Sint16 *)pActwk)[29];
+            lrblk4_get_work(pNewActwk)->child_index = 1;
+            lrblk4_get_work(pNewActwk)->base_x = lrblk4_get_work(pActwk)->base_x;
+            d0 = lrblk4_get_work(pActwk)->base_x;
             d0 -= 128;
             pNewActwk->xposi.w.h = d0;
             pNewActwk->yposi.w.h = pActwk->yposi.w.h;
-            d0 = ((Sint16 *)pActwk)[29];
+            d0 = lrblk4_get_work(pActwk)->base_x;
             d0 += 128;
             pActwk->xposi.w.h = d0;
         }
@@ -591,14 +636,15 @@ static void type8_init(sprite_status *pActwk) {
 
 static void type8_move(sprite_status *pActwk) {
     Sint16 d0;
+    lrblk4_work *pWork = lrblk4_get_work(pActwk);
 
     pActwk->xposi.l += pActwk->xspeed.w << 8;
     hitchk(pActwk, &actwk[0]);
     d0 = pActwk->xposi.w.h;
-    if (d0 >= ((Sint16 *)pActwk)[29]) {
-        d0 -= ((Sint16 *)pActwk)[29];
+    if (d0 >= pWork->base_x) {
+        d0 -= pWork->base_x;
         if (d0 == 256) {
-            pActwk->xposi.w.h = ((Sint16 *)pActwk)[29] - 256;
+            pActwk->xposi.w.h = pWork->base_x - 256;
         }
     }
 }

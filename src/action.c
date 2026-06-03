@@ -1,6 +1,7 @@
 #include "equ.h"
 #include "action.h"
 #include "impfuncs.h"
+#include "player_work.h"
 
 extern void (*act_tbl[1])(sprite_status *);
 extern bmp_info SprBmp[700];
@@ -19,6 +20,7 @@ void action(void) {
 }
 
 void speedset(sprite_status *pActwk) {
+    player_work *work = player_work_get(pActwk);
     int_union xpos, ypos;
     short_union spd;
 
@@ -27,16 +29,16 @@ void speedset(sprite_status *pActwk) {
     spd.w = pActwk->xspeed.w;
     xpos.l += spd.w << 8;
     spd.w = pActwk->yspeed.w;
-    if (pActwk->actfree[2] & 8)
+    if (work->status_flags & 8)
         goto label2;
     if (spd.w >= 0)
         goto label1;
-    if (!(pActwk->actfree[2] & 2))
+    if (!(work->status_flags & 2))
         goto label1;
     if (pActwk->yspeed.w < -2048)
         goto label2;
 label1:
-    if (pActwk->actfree[2] & 4)
+    if (work->status_flags & 4)
         goto label2;
     pActwk->yspeed.w += 56;
 label2:
@@ -52,6 +54,7 @@ label3:
 }
 
 void speedset2(sprite_status *pActwk) {
+    player_work *work = player_work_get(pActwk);
     int_union xpos, ypos;
     Sint32 spd;
     Sint32 actwkno;
@@ -63,7 +66,7 @@ void speedset2(sprite_status *pActwk) {
     if (pActwk->cddat & 8) {
 
         d1 = 0;
-        actwkno = pActwk->actfree[19];
+        actwkno = work->ride_actor_index;
         if (actwk[actwkno].actno == 30) {
 
             d1 = -256;

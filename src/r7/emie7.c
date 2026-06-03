@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "emie7.h"
 #include "../actset.h"
@@ -8,6 +10,49 @@
 
 void actionsub(sprite_status *pActwk);
 void frameout(sprite_status *pActwk);
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 goal_started;
+    Uint8 unused1[5];
+    Sint16 timer;
+    Uint8 unused8[4];
+    Sint16 home_x;
+    Uint8 goal_flag;
+    Uint8 unused15;
+    Uint8 motion_counter;
+    Uint8 heart_counter;
+    Uint8 stop_flag;
+    Uint8 unused19;
+    Uint8 daki_flags;
+    Uint8 daki_delay;
+} emie7_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(emie7_work, goal_started) == 0,
+               "emie7_work.goal_started offset");
+_Static_assert(offsetof(emie7_work, timer) == 6,
+               "emie7_work.timer offset");
+_Static_assert(offsetof(emie7_work, home_x) == 12,
+               "emie7_work.home_x offset");
+_Static_assert(offsetof(emie7_work, goal_flag) == 14,
+               "emie7_work.goal_flag offset");
+_Static_assert(offsetof(emie7_work, motion_counter) == 16,
+               "emie7_work.motion_counter offset");
+_Static_assert(offsetof(emie7_work, heart_counter) == 17,
+               "emie7_work.heart_counter offset");
+_Static_assert(offsetof(emie7_work, stop_flag) == 18,
+               "emie7_work.stop_flag offset");
+_Static_assert(offsetof(emie7_work, daki_flags) == 20,
+               "emie7_work.daki_flags offset");
+_Static_assert(offsetof(emie7_work, daki_delay) == 21,
+               "emie7_work.daki_delay offset");
+_Static_assert(sizeof(emie7_work) <= sizeof(((sprite_status *)0)->actfree),
+               "emie7_work fits in actfree");
+
+static emie7_work *emie7_get_work(sprite_status *pActwk) {
+    return (emie7_work *)pActwk->actfree;
+}
 
 static void emie7_init(sprite_status *pActwk);
 static void emie7_move0(sprite_status *pActwk);
@@ -55,7 +100,7 @@ static void emie7_init(sprite_status *pActwk) {
 
     pActwk->sprhsize = 12;
     pActwk->sprvsize = 16;
-    ((Sint16 *)pActwk)[29] = pActwk->xposi.w.h;
+    emie7_get_work(pActwk)->home_x = pActwk->xposi.w.h;
     pActwk->colino = 245;
 
     if (!generate_flag) {
@@ -75,14 +120,16 @@ static void emie7_init(sprite_status *pActwk) {
 
         actwk[0].yspeed.w *= -1;
         pActwk->r_no0 += 2;
-        ((Sint16 *)pActwk)[26] = 600;
+        emie7_get_work(pActwk)->timer = 600;
     } else {
         empatchg(pActwk, em_pchg);
     }
 }
 
 static void emie7_move0(sprite_status *pActwk) {
-    if (((char *)pActwk)[64] >= 0) {
+    emie7_work *work = emie7_get_work(pActwk);
+
+    if ((Sint8)work->stop_flag >= 0) {
 
         pActwk->yspeed.w += 16;
         speedsety(pActwk);
@@ -90,34 +137,35 @@ static void emie7_move0(sprite_status *pActwk) {
         if (pActwk->yposi.w.h >= 464) {
             pActwk->yposi.w.h = 464;
             pActwk->yspeed.w = 0;
-            ((char *)pActwk)[64] = -1;
+            work->stop_flag = (Uint8)-1;
         }
     } else {
         setdirect(pActwk, &actwk[0]);
-        pActwk->actfree[21] = 60;
+        work->daki_delay = 60;
         pActwk->r_no0 += 2;
         empatchg(pActwk, em_pchg);
     }
 }
 
 static void emie7_move1(sprite_status *pActwk) {
+    emie7_work *work = emie7_get_work(pActwk);
     Sint16 lenwk, maxspd, spdwk, scdwk;
 
     heartset(pActwk);
     setdirect(pActwk, &actwk[0]);
 
-    if (((Sint16 *)pActwk)[26]) {
-        if (!(--((Sint16 *)pActwk)[26])) {
+    if (work->timer) {
+        if (!(--work->timer)) {
 
-            ((char *)pActwk)[60] = -1;
+            work->goal_flag = (Uint8)-1;
             pltime_f = 0;
-            pActwk->actfree[0] = 1;
+            work->goal_started = 1;
             goal_move2(pActwk);
             return;
         }
     }
 
-    if (!pActwk->actfree[21] || !(--pActwk->actfree[21])) {
+    if (!work->daki_delay || !(--work->daki_delay)) {
 
         dakicheck(pActwk);
 
@@ -125,9 +173,9 @@ static void emie7_move1(sprite_status *pActwk) {
             lenwk *= -1;
         }
 
-        if (((pActwk->actfree[20] & 4) && lenwk < 32) ||
+        if (((work->daki_flags & 4) && lenwk < 32) ||
             (!(actwk[0].xspeed.w) && lenwk < 10)) {
-            pActwk->actfree[20] |= 4;
+            work->daki_flags |= 4;
             pActwk->xspeed.w = 0;
 
             pActwk->mstno.b.h = 1;
@@ -158,7 +206,7 @@ static void emie7_move1(sprite_status *pActwk) {
 
     if (pActwk->xspeed.w < 0) {
 
-        lenwk = ((Sint16 *)pActwk)[29];
+        lenwk = work->home_x;
 
         if (generate_flag) {
             lenwk -= 96;
@@ -188,11 +236,12 @@ static void emie7_move1(sprite_status *pActwk) {
 }
 
 static void emie7_tobii(sprite_status *pActwk) {
+    emie7_work *work = emie7_get_work(pActwk);
     Sint16 lenwk;
 
     pActwk->patno = 6;
 
-    if ((lenwk = pActwk->xposi.w.h - ((Sint16 *)pActwk)[29]) < 0) {
+    if ((lenwk = pActwk->xposi.w.h - work->home_x) < 0) {
 
         lenwk = -lenwk;
     }
@@ -215,6 +264,8 @@ static void emie7_tobii(sprite_status *pActwk) {
 }
 
 static void emie7_tobim(sprite_status *pActwk) {
+    emie7_work *work = emie7_get_work(pActwk);
+
     speedset(pActwk);
     if ((pActwk->yspeed.w += 64) >= 0) {
         pActwk->patno = 7;
@@ -226,12 +277,12 @@ static void emie7_tobim(sprite_status *pActwk) {
         pActwk->xspeed.w = 0;
         pActwk->yspeed.w = 0;
 
-        if ((Sint16)pActwk->actfree[16] + 16 < 256) {
-            pActwk->actfree[16] += 16;
+        if ((Sint16)work->motion_counter + 16 < 256) {
+            work->motion_counter += 16;
             return;
         }
 
-        pActwk->actfree[16] += 16;
+        work->motion_counter += 16;
         pActwk->r_no0 = 4;
     }
 }
@@ -252,9 +303,9 @@ static void emie7_daki2(sprite_status *pActwk) {
 
     pActwk->yposi.w.h = actwk[0].yposi.w.h;
     pActwk->patno = 14;
-    if (!pActwk->actfree[14]) {
+    if (!emie7_get_work(pActwk)->goal_flag) {
         pltime_f = 0;
-        pActwk->actfree[0] = 1;
+        emie7_get_work(pActwk)->goal_started = 1;
         goal_move2(pActwk);
     }
 }
@@ -331,7 +382,7 @@ static void dakicheck(sprite_status *pActwk) {
 
         pActwk->r_no0 = 14;
     } else {
-        pActwk->actfree[20] |= 129;
+        emie7_get_work(pActwk)->daki_flags |= 129;
         pActwk->xspeed.w = pActwk->yspeed.w = 0;
         pActwk->patno = 7;
         pActwk->r_no0 = 10;
@@ -383,10 +434,11 @@ static void emie7clrsetx(PALETTEENTRY *pPalet) {
 }
 
 static void heartset(sprite_status *pActwk) {
+    emie7_work *work = emie7_get_work(pActwk);
     sprite_status *pHeartact;
     Sint16 wk;
 
-    if (pActwk->actfree[17] + 6 > 255) {
+    if (work->heart_counter + 6 > 255) {
         if (actwkchk(&pHeartact) == 0) {
             pHeartact->actno = 52;
             wk = 8;
@@ -395,7 +447,7 @@ static void heartset(sprite_status *pActwk) {
                 wk = -10;
             }
 
-            if (pActwk->actfree[20] & 1) {
+            if (work->daki_flags & 1) {
                 wk *= -1;
             }
 
@@ -404,7 +456,7 @@ static void heartset(sprite_status *pActwk) {
         }
     }
 
-    pActwk->actfree[17] += 6;
+    work->heart_counter += 6;
 }
 
 void heart7(sprite_status *pActwk) {
@@ -426,21 +478,22 @@ static void heart1_init(sprite_status *pActwk) {
 }
 
 static void heart1_move(sprite_status *pActwk) {
+    emie7_work *work = emie7_get_work(pActwk);
     Sint16 sinwk, coswk;
 
-    if (!pActwk->actfree[18]) {
-        sinset(pActwk->actfree[16] * 3, &sinwk, &coswk);
+    if (!work->stop_flag) {
+        sinset(work->motion_counter * 3, &sinwk, &coswk);
         pActwk->xspeed.w = sinwk >> 2;
     }
 
     speedset(pActwk);
-    if (++pActwk->actfree[16] == 20) {
+    if (++work->motion_counter == 20) {
         ++pActwk->patno;
-    } else if (pActwk->actfree[16] == 110) {
+    } else if (work->motion_counter == 110) {
         ++pActwk->patno;
         pActwk->xspeed.w = pActwk->yspeed.w = 0;
-        pActwk->actfree[18] = 1;
-    } else if (pActwk->actfree[16] == 120) {
+        work->stop_flag = 1;
+    } else if (work->motion_counter == 120) {
         frameout(pActwk);
     }
 }

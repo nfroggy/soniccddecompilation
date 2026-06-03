@@ -6,8 +6,122 @@
 #include "../fcol.h"
 #include "../loader2.h"
 #include "../playsub.h"
+#include "../player_work.h"
 #include "../ridechk.h"
 #include "coli3.h"
+#include <stddef.h>
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 unused0[6];
+    Uint8 wait_timer;
+    Uint8 unused7;
+    Sint16 base_y;
+    Uint16 ride_actor_index;
+    Uint8 unused12[4];
+    Uint8 hover_angle;
+    Uint8 lift_timer;
+    Uint8 unused18;
+    Uint8 ready_flag;
+    Sint16 acceleration;
+} mecasnc3_work;
+
+typedef struct {
+    Uint8 unused0[10];
+    Uint16 ride_actor_index;
+    Uint8 unused12[5];
+    Uint8 heart_timer;
+    Uint8 unused18[2];
+    Uint8 initialized_flag;
+} emie3_work;
+
+typedef struct {
+    Uint8 unused0[16];
+    Uint8 timer;
+    Uint8 unused17;
+    Uint8 piece_index;
+    Uint8 unused19;
+    Sint16 gravity;
+} hari3x_work;
+
+typedef struct {
+    Uint8 unused0[16];
+    Uint8 timer;
+    Uint8 unused17;
+    Uint8 no_wave;
+} heart3_work;
+
+typedef struct {
+    Uint8 unused0[10];
+    Uint16 parent_index;
+} msnc3fire_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(mecasnc3_work, wait_timer) == 6,
+               "mecasnc3_work.wait_timer offset");
+_Static_assert(offsetof(mecasnc3_work, base_y) == 8,
+               "mecasnc3_work.base_y offset");
+_Static_assert(offsetof(mecasnc3_work, ride_actor_index) == 10,
+               "mecasnc3_work.ride_actor_index offset");
+_Static_assert(offsetof(mecasnc3_work, hover_angle) == 16,
+               "mecasnc3_work.hover_angle offset");
+_Static_assert(offsetof(mecasnc3_work, lift_timer) == 17,
+               "mecasnc3_work.lift_timer offset");
+_Static_assert(offsetof(mecasnc3_work, ready_flag) == 19,
+               "mecasnc3_work.ready_flag offset");
+_Static_assert(offsetof(mecasnc3_work, acceleration) == 20,
+               "mecasnc3_work.acceleration offset");
+_Static_assert(sizeof(mecasnc3_work) <= sizeof(((sprite_status *)0)->actfree),
+               "mecasnc3_work fits in actfree");
+
+_Static_assert(offsetof(emie3_work, ride_actor_index) == 10,
+               "emie3_work.ride_actor_index offset");
+_Static_assert(offsetof(emie3_work, heart_timer) == 17,
+               "emie3_work.heart_timer offset");
+_Static_assert(offsetof(emie3_work, initialized_flag) == 20,
+               "emie3_work.initialized_flag offset");
+_Static_assert(sizeof(emie3_work) <= sizeof(((sprite_status *)0)->actfree),
+               "emie3_work fits in actfree");
+
+_Static_assert(offsetof(hari3x_work, timer) == 16,
+               "hari3x_work.timer offset");
+_Static_assert(offsetof(hari3x_work, piece_index) == 18,
+               "hari3x_work.piece_index offset");
+_Static_assert(offsetof(hari3x_work, gravity) == 20,
+               "hari3x_work.gravity offset");
+_Static_assert(sizeof(hari3x_work) <= sizeof(((sprite_status *)0)->actfree),
+               "hari3x_work fits in actfree");
+
+_Static_assert(offsetof(heart3_work, timer) == 16, "heart3_work.timer offset");
+_Static_assert(offsetof(heart3_work, no_wave) == 18,
+               "heart3_work.no_wave offset");
+_Static_assert(sizeof(heart3_work) <= sizeof(((sprite_status *)0)->actfree),
+               "heart3_work fits in actfree");
+
+_Static_assert(offsetof(msnc3fire_work, parent_index) == 10,
+               "msnc3fire_work.parent_index offset");
+_Static_assert(sizeof(msnc3fire_work) <= sizeof(((sprite_status *)0)->actfree),
+               "msnc3fire_work fits in actfree");
+
+static inline mecasnc3_work *mecasnc3_work_get(sprite_status *pActwk) {
+    return (mecasnc3_work *)pActwk->actfree;
+}
+
+static inline emie3_work *emie3_work_get(sprite_status *pActwk) {
+    return (emie3_work *)pActwk->actfree;
+}
+
+static inline hari3x_work *hari3x_work_get(sprite_status *pActwk) {
+    return (hari3x_work *)pActwk->actfree;
+}
+
+static inline heart3_work *heart3_work_get(sprite_status *pActwk) {
+    return (heart3_work *)pActwk->actfree;
+}
+
+static inline msnc3fire_work *msnc3fire_work_get(sprite_status *pActwk) {
+    return (msnc3fire_work *)pActwk->actfree;
+}
 
 static Uint8 jmp_flg;
 static Uint8 bCarry;
@@ -64,6 +178,8 @@ void mecasnc3(sprite_status *pActwk) {
 }
 
 void mecasnc3_init(sprite_status *pActwk) {
+    mecasnc3_work *work = mecasnc3_work_get(pActwk);
+
     pActwk->r_no0 += 2;
     pActwk->actflg |= 4;
     pActwk->sproffset = 976;
@@ -71,20 +187,22 @@ void mecasnc3_init(sprite_status *pActwk) {
     pActwk->patbase = mecasnc3pat;
     pActwk->patno = 14;
     pActwk->sprvsize = 32;
-    pActwk->actfree[16] = 60;
+    work->hover_angle = 60;
     pActwk->colino = 0;
     mecasnc3_matu1(pActwk);
 }
 
 void mecasnc3_matu1(sprite_status *pActwk) {
-    if (pActwk->actfree[16] != 0) {
+    mecasnc3_work *work = mecasnc3_work_get(pActwk);
 
-        --pActwk->actfree[16];
+    if (work->hover_angle != 0) {
+
+        --work->hover_angle;
         return;
     }
 
     dir_left(pActwk);
-    ((Sint16 *)pActwk)[33] = -16;
+    work->acceleration = -16;
     pActwk->r_no0 += 2;
 
     if (pActwk->actflg & 128)
@@ -93,9 +211,10 @@ void mecasnc3_matu1(sprite_status *pActwk) {
 
 void mecasnc3_come(sprite_status *pActwk) {
     Sint16 iD0, iD1;
+    mecasnc3_work *work = mecasnc3_work_get(pActwk);
 
     emie_speedsetx(pActwk);
-    iD0 = ((Sint16 *)pActwk)[33];
+    iD0 = work->acceleration;
     iD0 += pActwk->xspeed.w;
     if (iD0 <= -768)
         iD0 = -768;
@@ -103,19 +222,19 @@ void mecasnc3_come(sprite_status *pActwk) {
     pActwk->xspeed.w = iD0;
 
     iD0 = 992;
-    iD1 = ((Uint16 *)pActwk)[28];
+    iD1 = work->ride_actor_index;
     if (iD1 != 0)
         iD0 = actwk[iD1].xposi.w.h + 32;
 
     if (iD0 >= pActwk->xposi.w.h) {
 
         pActwk->xspeed.w = 0;
-        ((Sint16 *)pActwk)[33] = 0;
-        pActwk->actfree[19] = 255;
+        work->acceleration = 0;
+        work->ready_flag = 255;
         pActwk->mstno.b.h = 2;
         setfire(pActwk);
         pActwk->colino = 0;
-        ((Sint16 *)pActwk)[27] = pActwk->yposi.w.h;
+        work->base_y = pActwk->yposi.w.h;
         pActwk->r_no0 += 2;
     }
 
@@ -125,27 +244,29 @@ void mecasnc3_come(sprite_status *pActwk) {
 void mecasnc3_hovr(sprite_status *pActwk) {
     sprite_status *pPlaywk;
     char wWk;
+    mecasnc3_work *work = mecasnc3_work_get(pActwk);
 
     pPlaywk = &actwk[0];
     setdirect(pActwk, pPlaywk);
     yposisetsub(pActwk);
 
-    pActwk->actfree[16] += 4;
-    wWk = ((char *)pActwk)[62];
+    work->hover_angle += 4;
+    wWk = (Sint8)work->hover_angle;
     if (wWk < 0) {
 
         pActwk->r_no0 += 2;
         pActwk->yspeed.w = -704;
-        ((Sint16 *)pActwk)[33] = 11;
-        pActwk->actfree[17] = 64;
-        pActwk->actfree[6] = 80;
+        work->acceleration = 11;
+        work->lift_timer = 64;
+        work->wait_timer = 80;
     }
 
     empatchg(pActwk, msc_pchg);
 }
 
 void yposisetsub(sprite_status *pActwk) {
-    Uint8 byR = pActwk->actfree[16];
+    mecasnc3_work *work = mecasnc3_work_get(pActwk);
+    Uint8 byR = work->hover_angle;
     Sint16 iSin, iCos;
     int_union lD0;
 
@@ -156,26 +277,27 @@ void yposisetsub(sprite_status *pActwk) {
     else
         lD0.l <<= 8;
 
-    lD0.w.h += ((Sint16 *)pActwk)[27];
+    lD0.w.h += work->base_y;
     pActwk->yposi.l = lD0.l;
 }
 
 void mecasnc3_upmv(sprite_status *pActwk) {
     sprite_status *pPlaywk;
     short_union iD0;
+    mecasnc3_work *work = mecasnc3_work_get(pActwk);
 
     pPlaywk = &actwk[0];
     setdirect(pActwk, pPlaywk);
-    if (pActwk->actfree[17] != 0) {
+    if (work->lift_timer != 0) {
 
         emie_speedset(pActwk);
-        pActwk->yspeed.w += ((Sint16 *)pActwk)[33];
+        pActwk->yspeed.w += work->acceleration;
 
-        if (--pActwk->actfree[17] == 0) {
+        if (--work->lift_timer == 0) {
 
-            ((Sint16 *)pActwk)[33] = 0;
+            work->acceleration = 0;
             pActwk->yspeed.w = 0;
-            ((Sint16 *)pActwk)[27] = pActwk->yposi.w.h;
+            work->base_y = pActwk->yposi.w.h;
         } else {
 
             empatchg(pActwk, msc_pchg);
@@ -184,7 +306,7 @@ void mecasnc3_upmv(sprite_status *pActwk) {
     }
 
     yposisetsub(pActwk);
-    pActwk->actfree[16] += 4;
+    work->hover_angle += 4;
 
     iD0.w = pActwk->xposi.w.h;
     bCarry = CCset(iD0.w, pPlaywk->xposi.w.h);
@@ -198,11 +320,11 @@ void mecasnc3_upmv(sprite_status *pActwk) {
         }
     }
 
-    if (--pActwk->actfree[6] == 0) {
+    if (--work->wait_timer == 0) {
 
         dir_right(pActwk);
         pActwk->xspeed.w = 0;
-        ((Sint16 *)pActwk)[33] = 96;
+        work->acceleration = 96;
         pActwk->r_no0 += 2;
     }
 
@@ -215,15 +337,16 @@ void setfire(sprite_status *pActwk) {
     if (actwkchk(&pActfree) == 0) {
 
         pActfree->actno = 52;
-        ((Uint16 *)pActfree)[28] = pActwk - actwk;
+        msnc3fire_work_get(pActfree)->parent_index = pActwk - actwk;
     }
 }
 
 void mecasnc3_rght(sprite_status *pActwk) {
     Sint16 iD0;
+    mecasnc3_work *work = mecasnc3_work_get(pActwk);
 
     emie_speedsetx(pActwk);
-    iD0 = ((Sint16 *)pActwk)[33];
+    iD0 = work->acceleration;
     iD0 += pActwk->xspeed.w;
     if (iD0 >= 1024)
         iD0 = 1024;
@@ -292,10 +415,11 @@ void emie3(sprite_status *pActwk) {
 
 void emie3_init(sprite_status *pActwk) {
     sprite_status *pPlaywk;
+    emie3_work *work = emie3_work_get(pActwk);
 
-    if (pActwk->actfree[20] == 0) {
+    if (work->initialized_flag == 0) {
 
-        pActwk->actfree[20] = 255;
+        work->initialized_flag = 255;
     }
 
     pActwk->actflg |= 4;
@@ -319,13 +443,14 @@ void emiewalkret(sprite_status *pActwk) {
 void emie3_walk(sprite_status *pActwk) {
     Sint16 iD0, iD1, iD2;
     sprite_status *pPlaywk, *pRideAct;
+    emie3_work *work = emie3_work_get(pActwk);
 
     pPlaywk = &actwk[0];
-    iD0 = ((Sint16 *)pActwk)[28];
+    iD0 = work->ride_actor_index;
     if (iD0 != 0) {
 
         pRideAct = &actwk[iD0];
-        if (pRideAct->actfree[19] != 0) {
+        if (mecasnc3_work_get(pRideAct)->ready_flag != 0) {
 
             pActwk->r_no0 = 4;
             sub_sync(125);
@@ -376,7 +501,7 @@ void emie3_walk(sprite_status *pActwk) {
 
     pActwk->mstno.b.h = 0;
 
-    if (((Sint16 *)pActwk)[28] == 0) {
+    if (work->ride_actor_index == 0) {
 
         if (actwkchk(&pPlaywk) == 0) {
 
@@ -384,9 +509,9 @@ void emie3_walk(sprite_status *pActwk) {
             pPlaywk->xposi.w.h = 1280;
             pPlaywk->yposi.w.h = 1000;
 
-            ((Uint16 *)pPlaywk)[28] = pActwk - actwk;
+            mecasnc3_work_get(pPlaywk)->ride_actor_index = pActwk - actwk;
 
-            ((Uint16 *)pActwk)[28] = pPlaywk - actwk;
+            work->ride_actor_index = pPlaywk - actwk;
         }
     }
     emiewalkret(pActwk);
@@ -395,8 +520,9 @@ void emie3_walk(sprite_status *pActwk) {
 void emie3_help(sprite_status *pActwk) {
     Sint16 iD0;
     sprite_status *pRideAct;
+    emie3_work *work = emie3_work_get(pActwk);
 
-    iD0 = ((Sint16 *)pActwk)[28];
+    iD0 = work->ride_actor_index;
     pRideAct = &actwk[iD0];
     if (pRideAct->actno == 49) {
 
@@ -502,10 +628,11 @@ void heartset(sprite_status *pActwk) {
     Uint8 bywk;
     Sint16 iD1, wk;
     sprite_status *pActfree;
+    emie3_work *work = emie3_work_get(pActwk);
 
-    bywk = pActwk->actfree[17];
+    bywk = work->heart_timer;
     wk = (Sint16)bywk + 8;
-    pActwk->actfree[17] += 8;
+    work->heart_timer += 8;
     if (wk <= 255)
         return;
 
@@ -561,7 +688,7 @@ void hari3x_ridechk(sprite_status *pActwk) {
     pPlaywk = &actwk[0];
     if (pPlaywk->r_no0 < 4) {
 
-        if (((Uint16 *)pPlaywk)[26] == 0) {
+        if (player_work_get(pPlaywk)->damage_invulnerability_timer == 0) {
 
             lD3 = pPlaywk->yposi.l;
             lD0 = pPlaywk->yspeed.w;
@@ -577,6 +704,8 @@ void hari3x_ridechk(sprite_status *pActwk) {
 }
 
 void hari3x_init(sprite_status *pActwk) {
+    hari3x_work *work = hari3x_work_get(pActwk);
+
     if (emie3end != 0) {
 
         hari3x_fout(pActwk);
@@ -604,7 +733,7 @@ void hari3x_init(sprite_status *pActwk) {
         }
     }
 
-    if (pActwk->actfree[18] == 0) {
+    if (work->piece_index == 0) {
 
         hari3x_move(pActwk);
         return;
@@ -700,7 +829,7 @@ void brknset(sprite_status *pActwk) {
             pActfree->xposi.w.h = pActwk->xposi.w.h;
             pActfree->yposi.w.h = pActwk->yposi.w.h;
             pActfree->patno = iD1 + iD2;
-            pActfree->actfree[18] = iD1;
+            hari3x_work_get(pActfree)->piece_index = iD1;
         }
 
         --iD1;
@@ -714,23 +843,25 @@ void brknset(sprite_status *pActwk) {
 
 void hari3x_spdset(sprite_status *pActwk) {
     Uint8 byD0;
+    hari3x_work *work = hari3x_work_get(pActwk);
 
-    byD0 = pActwk->actfree[18];
+    byD0 = work->piece_index;
     byD0 *= 2;
     pActwk->xspeed.w = spd_tbl[byD0];
     pActwk->yspeed.w = spd_tbl[byD0 + 1];
-    ((Sint16 *)pActwk)[33] = 96;
-    pActwk->actfree[16] = 120;
+    work->gravity = 96;
+    work->timer = 120;
 }
 
 void hari3x_brkn(sprite_status *pActwk) {
     Sint16 iD0;
+    hari3x_work *work = hari3x_work_get(pActwk);
 
     emie_speedset(pActwk);
-    iD0 = ((Sint16 *)pActwk)[33];
+    iD0 = work->gravity;
     pActwk->yspeed.w += iD0;
-    --pActwk->actfree[16];
-    if (pActwk->actfree[16] == 0) {
+    --work->timer;
+    if (work->timer == 0) {
 
         frameout(pActwk);
         jmp_flg = 1;
@@ -762,10 +893,11 @@ void heart3_init(sprite_status *pActwk) {
 void heart3_move(sprite_status *pActwk) {
     Uint8 byR;
     Sint16 iD0, iD1;
+    heart3_work *work = heart3_work_get(pActwk);
 
-    if (pActwk->actfree[18] == 0) {
+    if (work->no_wave == 0) {
 
-        byR = pActwk->actfree[16];
+        byR = work->timer;
         byR *= 3;
         sinset(byR, &iD0, &iD1);
         iD0 /= 4;
@@ -773,19 +905,19 @@ void heart3_move(sprite_status *pActwk) {
     }
 
     emie_speedset(pActwk);
-    ++pActwk->actfree[16];
-    if (pActwk->actfree[16] == 20)
+    ++work->timer;
+    if (work->timer == 20)
         ++pActwk->patno;
 
-    if (pActwk->actfree[16] == 110) {
+    if (work->timer == 110) {
 
         ++pActwk->patno;
         pActwk->yspeed.w = 0;
         pActwk->xspeed.w = 0;
-        pActwk->actfree[18] = 255;
+        work->no_wave = 255;
     }
 
-    if (pActwk->actfree[16] == 120) {
+    if (work->timer == 120) {
 
         frameout(pActwk);
         jmp_flg = 1;
@@ -809,8 +941,9 @@ void msnc3fire_init(sprite_status *pActwk) {
 void msnc3fire_move(sprite_status *pActwk) {
     Sint16 iD0;
     sprite_status *pActmsnc;
+    msnc3fire_work *work = msnc3fire_work_get(pActwk);
 
-    iD0 = ((Sint16 *)pActwk)[28];
+    iD0 = work->parent_index;
     pActmsnc = &actwk[iD0];
     if (pActmsnc->actno != 49) {
 

@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "equ.h"
 #include "zone.h"
 #include "action.h"
@@ -37,6 +39,49 @@ static void clear_wait(sprite_status *pAct);
 #else
 #define SPRITE_ZONE_BASE 348
 #endif
+
+#pragma pack(push, 1)
+typedef struct {
+    union {
+        struct {
+            Sint16 target_x;
+        } over;
+        struct {
+            Sint16 target_x;
+            Sint16 start_x;
+            Sint16 target_y;
+            Sint16 start_y;
+        } title;
+        struct {
+            Sint16 target_x;
+            Sint8 unused2[6];
+            union {
+                Sint16 slide_timer;
+                Uint8 start_delay;
+            };
+        } clear;
+    };
+} zone_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(zone_work, over.target_x) == 0,
+               "zone_work.over.target_x offset");
+_Static_assert(offsetof(zone_work, title.start_x) == 2,
+               "zone_work.title.start_x offset");
+_Static_assert(offsetof(zone_work, title.target_y) == 4,
+               "zone_work.title.target_y offset");
+_Static_assert(offsetof(zone_work, title.start_y) == 6,
+               "zone_work.title.start_y offset");
+_Static_assert(offsetof(zone_work, clear.slide_timer) == 8,
+               "zone_work.clear.slide_timer offset");
+_Static_assert(offsetof(zone_work, clear.start_delay) == 8,
+               "zone_work.clear.start_delay offset");
+_Static_assert(sizeof(zone_work) <= sizeof(((sprite_status *)0)->actfree),
+               "zone_work fits in actfree");
+
+static zone_work *zone_get_work(sprite_status *pAct) {
+    return (zone_work *)pAct->actfree;
+}
 
 static sprite_pattern game0 = {1, {{-72, -8, 0, SPRITE_ZONE_BASE}}};
 static sprite_pattern game1 = {1, {{8, -8, 0, SPRITE_ZONE_BASE + 1}}};
@@ -121,7 +166,7 @@ static void over_init(sprite_status *pAct) {
     pAct->r_no0 = 2;
     pAct->yposi.w.h = 224;
     pAct->xposi.w.h = 128;
-    ((Sint16 *)pAct)[23] = 288;
+    zone_get_work(pAct)->over.target_x = 288;
     pAct->sproffset = 32768;
     pAct->patbase = gamepat;
     plsubchg_flag = 8;
@@ -155,7 +200,7 @@ static void over_init(sprite_status *pAct) {
     pTmpAct->patno = 1;
     pTmpAct->yposi.w.h = 224;
     pTmpAct->xposi.w.h = 448;
-    ((Sint16 *)pTmpAct)[23] = 288;
+    zone_get_work(pTmpAct)->over.target_x = 288;
 
     if (pl_suu) {
         over_move(pAct);
@@ -165,9 +210,11 @@ static void over_init(sprite_status *pAct) {
 }
 
 static void over_move(sprite_status *pAct) {
-    if (pAct->xposi.w.h < (Sint16)((Uint16 *)pAct)[23]) {
+    zone_work *pWork = zone_get_work(pAct);
+
+    if (pAct->xposi.w.h < pWork->over.target_x) {
         pAct->xposi.w.h += 8;
-    } else if (pAct->xposi.w.h > (Sint16)((Uint16 *)pAct)[23]) {
+    } else if (pAct->xposi.w.h > pWork->over.target_x) {
         pAct->xposi.w.h -= 8;
     }
     actionsub(pAct);
@@ -204,8 +251,8 @@ static void title_init(sprite_status *pAct) {
     pAct->r_no0 = 2;
     pAct->xposi.w.h = 280;
     pAct->yposi.w.h = 48;
-    ((Sint16 *)pAct)[26] = 48;
-    ((Sint16 *)pAct)[25] = 240;
+    zone_get_work(pAct)->title.start_y = 48;
+    zone_get_work(pAct)->title.target_y = 240;
     pAct->pattim = 90;
     pAct->sproffset = 32768;
     pAct->patbase = title_pat;
@@ -221,8 +268,8 @@ static void title_init(sprite_status *pAct) {
 
         pTmpAct->yposi.w.h = *wp++;
         pTmpAct->xposi.w.h = *wp;
-        ((Sint16 *)pTmpAct)[24] = *wp++;
-        ((Sint16 *)pTmpAct)[23] = *wp++;
+        zone_get_work(pTmpAct)->title.start_x = *wp++;
+        zone_get_work(pTmpAct)->title.target_x = *wp++;
         pTmpAct->patno = (*wp & 65280) >> 8;
         if (i == 5) {
             pTmpAct->patno = pTmpAct->patno + (Uint8)stageno.b.l;
@@ -232,9 +279,11 @@ static void title_init(sprite_status *pAct) {
 }
 
 static void title_move0(sprite_status *pAct) {
-    if (pAct->yposi.w.h == (Sint16)((Uint16 *)pAct)[25]) {
+    zone_work *pWork = zone_get_work(pAct);
+
+    if (pAct->yposi.w.h == pWork->title.target_y) {
         pAct->r_no0 += 4;
-    } else if (pAct->yposi.w.h < (Sint16)((Uint16 *)pAct)[25]) {
+    } else if (pAct->yposi.w.h < pWork->title.target_y) {
         pAct->yposi.w.h += 8;
     } else {
         pAct->yposi.w.h -= 8;
@@ -243,9 +292,11 @@ static void title_move0(sprite_status *pAct) {
 }
 
 static void title_move1(sprite_status *pAct) {
-    if (pAct->xposi.w.h == (Sint16)((Uint16 *)pAct)[23]) {
+    zone_work *pWork = zone_get_work(pAct);
+
+    if (pAct->xposi.w.h == pWork->title.target_x) {
         pAct->r_no0 += 4;
-    } else if (pAct->xposi.w.h < (Sint16)((Uint16 *)pAct)[23]) {
+    } else if (pAct->xposi.w.h < pWork->title.target_x) {
         pAct->xposi.w.h += 8;
     } else {
         pAct->xposi.w.h -= 8;
@@ -254,15 +305,17 @@ static void title_move1(sprite_status *pAct) {
 }
 
 static void title_back0(sprite_status *pAct) {
+    zone_work *pWork = zone_get_work(pAct);
+
     if (pAct->pattim) {
         --pAct->pattim;
     } else {
-        if (pAct->yposi.w.h == (Sint16)((Uint16 *)pAct)[26]) {
+        if (pAct->yposi.w.h == pWork->title.start_y) {
             pAct->r_no0 += 4;
             scroll_start.b.h = 1;
             return;
         }
-        if (pAct->yposi.w.h < (Sint16)((Uint16 *)pAct)[26]) {
+        if (pAct->yposi.w.h < pWork->title.start_y) {
             pAct->yposi.w.h += 16;
         } else {
             pAct->yposi.w.h -= 16;
@@ -272,14 +325,16 @@ static void title_back0(sprite_status *pAct) {
 }
 
 static void title_back1(sprite_status *pAct) {
+    zone_work *pWork = zone_get_work(pAct);
+
     if (pAct->pattim) {
         --pAct->pattim;
     } else {
-        if (pAct->xposi.w.h == (Sint16)((Uint16 *)pAct)[24]) {
+        if (pAct->xposi.w.h == pWork->title.start_x) {
             frameout(pAct);
             return;
         }
-        if (pAct->xposi.w.h < (Sint16)((Uint16 *)pAct)[24]) {
+        if (pAct->xposi.w.h < pWork->title.start_x) {
             pAct->xposi.w.h += 16;
         } else {
             pAct->xposi.w.h -= 16;
@@ -327,8 +382,8 @@ void clear(sprite_status *pAct) {
 }
 
 static void clear_init0(sprite_status *pAct) {
-    --pAct->actfree[8];
-    if (!pAct->actfree[8]) {
+    --zone_get_work(pAct)->clear.start_delay;
+    if (!zone_get_work(pAct)->clear.start_delay) {
         pAct->r_no0 = 2;
         clear_init(pAct);
     }
@@ -350,7 +405,7 @@ static void clear_init(sprite_status *pAct) {
         pTmpAct = pAct;
         wp = cleartbl;
         for (i = 0; i < 3; ++i) {
-            ((Sint16 *)pTmpAct)[27] = 360;
+            zone_get_work(pTmpAct)->clear.slide_timer = 360;
             pTmpAct->actno = 58;
             pTmpAct->r_no0 = 4;
             pTmpAct->sproffset = 32768;
@@ -370,7 +425,7 @@ static void clear_init(sprite_status *pAct) {
 
             pTmpAct->yposi.w.h = *wp++;
             pTmpAct->xposi.w.h = *wp++;
-            ((Sint16 *)pTmpAct)[23] = *wp++;
+            zone_get_work(pTmpAct)->clear.target_x = *wp++;
             pTmpAct->patno = *wp++ & 255;
 
             if (i == 2) {
@@ -382,42 +437,45 @@ static void clear_init(sprite_status *pAct) {
 }
 
 static void clear_move0(sprite_status *pAct) {
-    if (((Uint16 *)pAct)[27]) {
-        --((Uint16 *)pAct)[27];
+    zone_work *pWork = zone_get_work(pAct);
+
+    if (pWork->clear.slide_timer) {
+        --pWork->clear.slide_timer;
     }
 
-    if (pAct->xposi.w.h == (Sint16)((Uint16 *)pAct)[23]) {
+    if (pAct->xposi.w.h == pWork->clear.target_x) {
 
         if (!pAct->patno) {
             pAct->r_no0 += 2;
         }
-    } else if (pAct->xposi.w.h > (Sint16)((Uint16 *)pAct)[23]) {
+    } else if (pAct->xposi.w.h > pWork->clear.target_x) {
         pAct->xposi.w.h -= 8;
     } else {
         pAct->xposi.w.h += 8;
     }
 
-    if (((Uint16 *)pAct)[27] < 352) {
+    if (pWork->clear.slide_timer < 352) {
         actionsub(pAct);
     }
 }
 
 static void clear_move1(sprite_status *pAct) {
     int_union lD0;
+    zone_work *pWork = zone_get_work(pAct);
 
     lD0.l = 0;
     bonus_f = 1;
     if (!timebonus) {
         if (!ringbonus) {
-            --((Uint16 *)pAct)[27];
-            if (((Sint16 *)pAct)[27] < 0) {
+            --pWork->clear.slide_timer;
+            if (pWork->clear.slide_timer < 0) {
                 pAct->r_no0 += 2;
                 if (systemtimer.w.l - ClearSountWait >= 540) {
                     ClearSountWait = systemtimer.w.l - 540;
                 }
             }
 
-            if (((Sint16 *)pAct)[27] == 30) {
+            if (pWork->clear.slide_timer == 30) {
                 if (special_flag) {
                     soundset(200);
                 }
@@ -441,16 +499,16 @@ static void clear_move1(sprite_status *pAct) {
     if (!timebonus && !ringbonus) {
         WaveAllStop();
         soundset(154);
-        if (((Uint16 *)pAct)[27] >= 45) {
-            ((Uint16 *)pAct)[27] = 45;
+        if ((Uint16)pWork->clear.slide_timer >= 45) {
+            pWork->clear.slide_timer = 45;
         }
     } else {
 
-        if (((Uint16 *)pAct)[27]) {
-            --((Uint16 *)pAct)[27];
+        if (pWork->clear.slide_timer) {
+            --pWork->clear.slide_timer;
         }
 
-        if (pAct->actfree[8] % 2 == 0) {
+        if ((Uint8)pWork->clear.slide_timer % 2 == 0) {
             soundset(189);
         }
     }

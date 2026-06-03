@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "legmeca8.h"
 #include "../action.h"
@@ -5,6 +7,30 @@
 #include "../dircol.h"
 #include "../etc.h"
 #include "../ridechk.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 routine;
+    Uint8 roll_start_timer;
+    Sint16 rotation;
+    Sint16 segment_indices[9];
+} legmeca8_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(legmeca8_work, routine) == 0,
+               "legmeca8_work.routine offset");
+_Static_assert(offsetof(legmeca8_work, roll_start_timer) == 1,
+               "legmeca8_work.roll_start_timer offset");
+_Static_assert(offsetof(legmeca8_work, rotation) == 2,
+               "legmeca8_work.rotation offset");
+_Static_assert(offsetof(legmeca8_work, segment_indices) == 4,
+               "legmeca8_work.segment_indices offset");
+_Static_assert(sizeof(legmeca8_work) <= sizeof(((sprite_status *)0)->actfree),
+               "legmeca8_work fits in actfree");
+
+static legmeca8_work *legmeca8_get_work(sprite_status *pActwk) {
+    return (legmeca8_work *)pActwk->actfree;
+}
 
 static void m_init(sprite_status *pActwk);
 static void m0move(sprite_status *pActwk);
@@ -34,19 +60,19 @@ void legmeca(sprite_status *pActwk) {
     if (pActwk->userflag.b.h) {
         slave(pActwk);
     } else {
-        tbl[pActwk->actfree[0] / 2](pActwk);
+        tbl[legmeca8_get_work(pActwk)->routine / 2](pActwk);
     }
 }
 
 static void m_init(sprite_status *pActwk) {
     sprite_status *pNewActwk;
-    Sint16 a6;
+    legmeca8_work *pWork;
     Sint16 d4;
     Sint16 d5;
     Sint16 d6;
     Sint16 i;
 
-    a6 = 4;
+    pWork = legmeca8_get_work(pActwk);
     d4 = pActwk->xposi.w.h;
     d5 = 8;
     d6 = 8;
@@ -69,9 +95,9 @@ static void m_init(sprite_status *pActwk) {
             pNewActwk->xposi.w.h = d4;
         }
 
-        *(Sint16 *)&pActwk->actfree[a6] = (Uint16)(pNewActwk - actwk);
-        a6 += 2;
-        ((Sint16 *)pNewActwk)[25] = (Uint16)(pActwk - actwk);
+        pWork->segment_indices[i] = (Uint16)(pNewActwk - actwk);
+        legmeca8_get_work(pNewActwk)->segment_indices[0] =
+            (Uint16)(pActwk - actwk);
         pNewActwk->actflg |= 4;
         pNewActwk->sproffset = 792;
         pNewActwk->patbase = pat_legmeca;
@@ -79,16 +105,17 @@ static void m_init(sprite_status *pActwk) {
     m_init_leg(pNewActwk);
     m_init_leg(pActwk);
 
-    pActwk->actfree[0] += 2;
-    pActwk->actfree[1] = 12;
-    ((Sint16 *)pActwk)[24] = -32768;
+    pWork->routine += 2;
+    pWork->roll_start_timer = 12;
+    pWork->rotation = -32768;
 
     m0move(pActwk);
 }
 
 static void m0move(sprite_status *pActwk) {
+    legmeca8_work *pWork = legmeca8_get_work(pActwk);
 
-    leg_center(&actwk[((Sint16 *)pActwk)[33]]);
+    leg_center(&actwk[pWork->segment_indices[8]]);
 
     leg_radius(pActwk);
 
@@ -96,35 +123,37 @@ static void m0move(sprite_status *pActwk) {
 }
 
 static void m_move_com(sprite_status *pActwk) {
+    legmeca8_work *pWork = legmeca8_get_work(pActwk);
 
-    actionsub(&actwk[((Sint16 *)pActwk)[26]]);
-    actionsub(&actwk[((Sint16 *)pActwk)[27]]);
-    actionsub(&actwk[((Sint16 *)pActwk)[28]]);
-    actionsub(&actwk[((Sint16 *)pActwk)[29]]);
-    actionsub(&actwk[((Sint16 *)pActwk)[30]]);
-    actionsub(&actwk[((Sint16 *)pActwk)[31]]);
-    actionsub(&actwk[((Sint16 *)pActwk)[32]]);
+    actionsub(&actwk[pWork->segment_indices[1]]);
+    actionsub(&actwk[pWork->segment_indices[2]]);
+    actionsub(&actwk[pWork->segment_indices[3]]);
+    actionsub(&actwk[pWork->segment_indices[4]]);
+    actionsub(&actwk[pWork->segment_indices[5]]);
+    actionsub(&actwk[pWork->segment_indices[6]]);
+    actionsub(&actwk[pWork->segment_indices[7]]);
 
     frameout_s(pActwk);
 }
 
 static void m1reset(sprite_status *pActwk) {
-    pActwk->actfree[0] = 6;
+    legmeca8_get_work(pActwk)->routine = 6;
 
     m1move(pActwk);
 }
 
 static void m1move(sprite_status *pActwk) {
+    legmeca8_work *pWork = legmeca8_get_work(pActwk);
 
     leg_center(pActwk);
 
-    leg_radius(&actwk[((Sint16 *)pActwk)[33]]);
+    leg_radius(&actwk[pWork->segment_indices[8]]);
 
     m_move_com(pActwk);
 }
 
 static void m0reset(sprite_status *pActwk) {
-    pActwk->actfree[0] = 2;
+    legmeca8_get_work(pActwk)->routine = 2;
     m0move(pActwk);
 }
 
@@ -157,35 +186,36 @@ static void c_roll1(sprite_status *pActwk) {
     sprite_status *pMasterwk;
     sprite_status *pLegwk;
     sprite_status *pKusariwk;
+    legmeca8_work *pMasterWork;
     int_union ld0, ld1, ld3, ld4, ld5;
-    Sint16 d0, d1, d6, a6;
+    Sint16 d0, d1, d6, i;
 
-    pMasterwk = &actwk[((Sint16 *)pActwk)[25]];
-    ((Sint16 *)pMasterwk)[24] += 512;
+    pMasterwk = &actwk[legmeca8_get_work(pActwk)->segment_indices[0]];
+    pMasterWork = legmeca8_get_work(pMasterwk);
+    pMasterWork->rotation += 512;
 
-    a6 = 6;
+    i = 1;
     d6 = 6;
     ld5.l = pActwk->xposi.l;
     ld4.l = pActwk->yposi.l;
     ld1.l = 0;
     ld0.l = 0;
-    sinset(pMasterwk->actfree[3], &d0, &d1);
+    sinset((Uint8)((Uint16)pMasterWork->rotation >> 8), &d0, &d1);
     ld1.w.h = d1;
     ld0.w.h = d0;
     ld1.l >>= 5;
     ld0.l >>= 5;
     do {
-        pKusariwk = &actwk[*(Sint16 *)&pMasterwk->actfree[a6]];
-        a6 += 2;
+        pKusariwk = &actwk[pMasterWork->segment_indices[i++]];
         ld5.l += ld1.l;
         ld4.l += ld0.l;
         pKusariwk->xposi.l = ld5.l;
         pKusariwk->yposi.l = ld4.l;
     } while (d6--);
 
-    pLegwk = &actwk[((Sint16 *)pMasterwk)[33]];
+    pLegwk = &actwk[pMasterWork->segment_indices[8]];
     if (pActwk->userflag.b.h) {
-        pLegwk = &actwk[((Sint16 *)pMasterwk)[25]];
+        pLegwk = &actwk[pMasterWork->segment_indices[0]];
     }
     ld3.l = pLegwk->xposi.l;
     ld5.l += ld1.l;
@@ -211,11 +241,14 @@ static void r_wait(sprite_status *pActwk) {
     sprite_status *pLegwk1;
 
     if (ridechk(pActwk, &actwk[0])) {
-        pMasterwk = &actwk[((Sint16 *)pActwk)[25]];
-        if (pMasterwk->actfree[1]) {
-            --pMasterwk->actfree[1];
-            pLegwk0 = &actwk[((Sint16 *)pMasterwk)[25]];
-            pLegwk1 = &actwk[((Sint16 *)pMasterwk)[33]];
+        legmeca8_work *pMasterWork;
+
+        pMasterwk = &actwk[legmeca8_get_work(pActwk)->segment_indices[0]];
+        pMasterWork = legmeca8_get_work(pMasterwk);
+        if (pMasterWork->roll_start_timer) {
+            --pMasterWork->roll_start_timer;
+            pLegwk0 = &actwk[pMasterWork->segment_indices[0]];
+            pLegwk1 = &actwk[pMasterWork->segment_indices[8]];
             pLegwk0->r_no0 += 2;
             pLegwk1->r_no0 += 2;
         }
@@ -232,21 +265,24 @@ static void r_roll(sprite_status *pActwk) {
     _ridechk(pActwk, &actwk[0]);
     actionsub(pActwk);
 
-    pMasterwk = &actwk[((Sint16 *)pActwk)[25]];
-    d0 = ((Sint16 *)pMasterwk)[24];
+    pMasterwk = &actwk[legmeca8_get_work(pActwk)->segment_indices[0]];
+    d0 = legmeca8_get_work(pMasterwk)->rotation;
     d0 += 16384;
     if (d0 >= 0) {
         d1 = emycol_d(pActwk);
         if (d1 < 0) {
+            legmeca8_work *pMasterWork;
+
             d1 += 2;
             pActwk->yposi.w.h += d1;
 
-            pMasterwk = &actwk[((Sint16 *)pActwk)[25]];
-            pMasterwk->actfree[0] += 2;
+            pMasterwk = &actwk[legmeca8_get_work(pActwk)->segment_indices[0]];
+            pMasterWork = legmeca8_get_work(pMasterwk);
+            pMasterWork->routine += 2;
 
-            ((Sint16 *)pMasterwk)[24] += 32768;
-            pLegwk0 = &actwk[((Sint16 *)pMasterwk)[25]];
-            pLegwk1 = &actwk[((Sint16 *)pMasterwk)[33]];
+            pMasterWork->rotation += 32768;
+            pLegwk0 = &actwk[pMasterWork->segment_indices[0]];
+            pLegwk1 = &actwk[pMasterWork->segment_indices[8]];
             pLegwk0->r_no0 = 0;
             pLegwk1->r_no0 = 0;
             pLegwk0->xspeed.w = 0;
@@ -278,7 +314,7 @@ static void _ridechk(sprite_status *pActwk, sprite_status *pPlayerwk) {
 static void slave(sprite_status *pActwk) {
     sprite_status *pMasterwk;
 
-    pMasterwk = &actwk[((Sint16 *)pActwk)[25]];
+    pMasterwk = &actwk[legmeca8_get_work(pActwk)->segment_indices[0]];
     if (pMasterwk->actno != 38) {
         frameout(pActwk);
     }

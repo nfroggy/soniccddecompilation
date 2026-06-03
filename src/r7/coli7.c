@@ -3,6 +3,7 @@
 #include "../fcol.h"
 #include "../loader2.h"
 #include "../player.h"
+#include "../player_work.h"
 #include "../score.h"
 
 extern Sint16 actwkchk(sprite_status **ppActwk);
@@ -145,11 +146,12 @@ Sint16 ColliHitChk(sprite_status *pActwk, sprite_status *pColliAct,
 }
 
 Sint16 pcolitem(sprite_status *pActwk, sprite_status *pColliAct) {
+    player_work *player = player_work_get(pActwk);
     Sint16 iD0;
 
     if ((pColliAct->colino & 63) != 6) {
 
-        if (((Uint16 *)pActwk)[26] < 90)
+        if (player->damage_invulnerability_timer < 90)
             pColliAct->r_no0 += 2;
     } else {
 
@@ -179,6 +181,7 @@ Sint16 pcolitem(sprite_status *pActwk, sprite_status *pColliAct) {
 Sint16 pcolnomal(sprite_status *pActwk, sprite_status *pColliAct) {
     Sint16 iScoreCntwk;
     Sint16 iScoreData;
+    score_marker_work *score_marker = score_marker_work_get(pColliAct);
 
     if (plpower_a == 0 && plpower_m == 0 && pActwk->mstno.b.h != 2) {
 
@@ -204,12 +207,12 @@ Sint16 pcolnomal(sprite_status *pActwk, sprite_status *pColliAct) {
         if ((Uint16)iScoreCntwk >= 6) {
             iScoreCntwk = 6;
         }
-        ((Sint16 *)pColliAct)[33] = iScoreCntwk;
+        score_marker->points_index = iScoreCntwk;
         iScoreData = escoretbl[iScoreCntwk / 2];
         if ((Uint16)emyscorecnt >= 32) {
 
             iScoreData = 1000;
-            ((Sint16 *)pColliAct)[33] = 10;
+            score_marker->points_index = 10;
         }
 
         scoreup(iScoreData);
@@ -243,15 +246,16 @@ Sint16 pcolplay(sprite_status *pActwk, sprite_status *pColliAct) {
 }
 
 Sint16 pcole(sprite_status *pActwk, sprite_status *pColliAct) {
-    if (((Uint16 *)pActwk)[26] != 0)
+    if (player_work_get(pActwk)->damage_invulnerability_timer != 0)
         return -1;
     else
         return playdamageset(pActwk, pColliAct);
 }
 
 void playdamagechk(sprite_status *pActwk, sprite_status *pColliAct) {
+    player_work *player = player_work_get(pActwk);
 
-    pActwk->actfree[0] = 0;
+    player->spin_dash_counter = 0;
     if (!(plpower_b & 1))
         conbine_flag = 0;
     plpower_b &= 254;
@@ -274,7 +278,7 @@ void playdamagechk(sprite_status *pActwk, sprite_status *pColliAct) {
     }
     pActwk->mspeed.w = 0;
     pActwk->mstno.b.h = 26;
-    ((Sint16 *)pActwk)[26] = 120;
+    player->damage_invulnerability_timer = 120;
 }
 
 Sint16 playdamageset(sprite_status *pActwk, sprite_status *pColliAct) {
@@ -309,6 +313,8 @@ Sint16 playdamageset(sprite_status *pActwk, sprite_status *pColliAct) {
 }
 
 Sint16 playdieset(sprite_status *pActwk) {
+    player_work *player = player_work_get(pActwk);
+
     if (editmode.w != 0)
         return -1;
     plpower_m = 0;
@@ -318,7 +324,7 @@ Sint16 playdieset(sprite_status *pActwk) {
     pActwk->yspeed.w = -1792;
     pActwk->xspeed.w = 0;
     pActwk->mspeed.w = 0;
-    ((Sint16 *)pActwk)[30] = pActwk->yposi.w.h;
+    player->death_y = pActwk->yposi.w.h;
     pActwk->mstno.b.h = 24;
     pActwk->sproffset |= 32768;
     pActwk->sprpri = 0;

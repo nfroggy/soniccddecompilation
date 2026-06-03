@@ -1,9 +1,49 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "nokogiri.h"
 #include "../action.h"
 #include "../actset.h"
 #include "../loader2.h"
 #include "../playsub.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    union {
+        Sint16 timer;
+        Uint16 parent_index;
+    };
+    Sint32 x_step;
+    Sint32 y_step;
+    Sint16 frame_count;
+    Sint16 origin_x;
+    Sint16 sound_counter;
+    Uint16 bar_index;
+} nokogiri_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(nokogiri_work, timer) == 0,
+               "nokogiri_work.timer offset");
+_Static_assert(offsetof(nokogiri_work, parent_index) == 0,
+               "nokogiri_work.parent_index offset");
+_Static_assert(offsetof(nokogiri_work, x_step) == 2,
+               "nokogiri_work.x_step offset");
+_Static_assert(offsetof(nokogiri_work, y_step) == 6,
+               "nokogiri_work.y_step offset");
+_Static_assert(offsetof(nokogiri_work, frame_count) == 10,
+               "nokogiri_work.frame_count offset");
+_Static_assert(offsetof(nokogiri_work, origin_x) == 12,
+               "nokogiri_work.origin_x offset");
+_Static_assert(offsetof(nokogiri_work, sound_counter) == 14,
+               "nokogiri_work.sound_counter offset");
+_Static_assert(offsetof(nokogiri_work, bar_index) == 16,
+               "nokogiri_work.bar_index offset");
+_Static_assert(sizeof(nokogiri_work) <= sizeof(((sprite_status *)0)->actfree),
+               "nokogiri_work fits in actfree");
+
+static nokogiri_work *nokogiri_get_work(sprite_status *actionwk) {
+    return (nokogiri_work *)actionwk->actfree;
+}
 
 #if defined(R83)
 #define SPRITE_NOKOGIRI_BASE 404
@@ -69,14 +109,15 @@ void nokogiri(sprite_status *actionwk) {
     }
     patchg(actionwk, (Uint8 **)pchg);
     actionsub(actionwk);
-    frameout_s00(actionwk, ((Sint16 *)actionwk)[29]);
+    frameout_s00(actionwk, nokogiri_get_work(actionwk)->origin_x);
 }
 
 void act_init(sprite_status *actionwk) {
+    nokogiri_work *work = nokogiri_get_work(actionwk);
     sprite_status *a1;
     Sint16 d0, d1;
 
-    ((Sint16 *)actionwk)[29] = actionwk->xposi.w.h;
+    work->origin_x = actionwk->xposi.w.h;
     actionwk->actflg |= 4;
     actionwk->sprpri = 3;
     actionwk->sproffset = 17174;
@@ -85,24 +126,24 @@ void act_init(sprite_status *actionwk) {
     actionwk->sprhsize = 80;
     actionwk->sprvsize = 80;
 
-    ((Sint32 *)actionwk)[12] = 65536;
-    ((Sint32 *)actionwk)[13] = 65536;
+    work->x_step = 65536;
+    work->y_step = 65536;
 
     if (actionwk->userflag.b.h & 1) {
-        ((Sint32 *)actionwk)[12] = -((Sint32 *)actionwk)[12];
+        work->x_step = -work->x_step;
 
         actionwk->actflg |= 1;
         actionwk->cddat |= 1;
     }
 
     if (actionwk->userflag.b.h & 2) {
-        ((Sint32 *)actionwk)[13] = -((Sint32 *)actionwk)[13];
+        work->y_step = -work->y_step;
 
         actionwk->actflg |= 2;
         actionwk->cddat |= 2;
     }
 
-    ((Sint16 *)actionwk)[23] = 60;
+    work->timer = 60;
     actionwk->r_no0 = 8;
     if (actionwk->userflag.b.h < 0) {
         actionwk->mstno.b.h = 9;
@@ -113,8 +154,8 @@ void act_init(sprite_status *actionwk) {
         frameout(actionwk);
         return;
     }
-    ((Uint16 *)actionwk)[31] = a1 - actwk;
-    ((Uint16 *)a1)[23] = actionwk - actwk;
+    work->bar_index = a1 - actwk;
+    nokogiri_get_work(a1)->parent_index = actionwk - actwk;
     a1->actno = actionwk->actno;
     a1->actflg = actionwk->actflg;
     a1->sproffset = actionwk->sproffset;
@@ -145,49 +186,57 @@ void act_init(sprite_status *actionwk) {
 }
 
 void act_open(sprite_status *actionwk) {
-    if (--((Sint16 *)actionwk)[23] == 0) {
+    nokogiri_work *work = nokogiri_get_work(actionwk);
+
+    if (--work->timer == 0) {
         ++actionwk->mstno.b.h;
-        ((Sint16 *)actionwk)[23] = 9;
-        if (--((Sint16 *)actionwk)[28] == 0) {
+        work->timer = 9;
+        if (--work->frame_count == 0) {
             actionwk->r_no0 += 2;
-            ((Sint16 *)actionwk)[23] = 60;
+            work->timer = 60;
         }
     }
 
-    actionwk->xposi.l += ((Sint32 *)actionwk)[12];
-    actionwk->yposi.l += ((Sint32 *)actionwk)[13];
+    actionwk->xposi.l += work->x_step;
+    actionwk->yposi.l += work->y_step;
     _soundset(actionwk);
 }
 
 void act_opend(sprite_status *actionwk) {
-    if (--((Sint16 *)actionwk)[23] == 0) {
+    nokogiri_work *work = nokogiri_get_work(actionwk);
+
+    if (--work->timer == 0) {
         actionwk->r_no0 += 2;
-        ((Sint16 *)actionwk)[28] = 9;
-        ((Sint16 *)actionwk)[23] = 1;
+        work->frame_count = 9;
+        work->timer = 1;
     }
     _soundset(actionwk);
 }
 
 void act_close(sprite_status *actionwk) {
-    if (--((Sint16 *)actionwk)[23] == 0) {
+    nokogiri_work *work = nokogiri_get_work(actionwk);
+
+    if (--work->timer == 0) {
         --actionwk->mstno.b.h;
-        ((Sint16 *)actionwk)[23] = 9;
-        if (--((Sint16 *)actionwk)[28] == 0) {
+        work->timer = 9;
+        if (--work->frame_count == 0) {
             actionwk->r_no0 += 2;
-            ((Sint16 *)actionwk)[23] = 60;
+            work->timer = 60;
         }
     }
 
-    actionwk->xposi.l -= ((Sint32 *)actionwk)[12];
-    actionwk->yposi.l -= ((Sint32 *)actionwk)[13];
+    actionwk->xposi.l -= work->x_step;
+    actionwk->yposi.l -= work->y_step;
     _soundset(actionwk);
 }
 
 void act_closed(sprite_status *actionwk) {
-    if (--((Sint16 *)actionwk)[23] == 0) {
+    nokogiri_work *work = nokogiri_get_work(actionwk);
+
+    if (--work->timer == 0) {
         actionwk->r_no0 -= 6;
-        ((Sint16 *)actionwk)[28] = 9;
-        ((Sint16 *)actionwk)[23] = 1;
+        work->frame_count = 9;
+        work->timer = 1;
     }
     _soundset(actionwk);
 }
@@ -197,8 +246,8 @@ void _soundset(sprite_status *actionwk) {
 
     if ((char)actionwk->actflg >= 0)
         return;
-    ++((Sint16 *)actionwk)[30];
-    d0 = ((Sint16 *)actionwk)[30];
+    ++nokogiri_get_work(actionwk)->sound_counter;
+    d0 = nokogiri_get_work(actionwk)->sound_counter;
     d0 &= 31;
     if (d0 != 0)
         return;
@@ -208,7 +257,7 @@ void _soundset(sprite_status *actionwk) {
 void bar(sprite_status *actionwk) {
     Sint16 ano;
 
-    ano = ((Sint16 *)actionwk)[23];
+    ano = nokogiri_get_work(actionwk)->parent_index;
     if (actwk[ano].actno != 39) {
         frameout(actionwk);
         return;

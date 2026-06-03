@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "semi.h"
 #include "../action.h"
@@ -16,6 +18,38 @@
 static void act_init(sprite_status *actionwk);
 static Sint16 act_check(sprite_status *actionwk, sprite_status *pw);
 static void bomb(sprite_status *actionwk);
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint32 x_speed;
+    Sint32 y_speed;
+    union {
+        Sint16 timer;
+        struct {
+            Uint8 subtype;
+            Uint8 timer_hi;
+        };
+    };
+    Sint16 player_delta_x;
+} semi_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(semi_work, x_speed) == 0,
+               "semi_work.x_speed offset");
+_Static_assert(offsetof(semi_work, y_speed) == 4,
+               "semi_work.y_speed offset");
+_Static_assert(offsetof(semi_work, timer) == 8,
+               "semi_work.timer offset");
+_Static_assert(offsetof(semi_work, subtype) == 8,
+               "semi_work.subtype offset");
+_Static_assert(offsetof(semi_work, player_delta_x) == 10,
+               "semi_work.player_delta_x offset");
+_Static_assert(sizeof(semi_work) <= sizeof(((sprite_status *)0)->actfree),
+               "semi_work fits in actfree");
+
+static semi_work *semi_get_work(sprite_status *actionwk) {
+    return (semi_work *)actionwk->actfree;
+}
 
 static char pchg0[6] = {3, 1, 2, 3, 2, -1};
 char pchg_bomb0[4] = {1, 0, 1, -1};
@@ -68,6 +102,8 @@ void semi(sprite_status *actionwk) {
 }
 
 static void act_init(sprite_status *actionwk) {
+    semi_work *work = semi_get_work(actionwk);
+
     actionwk->r_no0 += 2;
     actionwk->actflg |= 4;
     actionwk->sprpri = 1;
@@ -78,7 +114,7 @@ static void act_init(sprite_status *actionwk) {
     actionwk->sproffset = 42152;
     actionwk->colino = 54;
 
-    actionwk->actfree[8] = actionwk->userflag.b.l;
+    work->subtype = actionwk->userflag.b.l;
     if (actionwk->userflag.b.h != 0)
         actionwk->patbase = pat_semi_b;
     else
@@ -86,7 +122,9 @@ static void act_init(sprite_status *actionwk) {
 }
 
 void act_wait(sprite_status *actionwk) {
-    if (--((Sint16 *)actionwk)[27] > 0)
+    semi_work *work = semi_get_work(actionwk);
+
+    if (--work->timer > 0)
         return;
     actionwk->r_no0 += 2;
 }
@@ -104,7 +142,8 @@ static Sint16 act_check(sprite_status *actionwk, sprite_status *pw) {
     d0w -= actionwk->yposi.w.h;
     if (d0w < -96 || d0w > 96)
         return 0;
-    ((Sint16 *)actionwk)[28] = pw->xposi.w.h - actionwk->xposi.w.h;
+    semi_get_work(actionwk)->player_delta_x =
+        pw->xposi.w.h - actionwk->xposi.w.h;
 
     d0w = pw->xposi.w.h;
     d0w -= actionwk->xposi.w.h;
@@ -114,6 +153,7 @@ static Sint16 act_check(sprite_status *actionwk, sprite_status *pw) {
 }
 
 void act_movea(sprite_status *actionwk) {
+    semi_work *work = semi_get_work(actionwk);
     Sint32 d0, d1;
     Sint16 d2;
 
@@ -127,44 +167,48 @@ void act_movea(sprite_status *actionwk) {
         d2 = 42;
     }
 
-    if (((Sint16 *)actionwk)[28] >= 0) {
+    if (work->player_delta_x >= 0) {
         d0 = -d0;
     }
-    *(Sint32 *)&actionwk->actfree[0] = d0;
-    *(Sint32 *)&actionwk->actfree[4] = d1;
-    ((Sint16 *)actionwk)[27] = d2;
+    work->x_speed = d0;
+    work->y_speed = d1;
+    work->timer = d2;
 }
 
 void act_movea1(sprite_status *actionwk) {
-    if (--((Sint16 *)actionwk)[27] <= 0)
+    semi_work *work = semi_get_work(actionwk);
+
+    if (--work->timer <= 0)
         actionwk->r_no0 += 2;
 
-    actionwk->xposi.l += *(Sint32 *)&actionwk->actfree[0];
-    actionwk->yposi.l += *(Sint32 *)&actionwk->actfree[4];
+    actionwk->xposi.l += work->x_speed;
+    actionwk->yposi.l += work->y_speed;
     patchg(actionwk, (Uint8 **)pchg);
 }
 
 void act_moveb(sprite_status *actionwk) {
+    semi_work *work = semi_get_work(actionwk);
     Sint32 d0;
 
     actionwk->r_no0 += 2;
-    ((Sint16 *)actionwk)[27] = 0;
+    work->timer = 0;
     d0 = 65536;
     if (actionwk->userflag.b.h != 0)
         d0 = 49152;
 
-    if (((Sint16 *)actionwk)[28] >= 0) {
+    if (work->player_delta_x >= 0) {
         d0 = -d0;
     }
-    *(Sint32 *)&actionwk->actfree[0] = d0;
+    work->x_speed = d0;
 }
 
 void act_moveb1(sprite_status *actionwk) {
+    semi_work *work = semi_get_work(actionwk);
     sprite_status *a1;
 
     if (actionwk->userflag.b.h == 0) {
-        ((Sint16 *)actionwk)[27] &= 63;
-        if (((Sint16 *)actionwk)[27] == 0) {
+        work->timer &= 63;
+        if (work->timer == 0) {
             if (act_check(actionwk, &actwk[0]) != 0) {
                 if (actwkchk(&a1) == 0) {
                     a1->actno = actionwk->actno;
@@ -178,10 +222,10 @@ void act_moveb1(sprite_status *actionwk) {
                 }
             }
         }
-        ++((Sint16 *)actionwk)[27];
+        ++work->timer;
     }
 
-    actionwk->xposi.l += *(Sint32 *)&actionwk->actfree[0];
+    actionwk->xposi.l += work->x_speed;
     patchg(actionwk, (Uint8 **)pchg);
 }
 
@@ -207,6 +251,8 @@ static void bomb(sprite_status *actionwk) {
 }
 
 void bomb_init(sprite_status *actionwk) {
+    semi_work *work = semi_get_work(actionwk);
+
     actionwk->r_no0 += 2;
     actionwk->colino = 183;
 
@@ -215,38 +261,41 @@ void bomb_init(sprite_status *actionwk) {
     actionwk->sprhsize = 6;
     actionwk->sproffset = 33992;
     actionwk->patbase = pat_bomb;
-    *(Sint32 *)&actionwk->actfree[4] = 32768;
+    work->y_speed = 32768;
 }
 
 void bomb_fall(sprite_status *actionwk) {
+    semi_work *work = semi_get_work(actionwk);
     Sint16 d1;
 
-    actionwk->yposi.l += *(Sint32 *)&actionwk->actfree[4];
-    *(Sint32 *)&actionwk->actfree[4] += 16384;
+    actionwk->yposi.l += work->y_speed;
+    work->y_speed += 16384;
     d1 = emycol_d(actionwk);
     if (d1 < 0) {
         actionwk->r_no0 += 2;
         actionwk->yposi.w.h += d1;
-        ((Sint16 *)actionwk)[27] = 120;
+        work->timer = 120;
     }
 }
 
 void bomb_wait(sprite_status *actionwk) {
+    semi_work *work = semi_get_work(actionwk);
     Sint16 t;
 
-    --((Sint16 *)actionwk)[27];
-    t = ((Sint16 *)actionwk)[27];
+    --work->timer;
+    t = work->timer;
     if (t < 0) {
         actionwk->r_no0 += 2;
-        ((Sint16 *)actionwk)[27] = 120;
+        work->timer = 120;
     }
 }
 
 void bomb_blink(sprite_status *actionwk) {
+    semi_work *work = semi_get_work(actionwk);
     Sint16 t;
 
-    --((Sint16 *)actionwk)[27];
-    t = ((Sint16 *)actionwk)[27];
+    --work->timer;
+    t = work->timer;
     if (t < 0) {
         actionwk->r_no0 += 2;
     }

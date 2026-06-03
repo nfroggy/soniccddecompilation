@@ -77,7 +77,7 @@ static void fake_sprite_set_flags(hmx_sprite *sprite, Sint32 flags) {
     ++flags_call_count;
 }
 
-void sprCreate(Sint32 *handle) {
+void sprCreate(Uint32 *handle) {
     *handle = next_sprite_handle++;
     ++spr_create_call_count;
 }

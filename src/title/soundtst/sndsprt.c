@@ -55,7 +55,7 @@ static Uint32 CreateCharSprt(Sint32 nMenuNum, Sint32 colom, char code,
             indx = code - 46;
     }
 
-    sprCreate((Sint32 *)&hSprMenu[nMenuNum][colom]);
+    sprCreate(&hSprMenu[nMenuNum][colom]);
 
     s_ctx->spr_level[hSprMenu[nMenuNum][colom]] = infoSprtBmp[indx].order;
     point.x = nMenuPosiX[nMenuNum] + colom * 8;
@@ -118,7 +118,7 @@ void StrWelcome(void) {
 
     indx = 99;
 
-    sprCreate((Sint32 *)&hMesMenu);
+    sprCreate(&hMesMenu);
 
     s_ctx->spr_level[hMesMenu] = infoSprtBmp[indx].order;
     point.x = nMenuPosiX[0] - 8;

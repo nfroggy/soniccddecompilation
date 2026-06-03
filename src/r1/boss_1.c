@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "boss_1.h"
 #include "../action.h"
@@ -9,6 +11,100 @@
 #include "../playsub.h"
 #include "../score.h"
 #include "col1c.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    union {
+        Sint16 timer;
+        struct {
+            Uint8 timer_low;
+            Uint8 angle;
+        };
+        struct {
+            Sint8 signed_timer_low;
+            Uint8 unused1;
+        };
+    };
+    Uint8 flags;
+    Uint8 step;
+    Sint16 parent_index;
+    Sint16 child_index;
+    Sint16 sibling_index;
+    union {
+        Sint32 x_accum;
+        Sint16 x_accum_low;
+        struct {
+            Uint8 hit_timer;
+            Uint8 quake_timer;
+            Sint16 x_offset;
+        };
+    };
+    union {
+        Sint32 y_accum;
+        struct {
+            Sint16 target_pos;
+            Sint16 y_offset;
+        };
+    };
+    union {
+        Sint32 velocity;
+        struct {
+            Uint8 unused18;
+            Uint8 unused19;
+            Sint16 saved_x;
+        };
+        struct {
+            Uint8 unused18_b;
+            Uint8 unused19_b;
+            Uint8 unused20;
+            Uint8 speed_step;
+        };
+    };
+} egg1_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(egg1_work, timer) == 0, "egg1_work.timer offset");
+_Static_assert(offsetof(egg1_work, timer_low) == 0,
+               "egg1_work.timer_low offset");
+_Static_assert(offsetof(egg1_work, signed_timer_low) == 0,
+               "egg1_work.signed_timer_low offset");
+_Static_assert(offsetof(egg1_work, angle) == 1, "egg1_work.angle offset");
+_Static_assert(offsetof(egg1_work, flags) == 2, "egg1_work.flags offset");
+_Static_assert(offsetof(egg1_work, step) == 3, "egg1_work.step offset");
+_Static_assert(offsetof(egg1_work, parent_index) == 4,
+               "egg1_work.parent_index offset");
+_Static_assert(offsetof(egg1_work, child_index) == 6,
+               "egg1_work.child_index offset");
+_Static_assert(offsetof(egg1_work, sibling_index) == 8,
+               "egg1_work.sibling_index offset");
+_Static_assert(offsetof(egg1_work, x_accum) == 10,
+               "egg1_work.x_accum offset");
+_Static_assert(offsetof(egg1_work, x_accum_low) == 10,
+               "egg1_work.x_accum_low offset");
+_Static_assert(offsetof(egg1_work, hit_timer) == 10,
+               "egg1_work.hit_timer offset");
+_Static_assert(offsetof(egg1_work, quake_timer) == 11,
+               "egg1_work.quake_timer offset");
+_Static_assert(offsetof(egg1_work, x_offset) == 12,
+               "egg1_work.x_offset offset");
+_Static_assert(offsetof(egg1_work, y_accum) == 14,
+               "egg1_work.y_accum offset");
+_Static_assert(offsetof(egg1_work, target_pos) == 14,
+               "egg1_work.target_pos offset");
+_Static_assert(offsetof(egg1_work, y_offset) == 16,
+               "egg1_work.y_offset offset");
+_Static_assert(offsetof(egg1_work, velocity) == 18,
+               "egg1_work.velocity offset");
+_Static_assert(offsetof(egg1_work, saved_x) == 20,
+               "egg1_work.saved_x offset");
+_Static_assert(offsetof(egg1_work, speed_step) == 21,
+               "egg1_work.speed_step offset");
+_Static_assert(sizeof(egg1_work) <= sizeof(((sprite_status *)0)->actfree),
+               "egg1_work fits in actfree");
+
+static egg1_work *egg1_get_work(sprite_status *pActwk) {
+    return (egg1_work *)pActwk->actfree;
+}
 
 Uint8 egg1_pchg0[3] = {59, 0, 255};
 Uint8 egg1_pchg1[4] = {7, 2, 3, 255};
@@ -74,10 +170,10 @@ void egg1(sprite_status *pActwk) {
 }
 
 void egg1_anime(sprite_status *pActwk) {
-    if (!pActwk->actfree[0])
+    if (!egg1_get_work(pActwk)->timer_low)
         return;
-    --pActwk->actfree[0];
-    if (pActwk->actfree[0])
+    --egg1_get_work(pActwk)->timer_low;
+    if (egg1_get_work(pActwk)->timer_low)
         return;
     pActwk->patno = 0;
     pActwk->patcnt = 0;
@@ -92,9 +188,9 @@ void egg1_jisin(sprite_status *pActwk) {
 
     if (bossflag) {
         temp0 = 256;
-        if (pActwk->actfree[11]) {
-            --pActwk->actfree[11];
-            if (pActwk->actfree[11] & 1)
+        if (egg1_get_work(pActwk)->quake_timer) {
+            --egg1_get_work(pActwk)->quake_timer;
+            if (egg1_get_work(pActwk)->quake_timer & 1)
                 temp1 *= -1;
 
             temp0 += temp1;
@@ -120,7 +216,7 @@ void sonic_hajiku(Sint16 subact) {
 
 void egg1_coliude(Sint16 subact, sprite_status *pActwk) {
 
-    actwk[subact].actfree[2] |= 16;
+    egg1_get_work(&actwk[subact])->flags |= 16;
     sonic_hajiku(subact);
     egg1coli_set(pActwk);
     soundset(152);
@@ -130,8 +226,8 @@ void egg1_coliude(Sint16 subact, sprite_status *pActwk) {
 void egg1_hit_chk(sprite_status *pActwk) {
     Sint16 subact;
 
-    if (!pActwk->actfree[10]) {
-        if (!(pActwk->actfree[2] & 8))
+    if (!egg1_get_work(pActwk)->hit_timer) {
+        if (!(egg1_get_work(pActwk)->flags & 8))
             return;
 
         if (!pActwk->colino) {
@@ -139,57 +235,57 @@ void egg1_hit_chk(sprite_status *pActwk) {
             return;
         }
 
-        subact = ((Sint16 *)pActwk)[26];
-        subact = ((Sint16 *)&actwk[subact])[26];
-        subact = ((Sint16 *)&actwk[subact])[26];
+        subact = egg1_get_work(pActwk)->child_index;
+        subact = egg1_get_work(&actwk[subact])->child_index;
+        subact = egg1_get_work(&actwk[subact])->child_index;
         if (!actwk[subact].colino) {
             egg1_coli(subact, pActwk);
             return;
         }
-        subact = ((Sint16 *)&actwk[subact])[26];
+        subact = egg1_get_work(&actwk[subact])->child_index;
         if (!actwk[subact].colino) {
             egg1_coli(subact, pActwk);
             return;
         }
-        subact = ((Sint16 *)pActwk)[26];
-        subact = ((Sint16 *)&actwk[subact])[27];
-        subact = ((Sint16 *)&actwk[subact])[26];
+        subact = egg1_get_work(pActwk)->child_index;
+        subact = egg1_get_work(&actwk[subact])->sibling_index;
+        subact = egg1_get_work(&actwk[subact])->child_index;
         if (!actwk[subact].colino) {
             egg1_coli(subact, pActwk);
             return;
         }
-        subact = ((Sint16 *)&actwk[subact])[26];
+        subact = egg1_get_work(&actwk[subact])->child_index;
         if (!actwk[subact].colino) {
             egg1_coli(subact, pActwk);
             return;
         }
-        if (pActwk->actfree[1] == 3) {
+        if (egg1_get_work(pActwk)->angle == 3) {
 
-            subact = ((Sint16 *)pActwk)[27];
-            subact = ((Sint16 *)&actwk[subact])[27];
-            subact = ((Sint16 *)&actwk[subact])[26];
-            subact = ((Sint16 *)&actwk[subact])[26];
+            subact = egg1_get_work(pActwk)->sibling_index;
+            subact = egg1_get_work(&actwk[subact])->sibling_index;
+            subact = egg1_get_work(&actwk[subact])->child_index;
+            subact = egg1_get_work(&actwk[subact])->child_index;
             if (!actwk[subact].colino) {
                 egg1_coliude(subact, pActwk);
                 return;
             }
 
-            subact = ((Sint16 *)pActwk)[27];
-            subact = ((Sint16 *)&actwk[subact])[26];
-            subact = ((Sint16 *)&actwk[subact])[26];
-            subact = ((Sint16 *)&actwk[subact])[26];
+            subact = egg1_get_work(pActwk)->sibling_index;
+            subact = egg1_get_work(&actwk[subact])->child_index;
+            subact = egg1_get_work(&actwk[subact])->child_index;
+            subact = egg1_get_work(&actwk[subact])->child_index;
             if (!actwk[subact].colino) {
                 egg1_coliude(subact, pActwk);
                 return;
             }
         }
-        if (pActwk->actfree[1] != 2)
+        if (egg1_get_work(pActwk)->angle != 2)
             return;
 
-        subact = ((Sint16 *)pActwk)[27];
-        subact = ((Sint16 *)&actwk[subact])[26];
-        subact = ((Sint16 *)&actwk[subact])[26];
-        subact = ((Sint16 *)&actwk[subact])[26];
+        subact = egg1_get_work(pActwk)->sibling_index;
+        subact = egg1_get_work(&actwk[subact])->child_index;
+        subact = egg1_get_work(&actwk[subact])->child_index;
+        subact = egg1_get_work(&actwk[subact])->child_index;
         if (actwk[subact].colino)
             return;
 
@@ -197,29 +293,29 @@ void egg1_hit_chk(sprite_status *pActwk) {
         return;
     }
 
-    --pActwk->actfree[10];
-    if (!pActwk->actfree[10])
+    --egg1_get_work(pActwk)->hit_timer;
+    if (!egg1_get_work(pActwk)->hit_timer)
         egg1coli_set(pActwk);
 }
 
 void egg1_warai_chk(sprite_status *pActwk) {
 
     if (!pActwk->mstno.b.h) {
-        if (*(Sint16 *)&actwk[1].patno != 0 || actwk[0].r_no0 == 6) {
+        if (actwk[1].patno != 0 || actwk[0].r_no0 == 6) {
 
             pActwk->patno = 0;
             pActwk->patcnt = 0;
             pActwk->pattim = 0;
             pActwk->pattimm = 0;
             pActwk->mstno.b.h = 1;
-            pActwk->actfree[0] = 60;
+            egg1_get_work(pActwk)->timer_low = 60;
         }
     }
 }
 
 void egg1_coli(Sint16 subact, sprite_status *pActwk) {
 
-    pActwk->actfree[10] = 20;
+    egg1_get_work(pActwk)->hit_timer = 20;
 
     sonic_hajiku(subact);
 
@@ -228,59 +324,61 @@ void egg1_coli(Sint16 subact, sprite_status *pActwk) {
     pActwk->pattim = 0;
     pActwk->pattimm = 0;
     pActwk->mstno.b.h = 2;
-    pActwk->actfree[0] = 120;
-    --pActwk->actfree[1];
-    if (!pActwk->actfree[1]) {
+    egg1_get_work(pActwk)->timer_low = 120;
+    --egg1_get_work(pActwk)->angle;
+    if (!egg1_get_work(pActwk)->angle) {
 
         pActwk->patno = 0;
         pActwk->patcnt = 0;
         pActwk->pattim = 0;
         pActwk->pattimm = 0;
         pActwk->mstno.b.h = 2;
-        pActwk->actfree[0] = 0;
+        egg1_get_work(pActwk)->timer_low = 0;
 
-        pActwk->actfree[2] &= 247;
+        egg1_get_work(pActwk)->flags &= 247;
         pActwk->r_no1 = 0;
 
         pActwk->r_no0 = 6;
         pActwk->colino = 0;
         pActwk->colicnt = 0;
-        actwk[((Sint16 *)pActwk)[27]].r_no0 = 4;
+        actwk[egg1_get_work(pActwk)->sibling_index].r_no0 = 4;
 
-        subact = ((Sint16 *)pActwk)[26];
+        subact = egg1_get_work(pActwk)->child_index;
         actwk[subact].r_no0 = 14;
-        subact = ((Sint16 *)&actwk[subact])[26];
+        subact = egg1_get_work(&actwk[subact])->child_index;
 
         actwk[subact].r_no0 = 24;
-        subact = ((Sint16 *)&actwk[subact])[26];
+        subact = egg1_get_work(&actwk[subact])->child_index;
         actwk[subact].r_no0 = 14;
         actwk[subact].colino = 0;
         actwk[subact].colicnt = 0;
-        subact = ((Sint16 *)&actwk[subact])[26];
+        subact = egg1_get_work(&actwk[subact])->child_index;
         actwk[subact].r_no0 = 12;
         actwk[subact].colino = 0;
         actwk[subact].colicnt = 0;
-        subact = ((Sint16 *)&actwk[((Sint16 *)pActwk)[26]])[27];
+        subact =
+            egg1_get_work(&actwk[egg1_get_work(pActwk)->child_index])
+                ->sibling_index;
 
         actwk[subact].r_no0 = 24;
-        subact = ((Sint16 *)&actwk[subact])[26];
+        subact = egg1_get_work(&actwk[subact])->child_index;
         actwk[subact].r_no0 = 14;
         actwk[subact].colino = 0;
         actwk[subact].colicnt = 0;
-        subact = ((Sint16 *)&actwk[subact])[26];
+        subact = egg1_get_work(&actwk[subact])->child_index;
         actwk[subact].r_no0 = 12;
         actwk[subact].colino = 0;
         actwk[subact].colicnt = 0;
     } else {
-        if (pActwk->actfree[1] != 2) {
+        if (egg1_get_work(pActwk)->angle != 2) {
 
-            subact = ((Sint16 *)pActwk)[27];
-            actwk[subact].actfree[2] |= 64;
+            subact = egg1_get_work(pActwk)->sibling_index;
+            egg1_get_work(&actwk[subact])->flags |= 64;
             egg1coli_set_body(pActwk);
         } else {
 
-            subact = ((Sint16 *)pActwk)[27];
-            actwk[subact].actfree[2] |= 32;
+            subact = egg1_get_work(pActwk)->sibling_index;
+            egg1_get_work(&actwk[subact])->flags |= 32;
             egg1coli_set_arm_l(pActwk);
         }
     }
@@ -292,45 +390,57 @@ void egg1coli_set_body(sprite_status *pActwk) {
     pActwk->colino = 252;
     pActwk->colicnt = 2;
 
-    subact =
-        ((Sint16 *)&actwk[((Sint16 *)&actwk[((Sint16 *)pActwk)[26]])[26]])[26];
+    subact = egg1_get_work(
+                 &actwk[egg1_get_work(
+                            &actwk[egg1_get_work(pActwk)->child_index])
+                            ->child_index])
+                 ->child_index;
     actwk[subact].colino = 189;
     actwk[subact].colicnt = 2;
-    subact = ((Sint16 *)&actwk[subact])[26];
+    subact = egg1_get_work(&actwk[subact])->child_index;
     actwk[subact].colino = 190;
     actwk[subact].colicnt = 2;
 
-    subact =
-        ((Sint16 *)&actwk[((Sint16 *)&actwk[((Sint16 *)pActwk)[26]])[27]])[26];
+    subact = egg1_get_work(
+                 &actwk[egg1_get_work(
+                            &actwk[egg1_get_work(pActwk)->child_index])
+                            ->sibling_index])
+                 ->child_index;
     actwk[subact].colino = 189;
     actwk[subact].colicnt = 2;
-    subact = ((Sint16 *)&actwk[subact])[26];
+    subact = egg1_get_work(&actwk[subact])->child_index;
     actwk[subact].colino = 190;
     actwk[subact].colicnt = 2;
 }
 
 void egg1coli_set_arm(Sint16 subact) {
-    subact = ((Sint16 *)&actwk[((Sint16 *)&actwk[subact])[26]])[26];
+    subact =
+        egg1_get_work(&actwk[egg1_get_work(&actwk[subact])->child_index])
+            ->child_index;
     actwk[subact].colino = 255;
     actwk[subact].colicnt = 2;
 }
 
 void egg1coli_set_arm_l(sprite_status *pActwk) {
-    egg1coli_set_arm(((Sint16 *)&actwk[((Sint16 *)pActwk)[27]])[26]);
+    egg1coli_set_arm(
+        egg1_get_work(&actwk[egg1_get_work(pActwk)->sibling_index])
+            ->child_index);
     egg1coli_set_body(pActwk);
 }
 
 void egg1coli_set_arm_r(sprite_status *pActwk) {
-    egg1coli_set_arm(((Sint16 *)&actwk[((Sint16 *)pActwk)[27]])[27]);
+    egg1coli_set_arm(
+        egg1_get_work(&actwk[egg1_get_work(pActwk)->sibling_index])
+            ->sibling_index);
     egg1coli_set_arm_l(pActwk);
 }
 
 void egg1coli_set(sprite_status *pActwk) {
-    if (pActwk->actfree[1] == 3)
+    if (egg1_get_work(pActwk)->angle == 3)
         egg1coli_set_arm_r(pActwk);
-    if (pActwk->actfree[1] == 2)
+    if (egg1_get_work(pActwk)->angle == 2)
         egg1coli_set_arm_l(pActwk);
-    if (pActwk->actfree[1] == 1)
+    if (egg1_get_work(pActwk)->angle == 1)
         egg1coli_set_body(pActwk);
 }
 
@@ -379,8 +489,8 @@ void egg1_make_act(sprite_status *pActwk) {
 
     if (make_act(pActwk, &subActwk) != 0)
         return;
-    ((Sint16 *)pActwk)[26] = (Uint16)(Uint8)(subActwk - actwk);
-    ((Sint16 *)subActwk)[25] = (Uint16)(Uint8)(pActwk - actwk);
+    egg1_get_work(pActwk)->child_index = (Uint16)(Uint8)(subActwk - actwk);
+    egg1_get_work(subActwk)->parent_index = (Uint16)(Uint8)(pActwk - actwk);
     subActwk->sprpri = 6;
     subActwk->actno = 43;
     disActwk = subActwk;
@@ -388,63 +498,64 @@ void egg1_make_act(sprite_status *pActwk) {
 
     if (make_act(pActwk, &subActwk) != 0)
         return;
-    ((Sint16 *)disActwk)[26] = (Uint16)(Uint8)(subActwk - actwk);
-    ((Sint16 *)subActwk)[25] = (Uint16)(Uint8)(disActwk - actwk);
+    egg1_get_work(disActwk)->child_index = (Uint16)(Uint8)(subActwk - actwk);
+    egg1_get_work(subActwk)->parent_index = (Uint16)(Uint8)(disActwk - actwk);
     subActwk->sprpri = 6;
     subActwk->actno = 44;
     disActwk = subActwk;
 
     if (make_act(pActwk, &subActwk) != 0)
         return;
-    ((Sint16 *)disActwk)[26] = (Uint16)(Uint8)(subActwk - actwk);
-    ((Sint16 *)subActwk)[25] = (Uint16)(Uint8)(disActwk - actwk);
+    egg1_get_work(disActwk)->child_index = (Uint16)(Uint8)(subActwk - actwk);
+    egg1_get_work(subActwk)->parent_index = (Uint16)(Uint8)(disActwk - actwk);
     subActwk->sprpri = 3;
     subActwk->actno = 45;
     disActwk = subActwk;
 
     if (make_act(pActwk, &subActwk) != 0)
         return;
-    ((Sint16 *)disActwk)[26] = (Uint16)(Uint8)(subActwk - actwk);
-    ((Sint16 *)subActwk)[25] = (Uint16)(Uint8)(disActwk - actwk);
+    egg1_get_work(disActwk)->child_index = (Uint16)(Uint8)(subActwk - actwk);
+    egg1_get_work(subActwk)->parent_index = (Uint16)(Uint8)(disActwk - actwk);
     subActwk->sprpri = 2;
     subActwk->actno = 46;
 
     disActwk = bodyActwk;
-    ((Sint16 *)subActwk)[26] = (Uint16)(Uint8)(bodyActwk - actwk);
+    egg1_get_work(subActwk)->child_index = (Uint16)(Uint8)(bodyActwk - actwk);
 
     if (make_act(pActwk, &subActwk) != 0)
         return;
-    ((Sint16 *)disActwk)[27] = (Uint16)(Uint8)(subActwk - actwk);
-    ((Sint16 *)subActwk)[25] = (Uint16)(Uint8)(disActwk - actwk);
+    egg1_get_work(disActwk)->sibling_index = (Uint16)(Uint8)(subActwk - actwk);
+    egg1_get_work(subActwk)->parent_index = (Uint16)(Uint8)(disActwk - actwk);
     subActwk->sprpri = 7;
     subActwk->actno = 44;
-    subActwk->actfree[2] |= 4;
+    egg1_get_work(subActwk)->flags |= 4;
     disActwk = subActwk;
 
     if (make_act(pActwk, &subActwk) != 0)
         return;
-    ((Sint16 *)disActwk)[26] = (Uint16)(Uint8)(subActwk - actwk);
-    ((Sint16 *)subActwk)[25] = (Uint16)(Uint8)(disActwk - actwk);
+    egg1_get_work(disActwk)->child_index = (Uint16)(Uint8)(subActwk - actwk);
+    egg1_get_work(subActwk)->parent_index = (Uint16)(Uint8)(disActwk - actwk);
     subActwk->sprpri = 6;
     subActwk->actno = 45;
-    subActwk->actfree[2] |= 4;
+    egg1_get_work(subActwk)->flags |= 4;
     disActwk = subActwk;
 
     if (make_act(pActwk, &subActwk) != 0)
         return;
-    ((Sint16 *)disActwk)[26] = (Uint16)(Uint8)(subActwk - actwk);
-    ((Sint16 *)subActwk)[25] = (Uint16)(Uint8)(disActwk - actwk);
+    egg1_get_work(disActwk)->child_index = (Uint16)(Uint8)(subActwk - actwk);
+    egg1_get_work(subActwk)->parent_index = (Uint16)(Uint8)(disActwk - actwk);
     subActwk->sprpri = 5;
     subActwk->actno = 46;
-    subActwk->actfree[2] |= 4;
+    egg1_get_work(subActwk)->flags |= 4;
 
     disActwk = bodyActwk;
-    ((Sint16 *)subActwk)[26] = (Uint16)(Uint8)(bodyActwk - actwk);
+    egg1_get_work(subActwk)->child_index = (Uint16)(Uint8)(bodyActwk - actwk);
 
     if (make_act(pActwk, &subActwk) != 0)
         return;
-    ((Sint16 *)subActwk)[25] = (Uint16)(Uint8)(bodyActwk - actwk);
-    ((Sint16 *)&actwk[((Sint16 *)disActwk)[25]])[27] =
+    egg1_get_work(subActwk)->parent_index = (Uint16)(Uint8)(bodyActwk - actwk);
+    egg1_get_work(&actwk[egg1_get_work(disActwk)->parent_index])
+        ->sibling_index =
         (Uint16)(Uint8)(subActwk - actwk);
 
     subActwk->sprpri = 3;
@@ -453,18 +564,18 @@ void egg1_make_act(sprite_status *pActwk) {
 
     if (make_act(pActwk, &subActwk) != 0)
         return;
-    ((Sint16 *)disActwk)[26] = (Uint16)(Uint8)(subActwk - actwk);
-    subActwk->actfree[0] = 128;
-    ((Sint16 *)subActwk)[25] = (Uint16)(Uint8)(disActwk - actwk);
-    ((Sint16 *)disActwk)[26] = (Uint16)(Uint8)(subActwk - actwk);
+    egg1_get_work(disActwk)->child_index = (Uint16)(Uint8)(subActwk - actwk);
+    egg1_get_work(subActwk)->timer_low = 128;
+    egg1_get_work(subActwk)->parent_index = (Uint16)(Uint8)(disActwk - actwk);
+    egg1_get_work(disActwk)->child_index = (Uint16)(Uint8)(subActwk - actwk);
     subActwk->sprpri = 5;
     subActwk->actno = 48;
     disActwk = subActwk;
 
     if (make_act(pActwk, &subActwk) != 0)
         return;
-    ((Sint16 *)subActwk)[25] = (Uint16)(Uint8)(disActwk - actwk);
-    ((Sint16 *)disActwk)[26] = (Uint16)(Uint8)(subActwk - actwk);
+    egg1_get_work(subActwk)->parent_index = (Uint16)(Uint8)(disActwk - actwk);
+    egg1_get_work(disActwk)->child_index = (Uint16)(Uint8)(subActwk - actwk);
     subActwk->sprpri = 4;
     subActwk->patbase = egg1arm3_pat1;
     subActwk->actno = 49;
@@ -472,48 +583,48 @@ void egg1_make_act(sprite_status *pActwk) {
 
     if (make_act(pActwk, &subActwk) != 0)
         return;
-    ((Sint16 *)subActwk)[25] = (Uint16)(Uint8)(disActwk - actwk);
-    ((Sint16 *)disActwk)[26] = (Uint16)(Uint8)(subActwk - actwk);
+    egg1_get_work(subActwk)->parent_index = (Uint16)(Uint8)(disActwk - actwk);
+    egg1_get_work(disActwk)->child_index = (Uint16)(Uint8)(subActwk - actwk);
     subActwk->sprpri = 3;
     subActwk->actno = 50;
     disActwk = subActwk;
-    ((Sint16 *)subActwk)[26] = (Uint16)(Uint8)(bodyActwk - actwk);
+    egg1_get_work(subActwk)->child_index = (Uint16)(Uint8)(bodyActwk - actwk);
 
-    subact = ((Sint16 *)disActwk)[25];
-    subact = ((Sint16 *)&actwk[subact])[25];
-    subact = ((Sint16 *)&actwk[subact])[25];
+    subact = egg1_get_work(disActwk)->parent_index;
+    subact = egg1_get_work(&actwk[subact])->parent_index;
+    subact = egg1_get_work(&actwk[subact])->parent_index;
 
     if (make_act(pActwk, &subActwk) != 0)
         return;
-    ((Sint16 *)&actwk[subact])[27] = (Uint16)(Uint8)(subActwk - actwk);
-    ((Sint16 *)subActwk)[25] = subact;
+    egg1_get_work(&actwk[subact])->sibling_index = (Uint16)(Uint8)(subActwk - actwk);
+    egg1_get_work(subActwk)->parent_index = subact;
     subActwk->sprpri = 7;
     subActwk->actno = 48;
-    subActwk->actfree[2] |= 4;
+    egg1_get_work(subActwk)->flags |= 4;
     disActwk = subActwk;
 
     if (make_act(pActwk, &subActwk) != 0)
         return;
-    ((Sint16 *)subActwk)[25] = (Uint16)(Uint8)(disActwk - actwk);
-    ((Sint16 *)disActwk)[26] = (Uint16)(Uint8)(subActwk - actwk);
+    egg1_get_work(subActwk)->parent_index = (Uint16)(Uint8)(disActwk - actwk);
+    egg1_get_work(disActwk)->child_index = (Uint16)(Uint8)(subActwk - actwk);
     subActwk->sprpri = 7;
     subActwk->patbase = egg1arm3_pat2;
     subActwk->actno = 49;
-    subActwk->actfree[2] |= 4;
+    egg1_get_work(subActwk)->flags |= 4;
     disActwk = subActwk;
 
     if (make_act(pActwk, &subActwk) != 0)
         return;
-    ((Sint16 *)subActwk)[25] = (Uint16)(Uint8)(disActwk - actwk);
-    ((Sint16 *)disActwk)[26] = (Uint16)(Uint8)(subActwk - actwk);
+    egg1_get_work(subActwk)->parent_index = (Uint16)(Uint8)(disActwk - actwk);
+    egg1_get_work(disActwk)->child_index = (Uint16)(Uint8)(subActwk - actwk);
     subActwk->sprpri = 6;
     subActwk->actno = 50;
-    subActwk->actfree[2] |= 4;
+    egg1_get_work(subActwk)->flags |= 4;
     disActwk = subActwk;
 
-    ((Sint16 *)subActwk)[26] = (Uint16)(Uint8)(bodyActwk - actwk);
+    egg1_get_work(subActwk)->child_index = (Uint16)(Uint8)(bodyActwk - actwk);
 
-    pActwk->actfree[1] = 3;
+    egg1_get_work(pActwk)->angle = 3;
     egg1coli_set(pActwk);
 }
 
@@ -553,9 +664,9 @@ Sint32 egg1_06(sprite_status *pActwk) {
 }
 
 Sint32 egg1_wait(sprite_status *pActwk) {
-    ++pActwk->actfree[1];
-    if (pActwk->actfree[1] == 60) {
-        pActwk->actfree[1] = 0;
+    ++egg1_get_work(pActwk)->angle;
+    if (egg1_get_work(pActwk)->angle == 60) {
+        egg1_get_work(pActwk)->angle = 0;
         pActwk->r_no0 = 4;
         pActwk->xposi.w.h = 3026;
         pActwk->yposi.w.h = 120;
@@ -569,10 +680,10 @@ Sint32 egg1_02(sprite_status *pActwk) {
     Sint16 egg1acttbl[20] = {2,  0,  4, 0,  6,  0,  8,  5,  10, 6,
                              12, 10, 8, 10, 16, 50, 10, 10, -1, -1};
 
-    subact = ((Sint16 *)pActwk)[26];
-    if (!(actwk[subact].actfree[2] & 1))
+    subact = egg1_get_work(pActwk)->child_index;
+    if (!(egg1_get_work(&actwk[subact])->flags & 1))
         return 1;
-    actwk[subact].actfree[2] &= 254;
+    egg1_get_work(&actwk[subact])->flags &= 254;
     if (pActwk->r_no1 == 2) {
 
         pActwk->mstno.w = 0;
@@ -581,31 +692,31 @@ Sint32 egg1_02(sprite_status *pActwk) {
         pActwk->pattim = 0;
         pActwk->pattimm = 0;
 
-        pActwk->actfree[1] = 3;
-        pActwk->actfree[2] |= 8;
+        egg1_get_work(pActwk)->angle = 3;
+        egg1_get_work(pActwk)->flags |= 8;
         egg1coli_set(pActwk);
-        subact = ((Sint16 *)pActwk)[26];
+        subact = egg1_get_work(pActwk)->child_index;
     }
 
     pActwk->r_no1 += 2;
-    actwk[subact].actfree[2] &= 253;
+    egg1_get_work(&actwk[subact])->flags &= 253;
     while (egg1acttbl[pActwk->r_no1] < 0)
         pActwk->r_no1 = 6;
     actwk[subact].r_no0 = egg1acttbl[pActwk->r_no1];
-    actwk[subact].actfree[3] = egg1acttbl[pActwk->r_no1 + 1];
+    egg1_get_work(&actwk[subact])->step = egg1acttbl[pActwk->r_no1 + 1];
     return 1;
 }
 
 Sint32 egg1_03(sprite_status *pActwk) {
     Sint16 subact;
 
-    ++pActwk->actfree[1];
+    ++egg1_get_work(pActwk)->angle;
 
     bom_set(pActwk);
 
-    if (pActwk->actfree[1] == 94) {
+    if (egg1_get_work(pActwk)->angle == 94) {
 
-        ((Sint16 *)pActwk)[33] = pActwk->xposi.w.h;
+        egg1_get_work(pActwk)->saved_x = pActwk->xposi.w.h;
         pActwk->yspeed.w = pActwk->yposi.w.h;
 
         pActwk->mstno.b.h = 3;
@@ -613,11 +724,11 @@ Sint32 egg1_03(sprite_status *pActwk) {
         pActwk->patcnt = 0;
         pActwk->pattim = 0;
         pActwk->pattimm = 0;
-        subact = ((Sint16 *)pActwk)[26];
-        actwk[subact].actfree[2] |= 1;
+        subact = egg1_get_work(pActwk)->child_index;
+        egg1_get_work(&actwk[subact])->flags |= 1;
     }
-    if (pActwk->actfree[1] >= 120) {
-        pActwk->actfree[1] = 0;
+    if (egg1_get_work(pActwk)->angle >= 120) {
+        egg1_get_work(pActwk)->angle = 0;
         pActwk->r_no0 = 8;
         pActwk->sprhsize = 32;
         pActwk->sprvsize = 32;
@@ -633,20 +744,20 @@ Sint32 egg1_04(sprite_status *pActwk) {
     Sint16 xposi_bak, yposi_bak;
 
     if (pActwk->r_no1 != 0) {
-        pActwk->yposi.w.h -= ((Sint16 *)pActwk)[31];
+        pActwk->yposi.w.h -= egg1_get_work(pActwk)->y_offset;
 
-        pActwk->actfree[1] += 3;
-        sinset(pActwk->actfree[1], (Sint16 *)&sin, (Sint16 *)&cos);
+        egg1_get_work(pActwk)->angle += 3;
+        sinset(egg1_get_work(pActwk)->angle, (Sint16 *)&sin, (Sint16 *)&cos);
         sinl.l = sin;
         cosl.l = cos;
         sinl.w.l /= 32;
-        ((Sint16 *)pActwk)[31] = sinl.w.l;
+        egg1_get_work(pActwk)->y_offset = sinl.w.l;
         pActwk->yposi.w.h += sinl.w.l;
 
         pActwk->xposi.l += 163840;
         if (pActwk->xposi.w.h >= 3200) {
 
-            pActwk->actfree[1] = 0;
+            egg1_get_work(pActwk)->angle = 0;
             if (generate_flag == 0)
                 sub_sync(17);
             else
@@ -660,11 +771,11 @@ Sint32 egg1_04(sprite_status *pActwk) {
         }
     } else {
 
-        ++pActwk->actfree[1];
+        ++egg1_get_work(pActwk)->angle;
 
         xposi_bak = pActwk->xposi.w.h;
         yposi_bak = pActwk->yposi.w.h;
-        pActwk->xposi.w.h = ((Sint16 *)pActwk)[33];
+        pActwk->xposi.w.h = egg1_get_work(pActwk)->saved_x;
         pActwk->yposi.w.h = pActwk->yspeed.w;
         bom_set(pActwk);
         pActwk->xposi.w.h = xposi_bak;
@@ -679,8 +790,8 @@ Sint32 egg1_04(sprite_status *pActwk) {
             pActwk->pattim = 0;
             pActwk->pattimm = 0;
             pActwk->mstno.b.h = 4;
-            pActwk->actfree[1] = 64;
-            ((Sint16 *)pActwk)[31] = 8;
+            egg1_get_work(pActwk)->angle = 64;
+            egg1_get_work(pActwk)->y_offset = 8;
         }
     }
     return ret;
@@ -718,40 +829,40 @@ void egg1body(sprite_status *pActwk) {
 void spd_normal(sprite_status *pActwk) {
     Sint16 subact1, subact2;
 
-    subact1 = ((Sint16 *)pActwk)[26];
-    actwk[subact1].actfree[21] = 2;
-    subact1 = ((Sint16 *)&actwk[subact1])[26];
-    ((Sint32 *)&actwk[subact1])[16] = 32768;
+    subact1 = egg1_get_work(pActwk)->child_index;
+    egg1_get_work(&actwk[subact1])->speed_step = 2;
+    subact1 = egg1_get_work(&actwk[subact1])->child_index;
+    egg1_get_work(&actwk[subact1])->velocity = 32768;
     sprite_status_set_xspeed_yspeed(&actwk[subact1], 16384);
-    subact1 = ((Sint16 *)&actwk[subact1])[26];
-    ((Sint32 *)&actwk[subact1])[16] = 16384;
+    subact1 = egg1_get_work(&actwk[subact1])->child_index;
+    egg1_get_work(&actwk[subact1])->velocity = 16384;
     sprite_status_set_xspeed_yspeed(&actwk[subact1], 32768);
 
-    subact1 = ((Sint16 *)pActwk)[27];
-    actwk[subact1].actfree[21] = 2;
-    subact1 = ((Sint16 *)&actwk[subact1])[26];
-    ((Sint32 *)&actwk[subact1])[16] = 32768;
+    subact1 = egg1_get_work(pActwk)->sibling_index;
+    egg1_get_work(&actwk[subact1])->speed_step = 2;
+    subact1 = egg1_get_work(&actwk[subact1])->child_index;
+    egg1_get_work(&actwk[subact1])->velocity = 32768;
     sprite_status_set_xspeed_yspeed(&actwk[subact1], 16384);
-    subact1 = ((Sint16 *)&actwk[subact1])[26];
-    ((Sint32 *)&actwk[subact1])[16] = 16384;
+    subact1 = egg1_get_work(&actwk[subact1])->child_index;
+    egg1_get_work(&actwk[subact1])->velocity = 16384;
     sprite_status_set_xspeed_yspeed(&actwk[subact1], 32768);
 
-    subact1 = ((Sint16 *)pActwk)[25];
-    subact2 = ((Sint16 *)&actwk[subact1])[27];
-    subact1 = ((Sint16 *)&actwk[subact2])[27];
+    subact1 = egg1_get_work(pActwk)->parent_index;
+    subact2 = egg1_get_work(&actwk[subact1])->sibling_index;
+    subact1 = egg1_get_work(&actwk[subact2])->sibling_index;
     if (subact1) {
-        subact1 = ((Sint16 *)&actwk[subact1])[26];
-        actwk[subact1].actfree[2] &= 127;
-        subact1 = ((Sint16 *)&actwk[subact1])[26];
-        actwk[subact1].actfree[2] &= 127;
+        subact1 = egg1_get_work(&actwk[subact1])->child_index;
+        egg1_get_work(&actwk[subact1])->flags &= 127;
+        subact1 = egg1_get_work(&actwk[subact1])->child_index;
+        egg1_get_work(&actwk[subact1])->flags &= 127;
     }
 
-    subact1 = ((Sint16 *)&actwk[subact2])[26];
+    subact1 = egg1_get_work(&actwk[subact2])->child_index;
     if (subact1) {
-        subact1 = ((Sint16 *)&actwk[subact1])[26];
-        actwk[subact1].actfree[2] &= 127;
-        subact1 = ((Sint16 *)&actwk[subact1])[26];
-        actwk[subact1].actfree[2] &= 127;
+        subact1 = egg1_get_work(&actwk[subact1])->child_index;
+        egg1_get_work(&actwk[subact1])->flags &= 127;
+        subact1 = egg1_get_work(&actwk[subact1])->child_index;
+        egg1_get_work(&actwk[subact1])->flags &= 127;
     }
 }
 
@@ -768,11 +879,11 @@ Sint32 egg1body_ini(sprite_status *pActwk) {
 }
 
 Sint32 egg1body_08(sprite_status *pActwk) {
-    --pActwk->actfree[3];
-    if (!pActwk->actfree[3]) {
+    --egg1_get_work(pActwk)->step;
+    if (!egg1_get_work(pActwk)->step) {
         spd_normal(pActwk);
-        pActwk->actfree[2] |= 1;
-        pActwk->actfree[2] &= 253;
+        egg1_get_work(pActwk)->flags |= 1;
+        egg1_get_work(pActwk)->flags &= 253;
     }
     return 1;
 }
@@ -780,75 +891,75 @@ Sint32 egg1body_08(sprite_status *pActwk) {
 void bup_set(sprite_status *legActwk) {
     Sint16 subact;
 
-    legActwk->actfree[2] |= 32;
-    subact = ((Sint16 *)legActwk)[26];
-    actwk[subact].actfree[2] |= 32;
-    subact = ((Sint16 *)&actwk[subact])[26];
-    actwk[subact].actfree[2] |= 32;
+    egg1_get_work(legActwk)->flags |= 32;
+    subact = egg1_get_work(legActwk)->child_index;
+    egg1_get_work(&actwk[subact])->flags |= 32;
+    subact = egg1_get_work(&actwk[subact])->child_index;
+    egg1_get_work(&actwk[subact])->flags |= 32;
 }
 
 void bup_clr(sprite_status *legActwk) {
     Sint16 subact;
 
-    legActwk->actfree[2] &= 223;
-    subact = ((Sint16 *)legActwk)[26];
-    actwk[subact].actfree[2] &= 223;
-    subact = ((Sint16 *)&actwk[subact])[26];
-    actwk[subact].actfree[2] &= 223;
+    egg1_get_work(legActwk)->flags &= 223;
+    subact = egg1_get_work(legActwk)->child_index;
+    egg1_get_work(&actwk[subact])->flags &= 223;
+    subact = egg1_get_work(&actwk[subact])->child_index;
+    egg1_get_work(&actwk[subact])->flags &= 223;
 }
 
 void grd_set(sprite_status *legActwk) {
     Sint16 subact;
 
-    legActwk->actfree[2] |= 16;
-    subact = ((Sint16 *)legActwk)[26];
-    actwk[subact].actfree[2] |= 16;
-    subact = ((Sint16 *)&actwk[subact])[26];
-    actwk[subact].actfree[2] |= 16;
+    egg1_get_work(legActwk)->flags |= 16;
+    subact = egg1_get_work(legActwk)->child_index;
+    egg1_get_work(&actwk[subact])->flags |= 16;
+    subact = egg1_get_work(&actwk[subact])->child_index;
+    egg1_get_work(&actwk[subact])->flags |= 16;
 }
 
 void grd_clr(sprite_status *legActwk) {
     Sint16 subact;
 
-    legActwk->actfree[2] &= 239;
-    subact = ((Sint16 *)legActwk)[26];
-    actwk[subact].actfree[2] &= 239;
-    subact = ((Sint16 *)&actwk[subact])[26];
-    actwk[subact].actfree[2] &= 239;
+    egg1_get_work(legActwk)->flags &= 239;
+    subact = egg1_get_work(legActwk)->child_index;
+    egg1_get_work(&actwk[subact])->flags &= 239;
+    subact = egg1_get_work(&actwk[subact])->child_index;
+    egg1_get_work(&actwk[subact])->flags &= 239;
 }
 
 Sint32 egg1body_01(sprite_status *pActwk) {
     Sint16 subact;
 
-    subact = ((Sint16 *)pActwk)[27];
+    subact = egg1_get_work(pActwk)->sibling_index;
     actwk[subact].r_no0 = 16;
-    subact = ((Sint16 *)&actwk[subact])[26];
+    subact = egg1_get_work(&actwk[subact])->child_index;
     actwk[subact].r_no0 = 4;
-    subact = ((Sint16 *)&actwk[subact])[26];
+    subact = egg1_get_work(&actwk[subact])->child_index;
     actwk[subact].r_no0 = 10;
 
-    subact = ((Sint16 *)pActwk)[26];
+    subact = egg1_get_work(pActwk)->child_index;
     bup_set(&actwk[subact]);
-    if (!(actwk[subact].actfree[2] & 16)) {
+    if (!(egg1_get_work(&actwk[subact])->flags & 16)) {
         pActwk->yposi.l += 98304;
-        subact = ((Sint16 *)pActwk)[25];
+        subact = egg1_get_work(pActwk)->parent_index;
         actwk[subact].yposi.l += 98304;
     } else
-        pActwk->actfree[2] |= 1;
+        egg1_get_work(pActwk)->flags |= 1;
     return 1;
 }
 
 Sint32 egg1body_02(sprite_status *pActwk) {
     Sint16 subact;
 
-    subact = ((Sint16 *)pActwk)[27];
-    actwk[subact].actfree[2] &= 254;
-    subact = ((Sint16 *)pActwk)[26];
-    if (!(actwk[subact].actfree[2] & 1)) {
-        actwk[subact].actfree[2] &= 254;
+    subact = egg1_get_work(pActwk)->sibling_index;
+    egg1_get_work(&actwk[subact])->flags &= 254;
+    subact = egg1_get_work(pActwk)->child_index;
+    if (!(egg1_get_work(&actwk[subact])->flags & 1)) {
+        egg1_get_work(&actwk[subact])->flags &= 254;
         return 1;
     }
-    actwk[subact].actfree[2] &= 254;
+    egg1_get_work(&actwk[subact])->flags &= 254;
     if (actwk[subact].r_no0 == 12) {
 
         actwk[subact].r_no0 = 10;
@@ -864,36 +975,36 @@ Sint32 egg1body_02(sprite_status *pActwk) {
     bup_clr(&actwk[subact]);
     grd_clr(&actwk[subact]);
 
-    subact = ((Sint16 *)pActwk)[27];
+    subact = egg1_get_work(pActwk)->sibling_index;
     actwk[subact].r_no0 = 8;
     bup_set(&actwk[subact]);
     grd_set(&actwk[subact]);
-    subact = ((Sint16 *)&actwk[subact])[26];
+    subact = egg1_get_work(&actwk[subact])->child_index;
     actwk[subact].r_no0 = 2;
-    subact = ((Sint16 *)&actwk[subact])[26];
+    subact = egg1_get_work(&actwk[subact])->child_index;
     actwk[subact].r_no0 = 4;
 
-    pActwk->actfree[2] |= 1;
+    egg1_get_work(pActwk)->flags |= 1;
     return 1;
 }
 
 Sint32 egg1body_03(sprite_status *pActwk) {
     Sint16 subact;
 
-    if (!(pActwk->actfree[2] & 2)) {
-        pActwk->actfree[2] |= 2;
+    if (!(egg1_get_work(pActwk)->flags & 2)) {
+        egg1_get_work(pActwk)->flags |= 2;
         armset_2(pActwk);
     }
-    subact = ((Sint16 *)pActwk)[26];
-    if (!(actwk[subact].actfree[2] & 1))
+    subact = egg1_get_work(pActwk)->child_index;
+    if (!(egg1_get_work(&actwk[subact])->flags & 1))
         return 1;
-    subact = ((Sint16 *)pActwk)[27];
-    if (!(actwk[subact].actfree[2] & 1))
+    subact = egg1_get_work(pActwk)->sibling_index;
+    if (!(egg1_get_work(&actwk[subact])->flags & 1))
         return 1;
 
-    pActwk->actfree[2] &= 253;
-    pActwk->actfree[2] |= 64;
-    pActwk->actfree[2] |= 1;
+    egg1_get_work(pActwk)->flags &= 253;
+    egg1_get_work(pActwk)->flags |= 64;
+    egg1_get_work(pActwk)->flags |= 1;
     return 1;
 }
 
@@ -903,73 +1014,73 @@ Sint32 egg1body_04(sprite_status *pActwk) {
     Sint16 subact3;
     Sint16 subact4;
 
-    if (!(pActwk->actfree[2] & 64)) {
+    if (!(egg1_get_work(pActwk)->flags & 64)) {
 
-        subact1 = ((Sint16 *)pActwk)[26];
-        subact2 = ((Sint16 *)pActwk)[27];
+        subact1 = egg1_get_work(pActwk)->child_index;
+        subact2 = egg1_get_work(pActwk)->sibling_index;
     } else {
 
-        subact1 = ((Sint16 *)pActwk)[27];
-        subact2 = ((Sint16 *)pActwk)[26];
+        subact1 = egg1_get_work(pActwk)->sibling_index;
+        subact2 = egg1_get_work(pActwk)->child_index;
     }
-    if (!(actwk[subact1].actfree[2] & 1))
+    if (!(egg1_get_work(&actwk[subact1])->flags & 1))
         return 1;
-    if (!(actwk[subact2].actfree[2] & 1))
+    if (!(egg1_get_work(&actwk[subact2])->flags & 1))
         return 1;
 
-    subact3 = ((Sint16 *)&actwk[subact1])[26];
-    subact3 = ((Sint16 *)&actwk[subact3])[26];
-    subact4 = ((Sint16 *)&actwk[subact2])[26];
-    actwk[subact1].actfree[2] &= 254;
-    actwk[subact3].actfree[2] &= 254;
-    actwk[subact2].actfree[2] &= 254;
-    actwk[subact4].actfree[2] &= 254;
+    subact3 = egg1_get_work(&actwk[subact1])->child_index;
+    subact3 = egg1_get_work(&actwk[subact3])->child_index;
+    subact4 = egg1_get_work(&actwk[subact2])->child_index;
+    egg1_get_work(&actwk[subact1])->flags &= 254;
+    egg1_get_work(&actwk[subact3])->flags &= 254;
+    egg1_get_work(&actwk[subact2])->flags &= 254;
+    egg1_get_work(&actwk[subact4])->flags &= 254;
 
     if (pActwk->xposi.w.h <= 2904) {
 
-        pActwk->actfree[3] = 1;
+        egg1_get_work(pActwk)->step = 1;
     }
 
-    --pActwk->actfree[3];
-    if (!pActwk->actfree[3]) {
-        pActwk->actfree[2] |= 1;
-        pActwk->actfree[2] &= 253;
+    --egg1_get_work(pActwk)->step;
+    if (!egg1_get_work(pActwk)->step) {
+        egg1_get_work(pActwk)->flags |= 1;
+        egg1_get_work(pActwk)->flags &= 253;
         return 1;
     }
 
-    if (pActwk->actfree[2] & 64) {
-        pActwk->actfree[2] ^= 64;
+    if (egg1_get_work(pActwk)->flags & 64) {
+        egg1_get_work(pActwk)->flags ^= 64;
 
-        subact1 = ((Sint16 *)pActwk)[26];
+        subact1 = egg1_get_work(pActwk)->child_index;
         actwk[subact1].r_no0 = 8;
         bup_set(&actwk[subact1]);
         grd_set(&actwk[subact1]);
-        subact1 = ((Sint16 *)&actwk[subact1])[26];
+        subact1 = egg1_get_work(&actwk[subact1])->child_index;
         actwk[subact1].r_no0 = 6;
 
-        subact1 = ((Sint16 *)pActwk)[27];
+        subact1 = egg1_get_work(pActwk)->sibling_index;
         actwk[subact1].r_no0 = 2;
         bup_clr(&actwk[subact1]);
         grd_clr(&actwk[subact1]);
-        subact1 = ((Sint16 *)&actwk[subact1])[26];
+        subact1 = egg1_get_work(&actwk[subact1])->child_index;
         actwk[subact1].r_no0 = 8;
 
         armset_1(pActwk);
     } else {
-        pActwk->actfree[2] ^= 64;
+        egg1_get_work(pActwk)->flags ^= 64;
 
-        subact1 = ((Sint16 *)pActwk)[26];
+        subact1 = egg1_get_work(pActwk)->child_index;
         actwk[subact1].r_no0 = 2;
         bup_clr(&actwk[subact1]);
         grd_clr(&actwk[subact1]);
-        subact1 = ((Sint16 *)&actwk[subact1])[26];
+        subact1 = egg1_get_work(&actwk[subact1])->child_index;
         actwk[subact1].r_no0 = 8;
 
-        subact1 = ((Sint16 *)pActwk)[27];
+        subact1 = egg1_get_work(pActwk)->sibling_index;
         actwk[subact1].r_no0 = 8;
         bup_set(&actwk[subact1]);
         grd_set(&actwk[subact1]);
-        subact1 = ((Sint16 *)&actwk[subact1])[26];
+        subact1 = egg1_get_work(&actwk[subact1])->child_index;
         actwk[subact1].r_no0 = 6;
 
         armset_2(pActwk);
@@ -980,20 +1091,20 @@ Sint32 egg1body_04(sprite_status *pActwk) {
 void armset_1(sprite_status *pActwk) {
     Sint16 subact1, subact2;
 
-    subact1 = ((Sint16 *)pActwk)[25];
-    subact2 = ((Sint16 *)&actwk[subact1])[27];
-    subact1 = ((Sint16 *)&actwk[subact2])[27];
+    subact1 = egg1_get_work(pActwk)->parent_index;
+    subact2 = egg1_get_work(&actwk[subact1])->sibling_index;
+    subact1 = egg1_get_work(&actwk[subact2])->sibling_index;
     if (subact1) {
         actwk[subact1].r_no0 = 2;
-        subact1 = ((Sint16 *)&actwk[subact1])[26];
+        subact1 = egg1_get_work(&actwk[subact1])->child_index;
         actwk[subact1].r_no0 = 8;
         actwk[subact1].patno = 0;
     }
 
-    subact1 = ((Sint16 *)&actwk[subact2])[26];
+    subact1 = egg1_get_work(&actwk[subact2])->child_index;
     if (subact1) {
         actwk[subact1].r_no0 = 6;
-        subact1 = ((Sint16 *)&actwk[subact1])[26];
+        subact1 = egg1_get_work(&actwk[subact1])->child_index;
         actwk[subact1].r_no0 = 6;
         actwk[subact1].patno = 0;
     }
@@ -1002,20 +1113,20 @@ void armset_1(sprite_status *pActwk) {
 void armset_2(sprite_status *pActwk) {
     Sint16 subact1, subact2;
 
-    subact1 = ((Sint16 *)pActwk)[25];
-    subact2 = ((Sint16 *)&actwk[subact1])[27];
-    subact1 = ((Sint16 *)&actwk[subact2])[27];
+    subact1 = egg1_get_work(pActwk)->parent_index;
+    subact2 = egg1_get_work(&actwk[subact1])->sibling_index;
+    subact1 = egg1_get_work(&actwk[subact2])->sibling_index;
     if (subact1) {
         actwk[subact1].r_no0 = 6;
-        subact1 = ((Sint16 *)&actwk[subact1])[26];
+        subact1 = egg1_get_work(&actwk[subact1])->child_index;
         actwk[subact1].r_no0 = 6;
         actwk[subact1].patno = 0;
     }
 
-    subact1 = ((Sint16 *)&actwk[subact2])[26];
+    subact1 = egg1_get_work(&actwk[subact2])->child_index;
     if (subact1) {
         actwk[subact1].r_no0 = 2;
-        subact1 = ((Sint16 *)&actwk[subact1])[26];
+        subact1 = egg1_get_work(&actwk[subact1])->child_index;
         actwk[subact1].r_no0 = 8;
         actwk[subact1].patno = 0;
     }
@@ -1024,20 +1135,20 @@ void armset_2(sprite_status *pActwk) {
 void armset_3(sprite_status *pActwk) {
     Sint16 subact1, subact2;
 
-    subact1 = ((Sint16 *)pActwk)[25];
-    subact2 = ((Sint16 *)&actwk[subact1])[27];
-    subact1 = ((Sint16 *)&actwk[subact2])[27];
+    subact1 = egg1_get_work(pActwk)->parent_index;
+    subact2 = egg1_get_work(&actwk[subact1])->sibling_index;
+    subact1 = egg1_get_work(&actwk[subact2])->sibling_index;
     if (subact1) {
         actwk[subact1].r_no0 = 2;
-        subact1 = ((Sint16 *)&actwk[subact1])[26];
+        subact1 = egg1_get_work(&actwk[subact1])->child_index;
         actwk[subact1].r_no0 = 10;
         actwk[subact1].patno = 1;
     }
 
-    subact1 = ((Sint16 *)&actwk[subact2])[26];
+    subact1 = egg1_get_work(&actwk[subact2])->child_index;
     if (subact1) {
         actwk[subact1].r_no0 = 2;
-        subact1 = ((Sint16 *)&actwk[subact1])[26];
+        subact1 = egg1_get_work(&actwk[subact1])->child_index;
         actwk[subact1].r_no0 = 10;
         actwk[subact1].patno = 1;
     }
@@ -1046,40 +1157,40 @@ void armset_3(sprite_status *pActwk) {
 void spd_up(sprite_status *pActwk) {
     Sint16 subact1, subact2;
 
-    subact1 = ((Sint16 *)pActwk)[26];
-    actwk[subact1].actfree[21] = 8;
-    subact1 = ((Sint16 *)&actwk[subact1])[26];
-    ((Sint32 *)&actwk[subact1])[16] = 65536;
+    subact1 = egg1_get_work(pActwk)->child_index;
+    egg1_get_work(&actwk[subact1])->speed_step = 8;
+    subact1 = egg1_get_work(&actwk[subact1])->child_index;
+    egg1_get_work(&actwk[subact1])->velocity = 65536;
     sprite_status_set_xspeed_yspeed(&actwk[subact1], 32768);
-    subact1 = ((Sint16 *)&actwk[subact1])[26];
-    ((Sint32 *)&actwk[subact1])[16] = 49152;
+    subact1 = egg1_get_work(&actwk[subact1])->child_index;
+    egg1_get_work(&actwk[subact1])->velocity = 49152;
     sprite_status_set_xspeed_yspeed(&actwk[subact1], 98304);
 
-    subact1 = ((Sint16 *)pActwk)[27];
-    actwk[subact1].actfree[21] = 8;
-    subact1 = ((Sint16 *)&actwk[subact1])[26];
-    ((Sint32 *)&actwk[subact1])[16] = 65536;
+    subact1 = egg1_get_work(pActwk)->sibling_index;
+    egg1_get_work(&actwk[subact1])->speed_step = 8;
+    subact1 = egg1_get_work(&actwk[subact1])->child_index;
+    egg1_get_work(&actwk[subact1])->velocity = 65536;
     sprite_status_set_xspeed_yspeed(&actwk[subact1], 32768);
-    subact1 = ((Sint16 *)&actwk[subact1])[26];
-    ((Sint32 *)&actwk[subact1])[16] = 49152;
+    subact1 = egg1_get_work(&actwk[subact1])->child_index;
+    egg1_get_work(&actwk[subact1])->velocity = 49152;
     sprite_status_set_xspeed_yspeed(&actwk[subact1], 98304);
 
-    subact1 = ((Sint16 *)pActwk)[25];
-    subact2 = ((Sint16 *)&actwk[subact1])[27];
-    subact1 = ((Sint16 *)&actwk[subact2])[27];
+    subact1 = egg1_get_work(pActwk)->parent_index;
+    subact2 = egg1_get_work(&actwk[subact1])->sibling_index;
+    subact1 = egg1_get_work(&actwk[subact2])->sibling_index;
     if (subact1) {
-        subact1 = ((Sint16 *)&actwk[subact1])[26];
-        actwk[subact1].actfree[2] |= 128;
-        subact1 = ((Sint16 *)&actwk[subact1])[26];
-        actwk[subact1].actfree[2] |= 128;
+        subact1 = egg1_get_work(&actwk[subact1])->child_index;
+        egg1_get_work(&actwk[subact1])->flags |= 128;
+        subact1 = egg1_get_work(&actwk[subact1])->child_index;
+        egg1_get_work(&actwk[subact1])->flags |= 128;
     }
 
-    subact1 = ((Sint16 *)&actwk[subact2])[26];
+    subact1 = egg1_get_work(&actwk[subact2])->child_index;
     if (subact1) {
-        subact1 = ((Sint16 *)&actwk[subact1])[26];
-        actwk[subact1].actfree[2] |= 128;
-        subact1 = ((Sint16 *)&actwk[subact1])[26];
-        actwk[subact1].actfree[2] |= 128;
+        subact1 = egg1_get_work(&actwk[subact1])->child_index;
+        egg1_get_work(&actwk[subact1])->flags |= 128;
+        subact1 = egg1_get_work(&actwk[subact1])->child_index;
+        egg1_get_work(&actwk[subact1])->flags |= 128;
     }
 }
 
@@ -1089,78 +1200,78 @@ Sint32 egg1body_05(sprite_status *pActwk) {
     Sint16 subact3;
     Sint16 subact4;
 
-    if (!(pActwk->actfree[2] & 64)) {
+    if (!(egg1_get_work(pActwk)->flags & 64)) {
 
-        subact1 = ((Sint16 *)pActwk)[26];
-        subact2 = ((Sint16 *)pActwk)[27];
+        subact1 = egg1_get_work(pActwk)->child_index;
+        subact2 = egg1_get_work(pActwk)->sibling_index;
     } else {
 
-        subact1 = ((Sint16 *)pActwk)[27];
-        subact2 = ((Sint16 *)pActwk)[26];
+        subact1 = egg1_get_work(pActwk)->sibling_index;
+        subact2 = egg1_get_work(pActwk)->child_index;
     }
 
-    if (!(actwk[subact1].actfree[2] & 1))
+    if (!(egg1_get_work(&actwk[subact1])->flags & 1))
         return 1;
-    if (!(actwk[subact2].actfree[2] & 1))
+    if (!(egg1_get_work(&actwk[subact2])->flags & 1))
         return 1;
 
-    if (!(pActwk->actfree[2] & 2)) {
-        pActwk->actfree[2] |= 2;
+    if (!(egg1_get_work(pActwk)->flags & 2)) {
+        egg1_get_work(pActwk)->flags |= 2;
         spd_normal(pActwk);
     } else {
 
-        subact3 = ((Sint16 *)&actwk[subact1])[26];
-        subact3 = ((Sint16 *)&actwk[subact3])[26];
-        subact4 = ((Sint16 *)&actwk[subact2])[26];
-        actwk[subact1].actfree[2] &= 254;
-        actwk[subact3].actfree[2] &= 254;
-        actwk[subact2].actfree[2] &= 254;
-        actwk[subact4].actfree[2] &= 254;
+        subact3 = egg1_get_work(&actwk[subact1])->child_index;
+        subact3 = egg1_get_work(&actwk[subact3])->child_index;
+        subact4 = egg1_get_work(&actwk[subact2])->child_index;
+        egg1_get_work(&actwk[subact1])->flags &= 254;
+        egg1_get_work(&actwk[subact3])->flags &= 254;
+        egg1_get_work(&actwk[subact2])->flags &= 254;
+        egg1_get_work(&actwk[subact4])->flags &= 254;
 
         if (pActwk->xposi.w.h >= 2976)
-            pActwk->actfree[3] = 1;
+            egg1_get_work(pActwk)->step = 1;
 
-        --pActwk->actfree[3];
-        if (!pActwk->actfree[3]) {
-            pActwk->actfree[2] &= 253;
-            pActwk->actfree[2] |= 1;
+        --egg1_get_work(pActwk)->step;
+        if (!egg1_get_work(pActwk)->step) {
+            egg1_get_work(pActwk)->flags &= 253;
+            egg1_get_work(pActwk)->flags |= 1;
             return 1;
         }
     }
 
-    if (pActwk->actfree[2] & 64) {
-        pActwk->actfree[2] ^= 64;
+    if (egg1_get_work(pActwk)->flags & 64) {
+        egg1_get_work(pActwk)->flags ^= 64;
 
-        subact1 = ((Sint16 *)pActwk)[26];
+        subact1 = egg1_get_work(pActwk)->child_index;
         actwk[subact1].r_no0 = 22;
         bup_set(&actwk[subact1]);
         grd_set(&actwk[subact1]);
-        subact1 = ((Sint16 *)&actwk[subact1])[26];
+        subact1 = egg1_get_work(&actwk[subact1])->child_index;
         actwk[subact1].r_no0 = 8;
 
-        subact1 = ((Sint16 *)pActwk)[27];
+        subact1 = egg1_get_work(pActwk)->sibling_index;
         actwk[subact1].r_no0 = 18;
         bup_clr(&actwk[subact1]);
         grd_clr(&actwk[subact1]);
-        subact1 = ((Sint16 *)&actwk[subact1])[26];
+        subact1 = egg1_get_work(&actwk[subact1])->child_index;
         actwk[subact1].r_no0 = 6;
 
         armset_2(pActwk);
     } else {
-        pActwk->actfree[2] ^= 64;
+        egg1_get_work(pActwk)->flags ^= 64;
 
-        subact1 = ((Sint16 *)pActwk)[26];
+        subact1 = egg1_get_work(pActwk)->child_index;
         actwk[subact1].r_no0 = 18;
         bup_clr(&actwk[subact1]);
         grd_clr(&actwk[subact1]);
-        subact1 = ((Sint16 *)&actwk[subact1])[26];
+        subact1 = egg1_get_work(&actwk[subact1])->child_index;
         actwk[subact1].r_no0 = 6;
 
-        subact1 = ((Sint16 *)pActwk)[27];
+        subact1 = egg1_get_work(pActwk)->sibling_index;
         actwk[subact1].r_no0 = 22;
         bup_set(&actwk[subact1]);
         grd_set(&actwk[subact1]);
-        subact1 = ((Sint16 *)&actwk[subact1])[26];
+        subact1 = egg1_get_work(&actwk[subact1])->child_index;
         actwk[subact1].r_no0 = 8;
 
         armset_1(pActwk);
@@ -1174,89 +1285,89 @@ Sint32 egg1body_06(sprite_status *pActwk) {
     Sint16 subact3;
     Sint16 subact4;
 
-    if (!(pActwk->actfree[2] & 64)) {
+    if (!(egg1_get_work(pActwk)->flags & 64)) {
 
-        subact1 = ((Sint16 *)pActwk)[26];
-        subact2 = ((Sint16 *)pActwk)[27];
+        subact1 = egg1_get_work(pActwk)->child_index;
+        subact2 = egg1_get_work(pActwk)->sibling_index;
     } else {
 
-        subact1 = ((Sint16 *)pActwk)[27];
-        subact2 = ((Sint16 *)pActwk)[26];
+        subact1 = egg1_get_work(pActwk)->sibling_index;
+        subact2 = egg1_get_work(pActwk)->child_index;
     }
 
-    if (!(pActwk->actfree[2] & 2)) {
-        pActwk->actfree[2] |= 2;
+    if (!(egg1_get_work(pActwk)->flags & 2)) {
+        egg1_get_work(pActwk)->flags |= 2;
         spd_up(pActwk);
     }
     if (actwk[subact1].r_no0 == 4) {
 
-        subact3 = ((Sint16 *)&actwk[subact1])[26];
+        subact3 = egg1_get_work(&actwk[subact1])->child_index;
         actwk[subact3].r_no0 = 10;
-        subact3 = ((Sint16 *)&actwk[subact2])[26];
+        subact3 = egg1_get_work(&actwk[subact2])->child_index;
         actwk[subact3].r_no0 = 12;
     }
 
-    if (!(actwk[subact1].actfree[2] & 1))
+    if (!(egg1_get_work(&actwk[subact1])->flags & 1))
         return 1;
 
-    if (!(actwk[subact2].actfree[2] & 1))
+    if (!(egg1_get_work(&actwk[subact2])->flags & 1))
         return 1;
 
-    subact3 = ((Sint16 *)&actwk[subact1])[26];
-    subact3 = ((Sint16 *)&actwk[subact3])[26];
-    subact4 = ((Sint16 *)&actwk[subact2])[26];
-    actwk[subact1].actfree[2] &= 254;
-    actwk[subact3].actfree[2] &= 254;
-    actwk[subact2].actfree[2] &= 254;
-    actwk[subact4].actfree[2] &= 254;
+    subact3 = egg1_get_work(&actwk[subact1])->child_index;
+    subact3 = egg1_get_work(&actwk[subact3])->child_index;
+    subact4 = egg1_get_work(&actwk[subact2])->child_index;
+    egg1_get_work(&actwk[subact1])->flags &= 254;
+    egg1_get_work(&actwk[subact3])->flags &= 254;
+    egg1_get_work(&actwk[subact2])->flags &= 254;
+    egg1_get_work(&actwk[subact4])->flags &= 254;
 
-    --pActwk->actfree[3];
-    if (!pActwk->actfree[3]) {
-        pActwk->actfree[2] |= 1;
-        pActwk->actfree[2] &= 253;
+    --egg1_get_work(pActwk)->step;
+    if (!egg1_get_work(pActwk)->step) {
+        egg1_get_work(pActwk)->flags |= 1;
+        egg1_get_work(pActwk)->flags &= 253;
         return 1;
     }
 
-    if (pActwk->actfree[2] & 64) {
-        pActwk->actfree[2] ^= 64;
+    if (egg1_get_work(pActwk)->flags & 64) {
+        egg1_get_work(pActwk)->flags ^= 64;
 
-        subact1 = ((Sint16 *)pActwk)[26];
-        actwk[subact1].actfree[2] &= 253;
+        subact1 = egg1_get_work(pActwk)->child_index;
+        egg1_get_work(&actwk[subact1])->flags &= 253;
         bup_set(&actwk[subact1]);
         grd_set(&actwk[subact1]);
-        subact1 = ((Sint16 *)&actwk[subact1])[26];
+        subact1 = egg1_get_work(&actwk[subact1])->child_index;
         actwk[subact1].r_no0 = 10;
-        subact1 = ((Sint16 *)&actwk[subact1])[26];
+        subact1 = egg1_get_work(&actwk[subact1])->child_index;
         actwk[subact1].r_no0 = 2;
 
-        subact1 = ((Sint16 *)pActwk)[27];
-        actwk[subact1].actfree[2] &= 253;
+        subact1 = egg1_get_work(pActwk)->sibling_index;
+        egg1_get_work(&actwk[subact1])->flags &= 253;
         actwk[subact1].r_no0 = 2;
         bup_clr(&actwk[subact1]);
         grd_clr(&actwk[subact1]);
-        subact1 = ((Sint16 *)&actwk[subact1])[26];
+        subact1 = egg1_get_work(&actwk[subact1])->child_index;
         actwk[subact1].r_no0 = 12;
 
         armset_3(pActwk);
 
     } else {
-        pActwk->actfree[2] ^= 64;
+        egg1_get_work(pActwk)->flags ^= 64;
 
-        subact1 = ((Sint16 *)pActwk)[26];
-        actwk[subact1].actfree[2] &= 253;
+        subact1 = egg1_get_work(pActwk)->child_index;
+        egg1_get_work(&actwk[subact1])->flags &= 253;
         actwk[subact1].r_no0 = 2;
         bup_clr(&actwk[subact1]);
         grd_clr(&actwk[subact1]);
-        subact1 = ((Sint16 *)&actwk[subact1])[26];
+        subact1 = egg1_get_work(&actwk[subact1])->child_index;
         actwk[subact1].r_no0 = 12;
 
-        subact1 = ((Sint16 *)pActwk)[27];
-        actwk[subact1].actfree[2] &= 253;
+        subact1 = egg1_get_work(pActwk)->sibling_index;
+        egg1_get_work(&actwk[subact1])->flags &= 253;
         bup_set(&actwk[subact1]);
         grd_set(&actwk[subact1]);
-        subact1 = ((Sint16 *)&actwk[subact1])[26];
+        subact1 = egg1_get_work(&actwk[subact1])->child_index;
         actwk[subact1].r_no0 = 10;
-        subact1 = ((Sint16 *)&actwk[subact1])[26];
+        subact1 = egg1_get_work(&actwk[subact1])->child_index;
         actwk[subact1].r_no0 = 2;
 
         armset_3(pActwk);
@@ -1269,9 +1380,9 @@ Sint32 egg1body_07(sprite_status *pActwk) {
     Sint32 ret = 1;
     Sint16 subact;
 
-    if (!(pActwk->actfree[2] & 1)) {
+    if (!(egg1_get_work(pActwk)->flags & 1)) {
         if (emycol_d(pActwk) > 0) {
-            subact = ((Sint16 *)pActwk)[25];
+            subact = egg1_get_work(pActwk)->parent_index;
             pActwk->yposi.w.h += 2;
             actwk[subact].yposi.w.h += 2;
         }
@@ -1321,26 +1432,26 @@ Sint32 egg1arm1_ini(sprite_status *pActwk) {
 Sint32 egg1arm1_01(sprite_status *pActwk) {
     Sint16 subact;
 
-    subact = ((Sint16 *)pActwk)[25];
+    subact = egg1_get_work(pActwk)->parent_index;
     pActwk->xposi.w.h = actwk[subact].xposi.w.h + 24;
     pActwk->yposi.w.h = actwk[subact].yposi.w.h - 12;
 
-    if (pActwk->actfree[2] & 64) {
-        pActwk->actfree[2] &= 191;
+    if (egg1_get_work(pActwk)->flags & 64) {
+        egg1_get_work(pActwk)->flags &= 191;
 
-        subact = ((Sint16 *)pActwk)[26];
+        subact = egg1_get_work(pActwk)->child_index;
         actwk[subact].r_no0 = 10;
-        ((Sint16 *)pActwk)[26] = 0;
-        subact = ((Sint16 *)pActwk)[27];
-        subact = ((Sint16 *)&actwk[subact])[26];
+        egg1_get_work(pActwk)->child_index = 0;
+        subact = egg1_get_work(pActwk)->sibling_index;
+        subact = egg1_get_work(&actwk[subact])->child_index;
         return 1;
     }
-    if (pActwk->actfree[2] & 32) {
-        pActwk->actfree[2] &= 223;
+    if (egg1_get_work(pActwk)->flags & 32) {
+        egg1_get_work(pActwk)->flags &= 223;
 
-        subact = ((Sint16 *)pActwk)[27];
+        subact = egg1_get_work(pActwk)->sibling_index;
         actwk[subact].r_no0 = 10;
-        ((Sint16 *)pActwk)[27] = 0;
+        egg1_get_work(pActwk)->sibling_index = 0;
         actwk[subact].patno = 0;
         return 1;
     }
@@ -1350,17 +1461,17 @@ Sint32 egg1arm1_01(sprite_status *pActwk) {
 Sint32 egg1arm1_02(sprite_status *pActwk) {
     Sint32 ret = 1;
 
-    if (!(pActwk->actfree[2] & 2)) {
+    if (!(egg1_get_work(pActwk)->flags & 2)) {
 
-        ((Sint32 *)pActwk)[16] = -65536;
+        egg1_get_work(pActwk)->velocity = -65536;
         sprite_status_set_xspeed_yspeed(pActwk, -0x20000);
     } else {
 
-        ((Sint32 *)pActwk)[16] -= 1536;
+        egg1_get_work(pActwk)->velocity -= 1536;
         sprite_status_add_xspeed_yspeed(pActwk, 6144);
     }
-    pActwk->actfree[2] |= 2;
-    pActwk->xposi.l += ((Sint32 *)pActwk)[16];
+    egg1_get_work(pActwk)->flags |= 2;
+    pActwk->xposi.l += egg1_get_work(pActwk)->velocity;
     pActwk->yposi.l += sprite_status_get_xspeed_yspeed(pActwk);
 
     if (pActwk->yposi.w.h >= 576) {
@@ -1377,7 +1488,7 @@ void egg1arm2(sprite_status *pActwk) {
                                          &egg1arm2_04,  &egg1arm2_05};
 
     if (tbl[pActwk->r_no0 / 2](pActwk) != 0) {
-        if (!(pActwk->actfree[2] & 4))
+        if (!(egg1_get_work(pActwk)->flags & 4))
             actionsub(pActwk);
     }
 }
@@ -1395,26 +1506,26 @@ Sint32 egg1arm2_ini(sprite_status *pActwk) {
 }
 
 Sint32 egg1arm2_01(sprite_status *pActwk) {
-    ((char *)pActwk)[46] -= 2;
-    if (((char *)pActwk)[46] > 0)
+    egg1_get_work(pActwk)->signed_timer_low -= 2;
+    if (egg1_get_work(pActwk)->signed_timer_low > 0)
         egg1arm2_set(pActwk);
     else {
         pActwk->r_no0 = 4;
-        ((char *)pActwk)[46] = 0;
-        pActwk->actfree[2] |= 1;
+        egg1_get_work(pActwk)->signed_timer_low = 0;
+        egg1_get_work(pActwk)->flags |= 1;
         egg1arm2_set(pActwk);
     }
     return 1;
 }
 
 Sint32 egg1arm2_03(sprite_status *pActwk) {
-    ((char *)pActwk)[46] += 2;
-    if (((char *)pActwk)[46] < 48)
+    egg1_get_work(pActwk)->signed_timer_low += 2;
+    if (egg1_get_work(pActwk)->signed_timer_low < 48)
         egg1arm2_set(pActwk);
     else {
         pActwk->r_no0 = 8;
-        ((char *)pActwk)[46] = 48;
-        pActwk->actfree[2] |= 1;
+        egg1_get_work(pActwk)->signed_timer_low = 48;
+        egg1_get_work(pActwk)->flags |= 1;
         egg1arm2_set(pActwk);
     }
     return 1;
@@ -1434,19 +1545,19 @@ Sint32 egg1arm2_05(sprite_status *pActwk) {
     Sint32 ret = 1;
     Sint16 subact;
 
-    if (!(pActwk->actfree[2] & 2)) {
-        pActwk->actfree[2] |= 2;
+    if (!(egg1_get_work(pActwk)->flags & 2)) {
+        egg1_get_work(pActwk)->flags |= 2;
 
-        ((Sint32 *)pActwk)[16] = 65536;
+        egg1_get_work(pActwk)->velocity = 65536;
         sprite_status_set_xspeed_yspeed(pActwk, -0x20000);
-        subact = ((Sint16 *)pActwk)[26];
+        subact = egg1_get_work(pActwk)->child_index;
         actwk[subact].r_no0 = 4;
     } else {
 
-        ((Sint32 *)pActwk)[16] += 1536;
+        egg1_get_work(pActwk)->velocity += 1536;
         sprite_status_add_xspeed_yspeed(pActwk, 7936);
     }
-    pActwk->xposi.l += ((Sint32 *)pActwk)[16];
+    pActwk->xposi.l += egg1_get_work(pActwk)->velocity;
     pActwk->yposi.l += sprite_status_get_xspeed_yspeed(pActwk);
 
     if (pActwk->yposi.l >= 576) {
@@ -1462,11 +1573,11 @@ void egg1arm2_set(sprite_status *pActwk) {
     Uint16 sin, cos;
     int_union sinl, cosl;
 
-    subact = ((Sint16 *)pActwk)[25];
+    subact = egg1_get_work(pActwk)->parent_index;
     pActwk->xposi.w.h = actwk[subact].xposi.w.h;
     pActwk->yposi.w.h = actwk[subact].yposi.w.h;
 
-    sinset(pActwk->actfree[0] + 64, (Sint16 *)&sin, (Sint16 *)&cos);
+    sinset(egg1_get_work(pActwk)->timer_low + 64, (Sint16 *)&sin, (Sint16 *)&cos);
     sinl.l = sin;
     cosl.l = cos;
     sinl.w.l /= 16;
@@ -1474,7 +1585,7 @@ void egg1arm2_set(sprite_status *pActwk) {
     pActwk->xposi.w.h += cosl.w.l;
     pActwk->yposi.w.h += sinl.w.l;
 
-    if (pActwk->actfree[2] & 4)
+    if (egg1_get_work(pActwk)->flags & 4)
         pActwk->xposi.w.h -= 10;
 }
 
@@ -1502,22 +1613,22 @@ Sint32 egg1arm3_ini(sprite_status *pActwk) {
 Sint32 egg1arm3_01(sprite_status *pActwk) {
     Sint16 subact;
 
-    subact = ((Sint16 *)pActwk)[25];
-    pActwk->xposi.w.h = ((Sint16 *)pActwk)[29] + (actwk[subact].xposi.w.h - 36);
+    subact = egg1_get_work(pActwk)->parent_index;
+    pActwk->xposi.w.h = egg1_get_work(pActwk)->x_offset + (actwk[subact].xposi.w.h - 36);
 
     pActwk->yposi.w.h = (Sint32)actwk[subact].yposi.w.h;
 
-    if (!(pActwk->actfree[2] & 128)) {
+    if (!(egg1_get_work(pActwk)->flags & 128)) {
         if (actwk[0].yposi.w.h <= pActwk->yposi.w.h) {
 
-            if (((Sint16 *)pActwk)[31] > -8)
-                ((Sint32 *)pActwk)[15] -= 65536;
+            if (egg1_get_work(pActwk)->y_offset > -8)
+                egg1_get_work(pActwk)->y_accum -= 65536;
         } else {
 
-            if (((Sint16 *)pActwk)[31] < 8)
-                ((Sint32 *)pActwk)[15] += 65536;
+            if (egg1_get_work(pActwk)->y_offset < 8)
+                egg1_get_work(pActwk)->y_accum += 65536;
         }
-        pActwk->yposi.w.h += ((Sint16 *)pActwk)[31];
+        pActwk->yposi.w.h += egg1_get_work(pActwk)->y_offset;
         return 1;
     }
 }
@@ -1525,8 +1636,8 @@ Sint32 egg1arm3_01(sprite_status *pActwk) {
 Sint32 egg1arm3_03(sprite_status *pActwk) {
     Sint32 ret = 1;
 
-    if (((Sint16 *)pActwk)[29] > 0)
-        ((Sint32 *)pActwk)[14] -= 32768;
+    if (egg1_get_work(pActwk)->x_offset > 0)
+        egg1_get_work(pActwk)->x_accum -= 32768;
     ret = egg1arm3_01(pActwk);
     return ret;
 }
@@ -1534,8 +1645,8 @@ Sint32 egg1arm3_03(sprite_status *pActwk) {
 Sint32 egg1arm3_04(sprite_status *pActwk) {
     Sint32 ret = 1;
 
-    if (((Sint16 *)pActwk)[29] < 16)
-        ((Sint32 *)pActwk)[14] += 32768;
+    if (egg1_get_work(pActwk)->x_offset < 16)
+        egg1_get_work(pActwk)->x_accum += 32768;
     ret = egg1arm3_01(pActwk);
     return ret;
 }
@@ -1543,17 +1654,17 @@ Sint32 egg1arm3_04(sprite_status *pActwk) {
 Sint32 egg1arm3_05(sprite_status *pActwk) {
     Sint16 subact;
 
-    if (((Sint16 *)pActwk)[29] < 8)
-        ((Sint32 *)pActwk)[14] += 32768;
+    if (egg1_get_work(pActwk)->x_offset < 8)
+        egg1_get_work(pActwk)->x_accum += 32768;
     else
         pActwk->patno = 1;
-    subact = ((Sint16 *)pActwk)[25];
-    pActwk->xposi.w.h = ((Sint16 *)pActwk)[29] + (actwk[subact].xposi.w.h - 36);
+    subact = egg1_get_work(pActwk)->parent_index;
+    pActwk->xposi.w.h = egg1_get_work(pActwk)->x_offset + (actwk[subact].xposi.w.h - 36);
     pActwk->yposi.w.h = (Sint32)actwk[subact].yposi.w.h;
 
-    if (((Sint16 *)pActwk)[31] < 8)
-        ((Sint32 *)pActwk)[15] += 65536;
-    pActwk->yposi.w.h += ((Sint16 *)pActwk)[31];
+    if (egg1_get_work(pActwk)->y_offset < 8)
+        egg1_get_work(pActwk)->y_accum += 65536;
+    pActwk->yposi.w.h += egg1_get_work(pActwk)->y_offset;
     return 1;
 }
 
@@ -1561,29 +1672,29 @@ Sint32 egg1arm3_02(sprite_status *pActwk) {
     Sint32 ret = 1;
     Sint16 subact;
 
-    if (!(pActwk->actfree[2] & 2)) {
-        pActwk->actfree[2] |= 2;
+    if (!(egg1_get_work(pActwk)->flags & 2)) {
+        egg1_get_work(pActwk)->flags |= 2;
 
-        pActwk->actfree[1] = 1;
-        pActwk->actfree[0] = 0;
-        ((Sint32 *)pActwk)[16] = 0;
+        egg1_get_work(pActwk)->angle = 1;
+        egg1_get_work(pActwk)->timer_low = 0;
+        egg1_get_work(pActwk)->velocity = 0;
         sprite_status_set_xspeed_yspeed(pActwk, 65536);
-        subact = ((Sint16 *)pActwk)[26];
+        subact = egg1_get_work(pActwk)->child_index;
         actwk[subact].r_no0 = 4;
     } else {
 
-        ((Sint32 *)pActwk)[16] -= 1568;
+        egg1_get_work(pActwk)->velocity -= 1568;
         sprite_status_add_xspeed_yspeed(pActwk, 4640);
     }
-    pActwk->xposi.l += ((Sint32 *)pActwk)[16];
+    pActwk->xposi.l += egg1_get_work(pActwk)->velocity;
     pActwk->yposi.l += sprite_status_get_xspeed_yspeed(pActwk);
 
     if (pActwk->yposi.w.h >= 576) {
         ret = 0;
         frameout(pActwk);
     } else {
-        ++pActwk->actfree[0];
-        if (((Sint16 *)pActwk)[23] % 7 == 0)
+        ++egg1_get_work(pActwk)->timer_low;
+        if (egg1_get_work(pActwk)->timer % 7 == 0)
             arm_bom(pActwk);
         tenmetu();
     }
@@ -1613,7 +1724,7 @@ Sint32 egg1arm4_ini(sprite_status *pActwk) {
 Sint32 egg1arm4_01(sprite_status *pActwk) {
     Sint16 subact;
 
-    subact = ((Sint16 *)pActwk)[25];
+    subact = egg1_get_work(pActwk)->parent_index;
     pActwk->xposi.w.h = actwk[subact].xposi.w.h - 12;
     pActwk->yposi.w.h = actwk[subact].yposi.w.h;
 
@@ -1624,31 +1735,31 @@ Sint32 egg1arm4_01(sprite_status *pActwk) {
             pActwk->xposi.w.h += 16;
     }
 
-    if (pActwk->actfree[2] & 16)
+    if (egg1_get_work(pActwk)->flags & 16)
         pActwk->xposi.w.h -= 4;
-    pActwk->actfree[2] &= 239;
+    egg1_get_work(pActwk)->flags &= 239;
     return 1;
 }
 
 Sint32 egg1arm4_02(sprite_status *pActwk) {
     Sint32 ret = 1;
 
-    if (!(pActwk->actfree[2] & 2)) {
-        pActwk->actfree[2] |= 2;
+    if (!(egg1_get_work(pActwk)->flags & 2)) {
+        egg1_get_work(pActwk)->flags |= 2;
 
-        pActwk->actfree[1] = 0;
+        egg1_get_work(pActwk)->angle = 0;
 
         pActwk->colino = 0;
         pActwk->colicnt = 0;
 
-        ((Sint32 *)pActwk)[16] = 0;
+        egg1_get_work(pActwk)->velocity = 0;
         sprite_status_set_xspeed_yspeed(pActwk, -98304);
     } else {
 
-        ((Sint32 *)pActwk)[16] -= 1280;
+        egg1_get_work(pActwk)->velocity -= 1280;
         sprite_status_add_xspeed_yspeed(pActwk, 6144);
     }
-    pActwk->xposi.l += ((Sint32 *)pActwk)[16];
+    pActwk->xposi.l += egg1_get_work(pActwk)->velocity;
     pActwk->yposi.l += sprite_status_get_xspeed_yspeed(pActwk);
 
     if (pActwk->yposi.w.h >= 576) {
@@ -1679,40 +1790,40 @@ Sint32 egg1leg1_ini(sprite_status *pActwk) {
     pActwk->patbase = egg1leg1_pat;
 
     pActwk->r_no0 = 12;
-    pActwk->actfree[0] = 88;
-    pActwk->actfree[21] = 2;
+    egg1_get_work(pActwk)->timer_low = 88;
+    egg1_get_work(pActwk)->speed_step = 2;
     return 1;
 }
 
 Sint32 egg1leg1_01(sprite_status *pActwk) {
     Sint16 subact;
 
-    subact = ((Sint16 *)pActwk)[26];
-    subact = ((Sint16 *)&actwk[subact])[26];
+    subact = egg1_get_work(pActwk)->child_index;
+    subact = egg1_get_work(&actwk[subact])->child_index;
     if (actwk[subact].r_no0 != 6) {
         if (actwk[subact].r_no0 != 8) {
-            actwk[subact].actfree[2] &= 254;
+            egg1_get_work(&actwk[subact])->flags &= 254;
             actwk[subact].r_no0 = 6;
         }
     }
-    if (((char *)pActwk)[46] > 0) {
-        pActwk->actfree[0] = pActwk->actfree[0] - ((char *)pActwk)[67];
+    if (egg1_get_work(pActwk)->signed_timer_low > 0) {
+        egg1_get_work(pActwk)->signed_timer_low = egg1_get_work(pActwk)->signed_timer_low - egg1_get_work(pActwk)->speed_step;
 
-        if (((char *)pActwk)[46] > 0) {
+        if (egg1_get_work(pActwk)->signed_timer_low > 0) {
 
             egg1leg1_set(pActwk);
             return 1;
         }
     }
-    pActwk->actfree[0] = 0;
+    egg1_get_work(pActwk)->signed_timer_low = 0;
     if (actwk[subact].r_no0 != 8) {
-        if (!(actwk[subact].actfree[2] & 1)) {
+        if (!(egg1_get_work(&actwk[subact])->flags & 1)) {
 
-            actwk[subact].actfree[2] &= 254;
+            egg1_get_work(&actwk[subact])->flags &= 254;
             egg1leg1_set(pActwk);
             return 1;
         }
-        actwk[subact].actfree[2] &= 254;
+        egg1_get_work(&actwk[subact])->flags &= 254;
     }
 
     pActwk->r_no0 = 4;
@@ -1723,12 +1834,12 @@ Sint32 egg1leg1_01(sprite_status *pActwk) {
 Sint32 egg1leg1_02(sprite_status *pActwk) {
     Sint16 subact;
 
-    subact = ((Sint16 *)pActwk)[26];
-    subact = ((Sint16 *)&actwk[subact])[26];
-    pActwk->actfree[0] = pActwk->actfree[0] + ((char *)pActwk)[67];
-    if (((char *)pActwk)[46] >= 88) {
+    subact = egg1_get_work(pActwk)->child_index;
+    subact = egg1_get_work(&actwk[subact])->child_index;
+    egg1_get_work(pActwk)->signed_timer_low = egg1_get_work(pActwk)->signed_timer_low + egg1_get_work(pActwk)->speed_step;
+    if (egg1_get_work(pActwk)->signed_timer_low >= 88) {
 
-        pActwk->actfree[0] = 88;
+        egg1_get_work(pActwk)->signed_timer_low = 88;
         pActwk->r_no0 = 6;
         actwk[subact].r_no0 = 2;
     }
@@ -1739,21 +1850,21 @@ Sint32 egg1leg1_02(sprite_status *pActwk) {
 Sint32 egg1leg1_03(sprite_status *pActwk) {
     Sint16 subact;
 
-    subact = ((Sint16 *)pActwk)[26];
-    subact = ((Sint16 *)&actwk[subact])[26];
-    if (actwk[subact].actfree[2] & 16)
-        pActwk->actfree[2] |= 1;
+    subact = egg1_get_work(pActwk)->child_index;
+    subact = egg1_get_work(&actwk[subact])->child_index;
+    if (egg1_get_work(&actwk[subact])->flags & 16)
+        egg1_get_work(pActwk)->flags |= 1;
     egg1leg1_set(pActwk);
     return 1;
 }
 
 Sint32 egg1leg1_04(sprite_status *pActwk) {
-    if (!(pActwk->actfree[2] & 1)) {
-        pActwk->actfree[0] = pActwk->actfree[0] - ((char *)pActwk)[67];
-        if (((char *)pActwk)[46] < 24) {
+    if (!(egg1_get_work(pActwk)->flags & 1)) {
+        egg1_get_work(pActwk)->signed_timer_low = egg1_get_work(pActwk)->signed_timer_low - egg1_get_work(pActwk)->speed_step;
+        if (egg1_get_work(pActwk)->signed_timer_low < 24) {
 
-            pActwk->actfree[0] = 24;
-            pActwk->actfree[2] |= 1;
+            egg1_get_work(pActwk)->signed_timer_low = 24;
+            egg1_get_work(pActwk)->flags |= 1;
         }
     }
 
@@ -1764,24 +1875,24 @@ Sint32 egg1leg1_04(sprite_status *pActwk) {
 Sint32 egg1leg1_05(sprite_status *pActwk) {
     Sint16 subact;
 
-    subact = ((Sint16 *)pActwk)[26];
-    subact = ((Sint16 *)&actwk[subact])[26];
+    subact = egg1_get_work(pActwk)->child_index;
+    subact = egg1_get_work(&actwk[subact])->child_index;
     if (actwk[subact].r_no0 != 8)
         actwk[subact].r_no0 = 6;
     else {
 
-        if (((char *)pActwk)[46] == 0) {
+        if (egg1_get_work(pActwk)->signed_timer_low == 0) {
 
-            if (actwk[subact].actfree[2] & 1) {
-                actwk[subact].actfree[2] &= 254;
-                pActwk->actfree[2] |= 1;
+            if (egg1_get_work(&actwk[subact])->flags & 1) {
+                egg1_get_work(&actwk[subact])->flags &= 254;
+                egg1_get_work(pActwk)->flags |= 1;
             } else
-                actwk[subact].actfree[2] &= 254;
+                egg1_get_work(&actwk[subact])->flags &= 254;
             egg1leg1_set(pActwk);
         }
     }
-    if (((char *)pActwk)[46] != 0)
-        pActwk->actfree[0] = pActwk->actfree[0] - ((char *)pActwk)[67];
+    if (egg1_get_work(pActwk)->signed_timer_low != 0)
+        egg1_get_work(pActwk)->signed_timer_low = egg1_get_work(pActwk)->signed_timer_low - egg1_get_work(pActwk)->speed_step;
     egg1leg1_set(pActwk);
     return 1;
 }
@@ -1789,24 +1900,24 @@ Sint32 egg1leg1_05(sprite_status *pActwk) {
 Sint32 egg1leg1_06(sprite_status *pActwk) {
     Sint16 subact;
 
-    subact = ((Sint16 *)pActwk)[26];
-    subact = ((Sint16 *)&actwk[subact])[26];
+    subact = egg1_get_work(pActwk)->child_index;
+    subact = egg1_get_work(&actwk[subact])->child_index;
     if (actwk[subact].r_no0 != 4)
         actwk[subact].r_no0 = 2;
     else {
 
-        if (((char *)pActwk)[46] >= 88) {
+        if (egg1_get_work(pActwk)->signed_timer_low >= 88) {
 
-            if (actwk[subact].actfree[2] & 1)
-                pActwk->actfree[2] |= 1;
-            actwk[subact].actfree[2] &= 254;
+            if (egg1_get_work(&actwk[subact])->flags & 1)
+                egg1_get_work(pActwk)->flags |= 1;
+            egg1_get_work(&actwk[subact])->flags &= 254;
             egg1leg1_set(pActwk);
             return 1;
         }
     }
 
-    if (((char *)pActwk)[46] < 88)
-        pActwk->actfree[0] = pActwk->actfree[0] + ((char *)pActwk)[67];
+    if (egg1_get_work(pActwk)->signed_timer_low < 88)
+        egg1_get_work(pActwk)->signed_timer_low = egg1_get_work(pActwk)->signed_timer_low + egg1_get_work(pActwk)->speed_step;
     egg1leg1_set(pActwk);
     return 1;
 }
@@ -1815,31 +1926,31 @@ Sint32 egg1leg1_07(sprite_status *pActwk) {
     Sint32 ret = 1;
     Sint16 subact;
 
-    if (((char *)pActwk)[46] < 24) {
+    if (egg1_get_work(pActwk)->signed_timer_low < 24) {
 
-        pActwk->actfree[0] = pActwk->actfree[0] + ((char *)pActwk)[67];
-        subact = ((Sint16 *)pActwk)[26];
-        subact = ((Sint16 *)&actwk[subact])[26];
-        actwk[subact].actfree[2] |= 128;
-        subact = ((Sint16 *)pActwk)[25];
-        subact = ((Sint16 *)&actwk[subact])[27];
-        subact = ((Sint16 *)&actwk[subact])[26];
-        subact = ((Sint16 *)&actwk[subact])[26];
-        actwk[subact].actfree[2] |= 128;
+        egg1_get_work(pActwk)->signed_timer_low = egg1_get_work(pActwk)->signed_timer_low + egg1_get_work(pActwk)->speed_step;
+        subact = egg1_get_work(pActwk)->child_index;
+        subact = egg1_get_work(&actwk[subact])->child_index;
+        egg1_get_work(&actwk[subact])->flags |= 128;
+        subact = egg1_get_work(pActwk)->parent_index;
+        subact = egg1_get_work(&actwk[subact])->sibling_index;
+        subact = egg1_get_work(&actwk[subact])->child_index;
+        subact = egg1_get_work(&actwk[subact])->child_index;
+        egg1_get_work(&actwk[subact])->flags |= 128;
         ret = egg1leg1_06(pActwk);
         return ret;
     }
-    if (((char *)pActwk)[46] > 24) {
+    if (egg1_get_work(pActwk)->signed_timer_low > 24) {
 
-        pActwk->actfree[0] = pActwk->actfree[0] - ((char *)pActwk)[67];
+        egg1_get_work(pActwk)->signed_timer_low = egg1_get_work(pActwk)->signed_timer_low - egg1_get_work(pActwk)->speed_step;
         ret = egg1leg1_05(pActwk);
         return ret;
     }
 
-    subact = ((Sint16 *)pActwk)[26];
-    subact = ((Sint16 *)&actwk[subact])[26];
-    if (actwk[subact].actfree[2] & 1)
-        pActwk->actfree[2] |= 1;
+    subact = egg1_get_work(pActwk)->child_index;
+    subact = egg1_get_work(&actwk[subact])->child_index;
+    if (egg1_get_work(&actwk[subact])->flags & 1)
+        egg1_get_work(pActwk)->flags |= 1;
     egg1leg1_set(pActwk);
     return ret;
 }
@@ -1847,37 +1958,37 @@ Sint32 egg1leg1_07(sprite_status *pActwk) {
 Sint32 egg1leg1_08(sprite_status *pActwk) {
     Sint16 subact;
 
-    subact = ((Sint16 *)pActwk)[25];
-    subact = ((Sint16 *)&actwk[subact])[26];
+    subact = egg1_get_work(pActwk)->parent_index;
+    subact = egg1_get_work(&actwk[subact])->child_index;
     pActwk->xposi.w.h = actwk[subact].xposi.w.h - 10;
     pActwk->yposi.w.h = actwk[subact].yposi.w.h;
-    pActwk->actfree[0] = actwk[subact].actfree[0];
-    pActwk->actfree[1] = actwk[subact].actfree[1];
+    egg1_get_work(pActwk)->timer_low = egg1_get_work(&actwk[subact])->timer_low;
+    egg1_get_work(pActwk)->angle = egg1_get_work(&actwk[subact])->angle;
     return 1;
 }
 
 Sint32 egg1leg1_09(sprite_status *pActwk) {
     Sint16 subact;
 
-    subact = ((Sint16 *)pActwk)[26];
-    subact = ((Sint16 *)&actwk[subact])[26];
+    subact = egg1_get_work(pActwk)->child_index;
+    subact = egg1_get_work(&actwk[subact])->child_index;
     if (actwk[subact].r_no0 != 6) {
         if (actwk[subact].r_no0 != 8) {
-            actwk[subact].actfree[2] &= 254;
+            egg1_get_work(&actwk[subact])->flags &= 254;
             actwk[subact].r_no0 = 6;
         } else {
 
-            if (((char *)pActwk)[46] != 32) {
-                pActwk->actfree[0] = pActwk->actfree[0] - ((char *)pActwk)[67];
-                if (pActwk->actfree[0] <= 0) {
-                    pActwk->actfree[0] = 32;
-                    actwk[subact].actfree[2] &= 254;
+            if (egg1_get_work(pActwk)->signed_timer_low != 32) {
+                egg1_get_work(pActwk)->signed_timer_low = egg1_get_work(pActwk)->signed_timer_low - egg1_get_work(pActwk)->speed_step;
+                if (egg1_get_work(pActwk)->signed_timer_low <= 0) {
+                    egg1_get_work(pActwk)->signed_timer_low = 32;
+                    egg1_get_work(&actwk[subact])->flags &= 254;
                     pActwk->r_no0 = 20;
                 }
             } else {
 
-                pActwk->actfree[0] = 32;
-                actwk[subact].actfree[2] &= 254;
+                egg1_get_work(pActwk)->signed_timer_low = 32;
+                egg1_get_work(&actwk[subact])->flags &= 254;
                 pActwk->r_no0 = 20;
             }
         }
@@ -1889,12 +2000,12 @@ Sint32 egg1leg1_09(sprite_status *pActwk) {
 Sint32 egg1leg1_10(sprite_status *pActwk) {
     Sint16 subact;
 
-    subact = ((Sint16 *)pActwk)[26];
-    subact = ((Sint16 *)&actwk[subact])[26];
-    pActwk->actfree[0] = pActwk->actfree[0] + ((char *)pActwk)[67];
-    if (((char *)pActwk)[46] >= 48) {
+    subact = egg1_get_work(pActwk)->child_index;
+    subact = egg1_get_work(&actwk[subact])->child_index;
+    egg1_get_work(pActwk)->signed_timer_low = egg1_get_work(pActwk)->signed_timer_low + egg1_get_work(pActwk)->speed_step;
+    if (egg1_get_work(pActwk)->signed_timer_low >= 48) {
 
-        pActwk->actfree[0] = 48;
+        egg1_get_work(pActwk)->signed_timer_low = 48;
         pActwk->r_no0 = 6;
         actwk[subact].r_no0 = 2;
     }
@@ -1905,15 +2016,15 @@ Sint32 egg1leg1_10(sprite_status *pActwk) {
 Sint32 egg1leg1_11(sprite_status *pActwk) {
     Sint16 subact;
 
-    if (!(pActwk->actfree[2] & 1)) {
-        subact = pActwk->actfree[6];
-        subact = actwk[subact].actfree[6];
+    if (!(egg1_get_work(pActwk)->flags & 1)) {
+        subact = egg1_get_work(pActwk)->child_index;
+        subact = egg1_get_work(&actwk[subact])->child_index;
         if (actwk[subact].r_no0 != 2) {
             if (actwk[subact].r_no0 == 4) {
 
-                pActwk->actfree[0] = pActwk->actfree[0] + ((char *)pActwk)[67];
-                if (((char *)pActwk)[46] >= 80) {
-                    pActwk->actfree[2] |= 1;
+                egg1_get_work(pActwk)->signed_timer_low = egg1_get_work(pActwk)->signed_timer_low + egg1_get_work(pActwk)->speed_step;
+                if (egg1_get_work(pActwk)->signed_timer_low >= 80) {
+                    egg1_get_work(pActwk)->flags |= 1;
                 }
                 egg1leg1_set(pActwk);
                 return 1;
@@ -1932,47 +2043,47 @@ void egg1leg1_set(sprite_status *pActwk) {
     int_union sinl, cosl;
     Sint16 subact;
 
-    sinset(pActwk->actfree[0], (Sint16 *)&sin, (Sint16 *)&cos);
+    sinset(egg1_get_work(pActwk)->timer_low, (Sint16 *)&sin, (Sint16 *)&cos);
     sinl.l = sin;
     cosl.l = cos;
     sinl.w.l /= 16;
     cosl.w.l /= 16;
 
-    if (pActwk->actfree[2] & 16) {
-        if (!(pActwk->actfree[2] & 32)) {
+    if (egg1_get_work(pActwk)->flags & 16) {
+        if (!(egg1_get_work(pActwk)->flags & 32)) {
 
-            subact = ((Sint16 *)pActwk)[25];
+            subact = egg1_get_work(pActwk)->parent_index;
             cos2 = cosl.w.l + (actwk[subact].xposi.w.h + 12);
-            if (pActwk->actfree[2] & 4)
+            if (egg1_get_work(pActwk)->flags & 4)
                 cos2 -= 10;
             pActwk->xposi.w.h = cos2;
             pActwk->yposi.w.h = sinl.w.l + (actwk[subact].yposi.w.h + 20);
         } else {
-            if (!(pActwk->actfree[2] & 2)) {
-                pActwk->actfree[2] |= 2;
-                ((Sint16 *)pActwk)[29] = cosl.w.l;
-                ((Sint16 *)pActwk)[31] = sinl.w.l;
+            if (!(egg1_get_work(pActwk)->flags & 2)) {
+                egg1_get_work(pActwk)->flags |= 2;
+                egg1_get_work(pActwk)->x_offset = cosl.w.l;
+                egg1_get_work(pActwk)->y_offset = sinl.w.l;
             }
 
-            cos2 = cosl.w.l - ((Sint16 *)pActwk)[29];
-            sin2 = sinl.w.l - ((Sint16 *)pActwk)[31];
+            cos2 = cosl.w.l - egg1_get_work(pActwk)->x_offset;
+            sin2 = sinl.w.l - egg1_get_work(pActwk)->y_offset;
 
-            ((Sint16 *)pActwk)[29] = cosl.w.l;
-            ((Sint16 *)pActwk)[31] = sinl.w.l;
+            egg1_get_work(pActwk)->x_offset = cosl.w.l;
+            egg1_get_work(pActwk)->y_offset = sinl.w.l;
 
-            subact = ((Sint16 *)pActwk)[25];
+            subact = egg1_get_work(pActwk)->parent_index;
             actwk[subact].xposi.w.h -= cos2;
             actwk[subact].yposi.w.h -= sin2;
-            subact = ((Sint16 *)&actwk[subact])[25];
+            subact = egg1_get_work(&actwk[subact])->parent_index;
             actwk[subact].xposi.w.h -= cos2;
             actwk[subact].yposi.w.h -= sin2;
         }
     } else {
-        pActwk->actfree[2] &= 253;
+        egg1_get_work(pActwk)->flags &= 253;
 
-        subact = ((Sint16 *)pActwk)[25];
+        subact = egg1_get_work(pActwk)->parent_index;
         cos2 = cosl.w.l + (actwk[subact].xposi.w.h + 12);
-        if (pActwk->actfree[2] & 4)
+        if (egg1_get_work(pActwk)->flags & 4)
             cos2 -= 10;
         pActwk->xposi.w.h = cos2;
         pActwk->yposi.w.h = sinl.w.l + (actwk[subact].yposi.w.h + 20);
@@ -1982,27 +2093,27 @@ void egg1leg1_set(sprite_status *pActwk) {
 Sint32 egg1leg1_12(sprite_status *pActwk) {
     Sint32 ret = 1;
 
-    if (!(pActwk->actfree[2] & 2)) {
-        pActwk->actfree[2] |= 2;
-        if (pActwk->actfree[2] & 16) {
-            ((Sint32 *)pActwk)[16] = 0;
+    if (!(egg1_get_work(pActwk)->flags & 2)) {
+        egg1_get_work(pActwk)->flags |= 2;
+        if (egg1_get_work(pActwk)->flags & 16) {
+            egg1_get_work(pActwk)->velocity = 0;
             sprite_status_set_xspeed_yspeed(pActwk, -163840);
         } else {
-            ((Sint32 *)pActwk)[16] = 0;
+            egg1_get_work(pActwk)->velocity = 0;
             sprite_status_set_xspeed_yspeed(pActwk, -163840);
         }
     } else {
 
-        if (pActwk->actfree[2] & 16) {
-            ((Sint32 *)pActwk)[16] = ((Sint32 *)pActwk)[16] - 1536;
+        if (egg1_get_work(pActwk)->flags & 16) {
+            egg1_get_work(pActwk)->velocity = egg1_get_work(pActwk)->velocity - 1536;
             sprite_status_add_xspeed_yspeed(pActwk, 6240);
         } else {
-            ((Sint32 *)pActwk)[16] = ((Sint32 *)pActwk)[16] + 1536;
+            egg1_get_work(pActwk)->velocity = egg1_get_work(pActwk)->velocity + 1536;
             sprite_status_add_xspeed_yspeed(pActwk, 6240);
         }
     }
 
-    pActwk->xposi.l += ((Sint32 *)pActwk)[16];
+    pActwk->xposi.l += egg1_get_work(pActwk)->velocity;
     pActwk->yposi.l += sprite_status_get_xspeed_yspeed(pActwk);
 
     if (pActwk->yposi.w.h >= 576) {
@@ -2031,7 +2142,7 @@ Sint32 egg1leg2_ini(sprite_status *pActwk) {
     pActwk->sprhsize = 20;
     pActwk->sproffset = 9049;
     pActwk->patbase = egg1leg2_pat;
-    ((Sint32 *)pActwk)[16] = 32768;
+    egg1_get_work(pActwk)->velocity = 32768;
     sprite_status_set_xspeed_yspeed(pActwk, 16384);
     return 1;
 }
@@ -2039,7 +2150,7 @@ Sint32 egg1leg2_ini(sprite_status *pActwk) {
 Sint32 egg1leg2_01(sprite_status *pActwk) {
     Sint16 subact;
 
-    subact = ((Sint16 *)pActwk)[25];
+    subact = egg1_get_work(pActwk)->parent_index;
     pActwk->xposi.w.h = actwk[subact].xposi.w.h + 4;
     pActwk->yposi.w.h = actwk[subact].yposi.w.h + 16;
     return 1;
@@ -2048,10 +2159,10 @@ Sint32 egg1leg2_01(sprite_status *pActwk) {
 Sint32 egg1leg2_02(sprite_status *pActwk) {
     Sint16 subact;
 
-    subact = ((Sint16 *)pActwk)[25];
-    subact = ((Sint16 *)&actwk[subact])[25];
-    subact = ((Sint16 *)&actwk[subact])[26];
-    subact = ((Sint16 *)&actwk[subact])[26];
+    subact = egg1_get_work(pActwk)->parent_index;
+    subact = egg1_get_work(&actwk[subact])->parent_index;
+    subact = egg1_get_work(&actwk[subact])->child_index;
+    subact = egg1_get_work(&actwk[subact])->child_index;
     pActwk->xposi.w.h = actwk[subact].xposi.w.h - 10;
     pActwk->yposi.w.h = actwk[subact].yposi.w.h;
     return 1;
@@ -2060,11 +2171,11 @@ Sint32 egg1leg2_02(sprite_status *pActwk) {
 Sint32 egg1leg2_03(sprite_status *pActwk) {
     Sint32 xs;
 
-    if (((Sint16 *)pActwk)[29] < 8) {
-        ((Sint32 *)pActwk)[14] =
-            ((Sint32 *)pActwk)[14] + ((Sint32 *)pActwk)[16];
-        if (pActwk->actfree[2] & 16) {
-            xs = ((Sint32 *)pActwk)[16];
+    if (egg1_get_work(pActwk)->x_offset < 8) {
+        egg1_get_work(pActwk)->x_accum =
+            egg1_get_work(pActwk)->x_accum + egg1_get_work(pActwk)->velocity;
+        if (egg1_get_work(pActwk)->flags & 16) {
+            xs = egg1_get_work(pActwk)->velocity;
             xs = -xs;
             leg2_set(xs, 0, pActwk);
             return 1;
@@ -2075,12 +2186,12 @@ Sint32 egg1leg2_03(sprite_status *pActwk) {
 }
 
 Sint32 egg1leg2_04(sprite_status *pActwk) {
-    ((Sint16 *)pActwk)[31] = 0;
-    if (((Sint16 *)pActwk)[29] > -8) {
-        ((Sint32 *)pActwk)[14] =
-            ((Sint32 *)pActwk)[14] - ((Sint32 *)pActwk)[16];
-        if (pActwk->actfree[2] & 16) {
-            leg2_set(((Sint32 *)pActwk)[16], 0, pActwk);
+    egg1_get_work(pActwk)->y_offset = 0;
+    if (egg1_get_work(pActwk)->x_offset > -8) {
+        egg1_get_work(pActwk)->x_accum =
+            egg1_get_work(pActwk)->x_accum - egg1_get_work(pActwk)->velocity;
+        if (egg1_get_work(pActwk)->flags & 16) {
+            leg2_set(egg1_get_work(pActwk)->velocity, 0, pActwk);
             return 1;
         }
     }
@@ -2091,19 +2202,19 @@ Sint32 egg1leg2_04(sprite_status *pActwk) {
 Sint32 egg1leg2_05(sprite_status *pActwk) {
     Sint32 xs, ys;
 
-    if (((Sint16 *)pActwk)[29] > -8) {
-        ((Sint32 *)pActwk)[14] =
-            ((Sint32 *)pActwk)[14] - ((Sint32 *)pActwk)[16];
-        xs = ((Sint32 *)pActwk)[16];
+    if (egg1_get_work(pActwk)->x_offset > -8) {
+        egg1_get_work(pActwk)->x_accum =
+            egg1_get_work(pActwk)->x_accum - egg1_get_work(pActwk)->velocity;
+        xs = egg1_get_work(pActwk)->velocity;
     } else
         xs = 0;
-    if (((Sint16 *)pActwk)[31] > -4) {
-        ((Sint32 *)pActwk)[15] =
-            ((Sint32 *)pActwk)[15] - sprite_status_get_xspeed_yspeed(pActwk);
+    if (egg1_get_work(pActwk)->y_offset > -4) {
+        egg1_get_work(pActwk)->y_accum =
+            egg1_get_work(pActwk)->y_accum - sprite_status_get_xspeed_yspeed(pActwk);
         ys = sprite_status_get_xspeed_yspeed(pActwk);
     } else
         ys = 0;
-    if (pActwk->actfree[2] & 16)
+    if (egg1_get_work(pActwk)->flags & 16)
         leg2_set(xs, ys, pActwk);
     else
         leg2_set2(pActwk);
@@ -2113,19 +2224,19 @@ Sint32 egg1leg2_05(sprite_status *pActwk) {
 Sint32 egg1leg2_06(sprite_status *pActwk) {
     Sint32 xs, ys;
 
-    if (((Sint16 *)pActwk)[29] > -8) {
-        ((Sint32 *)pActwk)[14] =
-            ((Sint32 *)pActwk)[14] - ((Sint32 *)pActwk)[16];
-        xs = ((Sint32 *)pActwk)[16];
+    if (egg1_get_work(pActwk)->x_offset > -8) {
+        egg1_get_work(pActwk)->x_accum =
+            egg1_get_work(pActwk)->x_accum - egg1_get_work(pActwk)->velocity;
+        xs = egg1_get_work(pActwk)->velocity;
     } else
         xs = 0;
-    if (((Sint16 *)pActwk)[31] < 4) {
-        ((Sint32 *)pActwk)[15] =
-            ((Sint32 *)pActwk)[15] + sprite_status_get_xspeed_yspeed(pActwk);
+    if (egg1_get_work(pActwk)->y_offset < 4) {
+        egg1_get_work(pActwk)->y_accum =
+            egg1_get_work(pActwk)->y_accum + sprite_status_get_xspeed_yspeed(pActwk);
         ys = sprite_status_get_xspeed_yspeed(pActwk);
     } else
         ys = 0;
-    if (pActwk->actfree[2] & 16) {
+    if (egg1_get_work(pActwk)->flags & 16) {
         ys = -ys;
         leg2_set(xs, ys, pActwk);
     } else
@@ -2136,14 +2247,14 @@ Sint32 egg1leg2_06(sprite_status *pActwk) {
 void leg2_set(Sint32 xs, Sint32 ys, sprite_status *pActwk) {
     Sint16 subact;
 
-    if (pActwk->actfree[2] & 32) {
-        subact = ((Sint16 *)pActwk)[25];
+    if (egg1_get_work(pActwk)->flags & 32) {
+        subact = egg1_get_work(pActwk)->parent_index;
         actwk[subact].xposi.l += xs;
         actwk[subact].yposi.l += ys;
-        subact = ((Sint16 *)&actwk[subact])[25];
+        subact = egg1_get_work(&actwk[subact])->parent_index;
         actwk[subact].xposi.l += xs;
         actwk[subact].yposi.l += ys;
-        subact = ((Sint16 *)&actwk[subact])[25];
+        subact = egg1_get_work(&actwk[subact])->parent_index;
         actwk[subact].xposi.l += xs;
         actwk[subact].yposi.l += ys;
     }
@@ -2152,35 +2263,35 @@ void leg2_set(Sint32 xs, Sint32 ys, sprite_status *pActwk) {
 void leg2_set2(sprite_status *pActwk) {
     Sint16 subact;
 
-    subact = ((Sint16 *)pActwk)[25];
-    pActwk->xposi.w.h = ((Sint16 *)pActwk)[29] + (actwk[subact].xposi.w.h + 4);
-    pActwk->yposi.w.h = ((Sint16 *)pActwk)[31] + (actwk[subact].yposi.w.h + 16);
+    subact = egg1_get_work(pActwk)->parent_index;
+    pActwk->xposi.w.h = egg1_get_work(pActwk)->x_offset + (actwk[subact].xposi.w.h + 4);
+    pActwk->yposi.w.h = egg1_get_work(pActwk)->y_offset + (actwk[subact].yposi.w.h + 16);
 }
 
 Sint32 egg1leg2_07(sprite_status *pActwk) {
     Sint32 ret = 1;
 
-    if (!(pActwk->actfree[2] & 2)) {
+    if (!(egg1_get_work(pActwk)->flags & 2)) {
 
-        pActwk->actfree[2] |= 2;
-        if (!(pActwk->actfree[2] & 16)) {
-            ((Sint32 *)pActwk)[16] = 0;
+        egg1_get_work(pActwk)->flags |= 2;
+        if (!(egg1_get_work(pActwk)->flags & 16)) {
+            egg1_get_work(pActwk)->velocity = 0;
             sprite_status_set_xspeed_yspeed(pActwk, -0x20000);
         } else {
-            ((Sint32 *)pActwk)[16] = 0;
+            egg1_get_work(pActwk)->velocity = 0;
             sprite_status_set_xspeed_yspeed(pActwk, -0x20000);
         }
     } else {
 
-        if (!(pActwk->actfree[2] & 16)) {
-            ((Sint32 *)pActwk)[16] -= 1536;
+        if (!(egg1_get_work(pActwk)->flags & 16)) {
+            egg1_get_work(pActwk)->velocity -= 1536;
             sprite_status_add_xspeed_yspeed(pActwk, 6752);
         } else {
-            ((Sint32 *)pActwk)[16] += 1536;
+            egg1_get_work(pActwk)->velocity += 1536;
             sprite_status_add_xspeed_yspeed(pActwk, 6752);
         }
     }
-    pActwk->xposi.l += ((Sint32 *)pActwk)[16];
+    pActwk->xposi.l += egg1_get_work(pActwk)->velocity;
     pActwk->yposi.l += sprite_status_get_xspeed_yspeed(pActwk);
     if (pActwk->yposi.w.h >= 576) {
         ret = 0;
@@ -2203,9 +2314,9 @@ void egg1leg3(sprite_status *pActwk) {
 void leg3_set_not_grd(sprite_status *pActwk) {
     Sint16 subact;
 
-    subact = ((Sint16 *)pActwk)[25];
-    pActwk->xposi.w.h = ((Sint16 *)pActwk)[29] + (actwk[subact].xposi.w.h - 11);
-    pActwk->yposi.w.h = ((Sint16 *)pActwk)[31] + (actwk[subact].yposi.w.h + 14);
+    subact = egg1_get_work(pActwk)->parent_index;
+    pActwk->xposi.w.h = egg1_get_work(pActwk)->x_offset + (actwk[subact].xposi.w.h - 11);
+    pActwk->yposi.w.h = egg1_get_work(pActwk)->y_offset + (actwk[subact].yposi.w.h + 14);
 }
 
 Sint32 egg1leg3_ini(sprite_status *pActwk) {
@@ -2216,13 +2327,13 @@ Sint32 egg1leg3_ini(sprite_status *pActwk) {
     pActwk->sproffset = 9049;
     pActwk->patbase = egg1leg3_pat;
 
-    ((Sint32 *)pActwk)[16] = 16384;
+    egg1_get_work(pActwk)->velocity = 16384;
     sprite_status_set_xspeed_yspeed(pActwk, 32768);
 
     pActwk->r_no0 = 4;
-    pActwk->actfree[2] |= 1;
-    ((Sint16 *)pActwk)[29] = -8;
-    ((Sint16 *)pActwk)[31] = 16;
+    egg1_get_work(pActwk)->flags |= 1;
+    egg1_get_work(pActwk)->x_offset = -8;
+    egg1_get_work(pActwk)->y_offset = 16;
     leg3_set_not_grd(pActwk);
     return 1;
 }
@@ -2230,26 +2341,26 @@ Sint32 egg1leg3_ini(sprite_status *pActwk) {
 void leg3_on_the_ground(sprite_status *pActwk) {
     Sint16 subact;
 
-    pActwk->actfree[2] |= 16;
-    subact = ((Sint16 *)pActwk)[25];
-    actwk[subact].actfree[2] |= 16;
-    subact = ((Sint16 *)&actwk[subact])[25];
-    actwk[subact].actfree[2] |= 16;
+    egg1_get_work(pActwk)->flags |= 16;
+    subact = egg1_get_work(pActwk)->parent_index;
+    egg1_get_work(&actwk[subact])->flags |= 16;
+    subact = egg1_get_work(&actwk[subact])->parent_index;
+    egg1_get_work(&actwk[subact])->flags |= 16;
 
-    subact = ((Sint16 *)&actwk[subact])[25];
-    subact = ((Sint16 *)&actwk[subact])[25];
-    actwk[subact].actfree[11] = 8;
+    subact = egg1_get_work(&actwk[subact])->parent_index;
+    subact = egg1_get_work(&actwk[subact])->parent_index;
+    egg1_get_work(&actwk[subact])->quake_timer = 8;
 }
 
 Sint32 egg1leg3_01(sprite_status *pActwk) {
-    ((Sint32 *)pActwk)[14] = ((Sint32 *)pActwk)[14] - ((Sint32 *)pActwk)[16];
-    ((Sint32 *)pActwk)[15] =
-        ((Sint32 *)pActwk)[15] + sprite_status_get_xspeed_yspeed(pActwk);
+    egg1_get_work(pActwk)->x_accum = egg1_get_work(pActwk)->x_accum - egg1_get_work(pActwk)->velocity;
+    egg1_get_work(pActwk)->y_accum =
+        egg1_get_work(pActwk)->y_accum + sprite_status_get_xspeed_yspeed(pActwk);
 
-    if (pActwk->actfree[2] & 16) {
-        if (pActwk->actfree[2] & 128) {
+    if (egg1_get_work(pActwk)->flags & 16) {
+        if (egg1_get_work(pActwk)->flags & 128) {
 
-            if (((Sint16 *)pActwk)[31] < 12) {
+            if (egg1_get_work(pActwk)->y_offset < 12) {
 
                 leg3_set(pActwk);
                 if (0 >= emycol_d(pActwk)) {
@@ -2259,14 +2370,14 @@ Sint32 egg1leg3_01(sprite_status *pActwk) {
                 return 1;
             } else {
 
-                pActwk->actfree[2] |= 1;
+                egg1_get_work(pActwk)->flags |= 1;
                 pActwk->r_no0 = 4;
                 return 1;
             }
         }
     }
 
-    if (((Sint16 *)pActwk)[31] < 16) {
+    if (egg1_get_work(pActwk)->y_offset < 16) {
 
         leg3_set(pActwk);
         if (0 >= emycol_d(pActwk)) {
@@ -2275,23 +2386,23 @@ Sint32 egg1leg3_01(sprite_status *pActwk) {
         }
     } else {
 
-        pActwk->actfree[2] |= 1;
+        egg1_get_work(pActwk)->flags |= 1;
         pActwk->r_no0 = 4;
     }
     return 1;
 }
 
 Sint32 egg1leg3_03(sprite_status *pActwk) {
-    ((Sint32 *)pActwk)[14] = ((Sint32 *)pActwk)[14] + ((Sint32 *)pActwk)[16];
-    ((Sint32 *)pActwk)[15] =
-        ((Sint32 *)pActwk)[15] - sprite_status_get_xspeed_yspeed(pActwk);
-    if (((Sint32 *)pActwk)[15] <= 0) {
+    egg1_get_work(pActwk)->x_accum = egg1_get_work(pActwk)->x_accum + egg1_get_work(pActwk)->velocity;
+    egg1_get_work(pActwk)->y_accum =
+        egg1_get_work(pActwk)->y_accum - sprite_status_get_xspeed_yspeed(pActwk);
+    if (egg1_get_work(pActwk)->y_accum <= 0) {
 
-        ((Sint16 *)pActwk)[29] = 0;
-        ((Sint16 *)pActwk)[28] = 0;
-        ((Sint16 *)pActwk)[31] = 0;
-        ((Sint16 *)pActwk)[30] = 0;
-        pActwk->actfree[2] |= 1;
+        egg1_get_work(pActwk)->x_offset = 0;
+        egg1_get_work(pActwk)->x_accum_low = 0;
+        egg1_get_work(pActwk)->y_offset = 0;
+        egg1_get_work(pActwk)->target_pos = 0;
+        egg1_get_work(pActwk)->flags |= 1;
         pActwk->r_no0 = 8;
     }
     leg3_set(pActwk);
@@ -2300,7 +2411,7 @@ Sint32 egg1leg3_03(sprite_status *pActwk) {
 
 Sint32 egg1leg3_02(sprite_status *pActwk) {
 
-    if (!(pActwk->actfree[2] & 16)) {
+    if (!(egg1_get_work(pActwk)->flags & 16)) {
         leg3_set_not_grd(pActwk);
         if (0 >= emycol_d(pActwk)) {
 
@@ -2319,16 +2430,16 @@ Sint32 egg1leg3_04(sprite_status *pActwk) {
 Sint32 egg1leg3_05(sprite_status *pActwk) {
     Sint16 subact;
 
-    subact = ((Sint16 *)pActwk)[25];
-    subact = ((Sint16 *)&actwk[subact])[25];
-    subact = ((Sint16 *)&actwk[subact])[25];
-    subact = ((Sint16 *)&actwk[subact])[26];
-    subact = ((Sint16 *)&actwk[subact])[26];
-    subact = ((Sint16 *)&actwk[subact])[26];
+    subact = egg1_get_work(pActwk)->parent_index;
+    subact = egg1_get_work(&actwk[subact])->parent_index;
+    subact = egg1_get_work(&actwk[subact])->parent_index;
+    subact = egg1_get_work(&actwk[subact])->child_index;
+    subact = egg1_get_work(&actwk[subact])->child_index;
+    subact = egg1_get_work(&actwk[subact])->child_index;
     pActwk->xposi.w.h = actwk[subact].xposi.w.h - 10;
     pActwk->yposi.w.h = actwk[subact].yposi.w.h;
-    ((Sint16 *)pActwk)[29] = ((Sint16 *)&actwk[subact])[29];
-    ((Sint16 *)pActwk)[31] = ((Sint16 *)&actwk[subact])[31];
+    egg1_get_work(pActwk)->x_offset = egg1_get_work(&actwk[subact])->x_offset;
+    egg1_get_work(pActwk)->y_offset = egg1_get_work(&actwk[subact])->y_offset;
     return 1;
 }
 
@@ -2336,11 +2447,11 @@ void leg3_set(sprite_status *pActwk) {
     Sint16 subact;
     Sint32 xs, ys;
 
-    if (!(pActwk->actfree[2] & 16)) {
+    if (!(egg1_get_work(pActwk)->flags & 16)) {
         leg3_set_not_grd(pActwk);
-    } else if (pActwk->actfree[2] & 32) {
+    } else if (egg1_get_work(pActwk)->flags & 32) {
 
-        xs = ((Sint32 *)pActwk)[16];
+        xs = egg1_get_work(pActwk)->velocity;
         ys = sprite_status_get_xspeed_yspeed(pActwk);
 
         if (pActwk->r_no0 != 6) {
@@ -2348,16 +2459,16 @@ void leg3_set(sprite_status *pActwk) {
             ys = -ys;
         }
 
-        subact = ((Sint16 *)pActwk)[25];
+        subact = egg1_get_work(pActwk)->parent_index;
         actwk[subact].xposi.l -= xs;
         actwk[subact].yposi.l += ys;
-        subact = ((Sint16 *)&actwk[subact])[25];
+        subact = egg1_get_work(&actwk[subact])->parent_index;
         actwk[subact].xposi.l -= xs;
         actwk[subact].yposi.l += ys;
-        subact = ((Sint16 *)&actwk[subact])[25];
+        subact = egg1_get_work(&actwk[subact])->parent_index;
         actwk[subact].xposi.l -= xs;
         actwk[subact].yposi.l += ys;
-        subact = ((Sint16 *)&actwk[subact])[25];
+        subact = egg1_get_work(&actwk[subact])->parent_index;
         actwk[subact].xposi.l -= xs;
         actwk[subact].yposi.l += ys;
     }
@@ -2366,28 +2477,28 @@ void leg3_set(sprite_status *pActwk) {
 Sint32 egg1leg3_06(sprite_status *pActwk) {
     Sint32 ret = 1;
 
-    if (!(pActwk->actfree[2] & 2)) {
-        pActwk->actfree[2] |= 2;
+    if (!(egg1_get_work(pActwk)->flags & 2)) {
+        egg1_get_work(pActwk)->flags |= 2;
 
-        if (pActwk->actfree[2] & 16) {
-            ((Sint32 *)pActwk)[16] = 0;
+        if (egg1_get_work(pActwk)->flags & 16) {
+            egg1_get_work(pActwk)->velocity = 0;
             sprite_status_set_xspeed_yspeed(pActwk, -143360);
         } else {
-            ((Sint32 *)pActwk)[16] = 0;
+            egg1_get_work(pActwk)->velocity = 0;
             sprite_status_set_xspeed_yspeed(pActwk, -143360);
         }
     } else {
 
-        if (!(pActwk->actfree[2] & 16)) {
-            ((Sint32 *)pActwk)[16] = ((Sint32 *)pActwk)[16] - 1632;
+        if (!(egg1_get_work(pActwk)->flags & 16)) {
+            egg1_get_work(pActwk)->velocity = egg1_get_work(pActwk)->velocity - 1632;
             sprite_status_add_xspeed_yspeed(pActwk, 5728);
         } else {
-            ((Sint32 *)pActwk)[16] = ((Sint32 *)pActwk)[16] + 1632;
+            egg1_get_work(pActwk)->velocity = egg1_get_work(pActwk)->velocity + 1632;
             sprite_status_add_xspeed_yspeed(pActwk, 5728);
         }
     }
 
-    pActwk->xposi.l += ((Sint32 *)pActwk)[16];
+    pActwk->xposi.l += egg1_get_work(pActwk)->velocity;
     pActwk->yposi.l += sprite_status_get_xspeed_yspeed(pActwk);
     if (pActwk->yposi.w.h >= 576) {
         ret = 0;
@@ -2404,8 +2515,8 @@ void bom_set(sprite_status *pActwk) {
     Sint16 bom_tbl[20] = {-48, -16, 48,  16, -16, -16, 16, 16,  -32, 0,
                           48,  -16, -48, 16, -16, 16,  16, -16, 32,  0};
 
-    if (pActwk->actfree[1] % 4 == 0) {
-        temp = (Sint16)(pActwk->actfree[1] / 4) % 10 * 2;
+    if (egg1_get_work(pActwk)->angle % 4 == 0) {
+        temp = (Sint16)(egg1_get_work(pActwk)->angle / 4) % 10 * 2;
         if (actwkchk(&subActwk) == 0) {
             subActwk->r_no1 = 255;
 

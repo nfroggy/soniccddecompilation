@@ -4,6 +4,61 @@
 #include "../actset.h"
 #include "../dircol.h"
 #include "../playsub.h"
+#include <stddef.h>
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 unused0;
+    Uint8 phase_flags;
+    Sint16 target_x;
+    Sint16 target_y;
+    Uint8 unused6[2];
+    Sint16 origin_y;
+    Uint16 linked_actor_index;
+    Sint16 origin_x;
+    Uint8 unused14[2];
+    Uint8 timer;
+    Uint8 sub_timer;
+    Uint8 sequence_index;
+    Uint8 unused19;
+    union {
+        Uint16 door_actor_index;
+        struct {
+            Uint8 unused20;
+            Uint8 beam_accumulator;
+        };
+    };
+} hota8c_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(hota8c_work, phase_flags) == 1,
+               "hota8c_work.phase_flags offset");
+_Static_assert(offsetof(hota8c_work, target_x) == 2,
+               "hota8c_work.target_x offset");
+_Static_assert(offsetof(hota8c_work, target_y) == 4,
+               "hota8c_work.target_y offset");
+_Static_assert(offsetof(hota8c_work, origin_y) == 8,
+               "hota8c_work.origin_y offset");
+_Static_assert(offsetof(hota8c_work, linked_actor_index) == 10,
+               "hota8c_work.linked_actor_index offset");
+_Static_assert(offsetof(hota8c_work, origin_x) == 12,
+               "hota8c_work.origin_x offset");
+_Static_assert(offsetof(hota8c_work, timer) == 16,
+               "hota8c_work.timer offset");
+_Static_assert(offsetof(hota8c_work, sub_timer) == 17,
+               "hota8c_work.sub_timer offset");
+_Static_assert(offsetof(hota8c_work, sequence_index) == 18,
+               "hota8c_work.sequence_index offset");
+_Static_assert(offsetof(hota8c_work, door_actor_index) == 20,
+               "hota8c_work.door_actor_index offset");
+_Static_assert(offsetof(hota8c_work, beam_accumulator) == 21,
+               "hota8c_work.beam_accumulator offset");
+_Static_assert(sizeof(hota8c_work) <= sizeof(((sprite_status *)0)->actfree),
+               "hota8c_work fits in actfree");
+
+static inline hota8c_work *hota8c_work_get(sprite_status *hotaru) {
+    return (hota8c_work *)hotaru->actfree;
+}
 
 static void hotaru8_initx(sprite_status *hotaru, Uint8 pr_data);
 static void hotaru8_init(sprite_status *hotaru);
@@ -91,34 +146,41 @@ void hotaru8(sprite_status *hotaru) {
 }
 
 static void hotaru8_initx(sprite_status *hotaru, Uint8 pr_data) {
+    hota8c_work *work = hota8c_work_get(hotaru);
+
     hotaru->actflg |= 4;
     hotaru->sprpri = pr_data;
     hotaru->patbase = hotaru8pat;
-    ((Sint16 *)hotaru)[29] = hotaru->xposi.w.h;
-    ((Sint16 *)hotaru)[27] = hotaru->yposi.w.h;
+    work->origin_x = hotaru->xposi.w.h;
+    work->origin_y = hotaru->yposi.w.h;
 }
 
 static void hotaru8_init(sprite_status *hotaru) {
+    hota8c_work *work = hota8c_work_get(hotaru);
+
     hotaru8_initx(hotaru, 1);
     hotaru->sprvsize = hotaru->sprhsize = 8;
     hotaru->r_no0 += 2;
-    hotaru->actfree[16] = 60;
+    work->timer = 60;
 }
 
 static void hotaru8_dspin(sprite_status *hotaru) {
+    hota8c_work *work = hota8c_work_get(hotaru);
+
     hotaru->mstno.b.h = 4;
     patchg(hotaru, hotaru8_pchg);
-    if (--hotaru->actfree[16] != 0)
+    if (--work->timer != 0)
         return;
     hotaru->mstno.b.h = 1;
-    hotaru->actfree[1] = hotaru->userflag.b.h;
+    work->phase_flags = hotaru->userflag.b.h;
     hotaru->r_no0 += 2;
 }
 
 static void hotaru8_setup(sprite_status *hotaru) {
     Sint16 next_position, speed_calc;
+    hota8c_work *work = hota8c_work_get(hotaru);
 
-    if (!(hotaru->actfree[1] & 1))
+    if (!(work->phase_flags & 1))
         goto label1;
 
     next_position = actwk[0].xposi.w.h & 32760;
@@ -126,47 +188,50 @@ static void hotaru8_setup(sprite_status *hotaru) {
         goto label1;
     if (next_position >= 3232)
         goto label1;
-    ((Sint16 *)hotaru)[24] = next_position;
-    ((Sint16 *)hotaru)[25] = 344;
+    work->target_x = next_position;
+    work->target_y = 344;
     goto label2;
 
 label1:
     next_position = (gametimer.w & 127) + 3056;
-    ((Sint16 *)hotaru)[24] = next_position;
+    work->target_x = next_position;
     next_position = (actwk[0].xposi.w.h * 5 & 31) + 352;
-    ((Sint16 *)hotaru)[25] = next_position;
+    work->target_y = next_position;
 
 label2:
     hotaru->yspeed.w = 0;
-    speed_calc = ((Sint16 *)hotaru)[25] - hotaru->yposi.w.h;
+    speed_calc = work->target_y - hotaru->yposi.w.h;
     if (speed_calc != 0)
         hotaru->yspeed.w = speed_calc * 8;
 
     hotaru->xspeed.w = 0;
-    speed_calc = ((Sint16 *)hotaru)[24] - hotaru->xposi.w.h;
+    speed_calc = work->target_x - hotaru->xposi.w.h;
     if (speed_calc != 0)
         hotaru->xspeed.w = speed_calc * 8;
 
-    ++hotaru->actfree[1];
-    hotaru->actfree[17] = 32;
+    ++work->phase_flags;
+    work->sub_timer = 32;
     hotaru->r_no0 += 2;
     hotaru->colino = 0;
 }
 
 static void hotaru8_idou(sprite_status *hotaru) {
+    hota8c_work *work = hota8c_work_get(hotaru);
+
     hotaru->xposi.l += hotaru->xspeed.w << 8;
     hotaru->yposi.l += hotaru->yspeed.w << 8;
 
     hota8_zanzou(hotaru);
-    if (--hotaru->actfree[17] == 0)
+    if (--work->sub_timer == 0)
         hotaru->r_no0 += 2;
     patchg(hotaru, hotaru8_pchg);
 }
 
 static void hota8_zanzou(sprite_status *hotaru) {
     sprite_status *shadowwk;
+    hota8c_work *work = hota8c_work_get(hotaru);
 
-    if ((hotaru->actfree[17] & 3) != 3)
+    if ((work->sub_timer & 3) != 3)
         return;
     if (actwkchk(&shadowwk) != 0)
         return;
@@ -181,30 +246,33 @@ static void hotaru8_move2(sprite_status *hotaru) {
     char tbl[32] = {0,  0,  0,  12, 12, 12, 36, 36, 36, 0, 0,
                     0,  12, 12, 12, 36, 36, 36, 0,  0,  0, 12,
                     12, 12, 36, 36, 36, 48, 60, 72, 84, -1};
+    hota8c_work *work = hota8c_work_get(hotaru);
 
     hotaru->mstno.b.h = 0;
     patchg(hotaru, hotaru8_pchg);
 
-    if ((color_change_number = tbl[hotaru->actfree[18]++]) != -1)
+    if ((color_change_number = tbl[work->sequence_index++]) != -1)
         colchg2(color_change_number);
     else {
         hotaru->r_no0 += 2;
-        hotaru->actfree[18] = 0;
+        work->sequence_index = 0;
     }
 }
 
 static void hotaru8_move3(sprite_status *hotaru) {
-    if (hotaru->actfree[18] == 0) {
-        hotaru->actfree[18] = 20;
+    hota8c_work *work = hota8c_work_get(hotaru);
+
+    if (work->sequence_index == 0) {
+        work->sequence_index = 20;
         hotaru->mstno.b.h = 2;
         hotaru->colino = 11;
     }
 
-    if ((hotaru->actfree[21] += 64) < 64)
+    if ((work->beam_accumulator += 64) < 64)
         hotaru8_beemset(hotaru);
 
     patchg(hotaru, hotaru8_pchg);
-    if (--hotaru->actfree[18] == 0)
+    if (--work->sequence_index == 0)
         hotaru->r_no0 += 2;
 }
 
@@ -220,14 +288,16 @@ static void hotaru8_beemset(sprite_status *hotaru) {
 }
 
 static void hotaru8_move4(sprite_status *hotaru) {
-    if (hotaru->actfree[18] == 0) {
-        hotaru->actfree[18] = 16;
+    hota8c_work *work = hota8c_work_get(hotaru);
+
+    if (work->sequence_index == 0) {
+        work->sequence_index = 16;
         hotaru->mstno.b.h = 0;
     }
 
     patchg(hotaru, hotaru8_pchg);
 
-    if (--hotaru->actfree[18] != 0)
+    if (--work->sequence_index != 0)
         return;
 
     hotaru->r_no0 = 4;
@@ -250,38 +320,44 @@ static void h8bem_init(sprite_status *beemwk) {
 }
 
 static void h8bem_move1(sprite_status *beemwk) {
+    hota8c_work *work = hota8c_work_get(beemwk);
+
     beemwk->mstno.b.h = 8;
     beemwk->yposi.w.h += 8;
     patchg(beemwk, hotaru8_pchg);
     if (emycol_d(beemwk) < 0) {
         beemwk->r_no0 += 2;
-        beemwk->actfree[16] = beemwk->actfree[17] = 0;
+        work->timer = work->sub_timer = 0;
     }
 }
 
 static void h8bem_move2(sprite_status *beemwk) {
-    if (beemwk->actfree[16] == 0) {
-        beemwk->actfree[16] = 2;
+    hota8c_work *work = hota8c_work_get(beemwk);
+
+    if (work->timer == 0) {
+        work->timer = 2;
         beemwk->mstno.b.h = 9;
-        if (beemwk->actfree[17] != 0)
+        if (work->sub_timer != 0)
             return;
     }
     patchg(beemwk, hotaru8_pchg);
-    if (--beemwk->actfree[16] != 0)
+    if (--work->timer != 0)
         return;
-    if (++beemwk->actfree[17] >= 2)
+    if (++work->sub_timer >= 2)
         frameout(beemwk);
 }
 
 static void hotaru8_zanact(sprite_status *shadowwk) {
+    hota8c_work *work = hota8c_work_get(shadowwk);
+
     if (shadowwk->r_no0 == 0) {
         hotaru8_initx(shadowwk, 4);
-        shadowwk->actfree[16] = 24;
+        work->timer = 24;
         shadowwk->mstno.b.h = 4;
         shadowwk->r_no0 += 2;
     }
     patchg(shadowwk, hotaru8_pchg);
-    if (--shadowwk->actfree[16])
+    if (--work->timer)
         actionsub(shadowwk);
     else
         frameout(shadowwk);
@@ -297,6 +373,7 @@ static void hotaru8_main(sprite_status *roomwk) {
 
 static void ht8main_init(sprite_status *roomwk) {
     sprite_status *doorwk;
+    hota8c_work *work = hota8c_work_get(roomwk);
 
     hotaru8_initx(roomwk, 1);
 
@@ -309,11 +386,13 @@ static void ht8main_init(sprite_status *roomwk) {
     doorwk->actno = 41;
     doorwk->yposi.w.h = 464;
     doorwk->xposi.w.h = 3240;
-    ((Uint16 *)roomwk)[33] = doorwk - actwk;
+    work->door_actor_index = doorwk - actwk;
     roomwk->r_no0 += 2;
 }
 
 static void ht8main_move1(sprite_status *roomwk) {
+    hota8c_work *work = hota8c_work_get(roomwk);
+
     if (actwk[0].xposi.w.h < 3024)
         return;
     if (scra_vline >= 204)
@@ -321,35 +400,37 @@ static void ht8main_move1(sprite_status *roomwk) {
     scra_vline += 6;
     if (bossflag == 8) {
         roomwk->r_no0 += 2;
-        roomwk->actfree[16] = roomwk->actfree[17] = 0;
+        work->timer = work->sub_timer = 0;
     }
 }
 
 static void ht8main_move2(sprite_status *roomwk) {
     sprite_status *hotaru;
+    hota8c_work *work = hota8c_work_get(roomwk);
 
     colchg(roomwk, clrchgtbl1);
-    if (roomwk->actfree[16] != 16)
+    if (work->timer != 16)
         return;
-    roomwk->actfree[16] = roomwk->actfree[17] = 0;
+    work->timer = work->sub_timer = 0;
     if (actwkchk(&hotaru) != 0)
         return;
     hotaru->actno = 57;
     hotaru->yposi.w.h = 400;
     hotaru->xposi.w.h = 3040;
-    ((Uint16 *)roomwk)[28] = hotaru - actwk;
-    roomwk->actfree[16] = 60;
+    work->linked_actor_index = hotaru - actwk;
+    work->timer = 60;
     roomwk->r_no0 += 2;
 }
 
 static void ht8main_move3(sprite_status *roomwk) {
     sprite_status *hotaru;
+    hota8c_work *work = hota8c_work_get(roomwk);
 
-    if (actwk[((Uint16 *)roomwk)[28]].actno == 57)
+    if (actwk[work->linked_actor_index].actno == 57)
         return;
 
     colchg2(0);
-    if (--roomwk->actfree[16])
+    if (--work->timer)
         return;
 
     if (actwkchk(&hotaru) != 0)
@@ -357,7 +438,7 @@ static void ht8main_move3(sprite_status *roomwk) {
     hotaru->actno = 57;
     hotaru->yposi.w.h = 392;
     hotaru->xposi.w.h = 3040;
-    ((Uint16 *)roomwk)[28] = hotaru - actwk;
+    work->linked_actor_index = hotaru - actwk;
     hotaru->userflag.b.h = 1;
     roomwk->r_no0 += 2;
     ht8main_move4(roomwk);
@@ -365,6 +446,7 @@ static void ht8main_move3(sprite_status *roomwk) {
 
 static void ht8main_move4(sprite_status *roomwk) {
     sprite_status *hotaru;
+    hota8c_work *work = hota8c_work_get(roomwk);
 
     if (actwkchk(&hotaru) != 0)
         return;
@@ -373,12 +455,14 @@ static void ht8main_move4(sprite_status *roomwk) {
     hotaru->xposi.w.h = 3200;
     roomwk->xposi.w.h = (Sint16)(hotaru - actwk);
     hotaru->userflag.b.h = 0;
-    roomwk->actfree[16] = roomwk->actfree[17] = 0;
+    work->timer = work->sub_timer = 0;
     roomwk->r_no0 += 2;
 }
 
 static void ht8main_move5(sprite_status *roomwk) {
-    if (actwk[((Uint16 *)roomwk)[28]].actno == 57)
+    hota8c_work *work = hota8c_work_get(roomwk);
+
+    if (actwk[work->linked_actor_index].actno == 57)
         return;
 
     if (actwk[(Uint16)roomwk->xposi.w.h].actno == 57)
@@ -389,11 +473,12 @@ static void ht8main_move5(sprite_status *roomwk) {
 
 static void ht8main_move6(sprite_status *roomwk) {
     sprite_status *eggwk;
+    hota8c_work *work = hota8c_work_get(roomwk);
 
     colchg(roomwk, clrchgtbl2);
-    if (roomwk->actfree[16] != 16)
+    if (work->timer != 16)
         return;
-    actwk[((Uint16 *)roomwk)[33]].actfree[21] = 255;
+    hota8c_work_get(&actwk[work->door_actor_index])->beam_accumulator = 255;
     if (actwkchk(&eggwk) != 0)
         return;
     eggwk->actno = 63;
@@ -419,18 +504,19 @@ static void clrtrn(PALETTEENTRY *color_tbl) {
 
 static void colchg(sprite_status *roomwk, Uint8 *chgtbl) {
     Uint8 clrtbl_index;
+    hota8c_work *work = hota8c_work_get(roomwk);
 
-    if (roomwk->actfree[16] == 16)
+    if (work->timer == 16)
         return;
 
-    if (roomwk->actfree[17] != 0) {
-        --roomwk->actfree[17];
+    if (work->sub_timer != 0) {
+        --work->sub_timer;
         return;
     }
-    clrtbl_index = chgtbl[roomwk->actfree[16]];
-    roomwk->actfree[17] = chgtbl[roomwk->actfree[16] + 1];
+    clrtbl_index = chgtbl[work->timer];
+    work->sub_timer = chgtbl[work->timer + 1];
     clrtrn(&clrtblC1[clrtbl_index / 2]);
-    roomwk->actfree[16] += 2;
+    work->timer += 2;
 }
 
 Uint8 clrchgtbl1[16] = {84, 64, 72, 4, 60, 5, 48, 6, 36, 7, 24, 8, 12, 9, 0, 0};

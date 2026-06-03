@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "boss_8.h"
 #include "../action.h"
@@ -6,6 +8,7 @@
 #include "../io.h"
 #include "../loader2.h"
 #include "../playsub.h"
+#include "../player_work.h"
 #include "../score.h"
 
 extern void colchg_boss8(Uint8 *a3, Uint8 *a4);
@@ -32,6 +35,108 @@ typedef struct {
     char Roll_Speed;
     char Dummy;
 } egg8spd;
+
+#pragma pack(push, 1)
+typedef struct {
+    union {
+        Sint16 timer;
+        Uint16 timer_u;
+        struct {
+            Uint8 timer_low;
+            Uint8 angle;
+        };
+    };
+    Uint8 flags;
+    Uint8 step;
+    Sint16 parent_index;
+    Sint16 target_x;
+    Sint16 target_y;
+    union {
+        Sint32 x_velocity;
+        struct {
+            Uint8 hane_mode;
+            Uint8 hane_base_patno;
+            Uint8 hane_target;
+            Uint8 roll_speed;
+        };
+    };
+    union {
+        Sint16 target_pos;
+        struct {
+            Uint8 wait_time;
+            Uint8 spin_frame;
+        };
+    };
+    union {
+        Sint16 hane_count_word;
+        struct {
+            Uint8 hane_count;
+            Uint8 action_index;
+        };
+    };
+    union {
+        Sint16 flash_word;
+        struct {
+            Uint8 hit_flash;
+            Uint8 hit_timer;
+        };
+    };
+    union {
+        Sint16 color_word;
+        struct {
+            Uint8 color_a;
+            Uint8 color_b;
+        };
+    };
+} boss8_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(boss8_work, timer) == 0, "boss8_work.timer offset");
+_Static_assert(offsetof(boss8_work, timer_low) == 0,
+               "boss8_work.timer_low offset");
+_Static_assert(offsetof(boss8_work, angle) == 1, "boss8_work.angle offset");
+_Static_assert(offsetof(boss8_work, flags) == 2, "boss8_work.flags offset");
+_Static_assert(offsetof(boss8_work, step) == 3, "boss8_work.step offset");
+_Static_assert(offsetof(boss8_work, parent_index) == 4,
+               "boss8_work.parent_index offset");
+_Static_assert(offsetof(boss8_work, target_x) == 6,
+               "boss8_work.target_x offset");
+_Static_assert(offsetof(boss8_work, target_y) == 8,
+               "boss8_work.target_y offset");
+_Static_assert(offsetof(boss8_work, x_velocity) == 10,
+               "boss8_work.x_velocity offset");
+_Static_assert(offsetof(boss8_work, hane_mode) == 10,
+               "boss8_work.hane_mode offset");
+_Static_assert(offsetof(boss8_work, hane_base_patno) == 11,
+               "boss8_work.hane_base_patno offset");
+_Static_assert(offsetof(boss8_work, hane_target) == 12,
+               "boss8_work.hane_target offset");
+_Static_assert(offsetof(boss8_work, roll_speed) == 13,
+               "boss8_work.roll_speed offset");
+_Static_assert(offsetof(boss8_work, target_pos) == 14,
+               "boss8_work.target_pos offset");
+_Static_assert(offsetof(boss8_work, wait_time) == 14,
+               "boss8_work.wait_time offset");
+_Static_assert(offsetof(boss8_work, spin_frame) == 15,
+               "boss8_work.spin_frame offset");
+_Static_assert(offsetof(boss8_work, hane_count) == 16,
+               "boss8_work.hane_count offset");
+_Static_assert(offsetof(boss8_work, action_index) == 17,
+               "boss8_work.action_index offset");
+_Static_assert(offsetof(boss8_work, hit_flash) == 18,
+               "boss8_work.hit_flash offset");
+_Static_assert(offsetof(boss8_work, hit_timer) == 19,
+               "boss8_work.hit_timer offset");
+_Static_assert(offsetof(boss8_work, color_a) == 20,
+               "boss8_work.color_a offset");
+_Static_assert(offsetof(boss8_work, color_b) == 21,
+               "boss8_work.color_b offset");
+_Static_assert(sizeof(boss8_work) <= sizeof(((sprite_status *)0)->actfree),
+               "boss8_work fits in actfree");
+
+static boss8_work *boss8_get_work(sprite_status *pActwk) {
+    return (boss8_work *)pActwk->actfree;
+}
 
 static void egg8_ini(sprite_status *pActwk, sprite_status *pMecawk);
 static void egg8_scrset(sprite_status *pActwk, sprite_status *pMecawk);
@@ -145,34 +250,34 @@ void egg8(sprite_status *pActwk) {
 
     pPlayerwk = &actwk[0];
 
-    if ((idx = ((Sint16 *)pActwk)[25]) != 0) {
+    if ((idx = boss8_get_work(pActwk)->parent_index) != 0) {
         pMecawk = &actwk[idx];
-        pMecawk->actfree[2] &= 159;
+        boss8_get_work(pMecawk)->flags &= 159;
     } else {
         pMecawk = NULL;
     }
 
     egg8_warai_chk(pActwk);
 
-    if (pActwk->actfree[18] && --pActwk->actfree[18] == 0) {
+    if (boss8_get_work(pActwk)->hit_flash && --boss8_get_work(pActwk)->hit_flash == 0) {
         pActwk->mstno.b.h = 0;
     }
 
     egg8_colichk(pActwk, pPlayerwk, pMecawk);
 
-    if (pActwk->actfree[2] & 1) {
+    if (boss8_get_work(pActwk)->flags & 1) {
         next_action(pActwk);
     }
-    pActwk->actfree[2] &= 254;
+    boss8_get_work(pActwk)->flags &= 254;
 
     egg8_act_tbl[pActwk->r_no0 / 2](pActwk, pMecawk);
     patchg(pActwk, egg8_pchg);
 
-    colchg_boss8(&pActwk->actfree[19], &pActwk->actfree[20]);
+    colchg_boss8(&boss8_get_work(pActwk)->hit_timer, &boss8_get_work(pActwk)->color_a);
 
-    pMecawk = &actwk[((Sint16 *)pActwk)[25]];
+    pMecawk = &actwk[boss8_get_work(pActwk)->parent_index];
 
-    if (!(pMecawk->actfree[18] / 2 & 1)) {
+    if (!(boss8_get_work(pMecawk)->hit_flash / 2 & 1)) {
         actionsub(pActwk);
     }
 }
@@ -186,7 +291,7 @@ static void egg8_ini(sprite_status *pActwk, sprite_status *pMecawk) {
     pActwk->sproffset = 990;
     pActwk->patbase = egg8_pat;
 
-    pActwk->actfree[16] = 4;
+    boss8_get_work(pActwk)->hane_count = 4;
     pActwk->yposi.w.h -= 256;
 }
 
@@ -200,10 +305,10 @@ static void egg8_scrset(sprite_status *pActwk, sprite_status *pMecawk) {
             bossflag = bossstart = 8;
             make_meca(pActwk);
 
-            pMecawk = &actwk[((Sint16 *)pActwk)[25]];
+            pMecawk = &actwk[boss8_get_work(pActwk)->parent_index];
             egg8_spd_set(pActwk, pMecawk);
 
-            pActwk->actfree[2] &= 253;
+            boss8_get_work(pActwk)->flags &= 253;
             pActwk->r_no0 = 4;
 
             limwk = 3680;
@@ -214,45 +319,45 @@ static void egg8_scrset(sprite_status *pActwk, sprite_status *pMecawk) {
 }
 
 static void egg8_open1(sprite_status *pActwk, sprite_status *pMecawk) {
-    switch (pActwk->actfree[3]) {
+    switch (boss8_get_work(pActwk)->step) {
     case 1:
-        if (++((Sint16 *)pActwk)[23] == 240) {
+        if (++boss8_get_work(pActwk)->timer == 240) {
 
             pActwk->yposi.w.h += 256;
 
             sub_sync(104);
             bossstart |= 128;
 
-            pActwk->actfree[0] = 0;
-            pActwk->actfree[1] = 0;
-            ++pActwk->actfree[3];
+            boss8_get_work(pActwk)->timer_low = 0;
+            boss8_get_work(pActwk)->angle = 0;
+            ++boss8_get_work(pActwk)->step;
             pActwk->mstno.b.h = 2;
         }
 
         break;
 
     case 2:
-        if ((Uint16)pActwk->actfree[0] % 3 == 0) {
+        if ((Uint16)boss8_get_work(pActwk)->timer_low % 3 == 0) {
             fadein_boss8();
         }
 
-        ++pActwk->actfree[0];
-        if (pActwk->actfree[0] == 63) {
+        ++boss8_get_work(pActwk)->timer_low;
+        if (boss8_get_work(pActwk)->timer_low == 63) {
 
-            ++pActwk->actfree[3];
+            ++boss8_get_work(pActwk)->step;
             pActwk->mstno.b.h = 0;
-            pActwk->actfree[0] = 0;
+            boss8_get_work(pActwk)->timer_low = 0;
         }
 
         break;
 
     case 3:
-        if (++pActwk->actfree[0] == 40) {
+        if (++boss8_get_work(pActwk)->timer_low == 40) {
 
-            pActwk->actfree[2] |= 1;
-            pActwk->actfree[0] = 0;
+            boss8_get_work(pActwk)->flags |= 1;
+            boss8_get_work(pActwk)->timer_low = 0;
 
-            pActwk->actfree[2] |= 8;
+            boss8_get_work(pActwk)->flags |= 8;
             pActwk->colino = 50;
             pActwk->colicnt = 2;
             pMecawk->colino = 51;
@@ -263,7 +368,7 @@ static void egg8_open1(sprite_status *pActwk, sprite_status *pMecawk) {
 
     default:
         pActwk->mstno.b.h = 5;
-        ++pActwk->actfree[3];
+        ++boss8_get_work(pActwk)->step;
 
         colorset2(7);
         colorset2(8);
@@ -275,48 +380,48 @@ static void egg8_open1(sprite_status *pActwk, sprite_status *pMecawk) {
 static void egg8_wait(sprite_status *pActwk, sprite_status *pMecawk) {
     Uint8 wk;
 
-    ++pActwk->actfree[0];
-    wk = pActwk->actfree[14];
-    if (pActwk->actfree[0] == wk) {
+    ++boss8_get_work(pActwk)->timer_low;
+    wk = boss8_get_work(pActwk)->wait_time;
+    if (boss8_get_work(pActwk)->timer_low == wk) {
 
-        pActwk->actfree[0] = 0;
-        pActwk->actfree[2] |= 1;
+        boss8_get_work(pActwk)->timer_low = 0;
+        boss8_get_work(pActwk)->flags |= 1;
     }
 }
 
 static void egg8_move_r(sprite_status *pActwk, sprite_status *pMecawk) {
-    pActwk->xposi.l += ((Sint32 *)pActwk)[14];
-    if (pActwk->xposi.w.h >= ((Sint16 *)pActwk)[30]) {
+    pActwk->xposi.l += boss8_get_work(pActwk)->x_velocity;
+    if (pActwk->xposi.w.h >= boss8_get_work(pActwk)->target_pos) {
 
-        pActwk->xposi.w.h = ((Sint16 *)pActwk)[30];
-        pActwk->actfree[2] |= 1;
+        pActwk->xposi.w.h = boss8_get_work(pActwk)->target_pos;
+        boss8_get_work(pActwk)->flags |= 1;
     }
 }
 
 static void egg8_move_l(sprite_status *pActwk, sprite_status *pMecawk) {
-    pActwk->xposi.l -= ((Sint32 *)pActwk)[14];
-    if (pActwk->xposi.w.h <= ((Sint16 *)pActwk)[30]) {
+    pActwk->xposi.l -= boss8_get_work(pActwk)->x_velocity;
+    if (pActwk->xposi.w.h <= boss8_get_work(pActwk)->target_pos) {
 
-        pActwk->xposi.w.h = ((Sint16 *)pActwk)[30];
-        pActwk->actfree[2] |= 1;
+        pActwk->xposi.w.h = boss8_get_work(pActwk)->target_pos;
+        boss8_get_work(pActwk)->flags |= 1;
     }
 }
 
 static void egg8_move_d(sprite_status *pActwk, sprite_status *pMecawk) {
     pActwk->yposi.l += sprite_status_get_xspeed_yspeed(pActwk);
-    if (pActwk->yposi.w.h >= ((Sint16 *)pActwk)[30]) {
+    if (pActwk->yposi.w.h >= boss8_get_work(pActwk)->target_pos) {
 
-        pActwk->yposi.w.h = ((Sint16 *)pActwk)[30];
-        pActwk->actfree[2] |= 1;
+        pActwk->yposi.w.h = boss8_get_work(pActwk)->target_pos;
+        boss8_get_work(pActwk)->flags |= 1;
     }
 }
 
 static void egg8_move_u(sprite_status *pActwk, sprite_status *pMecawk) {
     pActwk->yposi.l -= sprite_status_get_xspeed_yspeed(pActwk);
-    if (pActwk->yposi.w.h <= ((Sint16 *)pActwk)[30]) {
+    if (pActwk->yposi.w.h <= boss8_get_work(pActwk)->target_pos) {
 
-        pActwk->yposi.w.h = ((Sint16 *)pActwk)[30];
-        pActwk->actfree[2] |= 1;
+        pActwk->yposi.w.h = boss8_get_work(pActwk)->target_pos;
+        boss8_get_work(pActwk)->flags |= 1;
     }
 }
 
@@ -326,9 +431,9 @@ static void egg8_move_c(sprite_status *pActwk, sprite_status *pMecawk) {
 
     sw = 110;
 
-    if (!pActwk->actfree[3]) {
+    if (!boss8_get_work(pActwk)->step) {
 
-        pActwk->actfree[3] = 2;
+        boss8_get_work(pActwk)->step = 2;
 
         if (pActwk->xposi.w.h <= 3840) {
 
@@ -337,247 +442,247 @@ static void egg8_move_c(sprite_status *pActwk, sprite_status *pMecawk) {
             sw = 108;
         }
     } else {
-        if (!(pActwk->actfree[3] & 1)) {
+        if (!(boss8_get_work(pActwk)->step & 1)) {
 
-            pActwk->xposi.l -= ((Sint32 *)pActwk)[14];
+            pActwk->xposi.l -= boss8_get_work(pActwk)->x_velocity;
 
-            if ((xOfs = ((Sint16 *)pActwk)[26]) < pActwk->xposi.w.h)
+            if ((xOfs = boss8_get_work(pActwk)->target_x) < pActwk->xposi.w.h)
                 return;
 
         } else {
-            pActwk->xposi.l += ((Sint32 *)pActwk)[14];
+            pActwk->xposi.l += boss8_get_work(pActwk)->x_velocity;
 
-            if ((xOfs = ((Sint16 *)pActwk)[26]) > pActwk->xposi.w.h)
+            if ((xOfs = boss8_get_work(pActwk)->target_x) > pActwk->xposi.w.h)
                 return;
         }
 
         pActwk->xposi.w.h = xOfs;
 
-        if (!((Sint16 *)pActwk)[30]) {
+        if (!boss8_get_work(pActwk)->target_pos) {
 
-            pActwk->actfree[2] |= 1;
-        } else if (!(--((Sint16 *)pActwk)[30])) {
+            boss8_get_work(pActwk)->flags |= 1;
+        } else if (!(--boss8_get_work(pActwk)->target_pos)) {
             sw = 99;
         } else {
-            if (!(pActwk->actfree[3] & 1)) {
+            if (!(boss8_get_work(pActwk)->step & 1)) {
                 sw = 114;
             } else {
                 sw = 108;
             }
 
-            pActwk->actfree[3] ^= 1;
+            boss8_get_work(pActwk)->step ^= 1;
         }
     }
 
     switch (sw) {
 
     case 108:
-        pActwk->actfree[3] &= 254;
-        ((Sint16 *)pActwk)[26] = 3716;
+        boss8_get_work(pActwk)->step &= 254;
+        boss8_get_work(pActwk)->target_x = 3716;
         break;
 
     case 114:
-        pActwk->actfree[3] |= 1;
-        ((Sint16 *)pActwk)[26] = 3964;
+        boss8_get_work(pActwk)->step |= 1;
+        boss8_get_work(pActwk)->target_x = 3964;
         break;
 
     case 99:
-        pActwk->actfree[3] ^= 1;
-        ((Sint16 *)pActwk)[26] = 3840;
+        boss8_get_work(pActwk)->step ^= 1;
+        boss8_get_work(pActwk)->target_x = 3840;
         break;
     }
 }
 
 static void egg8_move_escu(sprite_status *pActwk, sprite_status *pMecawk) {
-    if (!pActwk->actfree[3]) {
+    if (!boss8_get_work(pActwk)->step) {
         egg8_hane_chg3(pActwk, pMecawk);
-        pActwk->actfree[2] &= 254;
-        pActwk->actfree[3] = 1;
+        boss8_get_work(pActwk)->flags &= 254;
+        boss8_get_work(pActwk)->step = 1;
     }
 
     pActwk->yposi.l -= 81920;
-    if (pActwk->yposi.w.h <= ((Sint16 *)pActwk)[30]) {
+    if (pActwk->yposi.w.h <= boss8_get_work(pActwk)->target_pos) {
 
-        pActwk->yposi.w.h = ((Sint16 *)pActwk)[30];
-        pActwk->actfree[2] |= 1;
+        pActwk->yposi.w.h = boss8_get_work(pActwk)->target_pos;
+        boss8_get_work(pActwk)->flags |= 1;
     }
 }
 
 static void egg8_hane_roll(sprite_status *pActwk, sprite_status *pMecawk) {
-    if (!(pMecawk->actfree[16] & 64)) {
-        pMecawk->actfree[2] |= 16;
-        pMecawk->actfree[3] = 0;
-        pMecawk->actfree[1] = 0;
+    if (!(boss8_get_work(pMecawk)->hane_count & 64)) {
+        boss8_get_work(pMecawk)->flags |= 16;
+        boss8_get_work(pMecawk)->step = 0;
+        boss8_get_work(pMecawk)->angle = 0;
     }
 
-    pActwk->actfree[2] |= 1;
+    boss8_get_work(pActwk)->flags |= 1;
 }
 
 static void egg8_hane_stop(sprite_status *pActwk, sprite_status *pMecawk) {
-    if (!pActwk->actfree[3]) {
+    if (!boss8_get_work(pActwk)->step) {
 
-        ++pActwk->actfree[3];
-        pMecawk->actfree[2] |= 16;
-        pMecawk->actfree[16] &= 127;
-        pMecawk->actfree[3] = 0;
-        pMecawk->actfree[1] = 0;
+        ++boss8_get_work(pActwk)->step;
+        boss8_get_work(pMecawk)->flags |= 16;
+        boss8_get_work(pMecawk)->hane_count &= 127;
+        boss8_get_work(pMecawk)->step = 0;
+        boss8_get_work(pMecawk)->angle = 0;
 
-        if (pActwk->actfree[16] == 2) {
+        if (boss8_get_work(pActwk)->hane_count == 2) {
 
-            pMecawk->actfree[12] = 8;
+            boss8_get_work(pMecawk)->hane_target = 8;
         } else {
-            pMecawk->actfree[12] = 4;
+            boss8_get_work(pMecawk)->hane_target = 4;
         }
     }
 
-    if (pMecawk->actfree[16] & 128) {
+    if (boss8_get_work(pMecawk)->hane_count & 128) {
 
-        pActwk->actfree[2] |= 1;
+        boss8_get_work(pActwk)->flags |= 1;
     }
 }
 
 static void egg8_hane_chg1(sprite_status *pActwk, sprite_status *pMecawk) {
-    pMecawk->actfree[3] = 0;
-    pMecawk->actfree[0] = 0;
-    pMecawk->actfree[1] = 0;
-    pMecawk->actfree[16] |= 160;
-    pMecawk->actfree[16] &= 191;
+    boss8_get_work(pMecawk)->step = 0;
+    boss8_get_work(pMecawk)->timer_low = 0;
+    boss8_get_work(pMecawk)->angle = 0;
+    boss8_get_work(pMecawk)->hane_count |= 160;
+    boss8_get_work(pMecawk)->hane_count &= 191;
     pMecawk->r_no0 = 4;
 
-    pActwk->actfree[0] = 0;
-    pActwk->actfree[1] = 0;
-    pActwk->actfree[2] |= 1;
+    boss8_get_work(pActwk)->timer_low = 0;
+    boss8_get_work(pActwk)->angle = 0;
+    boss8_get_work(pActwk)->flags |= 1;
 }
 
 static void egg8_hane_chg2(sprite_status *pActwk, sprite_status *pMecawk) {
     soundset(201);
 
-    pMecawk->actfree[3] = 0;
-    pMecawk->actfree[0] = 0;
-    pMecawk->actfree[1] = 0;
+    boss8_get_work(pMecawk)->step = 0;
+    boss8_get_work(pMecawk)->timer_low = 0;
+    boss8_get_work(pMecawk)->angle = 0;
     pMecawk->r_no0 = 6;
 
-    pActwk->actfree[2] |= 1;
+    boss8_get_work(pActwk)->flags |= 1;
 }
 
 static void egg8_hane_chg3(sprite_status *pActwk, sprite_status *pMecawk) {
-    pMecawk->actfree[3] = 0;
-    pMecawk->actfree[0] = 0;
-    pMecawk->actfree[1] = 0;
+    boss8_get_work(pMecawk)->step = 0;
+    boss8_get_work(pMecawk)->timer_low = 0;
+    boss8_get_work(pMecawk)->angle = 0;
     pMecawk->r_no0 = 8;
 
-    pActwk->actfree[2] |= 1;
+    boss8_get_work(pActwk)->flags |= 1;
 }
 
 static void egg8_hane_fire(sprite_status *pActwk, sprite_status *pMecawk) {
-    switch (pActwk->actfree[3]) {
+    switch (boss8_get_work(pActwk)->step) {
 
     case 1:
-        ((Sint16 *)pActwk)[30] = 316;
+        boss8_get_work(pActwk)->target_pos = 316;
         egg8_move_u(pActwk, pMecawk);
 
-        if (pActwk->actfree[2] & 1) {
+        if (boss8_get_work(pActwk)->flags & 1) {
 
-            ++pActwk->actfree[3];
+            ++boss8_get_work(pActwk)->step;
         }
 
-        pActwk->actfree[2] &= 254;
+        boss8_get_work(pActwk)->flags &= 254;
         break;
 
     case 2:
-        if (pMecawk->actfree[19] == pActwk->actfree[16] * 2) {
+        if (boss8_get_work(pMecawk)->hit_timer == boss8_get_work(pActwk)->hane_count * 2) {
 
-            pActwk->actfree[2] |= 1;
+            boss8_get_work(pActwk)->flags |= 1;
         }
         break;
 
     default:
-        ++pActwk->actfree[3];
-        pMecawk->actfree[3] = 0;
-        pMecawk->actfree[0] = 0;
-        pMecawk->actfree[1] = 0;
+        ++boss8_get_work(pActwk)->step;
+        boss8_get_work(pMecawk)->step = 0;
+        boss8_get_work(pMecawk)->timer_low = 0;
+        boss8_get_work(pMecawk)->angle = 0;
         pMecawk->r_no0 = 10;
-        pMecawk->actfree[19] = 0;
-        pMecawk->actfree[20] = 0;
+        boss8_get_work(pMecawk)->hit_timer = 0;
+        boss8_get_work(pMecawk)->color_a = 0;
         break;
     }
 }
 
 static void egg8_hane_reset(sprite_status *pActwk, sprite_status *pMecawk) {
-    pMecawk->actfree[3] = 0;
-    pMecawk->actfree[0] = 0;
-    pMecawk->actfree[1] = 0;
+    boss8_get_work(pMecawk)->step = 0;
+    boss8_get_work(pMecawk)->timer_low = 0;
+    boss8_get_work(pMecawk)->angle = 0;
     pMecawk->r_no0 = 12;
 
-    pActwk->actfree[2] |= 1;
+    boss8_get_work(pActwk)->flags |= 1;
 }
 
 static void egg8_spin_d(sprite_status *pActwk, sprite_status *pMecawk) {
     Sint32 tateini = 0;
 
-    if (!pActwk->actfree[3]) {
+    if (!boss8_get_work(pActwk)->step) {
 
-        if (pActwk->actfree[16] == 4) {
+        if (boss8_get_work(pActwk)->hane_count == 4) {
 
-            pMecawk->actfree[12] = 8;
+            boss8_get_work(pMecawk)->hane_target = 8;
 
             tateini = 1;
         } else {
             if (actwk[0].xposi.w.h < pActwk->xposi.w.h) {
 
-                pMecawk->actfree[12] = 8;
+                boss8_get_work(pMecawk)->hane_target = 8;
 
-                ((Sint16 *)pActwk)[30] = 3964;
-                pActwk->actfree[3] = 1;
+                boss8_get_work(pActwk)->target_pos = 3964;
+                boss8_get_work(pActwk)->step = 1;
             } else {
-                if (pActwk->actfree[16] != 3) {
+                if (boss8_get_work(pActwk)->hane_count != 3) {
 
-                    pMecawk->actfree[12] = 4;
+                    boss8_get_work(pMecawk)->hane_target = 4;
                 } else {
-                    pMecawk->actfree[12] = 0;
+                    boss8_get_work(pMecawk)->hane_target = 0;
                 }
 
-                ((Sint16 *)pActwk)[30] = 3716;
-                pActwk->actfree[3] = 2;
+                boss8_get_work(pActwk)->target_pos = 3716;
+                boss8_get_work(pActwk)->step = 2;
             }
         }
     }
 
-    if (pActwk->actfree[3] == 3) {
+    if (boss8_get_work(pActwk)->step == 3) {
 
         tateini = 2;
-    } else if (pActwk->actfree[3]) {
-        if (pActwk->actfree[3] == 1) {
+    } else if (boss8_get_work(pActwk)->step) {
+        if (boss8_get_work(pActwk)->step == 1) {
 
             egg8_move_r(pActwk, pMecawk);
         } else {
             egg8_move_l(pActwk, pMecawk);
         }
 
-        if (pActwk->actfree[2] & 1) {
+        if (boss8_get_work(pActwk)->flags & 1) {
             tateini = 1;
         }
 
-        pActwk->actfree[2] &= 254;
+        boss8_get_work(pActwk)->flags &= 254;
     }
 
     switch (tateini) {
 
     case 1:
-        pMecawk->actfree[2] |= 16;
-        pMecawk->actfree[16] &= 127;
-        pMecawk->actfree[3] = 0;
-        pMecawk->actfree[1] = 0;
+        boss8_get_work(pMecawk)->flags |= 16;
+        boss8_get_work(pMecawk)->hane_count &= 127;
+        boss8_get_work(pMecawk)->step = 0;
+        boss8_get_work(pMecawk)->angle = 0;
 
-        ((Sint16 *)pActwk)[30] = 416;
-        pActwk->actfree[3] = 3;
+        boss8_get_work(pActwk)->target_pos = 416;
+        boss8_get_work(pActwk)->step = 3;
 
     case 2:
         egg8_move_d(pActwk, pMecawk);
 
-        if (pActwk->actfree[2] & 1) {
+        if (boss8_get_work(pActwk)->flags & 1) {
 
-            pActwk->actfree[3] = 0;
+            boss8_get_work(pActwk)->step = 0;
         }
         break;
     }
@@ -599,99 +704,99 @@ static void egg8_spin_r(sprite_status *pActwk, sprite_status *pMecawk) {
     Sint16 *pSpinTbl, xwk, ywk;
     Uint8 hanecntwk, para0wk;
 
-    if ((char)pActwk->actfree[3] >= 5) {
+    if ((char)boss8_get_work(pActwk)->step >= 5) {
 
         pMecawk->r_no0 = 2;
-        pMecawk->actfree[3] = 0;
-        pMecawk->actfree[1] = 0;
+        boss8_get_work(pMecawk)->step = 0;
+        boss8_get_work(pMecawk)->angle = 0;
 
-        pActwk->actfree[3] = 0;
-        pActwk->actfree[0] = 0;
-        pActwk->actfree[1] = 0;
-        pActwk->actfree[2] |= 1;
-    } else if (pActwk->actfree[3] & 128) {
+        boss8_get_work(pActwk)->step = 0;
+        boss8_get_work(pActwk)->timer_low = 0;
+        boss8_get_work(pActwk)->angle = 0;
+        boss8_get_work(pActwk)->flags |= 1;
+    } else if (boss8_get_work(pActwk)->step & 128) {
 
-        if (++pActwk->actfree[0] == 60) {
-            pActwk->actfree[0] = 0;
-            pActwk->actfree[3] &= 127;
+        if (++boss8_get_work(pActwk)->timer_low == 60) {
+            boss8_get_work(pActwk)->timer_low = 0;
+            boss8_get_work(pActwk)->step &= 127;
         }
 
     } else {
-        if (!pActwk->actfree[3]) {
+        if (!boss8_get_work(pActwk)->step) {
 
-            pActwk->actfree[0] = 0;
-            pActwk->actfree[15] = 0;
+            boss8_get_work(pActwk)->timer_low = 0;
+            boss8_get_work(pActwk)->spin_frame = 0;
 
-            if ((pActwk->actfree[16] == 4 &&
+            if ((boss8_get_work(pActwk)->hane_count == 4 &&
                  actwk[0].xposi.w.h >= pActwk->xposi.w.h) ||
-                (pActwk->actfree[16] != 4 && pActwk->xposi.w.h < 3840)) {
-                pActwk->actfree[1] = 0;
-                pActwk->actfree[3] = 2;
+                (boss8_get_work(pActwk)->hane_count != 4 && pActwk->xposi.w.h < 3840)) {
+                boss8_get_work(pActwk)->angle = 0;
+                boss8_get_work(pActwk)->step = 2;
             } else {
-                pActwk->actfree[1] = 7;
-                pActwk->actfree[3] = 1;
+                boss8_get_work(pActwk)->angle = 7;
+                boss8_get_work(pActwk)->step = 1;
             }
 
             pMecawk->r_no0 = 14;
-            pMecawk->actfree[3] = 0;
-            pMecawk->actfree[1] = 0;
+            boss8_get_work(pMecawk)->step = 0;
+            boss8_get_work(pMecawk)->angle = 0;
         }
 
-        if (++pActwk->actfree[0] == 20) {
+        if (++boss8_get_work(pActwk)->timer_low == 20) {
 
-            ++((char *)pActwk)[61];
+            ++boss8_get_work(pActwk)->spin_frame;
 
-            if (!(((char *)pActwk)[61] & 1)) {
+            if (!(boss8_get_work(pActwk)->spin_frame & 1)) {
                 sub_sync(126);
             }
 
-            pActwk->actfree[0] = 0;
+            boss8_get_work(pActwk)->timer_low = 0;
 
-            pSpinTbl = spin_tbl[pActwk->actfree[16]];
-            pSpinTbl += (pActwk->actfree[1] & 15) * 2;
+            pSpinTbl = spin_tbl[boss8_get_work(pActwk)->hane_count];
+            pSpinTbl += (boss8_get_work(pActwk)->angle & 15) * 2;
 
             xwk = *pSpinTbl++;
             ywk = *pSpinTbl++;
 
-            if (pActwk->actfree[3] & 1) {
+            if (boss8_get_work(pActwk)->step & 1) {
 
-                pMecawk->actfree[2] |= 64;
+                boss8_get_work(pMecawk)->flags |= 64;
                 xwk *= -1;
                 ywk *= -1;
             } else {
-                pMecawk->actfree[2] |= 32;
+                boss8_get_work(pMecawk)->flags |= 32;
             }
 
             pActwk->xposi.w.h += xwk;
             pActwk->yposi.w.h += ywk;
 
-            hanecntwk = pActwk->actfree[16];
-            para0wk = ((char *)pActwk)[61];
+            hanecntwk = boss8_get_work(pActwk)->hane_count;
+            para0wk = boss8_get_work(pActwk)->spin_frame;
 
             if ((hanecntwk == 4 && (para0wk == 4 || para0wk == 12)) ||
                 (hanecntwk != 4 && (para0wk == 4 || para0wk == 8))) {
-                if ((char)pActwk->actfree[3] >= 3) {
+                if ((char)boss8_get_work(pActwk)->step >= 3) {
 
-                    pActwk->actfree[3] = 133;
+                    boss8_get_work(pActwk)->step = 133;
 
-                    if (pActwk->actfree[3] & 1) {
+                    if (boss8_get_work(pActwk)->step & 1) {
 
-                        --pActwk->actfree[1];
+                        --boss8_get_work(pActwk)->angle;
                     } else {
-                        ++pActwk->actfree[1];
+                        ++boss8_get_work(pActwk)->angle;
                     }
-                } else if (pActwk->actfree[3] == 1) {
+                } else if (boss8_get_work(pActwk)->step == 1) {
 
-                    pActwk->actfree[3] = 132;
+                    boss8_get_work(pActwk)->step = 132;
                 } else {
-                    pActwk->actfree[3] = 131;
+                    boss8_get_work(pActwk)->step = 131;
                 }
             } else {
-                if (pActwk->actfree[3] & 1) {
+                if (boss8_get_work(pActwk)->step & 1) {
 
-                    --pActwk->actfree[1];
+                    --boss8_get_work(pActwk)->angle;
                 } else {
-                    ++pActwk->actfree[1];
+                    ++boss8_get_work(pActwk)->angle;
                 }
             }
         }
@@ -699,24 +804,24 @@ static void egg8_spin_r(sprite_status *pActwk, sprite_status *pMecawk) {
 }
 
 static void egg8_target(sprite_status *pActwk, sprite_status *pMecawk) {
-    if (!pActwk->actfree[3]) {
+    if (!boss8_get_work(pActwk)->step) {
 
         egg8target_ini(pActwk, pMecawk);
     }
 
-    if (!(pActwk->actfree[3] & 2)) {
+    if (!(boss8_get_work(pActwk)->step & 2)) {
 
         egg8target_roll(pActwk, pMecawk);
     }
 
-    if (!(pActwk->actfree[3] & 4)) {
+    if (!(boss8_get_work(pActwk)->step & 4)) {
 
         egg8target_move(pActwk, pMecawk);
     }
 
-    if (pActwk->actfree[3] == 7) {
+    if (boss8_get_work(pActwk)->step == 7) {
 
-        pActwk->actfree[2] |= 1;
+        boss8_get_work(pActwk)->flags |= 1;
     }
 }
 
@@ -724,32 +829,32 @@ static void egg8target_ini(sprite_status *pActwk, sprite_status *pMecawk) {
     Sint16 xPos, xSav;
     int_union xwk, ywk;
 
-    pActwk->actfree[3] |= 1;
+    boss8_get_work(pActwk)->step |= 1;
     xwk.w.l = xSav = xPos = actwk[0].xposi.w.h - pActwk->xposi.w.h;
 
     if (xSav < 0) {
         xPos *= -1;
     }
 
-    pMecawk->actfree[2] |= 16;
-    pMecawk->actfree[16] &= 127;
-    pMecawk->actfree[3] = 0;
-    pMecawk->actfree[1] = 0;
+    boss8_get_work(pMecawk)->flags |= 16;
+    boss8_get_work(pMecawk)->hane_count &= 127;
+    boss8_get_work(pMecawk)->step = 0;
+    boss8_get_work(pMecawk)->angle = 0;
 
     if (xPos < 64) {
 
         xwk.l = xwk.w.l;
         xwk.l = xwk.l * 16 / 90 * 4096;
-        ((Sint32 *)pActwk)[14] = xwk.l;
+        boss8_get_work(pActwk)->x_velocity = xwk.l;
 
         ywk.l = (380 - pActwk->yposi.w.h) * 16 / 90 * 4096;
         sprite_status_set_xspeed_yspeed(pActwk, ywk.l);
 
-        if (pActwk->actfree[16] != 2) {
+        if (boss8_get_work(pActwk)->hane_count != 2) {
 
-            pMecawk->actfree[12] = 4;
+            boss8_get_work(pMecawk)->hane_target = 4;
         } else {
-            pMecawk->actfree[12] = 6;
+            boss8_get_work(pMecawk)->hane_target = 6;
         }
     } else {
         if (xSav >= 0) {
@@ -761,134 +866,134 @@ static void egg8target_ini(sprite_status *pActwk, sprite_status *pMecawk) {
 
         xwk.l = xwk.w.l;
         xwk.l = xwk.l * 16 / 90 * 4096;
-        ((Sint32 *)pActwk)[14] = xwk.l;
+        boss8_get_work(pActwk)->x_velocity = xwk.l;
 
         ywk.l = (394 - pActwk->yposi.w.h) * 16 / 90 * 4096;
         sprite_status_set_xspeed_yspeed(pActwk, ywk.l);
 
-        if (pActwk->actfree[16] != 2 && xSav >= 0) {
-            pMecawk->actfree[12] = 2;
+        if (boss8_get_work(pActwk)->hane_count != 2 && xSav >= 0) {
+            boss8_get_work(pMecawk)->hane_target = 2;
         } else {
-            pMecawk->actfree[12] = 6;
+            boss8_get_work(pMecawk)->hane_target = 6;
         }
     }
 }
 
 static void egg8target_roll(sprite_status *pActwk, sprite_status *pMecawk) {
-    if (pMecawk->actfree[16] & 128) {
+    if (boss8_get_work(pMecawk)->hane_count & 128) {
 
-        pActwk->actfree[3] |= 2;
+        boss8_get_work(pActwk)->step |= 2;
     }
 }
 
 static void egg8target_move(sprite_status *pActwk, sprite_status *pMecawk) {
     Sint16 ywk;
 
-    if (!(pMecawk->actfree[12] & 3)) {
+    if (!(boss8_get_work(pMecawk)->hane_target & 3)) {
         ywk = 380;
     } else {
         ywk = 394;
     }
 
-    pActwk->xposi.l += ((Sint32 *)pActwk)[14];
+    pActwk->xposi.l += boss8_get_work(pActwk)->x_velocity;
     pActwk->yposi.l += sprite_status_get_xspeed_yspeed(pActwk);
 
     if (pActwk->yposi.w.h >= ywk) {
 
         pActwk->yposi.w.h = ywk;
-        ((Sint32 *)pActwk)[14] *= -1;
+        boss8_get_work(pActwk)->x_velocity *= -1;
         sprite_status_set_xspeed_yspeed(
             pActwk, -sprite_status_get_xspeed_yspeed(pActwk));
-        pActwk->actfree[3] |= 4;
+        boss8_get_work(pActwk)->step |= 4;
     }
 }
 
 static void egg8_targetreset(sprite_status *pActwk, sprite_status *pMecawk) {
-    pActwk->xposi.l += ((Sint32 *)pActwk)[14];
+    pActwk->xposi.l += boss8_get_work(pActwk)->x_velocity;
     pActwk->yposi.l += sprite_status_get_xspeed_yspeed(pActwk);
 
     if (pActwk->yposi.w.h <= 316) {
 
         pActwk->yposi.w.h = 316;
-        pActwk->actfree[3] = 0;
-        pActwk->actfree[2] |= 1;
+        boss8_get_work(pActwk)->step = 0;
+        boss8_get_work(pActwk)->flags |= 1;
 
         egg8_spd_set(pActwk, pMecawk);
     }
 }
 
 static void egg8_tobi_d(sprite_status *pActwk, sprite_status *pMecawk) {
-    if (pActwk->actfree[3] == 0 || pActwk->actfree[3] > 5) {
+    if (boss8_get_work(pActwk)->step == 0 || boss8_get_work(pActwk)->step > 5) {
 
         if (pActwk->xposi.w.h > actwk[0].xposi.w.h) {
 
-            ((Sint16 *)pActwk)[30] = 3964;
-            pActwk->actfree[3] = 1;
+            boss8_get_work(pActwk)->target_pos = 3964;
+            boss8_get_work(pActwk)->step = 1;
         } else {
-            ((Sint16 *)pActwk)[30] = 3716;
-            pActwk->actfree[3] = 2;
+            boss8_get_work(pActwk)->target_pos = 3716;
+            boss8_get_work(pActwk)->step = 2;
         }
     }
 
-    if (pActwk->actfree[3] == 1) {
+    if (boss8_get_work(pActwk)->step == 1) {
 
         egg8_move_r(pActwk, pMecawk);
-    } else if (pActwk->actfree[3] == 2) {
+    } else if (boss8_get_work(pActwk)->step == 2) {
 
         egg8_move_l(pActwk, pMecawk);
     }
 
-    if (pActwk->actfree[3] == 1 || pActwk->actfree[3] == 2) {
+    if (boss8_get_work(pActwk)->step == 1 || boss8_get_work(pActwk)->step == 2) {
 
-        if (!(pActwk->actfree[2] & 1))
+        if (!(boss8_get_work(pActwk)->flags & 1))
             return;
 
-        pActwk->actfree[2] &= 254;
+        boss8_get_work(pActwk)->flags &= 254;
 
-        pMecawk->actfree[2] |= 16;
-        pMecawk->actfree[16] &= 127;
-        pMecawk->actfree[12] = 8;
-        pMecawk->actfree[3] = 0;
-        pMecawk->actfree[1] = 0;
+        boss8_get_work(pMecawk)->flags |= 16;
+        boss8_get_work(pMecawk)->hane_count &= 127;
+        boss8_get_work(pMecawk)->hane_target = 8;
+        boss8_get_work(pMecawk)->step = 0;
+        boss8_get_work(pMecawk)->angle = 0;
 
-        pActwk->actfree[3] = 3;
+        boss8_get_work(pActwk)->step = 3;
     }
 
-    if (pActwk->actfree[3] == 3) {
+    if (boss8_get_work(pActwk)->step == 3) {
 
-        if (!(pMecawk->actfree[16] & 128))
+        if (!(boss8_get_work(pMecawk)->hane_count & 128))
             return;
 
-        ((Sint16 *)pActwk)[30] = 312;
+        boss8_get_work(pActwk)->target_pos = 312;
 
-        pActwk->actfree[3] = 4;
+        boss8_get_work(pActwk)->step = 4;
     }
 
-    if (pActwk->actfree[3] == 4 || pActwk->actfree[3] > 5) {
+    if (boss8_get_work(pActwk)->step == 4 || boss8_get_work(pActwk)->step > 5) {
 
         egg8_move_d(pActwk, pMecawk);
 
-        if (!(pActwk->actfree[2] & 1))
+        if (!(boss8_get_work(pActwk)->flags & 1))
             return;
 
-        pActwk->actfree[2] &= 254;
+        boss8_get_work(pActwk)->flags &= 254;
 
-        pActwk->actfree[3] = 5;
-        ((Sint16 *)pActwk)[26] = 0;
-        ((Sint16 *)pActwk)[27] = -104;
-        ((Sint16 *)pActwk)[23] = 16384;
+        boss8_get_work(pActwk)->step = 5;
+        boss8_get_work(pActwk)->target_x = 0;
+        boss8_get_work(pActwk)->target_y = -104;
+        boss8_get_work(pActwk)->timer = 16384;
     }
 
-    if (pActwk->actfree[3] == 5) {
+    if (boss8_get_work(pActwk)->step == 5) {
 
         tobi_set(pActwk);
-        pActwk->xposi.w.h -= ((Sint16 *)pActwk)[26];
-        ((Sint16 *)pActwk)[26] = 0;
+        pActwk->xposi.w.h -= boss8_get_work(pActwk)->target_x;
+        boss8_get_work(pActwk)->target_x = 0;
 
-        if (((Sint16 *)pActwk)[23] == -32768) {
+        if (boss8_get_work(pActwk)->timer == -32768) {
 
-            pActwk->actfree[3] = 0;
-            pActwk->actfree[2] |= 1;
+            boss8_get_work(pActwk)->step = 0;
+            boss8_get_work(pActwk)->flags |= 1;
 
             soundset(180);
         }
@@ -898,46 +1003,46 @@ static void egg8_tobi_d(sprite_status *pActwk, sprite_status *pMecawk) {
 static void egg8_tobi(sprite_status *pActwk, sprite_status *pMecawk) {
     Sint16 xwk;
 
-    if ((char)pActwk->actfree[3] < 5) {
-        if (!pActwk->actfree[3]) {
+    if ((char)boss8_get_work(pActwk)->step < 5) {
+        if (!boss8_get_work(pActwk)->step) {
 
-            ((Sint16 *)pActwk)[27] = 0;
-            ((Sint16 *)pActwk)[23] = 0;
+            boss8_get_work(pActwk)->target_y = 0;
+            boss8_get_work(pActwk)->timer = 0;
 
             if (pActwk->xposi.w.h < 3840) {
 
-                ((Sint16 *)pActwk)[26] = -41;
-                pActwk->actfree[3] = 2;
+                boss8_get_work(pActwk)->target_x = -41;
+                boss8_get_work(pActwk)->step = 2;
             } else {
-                ((Sint16 *)pActwk)[26] = 41;
-                pActwk->actfree[3] = 1;
+                boss8_get_work(pActwk)->target_x = 41;
+                boss8_get_work(pActwk)->step = 1;
             }
 
             pMecawk->r_no0 = 18;
-            pMecawk->actfree[10] = 2;
-            pMecawk->actfree[3] = 0;
-            pMecawk->actfree[1] = 0;
+            boss8_get_work(pMecawk)->hane_mode = 2;
+            boss8_get_work(pMecawk)->step = 0;
+            boss8_get_work(pMecawk)->angle = 0;
         }
 
         tobi_set(pActwk);
 
-        if (((Sint16 *)pActwk)[23] != -32768)
+        if (boss8_get_work(pActwk)->timer != -32768)
             return;
 
         soundset(180);
 
-        ((Sint16 *)pActwk)[27] = 0;
-        ((Sint16 *)pActwk)[23] = 0;
+        boss8_get_work(pActwk)->target_y = 0;
+        boss8_get_work(pActwk)->timer = 0;
 
-        if (pActwk->actfree[3] & 1) {
+        if (boss8_get_work(pActwk)->step & 1) {
 
-            ((Sint16 *)pActwk)[26] = 41;
+            boss8_get_work(pActwk)->target_x = 41;
 
             if ((xwk = pActwk->xposi.w.h - 3716) < 0) {
                 xwk *= -1;
             }
         } else {
-            ((Sint16 *)pActwk)[26] = -41;
+            boss8_get_work(pActwk)->target_x = -41;
 
             if ((xwk = pActwk->xposi.w.h - 3964) < 0) {
                 xwk *= -1;
@@ -947,58 +1052,58 @@ static void egg8_tobi(sprite_status *pActwk, sprite_status *pMecawk) {
         if (xwk >= 41)
             return;
 
-        ((Sint16 *)pActwk)[26] *= -1;
-        if (pActwk->actfree[3] < 3) {
-            if (pActwk->actfree[3] != 1) {
+        boss8_get_work(pActwk)->target_x *= -1;
+        if (boss8_get_work(pActwk)->step < 3) {
+            if (boss8_get_work(pActwk)->step != 1) {
 
-                pActwk->actfree[3] = 3;
+                boss8_get_work(pActwk)->step = 3;
             } else {
-                pActwk->actfree[3] = 4;
+                boss8_get_work(pActwk)->step = 4;
             }
 
             return;
         }
     }
 
-    pActwk->actfree[3] = 0;
-    pActwk->actfree[2] |= 1;
+    boss8_get_work(pActwk)->step = 0;
+    boss8_get_work(pActwk)->flags |= 1;
 
     pMecawk->r_no0 = 2;
-    pMecawk->actfree[3] = 0;
-    pMecawk->actfree[1] = 0;
-    pMecawk->actfree[14] = 0;
+    boss8_get_work(pMecawk)->step = 0;
+    boss8_get_work(pMecawk)->angle = 0;
+    boss8_get_work(pMecawk)->wait_time = 0;
 }
 
 static void egg8_tobi_u(sprite_status *pActwk, sprite_status *pMecawk) {
-    if (!pActwk->actfree[3]) {
+    if (!boss8_get_work(pActwk)->step) {
 
-        pActwk->actfree[3] = 1;
-        ((Sint16 *)pActwk)[26] = 0;
-        ((Sint16 *)pActwk)[27] = 0;
-        ((Sint16 *)pActwk)[23] = 0;
+        boss8_get_work(pActwk)->step = 1;
+        boss8_get_work(pActwk)->target_x = 0;
+        boss8_get_work(pActwk)->target_y = 0;
+        boss8_get_work(pActwk)->timer = 0;
     }
 
     tobi_set(pActwk);
-    pActwk->xposi.w.h -= ((Sint16 *)pActwk)[26];
-    ((Sint16 *)pActwk)[26] = 0;
+    pActwk->xposi.w.h -= boss8_get_work(pActwk)->target_x;
+    boss8_get_work(pActwk)->target_x = 0;
 
-    if (((Sint16 *)pActwk)[23] >= 16384) {
+    if (boss8_get_work(pActwk)->timer >= 16384) {
 
-        pActwk->actfree[3] = 0;
-        pActwk->actfree[2] |= 1;
-        pActwk->actfree[0] = 0;
-        pActwk->actfree[1] = 0;
-        ((Sint16 *)pActwk)[27] = 0;
+        boss8_get_work(pActwk)->step = 0;
+        boss8_get_work(pActwk)->flags |= 1;
+        boss8_get_work(pActwk)->timer_low = 0;
+        boss8_get_work(pActwk)->angle = 0;
+        boss8_get_work(pActwk)->target_y = 0;
     }
 }
 
 static void egg8_dead(sprite_status *pActwk, sprite_status *pMecawk) {
     sprite_status *pNewact;
 
-    if (!pActwk->actfree[0]) {
+    if (!boss8_get_work(pActwk)->timer_low) {
 
         pActwk->mstno.b.h = 3;
-        pActwk->actfree[18] = 0;
+        boss8_get_work(pActwk)->hit_flash = 0;
 
         pMecawk->r_no0 = 16;
         pMecawk->patno = 3;
@@ -1006,10 +1111,10 @@ static void egg8_dead(sprite_status *pActwk, sprite_status *pMecawk) {
         pActwk->colicnt = 0;
         pMecawk->colino = 0;
         pMecawk->colicnt = 0;
-        pActwk->actfree[2] &= 247;
+        boss8_get_work(pActwk)->flags &= 247;
     }
 
-    if (++pActwk->actfree[0] >= 90) {
+    if (++boss8_get_work(pActwk)->timer_low >= 90) {
 
         if (actwkchk(&pNewact) != 0)
             return;
@@ -1028,55 +1133,55 @@ static void egg8_esc(sprite_status *pActwk, sprite_status *pMecawk) {
     Uint8 dirwk;
     Sint16 sinwk, coswk;
 
-    if (!pActwk->actfree[3]) {
+    if (!boss8_get_work(pActwk)->step) {
 
         scoreup(100);
 
-        pActwk->actfree[1] = 0;
-        ((Sint16 *)pActwk)[27] = 0;
-        ++pActwk->actfree[3];
+        boss8_get_work(pActwk)->angle = 0;
+        boss8_get_work(pActwk)->target_y = 0;
+        ++boss8_get_work(pActwk)->step;
     }
 
-    ++pActwk->actfree[0];
+    ++boss8_get_work(pActwk)->timer_low;
     bom_set(pActwk);
 
-    if ((Uint16)pActwk->actfree[0] % 60 == 0) {
+    if ((Uint16)boss8_get_work(pActwk)->timer_low % 60 == 0) {
         make_hibana(pActwk);
     }
 
-    pActwk->yposi.w.h -= ((Sint16 *)pActwk)[27];
+    pActwk->yposi.w.h -= boss8_get_work(pActwk)->target_y;
     pActwk->yposi.l += 16384;
 
-    dirwk = pActwk->actfree[1];
-    pActwk->actfree[1] += 3;
+    dirwk = boss8_get_work(pActwk)->angle;
+    boss8_get_work(pActwk)->angle += 3;
     sinset(dirwk, &sinwk, &coswk);
 
     sinwk = sinwk * 4 >> 8;
-    ((Sint16 *)pActwk)[27] = sinwk;
+    boss8_get_work(pActwk)->target_y = sinwk;
     pActwk->yposi.w.h += sinwk;
 
-    pActwk->xposi.l += ((Sint32 *)pActwk)[14];
+    pActwk->xposi.l += boss8_get_work(pActwk)->x_velocity;
 
     if (pActwk->xposi.w.h >= 4064) {
 
         colorset2(11);
 
         pActwk->r_no0 = 54;
-        pActwk->actfree[0] = 0;
+        boss8_get_work(pActwk)->timer_low = 0;
         bossstart = 0;
     }
 }
 
 static void egg8_esc2(sprite_status *pActwk, sprite_status *pMecawk) {
-    ++pActwk->actfree[0];
+    ++boss8_get_work(pActwk)->timer_low;
     bom_set(pActwk);
 }
 
 static void egg8_warai_chk(sprite_status *pActwk) {
     if (!pActwk->mstno.b.h) {
-        if (((Sint16 *)&actwk[0])[26] || actwk[0].r_no0 == 6) {
+        if (player_work_get(&actwk[0])->damage_invulnerability_timer || actwk[0].r_no0 == 6) {
 
-            pActwk->actfree[18] = 120;
+            boss8_get_work(pActwk)->hit_flash = 120;
             pActwk->mstno.b.h = 4;
         }
     }
@@ -1086,14 +1191,14 @@ static void egg8_colichk(sprite_status *pActwk, sprite_status *pPlayerwk,
                          sprite_status *pMecawk) {
     Uint8 hane_patno;
 
-    if (!(pActwk->actfree[2] & 8))
+    if (!(boss8_get_work(pActwk)->flags & 8))
         return;
 
-    pMecawk->actfree[17] = 255;
+    boss8_get_work(pMecawk)->action_index = 255;
 
-    if (pMecawk->actfree[18]) {
+    if (boss8_get_work(pMecawk)->hit_flash) {
 
-        if (--pMecawk->actfree[18] != 0)
+        if (--boss8_get_work(pMecawk)->hit_flash != 0)
             return;
 
     } else if (!pActwk->colino || !pMecawk->colino) {
@@ -1105,29 +1210,29 @@ static void egg8_colichk(sprite_status *pActwk, sprite_status *pPlayerwk,
             pMecawk->colicnt = 0;
 
             make_hibana(pActwk);
-            pActwk->actfree[18] = 150;
+            boss8_get_work(pActwk)->hit_flash = 150;
             pActwk->mstno.b.h = 1;
 
-            pMecawk->actfree[18] = 120;
-            pActwk->actfree[17] = 0;
-            pActwk->actfree[3] = 0;
-            pActwk->actfree[2] |= 1;
+            boss8_get_work(pMecawk)->hit_flash = 120;
+            boss8_get_work(pActwk)->action_index = 0;
+            boss8_get_work(pActwk)->step = 0;
+            boss8_get_work(pActwk)->flags |= 1;
 
             soundset(172);
 
-            --pActwk->actfree[16];
+            --boss8_get_work(pActwk)->hane_count;
             egg8_spd_set(pActwk, pMecawk);
 
-            hane_patno = pMecawk->actfree[11];
-            switch (pActwk->actfree[16]) {
+            hane_patno = boss8_get_work(pMecawk)->hane_base_patno;
+            switch (boss8_get_work(pActwk)->hane_count) {
 
             case 0:
                 pActwk->r_no0 = 50;
-                pActwk->actfree[2] &= 254;
-                pActwk->actfree[0] = 0;
-                pActwk->actfree[1] = 0;
+                boss8_get_work(pActwk)->flags &= 254;
+                boss8_get_work(pActwk)->timer_low = 0;
+                boss8_get_work(pActwk)->angle = 0;
 
-                pMecawk->actfree[17] = 0;
+                boss8_get_work(pMecawk)->action_index = 0;
                 break;
 
             case 3:
@@ -1135,30 +1240,30 @@ static void egg8_colichk(sprite_status *pActwk, sprite_status *pPlayerwk,
 
                     if (hane_patno < 4) {
 
-                        pMecawk->actfree[17] = 2;
+                        boss8_get_work(pMecawk)->action_index = 2;
                     } else if (hane_patno < 8) {
 
-                        pMecawk->actfree[17] = 1;
+                        boss8_get_work(pMecawk)->action_index = 1;
                     } else if (hane_patno < 12) {
 
-                        pMecawk->actfree[17] = 0;
+                        boss8_get_work(pMecawk)->action_index = 0;
                     } else {
 
-                        pMecawk->actfree[17] = 3;
+                        boss8_get_work(pMecawk)->action_index = 3;
                     }
                 } else {
                     if (hane_patno >= 13 || hane_patno == 0) {
 
-                        pMecawk->actfree[17] = 2;
+                        boss8_get_work(pMecawk)->action_index = 2;
                     } else if (hane_patno < 5) {
 
-                        pMecawk->actfree[17] = 1;
+                        boss8_get_work(pMecawk)->action_index = 1;
                     } else if (hane_patno < 9) {
 
-                        pMecawk->actfree[17] = 0;
+                        boss8_get_work(pMecawk)->action_index = 0;
                     } else {
 
-                        pMecawk->actfree[17] = 3;
+                        boss8_get_work(pMecawk)->action_index = 3;
                     }
                 }
 
@@ -1169,24 +1274,24 @@ static void egg8_colichk(sprite_status *pActwk, sprite_status *pPlayerwk,
 
                     if (hane_patno >= 13 || hane_patno < 3) {
 
-                        pMecawk->actfree[17] = 2;
+                        boss8_get_work(pMecawk)->action_index = 2;
                     } else if (hane_patno < 8) {
 
-                        pMecawk->actfree[17] = 1;
+                        boss8_get_work(pMecawk)->action_index = 1;
                     } else {
 
-                        pMecawk->actfree[17] = 0;
+                        boss8_get_work(pMecawk)->action_index = 0;
                     }
                 } else {
                     if (hane_patno >= 12 || hane_patno == 0) {
 
-                        pMecawk->actfree[17] = 2;
+                        boss8_get_work(pMecawk)->action_index = 2;
                     } else if (hane_patno < 5) {
 
-                        pMecawk->actfree[17] = 1;
+                        boss8_get_work(pMecawk)->action_index = 1;
                     } else {
 
-                        pMecawk->actfree[17] = 0;
+                        boss8_get_work(pMecawk)->action_index = 0;
                     }
                 }
 
@@ -1195,15 +1300,15 @@ static void egg8_colichk(sprite_status *pActwk, sprite_status *pPlayerwk,
             case 1:
                 if (pPlayerwk->xposi.w.h >= pActwk->xposi.w.h) {
 
-                    pMecawk->actfree[17] = 0;
+                    boss8_get_work(pMecawk)->action_index = 0;
                 } else {
-                    pMecawk->actfree[17] = 1;
+                    boss8_get_work(pMecawk)->action_index = 1;
                 }
 
                 break;
 
             default:
-                pActwk->actfree[16] = 0;
+                boss8_get_work(pActwk)->hane_count = 0;
                 break;
             }
 
@@ -1246,19 +1351,19 @@ static void next_action(sprite_status *pActwk) {
     Uint8 tblno, tblidx;
 
     do {
-        tblno = pActwk->actfree[16];
-        tblidx = pActwk->actfree[17];
+        tblno = boss8_get_work(pActwk)->hane_count;
+        tblidx = boss8_get_work(pActwk)->action_index;
         pEggactTbl = &egg8acttbl[tblno][tblidx];
 
         if (!pEggactTbl->r_no) {
-            pActwk->actfree[17] = 0;
+            boss8_get_work(pActwk)->action_index = 0;
         }
     } while (!pEggactTbl->r_no);
 
-    ++pActwk->actfree[17];
+    ++boss8_get_work(pActwk)->action_index;
     pActwk->r_no0 = pEggactTbl->r_no;
-    ((Sint16 *)pActwk)[30] = pEggactTbl->param;
-    pActwk->actfree[3] = 0;
+    boss8_get_work(pActwk)->target_pos = pEggactTbl->param;
+    boss8_get_work(pActwk)->step = 0;
 }
 
 static sprite_pattern meca_pat0 = {1, {{-36, -60, 0, 452}}};
@@ -1275,11 +1380,11 @@ static void (*meca_act_tbl[10])(sprite_status *, sprite_status *) = {
 void egg8meca(sprite_status *pActwk) {
     sprite_status *pEggwk;
 
-    pEggwk = &actwk[((Sint16 *)pActwk)[25]];
+    pEggwk = &actwk[boss8_get_work(pActwk)->parent_index];
 
     meca_act_tbl[pActwk->r_no0 / 2](pActwk, pEggwk);
 
-    if (!(pActwk->actfree[18] / 2 & 1)) {
+    if (!(boss8_get_work(pActwk)->hit_flash / 2 & 1)) {
         actionsub(pActwk);
     }
 }
@@ -1292,11 +1397,11 @@ static void egg8meca_ini(sprite_status *pActwk, sprite_status *pEggwk) {
     pActwk->sprvsize = 36;
     pActwk->sproffset = 9182;
     pActwk->patbase = egg8meca_pat;
-    ((Sint16 *)pActwk)[30] = 0;
-    pActwk->actfree[17] = 255;
+    boss8_get_work(pActwk)->target_pos = 0;
+    boss8_get_work(pActwk)->action_index = 255;
     make_hane(pActwk);
-    pActwk->actfree[16] |= 160;
-    pActwk->actfree[16] &= 191;
+    boss8_get_work(pActwk)->hane_count |= 160;
+    boss8_get_work(pActwk)->hane_count &= 191;
 }
 
 static void egg8meca_normal(sprite_status *pActwk, sprite_status *pEggwk) {
@@ -1312,54 +1417,54 @@ static void egg8meca_spin(sprite_status *pActwk, sprite_status *pEggwk) {
 }
 
 static void egg8meca_chg1(sprite_status *pActwk, sprite_status *pEggwk) {
-    switch (pActwk->actfree[3]) {
+    switch (boss8_get_work(pActwk)->step) {
 
     case 0:
-        pActwk->actfree[10] = 1;
-        ((Sint16 *)pActwk)[30] = 0;
-        pActwk->actfree[3] = 1;
+        boss8_get_work(pActwk)->hane_mode = 1;
+        boss8_get_work(pActwk)->target_pos = 0;
+        boss8_get_work(pActwk)->step = 1;
 
     case 1:
-        if (((Sint16 *)pActwk)[30] <= 170)
+        if (boss8_get_work(pActwk)->target_pos <= 170)
             break;
 
     default:
-        ++pActwk->actfree[3];
+        ++boss8_get_work(pActwk)->step;
 
-        if (pActwk->actfree[3] == 2) {
+        if (boss8_get_work(pActwk)->step == 2) {
 
-            pActwk->actfree[10] = 3;
-        } else if (pActwk->actfree[3] == 6) {
+            boss8_get_work(pActwk)->hane_mode = 3;
+        } else if (boss8_get_work(pActwk)->step == 6) {
 
-            pActwk->actfree[10] = 4;
+            boss8_get_work(pActwk)->hane_mode = 4;
         }
         break;
     }
 
-    if ((((Sint16 *)pActwk)[30] += 8) >= 256) {
+    if ((boss8_get_work(pActwk)->target_pos += 8) >= 256) {
 
-        ((Sint16 *)pActwk)[30] = 256;
-        pActwk->actfree[3] = 0;
+        boss8_get_work(pActwk)->target_pos = 256;
+        boss8_get_work(pActwk)->step = 0;
         pActwk->r_no0 = 2;
-        pActwk->actfree[10] = 4;
+        boss8_get_work(pActwk)->hane_mode = 4;
     }
 }
 
 static void egg8meca_chg2(sprite_status *pActwk, sprite_status *pEggwk) {
-    if (!pActwk->actfree[3]) {
+    if (!boss8_get_work(pActwk)->step) {
 
-        pActwk->actfree[10] = 1;
-        ++pActwk->actfree[3];
+        boss8_get_work(pActwk)->hane_mode = 1;
+        ++boss8_get_work(pActwk)->step;
     }
 
-    if ((((Sint16 *)pActwk)[30] += 16) >= 236) {
-        pActwk->actfree[10] = 2;
+    if ((boss8_get_work(pActwk)->target_pos += 16) >= 236) {
+        boss8_get_work(pActwk)->hane_mode = 2;
     }
 
-    if (((Sint16 *)pActwk)[30] >= 256) {
+    if (boss8_get_work(pActwk)->target_pos >= 256) {
 
-        ((Sint16 *)pActwk)[30] = 256;
-        pActwk->actfree[3] = 0;
+        boss8_get_work(pActwk)->target_pos = 256;
+        boss8_get_work(pActwk)->step = 0;
         pActwk->r_no0 = 2;
     }
 }
@@ -1368,22 +1473,22 @@ static void egg8meca_chg3(sprite_status *pActwk, sprite_status *pEggwk) {
     pActwk->xposi.w.h = pEggwk->xposi.w.h;
     pActwk->yposi.w.h = pEggwk->yposi.w.h;
 
-    if (!pActwk->actfree[3]) {
+    if (!boss8_get_work(pActwk)->step) {
 
-        pActwk->actfree[10] = 2;
-        ++pActwk->actfree[3];
+        boss8_get_work(pActwk)->hane_mode = 2;
+        ++boss8_get_work(pActwk)->step;
     }
 
-    if ((((Sint16 *)pActwk)[30] -= 6) < 236) {
-        pActwk->actfree[10] = 1;
+    if ((boss8_get_work(pActwk)->target_pos -= 6) < 236) {
+        boss8_get_work(pActwk)->hane_mode = 1;
     }
 
-    if (((Sint16 *)pActwk)[30] <= 0) {
+    if (boss8_get_work(pActwk)->target_pos <= 0) {
 
-        ((Sint16 *)pActwk)[30] = 0;
-        pActwk->actfree[3] = 0;
+        boss8_get_work(pActwk)->target_pos = 0;
+        boss8_get_work(pActwk)->step = 0;
         pActwk->r_no0 = 2;
-        pActwk->actfree[10] = 0;
+        boss8_get_work(pActwk)->hane_mode = 0;
     }
 }
 
@@ -1391,13 +1496,13 @@ static void egg8meca_fire(sprite_status *pActwk, sprite_status *pEggwk) {
     pActwk->xposi.w.h = pEggwk->xposi.w.h;
     pActwk->yposi.w.h = pEggwk->yposi.w.h;
 
-    if (pEggwk->actfree[16] == pActwk->actfree[19]) {
+    if (boss8_get_work(pEggwk)->hane_count == boss8_get_work(pActwk)->hit_timer) {
 
-        pActwk->actfree[21] =
+        boss8_get_work(pActwk)->color_b =
             (actwk[0].xposi.w.h + (Sint16)actwk[0].pattim & 3) * 8;
 
         pActwk->r_no0 = 2;
-        pActwk->actfree[2] |= 16;
+        boss8_get_work(pActwk)->flags |= 16;
     } else {
         hane_roll(pActwk);
     }
@@ -1407,21 +1512,21 @@ static void egg8meca_hane_reset(sprite_status *pActwk, sprite_status *pEggwk) {
     pActwk->xposi.w.h = pEggwk->xposi.w.h;
     pActwk->yposi.w.h = pEggwk->yposi.w.h;
 
-    if (pActwk->actfree[3] != 1) {
+    if (boss8_get_work(pActwk)->step != 1) {
 
-        pActwk->actfree[2] |= 8;
-        ++pActwk->actfree[3];
-        ((Sint16 *)pActwk)[30] = -256;
-        pActwk->actfree[16] |= 160;
-        pActwk->actfree[16] &= 191;
+        boss8_get_work(pActwk)->flags |= 8;
+        ++boss8_get_work(pActwk)->step;
+        boss8_get_work(pActwk)->target_pos = -256;
+        boss8_get_work(pActwk)->hane_count |= 160;
+        boss8_get_work(pActwk)->hane_count &= 191;
     }
 
-    if ((((Sint16 *)pActwk)[30] += 6) >= 0) {
+    if ((boss8_get_work(pActwk)->target_pos += 6) >= 0) {
 
-        pActwk->actfree[2] &= 247;
-        ((Sint16 *)pActwk)[30] = 0;
-        pActwk->actfree[0] = 0;
-        pActwk->actfree[3] = 0;
+        boss8_get_work(pActwk)->flags &= 247;
+        boss8_get_work(pActwk)->target_pos = 0;
+        boss8_get_work(pActwk)->timer_low = 0;
+        boss8_get_work(pActwk)->step = 0;
         pActwk->r_no0 = 2;
     }
 }
@@ -1441,91 +1546,91 @@ static void egg8meca_tobi(sprite_status *pActwk, sprite_status *pEggwk) {
         wk = 36;
     }
 
-    ((Sint16 *)pActwk)[30] = (wk << 8) / 36;
+    boss8_get_work(pActwk)->target_pos = (wk << 8) / 36;
 }
 
 static void hane_ctrl(sprite_status *pActwk) {
     Uint8 FlagWk;
 
-    FlagWk = pActwk->actfree[2];
-    pActwk->actfree[2] &= 239;
+    FlagWk = boss8_get_work(pActwk)->flags;
+    boss8_get_work(pActwk)->flags &= 239;
 
     if (!(FlagWk & 16)) {
-        if (!(pActwk->actfree[16] & 64)) {
+        if (!(boss8_get_work(pActwk)->hane_count & 64)) {
             hane_stop(pActwk);
         } else {
             hane_roll(pActwk);
         }
     } else {
-        pActwk->actfree[1] = 0;
-        pActwk->actfree[16] &= 95;
+        boss8_get_work(pActwk)->angle = 0;
+        boss8_get_work(pActwk)->hane_count &= 95;
 
-        if (!(pActwk->actfree[16] & 64)) {
-            pActwk->actfree[16] ^= 64;
+        if (!(boss8_get_work(pActwk)->hane_count & 64)) {
+            boss8_get_work(pActwk)->hane_count ^= 64;
             hane_roll(pActwk);
         } else {
-            pActwk->actfree[16] ^= 64;
+            boss8_get_work(pActwk)->hane_count ^= 64;
             hane_stop(pActwk);
         }
     }
 }
 
 static void hane_stop(sprite_status *pActwk) {
-    if (!(pActwk->actfree[16] & 128)) {
-        if (pActwk->actfree[16] & 32) {
+    if (!(boss8_get_work(pActwk)->hane_count & 128)) {
+        if (boss8_get_work(pActwk)->hane_count & 32) {
 
-            if (pActwk->actfree[11] != pActwk->actfree[12])
+            if (boss8_get_work(pActwk)->hane_base_patno != boss8_get_work(pActwk)->hane_target)
                 goto label1;
 
-            pActwk->actfree[16] |= 128;
+            boss8_get_work(pActwk)->hane_count |= 128;
             pActwk->patno = 0;
             return;
         }
 
         pActwk->patno = 1;
 
-        if (++pActwk->actfree[1] == 10) {
-            pActwk->actfree[16] |= 32;
-            pActwk->actfree[1] = 0;
+        if (++boss8_get_work(pActwk)->angle == 10) {
+            boss8_get_work(pActwk)->hane_count |= 32;
+            boss8_get_work(pActwk)->angle = 0;
         }
 
     label1:
-        if (++pActwk->actfree[0] >= pActwk->actfree[13]) {
-            pActwk->actfree[0] = 0;
-            pActwk->actfree[2] |= 64;
+        if (++boss8_get_work(pActwk)->timer_low >= boss8_get_work(pActwk)->roll_speed) {
+            boss8_get_work(pActwk)->timer_low = 0;
+            boss8_get_work(pActwk)->flags |= 64;
         }
     }
 }
 
 static void hane_roll(sprite_status *pActwk) {
-    if (!(pActwk->actfree[16] & 32)) {
+    if (!(boss8_get_work(pActwk)->hane_count & 32)) {
 
         pActwk->patno = 1;
 
-        if (++pActwk->actfree[1] != 10)
+        if (++boss8_get_work(pActwk)->angle != 10)
             return;
 
-        pActwk->actfree[1] = 0;
-        pActwk->actfree[16] |= 32;
+        boss8_get_work(pActwk)->angle = 0;
+        boss8_get_work(pActwk)->hane_count |= 32;
     }
 
     futa_roll(pActwk);
 
-    if (++pActwk->actfree[0] >= pActwk->actfree[13]) {
-        pActwk->actfree[0] = 0;
-        pActwk->actfree[2] |= 64;
+    if (++boss8_get_work(pActwk)->timer_low >= boss8_get_work(pActwk)->roll_speed) {
+        boss8_get_work(pActwk)->timer_low = 0;
+        boss8_get_work(pActwk)->flags |= 64;
     }
 }
 
 static void futa_roll(sprite_status *pActwk) {
-    ++pActwk->actfree[1];
+    ++boss8_get_work(pActwk)->angle;
 
-    if (pActwk->actfree[1] == 6) {
+    if (boss8_get_work(pActwk)->angle == 6) {
 
         pActwk->patno = 2;
-    } else if (pActwk->actfree[1] == 12) {
+    } else if (boss8_get_work(pActwk)->angle == 12) {
 
-        pActwk->actfree[1] = 0;
+        boss8_get_work(pActwk)->angle = 0;
         pActwk->patno = 1;
     }
 }
@@ -1605,10 +1710,10 @@ void egg8hane(sprite_status *pActwk) {
     sprite_status *pMecawk, *pEggwk;
     Sint32 ret;
 
-    pMecawk = &actwk[((Sint16 *)pActwk)[25]];
-    pEggwk = &actwk[((Sint16 *)pMecawk)[25]];
+    pMecawk = &actwk[boss8_get_work(pActwk)->parent_index];
+    pEggwk = &actwk[boss8_get_work(pMecawk)->parent_index];
 
-    if (!(pMecawk->actfree[17] & 128)) {
+    if (!(boss8_get_work(pMecawk)->action_index & 128)) {
         hane_no_reset(pActwk, pMecawk, pEggwk);
     }
 
@@ -1673,29 +1778,29 @@ static Sint32 egg8hane_demo(sprite_status *pActwk, sprite_status *pMecawk,
 
 static Sint32 egg8hane_normal(sprite_status *pActwk, sprite_status *pMecawk,
                               sprite_status *pEggwk) {
-    if (pActwk->actfree[2] & 8) {
-        pActwk->actfree[3] = 0;
+    if (boss8_get_work(pActwk)->flags & 8) {
+        boss8_get_work(pActwk)->step = 0;
         pActwk->r_no0 = 10;
         return -1;
     }
 
     if (pMecawk->r_no0 == 10 && pActwk->patno == 0) {
-        pActwk->actfree[3] = 0;
+        boss8_get_work(pActwk)->step = 0;
         pActwk->r_no0 = 6;
-        ++pMecawk->actfree[19];
+        ++boss8_get_work(pMecawk)->hit_timer;
         return 1;
     }
 
-    pActwk->patbase = hane_base_tbl[pMecawk->actfree[10]];
+    pActwk->patbase = hane_base_tbl[boss8_get_work(pMecawk)->hane_mode];
 
-    if (pMecawk->actfree[2] & 64) {
+    if (boss8_get_work(pMecawk)->flags & 64) {
         hane_rol_l(pActwk);
-    } else if (pMecawk->actfree[2] & 32) {
+    } else if (boss8_get_work(pMecawk)->flags & 32) {
         hane_rol_r(pActwk);
     }
 
-    if (!pActwk->actfree[14]) {
-        pMecawk->actfree[11] = pActwk->patno;
+    if (!boss8_get_work(pActwk)->wait_time) {
+        boss8_get_work(pMecawk)->hane_base_patno = pActwk->patno;
     }
 
     egg8hane_posiset(pActwk, pMecawk);
@@ -1718,12 +1823,12 @@ static Sint32 egg8hane_fire1(sprite_status *pActwk, sprite_status *pMecawk,
                                        3840, 3904, 3968, 3904, 3840, 3712,
                                        3760, 3920, 3792, 3856};
 
-    switch (pActwk->actfree[3]) {
+    switch (boss8_get_work(pActwk)->step) {
 
     case 0:
-        ++pActwk->actfree[3];
+        ++boss8_get_work(pActwk)->step;
 
-        if (pEggwk->actfree[16] == 1) {
+        if (boss8_get_work(pEggwk)->hane_count == 1) {
             pActwk->patbase = egg8hane0_pat2;
         }
 
@@ -1731,42 +1836,42 @@ static Sint32 egg8hane_fire1(sprite_status *pActwk, sprite_status *pMecawk,
         pActwk->yposi.l -= 65536;
         if (pActwk->yposi.w.h <= 224) {
 
-            ++pActwk->actfree[3];
-            ++pMecawk->actfree[20];
+            ++boss8_get_work(pActwk)->step;
+            ++boss8_get_work(pMecawk)->color_a;
         }
 
         break;
 
     case 2:
-        if (pEggwk->actfree[16] <= pMecawk->actfree[20]) {
+        if (boss8_get_work(pEggwk)->hane_count <= boss8_get_work(pMecawk)->color_a) {
 
-            pActwk->actfree[0] = 0;
-            ++pActwk->actfree[3];
+            boss8_get_work(pActwk)->timer_low = 0;
+            ++boss8_get_work(pActwk)->step;
         }
 
         break;
 
     case 3:
-        if (++pActwk->actfree[0] == (pActwk->actfree[14] + 1) * 30) {
+        if (++boss8_get_work(pActwk)->timer_low == (boss8_get_work(pActwk)->wait_time + 1) * 30) {
 
             pActwk->sprpri = 3;
-            ++pActwk->actfree[3];
-            pActwk->actfree[0] = 0;
+            ++boss8_get_work(pActwk)->step;
+            boss8_get_work(pActwk)->timer_low = 0;
 
             pActwk->patno = 0;
 
-            if (pEggwk->actfree[16] >= 3) {
+            if (boss8_get_work(pEggwk)->hane_count >= 3) {
                 pActwk->patbase = egg8hane2_pat2;
 
-                pActwk->xposi.w.h = hane_fire_tbl[pMecawk->actfree[21] / 2 +
-                                                  pActwk->actfree[14]];
+                pActwk->xposi.w.h = hane_fire_tbl[boss8_get_work(pMecawk)->color_b / 2 +
+                                                  boss8_get_work(pActwk)->wait_time];
 
-                ((Sint32 *)pActwk)[14] = 0;
+                boss8_get_work(pActwk)->x_velocity = 0;
                 sprite_status_set_xspeed_yspeed(pActwk, 229376);
             } else {
                 pActwk->patbase = egg8hane0_pat2;
 
-                if (pEggwk->actfree[16] != 2) {
+                if (boss8_get_work(pEggwk)->hane_count != 2) {
 
                     if (actwk[0].xposi.w.h < 3840) {
 
@@ -1781,7 +1886,7 @@ static Sint32 egg8hane_fire1(sprite_status *pActwk, sprite_status *pMecawk,
                         pActwk->yposi.w.h = lwk;
 
                         pActwk->xposi.w.h = 4040;
-                        ((Sint32 *)pActwk)[14] = -211897;
+                        boss8_get_work(pActwk)->x_velocity = -211897;
                         sprite_status_set_xspeed_yspeed(pActwk, 87759);
                     } else {
                         pActwk->patno = 13;
@@ -1795,20 +1900,20 @@ static Sint32 egg8hane_fire1(sprite_status *pActwk, sprite_status *pMecawk,
                         pActwk->yposi.w.h = lwk;
 
                         pActwk->xposi.w.h = 3640;
-                        ((Sint32 *)pActwk)[14] = 211897;
+                        boss8_get_work(pActwk)->x_velocity = 211897;
                         sprite_status_set_xspeed_yspeed(pActwk, 87759);
                     }
-                } else if (!pActwk->actfree[14]) {
+                } else if (!boss8_get_work(pActwk)->wait_time) {
 
-                    pActwk->xposi.w.h = hane_fire_tbl[pMecawk->actfree[21] / 2 +
-                                                      pActwk->actfree[14]];
+                    pActwk->xposi.w.h = hane_fire_tbl[boss8_get_work(pMecawk)->color_b / 2 +
+                                                      boss8_get_work(pActwk)->wait_time];
 
-                    ((Sint32 *)pActwk)[14] = 0;
+                    boss8_get_work(pActwk)->x_velocity = 0;
                     sprite_status_set_xspeed_yspeed(pActwk, 229376);
                 } else {
 
                     pActwk->xposi.w.h = actwk[0].xposi.w.h;
-                    ((Sint32 *)pActwk)[14] = 0;
+                    boss8_get_work(pActwk)->x_velocity = 0;
                     sprite_status_set_xspeed_yspeed(pActwk, 229376);
                 }
             }
@@ -1817,7 +1922,7 @@ static Sint32 egg8hane_fire1(sprite_status *pActwk, sprite_status *pMecawk,
         break;
 
     case 4:
-        pActwk->xposi.l += ((Sint32 *)pActwk)[14];
+        pActwk->xposi.l += boss8_get_work(pActwk)->x_velocity;
         pActwk->yposi.l += sprite_status_get_xspeed_yspeed(pActwk);
 
         if (pActwk->patno != 0) {
@@ -1833,8 +1938,8 @@ static Sint32 egg8hane_fire1(sprite_status *pActwk, sprite_status *pMecawk,
         if (pActwk->yposi.w.h >= PosWk) {
 
             pActwk->yposi.w.h = PosWk;
-            ++pActwk->actfree[3];
-            pActwk->actfree[0] = 0;
+            ++boss8_get_work(pActwk)->step;
+            boss8_get_work(pActwk)->timer_low = 0;
 
             soundset(180);
         }
@@ -1842,36 +1947,36 @@ static Sint32 egg8hane_fire1(sprite_status *pActwk, sprite_status *pMecawk,
         break;
 
     case 5:
-        if (++pActwk->actfree[0] == 30) {
+        if (++boss8_get_work(pActwk)->timer_low == 30) {
 
             pActwk->sprpri = 5;
-            ++pActwk->actfree[3];
+            ++boss8_get_work(pActwk)->step;
             pActwk->colino = 0;
             pActwk->colicnt = 0;
-            pActwk->actfree[0] = 0;
+            boss8_get_work(pActwk)->timer_low = 0;
         }
 
         break;
 
     case 6:
-        if (++pActwk->actfree[0] == 60) {
+        if (++boss8_get_work(pActwk)->timer_low == 60) {
 
-            ++pMecawk->actfree[19];
+            ++boss8_get_work(pMecawk)->hit_timer;
 
-            pActwk->actfree[0] = 0;
-            pActwk->actfree[3] = 0;
+            boss8_get_work(pActwk)->timer_low = 0;
+            boss8_get_work(pActwk)->step = 0;
             pActwk->r_no0 = 8;
 
-            pResetTbl = reset_pattbl[pEggwk->actfree[16]];
+            pResetTbl = reset_pattbl[boss8_get_work(pEggwk)->hane_count];
 
-            if (!pActwk->actfree[14]) {
-                pMecawk->actfree[11] = pResetTbl[0];
+            if (!boss8_get_work(pActwk)->wait_time) {
+                boss8_get_work(pMecawk)->hane_base_patno = pResetTbl[0];
             }
 
-            pActwk->patno = pResetTbl[pActwk->actfree[14]];
-            pMecawk->actfree[10] = 0;
+            pActwk->patno = pResetTbl[boss8_get_work(pActwk)->wait_time];
+            boss8_get_work(pMecawk)->hane_mode = 0;
 
-        } else if (!(pActwk->actfree[0] / 2 & 1)) {
+        } else if (!(boss8_get_work(pActwk)->timer_low / 2 & 1)) {
 
             return 1;
         }
@@ -1884,12 +1989,12 @@ static Sint32 egg8hane_fire1(sprite_status *pActwk, sprite_status *pMecawk,
 
 static Sint32 egg8hane_wait(sprite_status *pActwk, sprite_status *pMecawk,
                             sprite_status *pEggwk) {
-    if (pActwk->actfree[2] & 8) {
+    if (boss8_get_work(pActwk)->flags & 8) {
         frameout(pActwk);
         return 0;
     }
 
-    if (pMecawk->actfree[2] & 8) {
+    if (boss8_get_work(pMecawk)->flags & 8) {
 
         pActwk->r_no0 = 4;
     }
@@ -1899,21 +2004,21 @@ static Sint32 egg8hane_wait(sprite_status *pActwk, sprite_status *pMecawk,
 
 static Sint32 egg8hane_kill(sprite_status *pActwk, sprite_status *pMecawk,
                             sprite_status *pEggwk) {
-    if (!pActwk->actfree[3]) {
+    if (!boss8_get_work(pActwk)->step) {
 
         pActwk->colino = 0;
         pActwk->colicnt = 0;
 
-        ((Sint32 *)pActwk)[14] = 65536;
+        boss8_get_work(pActwk)->x_velocity = 65536;
         sprite_status_set_xspeed_yspeed(pActwk, -196608);
 
         if (pActwk->patno > 8) {
-            ((Sint32 *)pActwk)[14] *= -1;
+            boss8_get_work(pActwk)->x_velocity *= -1;
         }
 
-        pActwk->actfree[0] = 0;
-        pActwk->actfree[1] = 0;
-        ++pActwk->actfree[3];
+        boss8_get_work(pActwk)->timer_low = 0;
+        boss8_get_work(pActwk)->angle = 0;
+        ++boss8_get_work(pActwk)->step;
 
         if (pActwk->patbase != egg8hane1_pat) {
 
@@ -1923,7 +2028,7 @@ static Sint32 egg8hane_kill(sprite_status *pActwk, sprite_status *pMecawk,
         }
     }
 
-    pActwk->xposi.l += ((Sint32 *)pActwk)[14];
+    pActwk->xposi.l += boss8_get_work(pActwk)->x_velocity;
     pActwk->yposi.l += sprite_status_get_xspeed_yspeed(pActwk);
     sprite_status_add_xspeed_yspeed(pActwk, 12288);
 
@@ -1932,17 +2037,17 @@ static Sint32 egg8hane_kill(sprite_status *pActwk, sprite_status *pMecawk,
         return 0;
     }
 
-    if (++pActwk->actfree[0] == 4) {
-        pActwk->actfree[0] = 0;
+    if (++boss8_get_work(pActwk)->timer_low == 4) {
+        boss8_get_work(pActwk)->timer_low = 0;
 
         if (++pActwk->patno > 15) {
             pActwk->patno = 0;
         }
     }
 
-    ++pActwk->actfree[1];
+    ++boss8_get_work(pActwk)->angle;
 
-    if (pActwk->actfree[1] / 2 & 1) {
+    if (boss8_get_work(pActwk)->angle / 2 & 1) {
 
         return 0;
     }
@@ -1961,29 +2066,29 @@ static void hane_no_reset(sprite_status *pActwk, sprite_status *pMecawk,
     char *pResetTbl;
     Sint32 HaneNum, KillNo;
 
-    if (pMecawk->actfree[17] == pActwk->actfree[14]) {
+    if (boss8_get_work(pMecawk)->action_index == boss8_get_work(pActwk)->wait_time) {
 
-        pActwk->actfree[2] |= 8;
+        boss8_get_work(pActwk)->flags |= 8;
         return;
     }
 
-    if (pEggwk->actfree[16] == 1) {
+    if (boss8_get_work(pEggwk)->hane_count == 1) {
 
-        pActwk->actfree[14] = 0;
+        boss8_get_work(pActwk)->wait_time = 0;
         return;
     }
 
-    HaneNum = pEggwk->actfree[16];
-    KillNo = pMecawk->actfree[17];
+    HaneNum = boss8_get_work(pEggwk)->hane_count;
+    KillNo = boss8_get_work(pMecawk)->action_index;
     pResetTbl = hane_no_reset_tbl[HaneNum] + KillNo * 4;
 
-    pActwk->actfree[14] = pResetTbl[pActwk->actfree[14]];
+    boss8_get_work(pActwk)->wait_time = pResetTbl[boss8_get_work(pActwk)->wait_time];
 }
 
 static void egg8hane_posiset(sprite_status *pActwk, sprite_status *pMecawk) {
     hane_offs_set(pActwk, pMecawk);
-    pActwk->xposi.w.h = pMecawk->xposi.w.h + ((Sint16 *)pActwk)[26];
-    pActwk->yposi.w.h = pMecawk->yposi.w.h + ((Sint16 *)pActwk)[27];
+    pActwk->xposi.w.h = pMecawk->xposi.w.h + boss8_get_work(pActwk)->target_x;
+    pActwk->yposi.w.h = pMecawk->yposi.w.h + boss8_get_work(pActwk)->target_y;
 }
 
 static hane_offs hane0_offs_tbl1[16] = {
@@ -2017,12 +2122,12 @@ static void hane_offs_set(sprite_status *pActwk, sprite_status *pMecawk) {
     hane_offs *pOffsTbl;
     Sint16 hankeiwk;
 
-    pOffsTbl = hane_offs_tbl[pMecawk->actfree[10]] + pActwk->patno;
+    pOffsTbl = hane_offs_tbl[boss8_get_work(pMecawk)->hane_mode] + pActwk->patno;
 
-    hankeiwk = ((Sint16 *)pMecawk)[30];
-    ((Sint16 *)pActwk)[26] = (pOffsTbl->xDst * hankeiwk >> 8) + pOffsTbl->xOffs;
+    hankeiwk = boss8_get_work(pMecawk)->target_pos;
+    boss8_get_work(pActwk)->target_x = (pOffsTbl->xDst * hankeiwk >> 8) + pOffsTbl->xOffs;
 
-    ((Sint16 *)pActwk)[27] = (pOffsTbl->yDst * hankeiwk >> 8) + pOffsTbl->yOffs;
+    boss8_get_work(pActwk)->target_y = (pOffsTbl->yDst * hankeiwk >> 8) + pOffsTbl->yOffs;
 
     pActwk->colino = pOffsTbl->ColiNo;
     pActwk->colicnt = 2;
@@ -2045,7 +2150,7 @@ static void hane_rol_r(sprite_status *pActwk) {
 }
 
 static void rol_sound(sprite_status *pActwk) {
-    if (!pActwk->actfree[14] && (pActwk->patno & 3) != 2) {
+    if (!boss8_get_work(pActwk)->wait_time && (pActwk->patno & 3) != 2) {
         soundset(186);
     }
 }
@@ -2081,25 +2186,25 @@ static Uint32 egg8hibana_1(sprite_status *pActwk) {
     sprite_status *pMecawk;
     Sint16 *pOffsTbl;
 
-    pMecawk = &actwk[((Sint16 *)pActwk)[25]];
+    pMecawk = &actwk[boss8_get_work(pActwk)->parent_index];
     pActwk->xposi.w.h = pMecawk->xposi.w.h;
     pActwk->yposi.w.h = pMecawk->yposi.w.h;
 
-    pOffsTbl = hibana_offs_tbl[pActwk->actfree[10]] + pActwk->actfree[3] / 2;
+    pOffsTbl = hibana_offs_tbl[boss8_get_work(pActwk)->hane_mode] + boss8_get_work(pActwk)->step / 2;
     pActwk->xposi.w.h += *pOffsTbl++;
     pActwk->yposi.w.h += *pOffsTbl;
 
-    if (++pActwk->actfree[0] == 150) {
+    if (++boss8_get_work(pActwk)->timer_low == 150) {
         frameout(pActwk);
         return 0;
     }
 
-    if (++pActwk->actfree[1] == 4) {
-        if ((pActwk->actfree[3] += 4) > 8) {
-            pActwk->actfree[3] = 0;
+    if (++boss8_get_work(pActwk)->angle == 4) {
+        if ((boss8_get_work(pActwk)->step += 4) > 8) {
+            boss8_get_work(pActwk)->step = 0;
         }
 
-        pActwk->actfree[1] = 0;
+        boss8_get_work(pActwk)->angle = 0;
 
         if (++pActwk->patno > 2) {
             pActwk->patno = 0;
@@ -2116,8 +2221,8 @@ static void make_meca(sprite_status *pActwk) {
     sprite_status *pNewact;
 
     if (actwkchk2(pActwk, &pNewact) == 0) {
-        ((Sint16 *)pNewact)[25] = pActwk - actwk;
-        ((Sint16 *)pActwk)[25] = pNewact - actwk;
+        boss8_get_work(pNewact)->parent_index = pActwk - actwk;
+        boss8_get_work(pActwk)->parent_index = pNewact - actwk;
         pNewact->actno = 65;
         pNewact->xposi.w.h = pActwk->xposi.w.h;
         pNewact->yposi.w.h = pActwk->yposi.w.h;
@@ -2134,8 +2239,8 @@ static void make_hane(sprite_status *pActwk) {
         if (actwkchk2(pActwk, &pNewact) != 0)
             return;
 
-        ((Sint16 *)pNewact)[25] = pActwk - actwk;
-        pNewact->actfree[14] = hanecnt;
+        boss8_get_work(pNewact)->parent_index = pActwk - actwk;
+        boss8_get_work(pNewact)->wait_time = hanecnt;
         pNewact->actno = 64;
         pNewact->xposi.w.h = pActwk->xposi.w.h;
         pNewact->yposi.w.h = pActwk->yposi.w.h;
@@ -2155,11 +2260,11 @@ static void make_hibana(sprite_status *pActwk) {
         if (actwkchk(&pNewact) != 0)
             break;
 
-        ((Sint16 *)pNewact)[25] = pActwk - actwk;
+        boss8_get_work(pNewact)->parent_index = pActwk - actwk;
         pNewact->actno = 66;
         pNewact->xposi.w.h = pActwk->xposi.w.h;
         pNewact->yposi.w.h = pActwk->yposi.w.h;
-        pNewact->actfree[10] = cnt++;
+        boss8_get_work(pNewact)->hane_mode = cnt++;
 
     } while (cnt != 2);
 }
@@ -2171,34 +2276,34 @@ static void egg8_spd_set(sprite_status *pActwk, sprite_status *pMecawk) {
                           {98304, 49152, 4, 0},
                           {90112, 40960, 5, 0}};
 
-    ((Sint32 *)pActwk)[14] = spd_tbl[pActwk->actfree[16]].X_Speed;
+    boss8_get_work(pActwk)->x_velocity = spd_tbl[boss8_get_work(pActwk)->hane_count].X_Speed;
 
     sprite_status_set_xspeed_yspeed(
-        pActwk, spd_tbl[pActwk->actfree[16]].Y_Speed);
+        pActwk, spd_tbl[boss8_get_work(pActwk)->hane_count].Y_Speed);
 
-    pMecawk->actfree[13] = spd_tbl[pActwk->actfree[16]].Roll_Speed;
+    boss8_get_work(pMecawk)->roll_speed = spd_tbl[boss8_get_work(pActwk)->hane_count].Roll_Speed;
 }
 
 static void tobi_set(sprite_status *pActwk) {
     Sint16 sinwk, coswk;
 
-    pActwk->xposi.w.h -= ((Sint16 *)pActwk)[26];
-    pActwk->yposi.w.h -= ((Sint16 *)pActwk)[27];
+    pActwk->xposi.w.h -= boss8_get_work(pActwk)->target_x;
+    pActwk->yposi.w.h -= boss8_get_work(pActwk)->target_y;
 
-    if ((((Uint16 *)pActwk)[23] += 560) >= 32768) {
-        ((Uint16 *)pActwk)[23] = 32768;
+    if ((boss8_get_work(pActwk)->timer_u += 560) >= 32768) {
+        boss8_get_work(pActwk)->timer_u = 32768;
     }
 
-    sinset(pActwk->actfree[1], &sinwk, &coswk);
+    sinset(boss8_get_work(pActwk)->angle, &sinwk, &coswk);
 
-    if (!(pActwk->actfree[3] & 1)) {
+    if (!(boss8_get_work(pActwk)->step & 1)) {
         coswk *= -1;
     }
 
     coswk = coswk * 41 >> 8;
     sinwk = sinwk * -104 >> 8;
-    ((Sint16 *)pActwk)[26] = coswk;
-    ((Sint16 *)pActwk)[27] = sinwk;
+    boss8_get_work(pActwk)->target_x = coswk;
+    boss8_get_work(pActwk)->target_y = sinwk;
     pActwk->xposi.w.h += coswk;
     pActwk->yposi.w.h += sinwk;
 }
@@ -2208,7 +2313,7 @@ static void bom_set(sprite_status *pActwk) {
     Sint32 rnd;
     int_union wk1, wk2;
 
-    if (pActwk->actfree[0] % 2 == 0) {
+    if (boss8_get_work(pActwk)->timer_low % 2 == 0) {
 
         if (actwkchk(&pNewact) == 0) {
             pNewact->actno = 24;

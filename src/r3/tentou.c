@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "tentou.h"
 #include "../action.h"
@@ -15,6 +17,36 @@
 #else
 #define SPRITE_TENTOU_BASE 474
 #endif
+
+#pragma pack(push, 1)
+typedef struct {
+    union {
+        Sint32 horizontal_speed;
+        Sint16 bomb_timer;
+    } u0;
+    Sint32 hover_speed;
+    Sint32 hover_y;
+    Uint16 hover_counter;
+    Uint8 reserved14[7];
+    Uint8 spawn_bombs;
+} tentou_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(tentou_work, u0) == 0, "tentou_work u0 offset");
+_Static_assert(offsetof(tentou_work, hover_speed) == 4,
+               "tentou_work hover_speed offset");
+_Static_assert(offsetof(tentou_work, hover_y) == 8,
+               "tentou_work hover_y offset");
+_Static_assert(offsetof(tentou_work, hover_counter) == 12,
+               "tentou_work hover_counter offset");
+_Static_assert(offsetof(tentou_work, spawn_bombs) == 21,
+               "tentou_work spawn_bombs offset");
+_Static_assert(sizeof(tentou_work) <= sizeof(((sprite_status *)0)->actfree),
+               "tentou_work fits in actfree");
+
+static tentou_work *tentou_get_work(sprite_status *pActwk) {
+    return (tentou_work *)pActwk->actfree;
+}
 
 static Uint8 bCarry;
 void (*tentou_tbl[6])(sprite_status *) = {
@@ -53,6 +85,8 @@ void tentou(sprite_status *pActwk) {
 }
 
 void ten_a_init(sprite_status *pActwk) {
+    tentou_work *work = tentou_get_work(pActwk);
+
     pActwk->r_no0 += 2;
     pActwk->actflg |= 132;
     pActwk->sprpri = 1;
@@ -62,13 +96,14 @@ void ten_a_init(sprite_status *pActwk) {
     pActwk->sproffset = 42090;
     if (pActwk->userflag.w >= 0) {
         pActwk->patbase = pat_e_tentou;
-        pActwk->actfree[21] = 255;
+        work->spawn_bombs = 255;
     } else
         pActwk->patbase = pat_ten_b_tentou;
     ten_a_fall(pActwk);
 }
 
 void ten_a_fall(sprite_status *pActwk) {
+    tentou_work *work = tentou_get_work(pActwk);
     Sint16 iD1;
 
     pActwk->yposi.l += 65536;
@@ -76,11 +111,11 @@ void ten_a_fall(sprite_status *pActwk) {
     iD1 -= 8;
     if (iD1 <= 0) {
         pActwk->yposi.w.h -= iD1;
-        *(Sint32 *)&pActwk->actfree[8] = pActwk->yposi.l;
-        *(Sint32 *)&pActwk->actfree[4] = 12288;
-        ((Sint16 *)pActwk)[29] = 8;
+        work->hover_y = pActwk->yposi.l;
+        work->hover_speed = 12288;
+        work->hover_counter = 8;
         pActwk->r_no0 += 2;
-        if (*(Sint32 *)&pActwk->actfree[0] != 0)
+        if (work->u0.horizontal_speed != 0)
             pActwk->r_no0 += 2;
     }
 }
@@ -93,6 +128,7 @@ Sint32 abs(Sint32 i) {
 }
 
 void ten_a_wait(sprite_status *pActwk) {
+    tentou_work *work = tentou_get_work(pActwk);
     sprite_status *pPlaywk = &actwk[0];
     Sint16 iD0, iD1;
 
@@ -108,25 +144,25 @@ void ten_a_wait(sprite_status *pActwk) {
         if (iD0 <= 80) {
 
             pActwk->r_no0 += 2;
-            *(Sint32 *)&pActwk->actfree[0] = 4294918144;
+            work->u0.horizontal_speed = -49152;
             if (iD1 >= 0) {
                 pActwk->actflg ^= 1;
                 pActwk->cddat ^= 1;
-                *(Sint32 *)&pActwk->actfree[0] =
-                    -(*(Sint32 *)&pActwk->actfree[0]);
+                work->u0.horizontal_speed = -work->u0.horizontal_speed;
             }
         }
     }
 }
 
 void ten_a_lr(sprite_status *pActwk) {
+    tentou_work *work = tentou_get_work(pActwk);
     Sint16 iD1;
     sprite_status *pActfree;
 
-    pActwk->xposi.l += *(Sint32 *)&pActwk->actfree[0];
-    pActwk->yposi.l = *(Sint32 *)&pActwk->actfree[8];
+    pActwk->xposi.l += work->u0.horizontal_speed;
+    pActwk->yposi.l = work->hover_y;
 
-    if (*(Sint32 *)&pActwk->actfree[0] >= 0)
+    if (work->u0.horizontal_speed >= 0)
         iD1 = emycol_r(pActwk, pActwk->sprhs);
     else
         iD1 = emycol_l(pActwk, pActwk->sprhs);
@@ -136,11 +172,11 @@ void ten_a_lr(sprite_status *pActwk) {
         if (iD1 < 16) {
             iD1 -= 8;
             pActwk->yposi.w.h += iD1;
-            *(Sint32 *)&pActwk->actfree[8] = pActwk->yposi.l;
+            work->hover_y = pActwk->yposi.l;
             ten_a_hover(pActwk);
-            if (pActwk->actfree[21] != 0) {
-                ((Uint16 *)pActwk)[29] &= 127;
-                if (((Uint16 *)pActwk)[29] == 0) {
+            if (work->spawn_bombs != 0) {
+                work->hover_counter &= 127;
+                if (work->hover_counter == 0) {
                     if (actwkchk(&pActfree) == 0) {
                         pActfree->actno = pActwk->actno;
                         pActfree->xposi.l = pActwk->xposi.l;
@@ -154,7 +190,7 @@ void ten_a_lr(sprite_status *pActwk) {
 
             pActwk->r_no0 += 4;
             ten_a_hover(pActwk);
-            *(Sint32 *)&pActwk->actfree[8] = pActwk->yposi.l;
+            work->hover_y = pActwk->yposi.l;
         }
     } else {
 
@@ -165,14 +201,15 @@ void ten_a_lr(sprite_status *pActwk) {
 void ten_a_up(sprite_status *pActwk) { pActwk->yposi.l -= 32768; }
 
 void ten_a_gake(sprite_status *pActwk) {
+    tentou_work *work = tentou_get_work(pActwk);
     char cwk, cRwk;
     Sint16 iD1, iD3, iD4;
 
-    pActwk->xposi.l += *(Sint32 *)&pActwk->actfree[0];
+    pActwk->xposi.l += work->u0.horizontal_speed;
     iD3 = pActwk->xposi.w.h;
     iD4 = pActwk->sprhsize;
     iD3 -= iD4;
-    if (*(Sint32 *)&pActwk->actfree[0] > 0)
+    if (work->u0.horizontal_speed > 0)
         iD3 += iD4 + iD4;
     iD1 = emycol_d2(pActwk, iD3);
     if (iD1 >= 16) {
@@ -186,15 +223,16 @@ void ten_a_gake(sprite_status *pActwk) {
 }
 
 void ten_a_hover(sprite_status *pActwk) {
+    tentou_work *work = tentou_get_work(pActwk);
     Uint16 wD0;
 
-    ++((Sint16 *)pActwk)[29];
-    pActwk->yposi.l += *(Sint32 *)&pActwk->actfree[4];
-    wD0 = ((Uint16 *)pActwk)[29];
+    ++work->hover_counter;
+    pActwk->yposi.l += work->hover_speed;
+    wD0 = work->hover_counter;
     wD0 &= 15;
     if (wD0 != 0)
         return;
-    *(Sint32 *)&pActwk->actfree[4] = -(*(Sint32 *)&pActwk->actfree[4]);
+    work->hover_speed = -work->hover_speed;
 }
 
 void ten_a_range(sprite_status *pActwk) {
@@ -235,6 +273,7 @@ void ten_b_init(sprite_status *pActwk) {
 }
 
 void ten_b_fall(sprite_status *pActwk) {
+    tentou_work *work = tentou_get_work(pActwk);
     Sint16 iD1;
 
     if (pActwk->colicnt != 0) {
@@ -245,30 +284,34 @@ void ten_b_fall(sprite_status *pActwk) {
     iD1 = emycol_d(pActwk);
     if (iD1 < 0) {
         pActwk->yposi.w.h += iD1;
-        ((Sint16 *)pActwk)[23] = 120;
+        work->u0.bomb_timer = 120;
         pActwk->r_no0 += 2;
     }
 }
 
 void ten_b_wait(sprite_status *pActwk) {
+    tentou_work *work = tentou_get_work(pActwk);
+
     if (pActwk->colicnt != 0) {
         ten_b_die(pActwk);
         return;
     }
-    --((Sint16 *)pActwk)[23];
-    if (((Sint16 *)pActwk)[23] == 0) {
-        ((Sint16 *)pActwk)[23] = 120;
+    --work->u0.bomb_timer;
+    if (work->u0.bomb_timer == 0) {
+        work->u0.bomb_timer = 120;
         pActwk->r_no0 += 2;
     }
 }
 
 void ten_b_blink(sprite_status *pActwk) {
+    tentou_work *work = tentou_get_work(pActwk);
+
     if (pActwk->colicnt != 0) {
         ten_b_die(pActwk);
         return;
     }
-    --((Sint16 *)pActwk)[23];
-    if (((Sint16 *)pActwk)[23] == 0) {
+    --work->u0.bomb_timer;
+    if (work->u0.bomb_timer == 0) {
         pActwk->r_no0 += 2;
     }
     patchg(pActwk, pchg1);

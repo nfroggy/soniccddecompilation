@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "equ.h"
 #include "dai_rd1.h"
 #include "action.h"
@@ -7,6 +9,66 @@
 #include "etc.h"
 #include "loader2.h"
 #include "ridechk.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 phase;
+    Uint8 state;
+    Uint8 ride_offset;
+    Sint8 amplitude;
+    Uint8 wait_timer;
+    Uint8 unused5[5];
+    Uint16 parent_index;
+    Sint16 frameout_x;
+    union {
+        Sint16 origin_x;
+        struct {
+            Uint8 vfuta_x_offset;
+            Sint8 vfuta_y_offset;
+        };
+    };
+    union {
+        Sint16 origin_y;
+        struct {
+            Uint8 vfuta_phase;
+            Uint8 vfuta_phase_low;
+        };
+    };
+} dai_rd1_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(dai_rd1_work, phase) == 0,
+               "dai_rd1_work.phase offset");
+_Static_assert(offsetof(dai_rd1_work, state) == 1,
+               "dai_rd1_work.state offset");
+_Static_assert(offsetof(dai_rd1_work, ride_offset) == 2,
+               "dai_rd1_work.ride_offset offset");
+_Static_assert(offsetof(dai_rd1_work, amplitude) == 3,
+               "dai_rd1_work.amplitude offset");
+_Static_assert(offsetof(dai_rd1_work, wait_timer) == 4,
+               "dai_rd1_work.wait_timer offset");
+_Static_assert(offsetof(dai_rd1_work, parent_index) == 10,
+               "dai_rd1_work.parent_index offset");
+_Static_assert(offsetof(dai_rd1_work, frameout_x) == 12,
+               "dai_rd1_work.frameout_x offset");
+_Static_assert(offsetof(dai_rd1_work, origin_x) == 14,
+               "dai_rd1_work.origin_x offset");
+_Static_assert(offsetof(dai_rd1_work, vfuta_x_offset) == 14,
+               "dai_rd1_work.vfuta_x_offset offset");
+_Static_assert(offsetof(dai_rd1_work, vfuta_y_offset) == 15,
+               "dai_rd1_work.vfuta_y_offset offset");
+_Static_assert(offsetof(dai_rd1_work, origin_y) == 16,
+               "dai_rd1_work.origin_y offset");
+_Static_assert(offsetof(dai_rd1_work, vfuta_phase) == 16,
+               "dai_rd1_work.vfuta_phase offset");
+_Static_assert(offsetof(dai_rd1_work, vfuta_phase_low) == 17,
+               "dai_rd1_work.vfuta_phase_low offset");
+_Static_assert(sizeof(dai_rd1_work) <= sizeof(((sprite_status *)0)->actfree),
+               "dai_rd1_work fits in actfree");
+
+static dai_rd1_work *dai_rd1_get_work(sprite_status *pActwk) {
+    return (dai_rd1_work *)pActwk->actfree;
+}
 
 static void dodai_init(sprite_status *pActwk);
 static void dodai_move(sprite_status *pActwk);
@@ -82,14 +144,15 @@ void dodai(sprite_status *pActwk) {
 static void dodai_init(sprite_status *pActwk) {
     char wk;
     sprite_status *pNewact;
+    dai_rd1_work *pWork = dai_rd1_get_work(pActwk);
 
     pActwk->actflg |= 4;
     pActwk->sproffset = 17598;
     pActwk->sprpri = 2;
 
-    ((Sint16 *)pActwk)[30] = pActwk->xposi.w.h;
-    ((Sint16 *)pActwk)[31] = pActwk->yposi.w.h;
-    ((Sint16 *)pActwk)[29] = pActwk->yposi.w.h;
+    pWork->origin_x = pActwk->xposi.w.h;
+    pWork->origin_y = pActwk->yposi.w.h;
+    pWork->frameout_x = pActwk->yposi.w.h;
 
     pActwk->patbase = dai11a_pattbl;
     wk = pActwk->userflag.b.h & 3;
@@ -99,7 +162,7 @@ static void dodai_init(sprite_status *pActwk) {
     pActwk->sprvsize = 8;
 
     wk = (pActwk->userflag.b.h >> 2) & 3;
-    pActwk->actfree[3] = dai_mcnttbl[wk];
+    pWork->amplitude = dai_mcnttbl[wk];
 
     pActwk->r_no0 += 2;
     if ((wk = pActwk->userflag.b.l) != 0) {
@@ -111,13 +174,13 @@ static void dodai_init(sprite_status *pActwk) {
             pNewact->actno = 10;
             pNewact->xposi.w.h = pActwk->xposi.w.h;
             pNewact->yposi.w.h = pActwk->yposi.w.h - 16;
-            ((char *)(pNewact))[61] = -16;
+            dai_rd1_get_work(pNewact)->vfuta_y_offset = -16;
 
-            ((Uint16 *)pNewact)[28] = pActwk - actwk;
+            dai_rd1_get_work(pNewact)->parent_index = pActwk - actwk;
 
             pNewact->userflag.b.h = pActwk->userflag.b.l & 2;
             wk = (Uint8)pActwk->userflag.b.l & 248;
-            pNewact->actfree[14] = wk;
+            dai_rd1_get_work(pNewact)->vfuta_x_offset = wk;
             pNewact->xposi.w.h += (Uint16)wk;
         }
     }
@@ -135,7 +198,7 @@ static void dodai_move(sprite_status *pActwk) {
     mtype = (pActwk->userflag.b.h >> 4) & 15;
     dodai_mtype[mtype](pActwk);
 
-    xlen = ((Uint16 *)pActwk)[30] & 65408;
+    xlen = dai_rd1_get_work(pActwk)->origin_x & 65408;
     xlen -= (scra_h_posit.w.h - 128) & -128;
     if (xlen > 640) {
         ride_on_clr(pActwk, &actwk[0]);
@@ -144,8 +207,8 @@ static void dodai_move(sprite_status *pActwk) {
 }
 
 static void dodai_ud(sprite_status *pActwk) {
-    ++pActwk->actfree[0];
-    pActwk->yposi.w.h = ((Sint16 *)pActwk)[31] + dodai_sub(pActwk);
+    ++dai_rd1_get_work(pActwk)->phase;
+    pActwk->yposi.w.h = dai_rd1_get_work(pActwk)->origin_y + dodai_sub(pActwk);
 
     ridechk(pActwk, &actwk[0]);
 }
@@ -154,12 +217,13 @@ static void dodai_lr(sprite_status *pActwk) {
     Sint32 xsav;
 
     xsav = pActwk->xposi.l;
-    pActwk->xposi.w.h = ((Sint16 *)pActwk)[30] + dodai_sub(pActwk);
+    pActwk->xposi.w.h = dai_rd1_get_work(pActwk)->origin_x + dodai_sub(pActwk);
 
-    ++pActwk->actfree[0];
+    ++dai_rd1_get_work(pActwk)->phase;
 
     pActwk->yposi.w.h =
-        ((char)(((Uint8 *)pActwk)[48]) >> 1) + ((Sint16 *)pActwk)[31];
+        (dai_rd1_get_work(pActwk)->ride_offset >> 1) +
+        dai_rd1_get_work(pActwk)->origin_y;
 
     dodai_ride1(pActwk, xsav);
 }
@@ -172,14 +236,14 @@ static Uint8 dodai_ride1(sprite_status *pActwk, Sint32 xpos) {
 static Uint8 dodai_ride2(sprite_status *pActwk) {
     if (!ridechk(pActwk, &actwk[0])) {
 
-        if (pActwk->actfree[2]) {
-            --pActwk->actfree[2];
+        if (dai_rd1_get_work(pActwk)->ride_offset) {
+            --dai_rd1_get_work(pActwk)->ride_offset;
         }
         return 0;
     }
 
-    if (pActwk->actfree[2] < 8) {
-        ++pActwk->actfree[2];
+    if (dai_rd1_get_work(pActwk)->ride_offset < 8) {
+        ++dai_rd1_get_work(pActwk)->ride_offset;
     }
 
     return 1;
@@ -189,10 +253,10 @@ static void dodai_nA(sprite_status *pActwk) {
     Sint32 xsav;
 
     xsav = pActwk->xposi.l;
-    ++pActwk->actfree[0];
-    pActwk->yposi.w.h = ((Sint16 *)pActwk)[31] + dodai_sub(pActwk);
+    ++dai_rd1_get_work(pActwk)->phase;
+    pActwk->yposi.w.h = dai_rd1_get_work(pActwk)->origin_y + dodai_sub(pActwk);
 
-    pActwk->xposi.w.h = ((Sint16 *)pActwk)[30] + dodai_sub(pActwk);
+    pActwk->xposi.w.h = dai_rd1_get_work(pActwk)->origin_x + dodai_sub(pActwk);
 
     dodai_ride1(pActwk, xsav);
 }
@@ -201,32 +265,33 @@ static void dodai_nB(sprite_status *pActwk) {
     Sint32 xsav;
 
     xsav = pActwk->xposi.l;
-    ++pActwk->actfree[0];
-    pActwk->yposi.w.h = ((Sint16 *)pActwk)[31] + dodai_sub(pActwk);
+    ++dai_rd1_get_work(pActwk)->phase;
+    pActwk->yposi.w.h = dai_rd1_get_work(pActwk)->origin_y + dodai_sub(pActwk);
 
-    pActwk->xposi.w.h = ((Sint16 *)pActwk)[30] - dodai_sub(pActwk);
+    pActwk->xposi.w.h = dai_rd1_get_work(pActwk)->origin_x - dodai_sub(pActwk);
 
     dodai_ride1(pActwk, xsav);
 }
 
 static Uint8 dodai_fix(sprite_status *pActwk) {
     pActwk->yposi.w.h =
-        ((char)pActwk->actfree[2] >> 1) + ((Sint16 *)pActwk)[31];
+        ((char)dai_rd1_get_work(pActwk)->ride_offset >> 1) +
+        dai_rd1_get_work(pActwk)->origin_y;
 
     return dodai_ride2(pActwk);
 }
 
 static void dodai_fal(sprite_status *pActwk) {
-    if (!pActwk->actfree[1]) {
+    if (!dai_rd1_get_work(pActwk)->state) {
         if (!dodai_fix(pActwk))
             return;
 
-        pActwk->actfree[4] = 30;
-        pActwk->actfree[1] += 2;
+        dai_rd1_get_work(pActwk)->wait_timer = 30;
+        dai_rd1_get_work(pActwk)->state += 2;
     }
 
-    if (pActwk->actfree[4]) {
-        --pActwk->actfree[4];
+    if (dai_rd1_get_work(pActwk)->wait_timer) {
+        --dai_rd1_get_work(pActwk)->wait_timer;
         dodai_fix(pActwk);
         return;
     }
@@ -246,23 +311,25 @@ static void dodai_fal(sprite_status *pActwk) {
 }
 
 static void dodai_up(sprite_status *pActwk) {
-    switch (pActwk->actfree[1]) {
+    dai_rd1_work *pWork = dai_rd1_get_work(pActwk);
+
+    switch (pWork->state) {
     case 0:
         if (!dodai_fix(pActwk))
             break;
 
-        pActwk->actfree[1] += 2;
+        pWork->state += 2;
     case 2:
-        if (pActwk->actfree[0] < 64) {
-            pActwk->yposi.w.h = ((Sint16 *)pActwk)[31] - dodai_sub(pActwk);
+        if (pWork->phase < 64) {
+            pActwk->yposi.w.h = pWork->origin_y - dodai_sub(pActwk);
 
-            pActwk->actfree[0] += 2;
+            pWork->phase += 2;
             ridechk(pActwk, &actwk[0]);
             break;
         }
 
-        ((Sint16 *)pActwk)[31] = pActwk->yposi.w.h;
-        pActwk->actfree[1] += 2;
+        pWork->origin_y = pActwk->yposi.w.h;
+        pWork->state += 2;
     case 4:
         dodai_fix(pActwk);
         break;
@@ -271,17 +338,18 @@ static void dodai_up(sprite_status *pActwk) {
 
 static void dodai_upx(sprite_status *pActwk) {
     Sint16 coli;
+    dai_rd1_work *pWork = dai_rd1_get_work(pActwk);
 
-    switch (pActwk->actfree[1]) {
+    switch (pWork->state) {
     case 0:
         if (!dodai_fix(pActwk))
             break;
 
-        pActwk->actfree[1] += 2;
-        pActwk->actfree[4] = 60;
+        pWork->state += 2;
+        pWork->wait_timer = 60;
     case 2:
-        if (pActwk->actfree[4]) {
-            --pActwk->actfree[4];
+        if (pWork->wait_timer) {
+            --pWork->wait_timer;
             dodai_fix(pActwk);
             break;
         }
@@ -295,8 +363,8 @@ static void dodai_upx(sprite_status *pActwk) {
         }
 
         pActwk->yposi.w.h -= coli;
-        ((Sint16 *)pActwk)[31] = pActwk->yposi.w.h;
-        pActwk->actfree[1] += 2;
+        pWork->origin_y = pActwk->yposi.w.h;
+        pWork->state += 2;
     case 4:
         dodai_fix(pActwk);
         break;
@@ -305,35 +373,36 @@ static void dodai_upx(sprite_status *pActwk) {
 
 static void dodai_rm(sprite_status *pActwk) {
     Sint32 xsav;
+    dai_rd1_work *pWork = dai_rd1_get_work(pActwk);
 
-    switch (pActwk->actfree[1]) {
+    switch (pWork->state) {
     case 0:
         if (!dodai_fix(pActwk))
             break;
 
-        pActwk->actfree[1] += 2;
-        pActwk->actfree[4] = 60;
+        pWork->state += 2;
+        pWork->wait_timer = 60;
     case 2:
-        if (pActwk->actfree[4]) {
-            --pActwk->actfree[4];
+        if (pWork->wait_timer) {
+            --pWork->wait_timer;
             dodai_fix(pActwk);
             break;
         }
 
-        if (pActwk->actfree[0] < 64) {
+        if (pWork->phase < 64) {
             xsav = pActwk->xposi.l;
-            pActwk->xposi.w.h = ((Sint16 *)pActwk)[30] + dodai_sub(pActwk);
+            pActwk->xposi.w.h = pWork->origin_x + dodai_sub(pActwk);
 
-            ++pActwk->actfree[0];
+            ++pWork->phase;
             pActwk->yposi.w.h =
-                ((char)pActwk->actfree[2] >> 1) + ((Sint16 *)pActwk)[31];
+                ((char)pWork->ride_offset >> 1) + pWork->origin_y;
 
             dodai_ride1(pActwk, xsav);
             break;
         }
 
-        ((Sint16 *)pActwk)[30] = pActwk->xposi.w.h;
-        pActwk->actfree[1] += 2;
+        pWork->origin_x = pActwk->xposi.w.h;
+        pWork->state += 2;
     case 4:
         dodai_fix(pActwk);
         break;
@@ -342,35 +411,36 @@ static void dodai_rm(sprite_status *pActwk) {
 
 static void dodai_lm(sprite_status *pActwk) {
     Sint32 xsav;
+    dai_rd1_work *pWork = dai_rd1_get_work(pActwk);
 
-    switch (pActwk->actfree[1]) {
+    switch (pWork->state) {
     case 0:
         if (!dodai_fix(pActwk))
             break;
 
-        pActwk->actfree[1] += 2;
-        pActwk->actfree[4] = 60;
+        pWork->state += 2;
+        pWork->wait_timer = 60;
     case 2:
-        if (pActwk->actfree[4]) {
-            --pActwk->actfree[4];
+        if (pWork->wait_timer) {
+            --pWork->wait_timer;
             dodai_fix(pActwk);
             break;
         }
 
-        if (pActwk->actfree[0] < 64) {
+        if (pWork->phase < 64) {
             xsav = pActwk->xposi.l;
-            pActwk->xposi.w.h = ((Sint16 *)pActwk)[30] - dodai_sub(pActwk);
+            pActwk->xposi.w.h = pWork->origin_x - dodai_sub(pActwk);
 
-            ++pActwk->actfree[0];
+            ++pWork->phase;
             pActwk->yposi.w.h =
-                ((char)pActwk->actfree[2] >> 1) + ((Sint16 *)pActwk)[31];
+                ((char)pWork->ride_offset >> 1) + pWork->origin_y;
 
             dodai_ride1(pActwk, xsav);
             break;
         }
 
-        ((Sint16 *)pActwk)[30] = pActwk->xposi.w.h;
-        pActwk->actfree[1] += 2;
+        pWork->origin_x = pActwk->xposi.w.h;
+        pWork->state += 2;
     case 4:
         dodai_fix(pActwk);
         break;
@@ -380,8 +450,8 @@ static void dodai_lm(sprite_status *pActwk) {
 static Sint16 dodai_sub(sprite_status *pActwk) {
     Sint16 sinwk, coswk;
 
-    sinset((Uint8)(char)pActwk->actfree[0], &sinwk, &coswk);
-    return (sinwk * (Sint16)((char *)pActwk)[49]) >> 4;
+    sinset((Uint8)(char)dai_rd1_get_work(pActwk)->phase, &sinwk, &coswk);
+    return (sinwk * (Sint16)dai_rd1_get_work(pActwk)->amplitude) >> 4;
 }
 
 static void dai_fout(sprite_status *pActwk) {
@@ -424,7 +494,8 @@ static void vfuta_move1(sprite_status *pActwk) {
         wk = pActwk->xposi.w.h - actwk[0].xposi.w.h;
 
         if (0 <= wk && wk < 49) {
-            pActwk->actfree[16] = pActwk->actfree[17] = 0;
+            dai_rd1_get_work(pActwk)->vfuta_phase =
+                dai_rd1_get_work(pActwk)->vfuta_phase_low = 0;
             pActwk->r_no0 = 4;
 
             if (pActwk->actflg & 128) {
@@ -440,9 +511,9 @@ static void vfuta_move1(sprite_status *pActwk) {
 static void vfuta_move2(sprite_status *pActwk) {
     Sint16 wk;
 
-    wk = pActwk->actfree[16];
+    wk = dai_rd1_get_work(pActwk)->vfuta_phase;
     wk += 8;
-    pActwk->actfree[16] += 8;
+    dai_rd1_get_work(pActwk)->vfuta_phase += 8;
 
     if (wk > 255) {
         pActwk->r_no0 -= 2;

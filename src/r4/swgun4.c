@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "swgun4.h"
 #include "../action.h"
@@ -8,6 +10,64 @@
 #include "../ring.h"
 #include "../score.h"
 #include "playsub4.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    union {
+        struct {
+            Sint8 unused0[4];
+            Uint8 triggered_sound;
+            Uint8 press_ramp;
+            Uint8 previous_pressed;
+            Uint8 current_pressed;
+            Sint16 origin_y;
+            Uint8 switch_index;
+            Uint8 reward_type;
+            Sint16 origin_x;
+            Uint8 reward_timer;
+            Uint8 reward_subtimer;
+            Sint16 master_index;
+            Sint16 active_switch_index;
+        } swgun;
+        struct {
+            Sint8 unused0[12];
+            Sint16 spin_angle;
+            Sint16 spin_speed;
+            Uint8 lifetime;
+            Uint8 bounce_delay;
+        } ring;
+    };
+} swgun4_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(swgun4_work, swgun.triggered_sound) == 4,
+               "swgun4_work.swgun.triggered_sound offset");
+_Static_assert(offsetof(swgun4_work, swgun.origin_y) == 8,
+               "swgun4_work.swgun.origin_y offset");
+_Static_assert(offsetof(swgun4_work, swgun.switch_index) == 10,
+               "swgun4_work.swgun.switch_index offset");
+_Static_assert(offsetof(swgun4_work, swgun.reward_type) == 11,
+               "swgun4_work.swgun.reward_type offset");
+_Static_assert(offsetof(swgun4_work, swgun.origin_x) == 12,
+               "swgun4_work.swgun.origin_x offset");
+_Static_assert(offsetof(swgun4_work, ring.spin_angle) == 12,
+               "swgun4_work.ring.spin_angle offset");
+_Static_assert(offsetof(swgun4_work, swgun.reward_timer) == 14,
+               "swgun4_work.swgun.reward_timer offset");
+_Static_assert(offsetof(swgun4_work, ring.spin_speed) == 14,
+               "swgun4_work.ring.spin_speed offset");
+_Static_assert(offsetof(swgun4_work, swgun.master_index) == 16,
+               "swgun4_work.swgun.master_index offset");
+_Static_assert(offsetof(swgun4_work, ring.lifetime) == 16,
+               "swgun4_work.ring.lifetime offset");
+_Static_assert(offsetof(swgun4_work, swgun.active_switch_index) == 18,
+               "swgun4_work.swgun.active_switch_index offset");
+_Static_assert(sizeof(swgun4_work) <= sizeof(((sprite_status *)0)->actfree),
+               "swgun4_work fits in actfree");
+
+static swgun4_work *swgun4_get_work(sprite_status *pActwk) {
+    return (swgun4_work *)pActwk->actfree;
+}
 
 static void swgun4_init(sprite_status *pActwk);
 static void swgun4_move(sprite_status *pActwk);
@@ -36,7 +96,7 @@ void swgun4(sprite_status *pActwk) {
 
     tbl[pActwk->r_no0 / 2](pActwk);
     actionsub(pActwk);
-    frameout_s00(pActwk, ((Sint16 *)pActwk)[29]);
+    frameout_s00(pActwk, swgun4_get_work(pActwk)->swgun.origin_x);
 }
 
 static void swgun4_init(sprite_status *pActwk) {
@@ -44,6 +104,7 @@ static void swgun4_init(sprite_status *pActwk) {
     Sint16 *a2;
     Sint16 i;
     Uint8 d1;
+    swgun4_work *pWork = swgun4_get_work(pActwk);
     Sint16 tbl[12] = {0, 0, -64, 64, -128, 128, 64, -64, 96, -128, 128, -128};
 
     pActwk->r_no0 += 2;
@@ -54,24 +115,26 @@ static void swgun4_init(sprite_status *pActwk) {
     pActwk->sprhsize = 14;
     pActwk->sprvsize = 8;
 
-    if (pActwk->actfree[10] == 0) {
-        ((Sint16 *)pActwk)[29] = pActwk->xposi.w.h;
-        ((Sint16 *)pActwk)[27] = pActwk->yposi.w.h;
-        ((Sint16 *)pActwk)[31] = (Uint16)(pActwk - actwk);
+    if (pWork->swgun.switch_index == 0) {
+        pWork->swgun.origin_x = pActwk->xposi.w.h;
+        pWork->swgun.origin_y = pActwk->yposi.w.h;
+        pWork->swgun.master_index = (Uint16)(pActwk - actwk);
 
         d1 = 1;
         for (i = 0; i <= 4; ++i) {
             if (actwkchk(&pNewActwk) == 0) {
+                swgun4_work *pNewWork = swgun4_get_work(pNewActwk);
+
                 pNewActwk->actno = 63;
 
-                ((Sint16 *)pNewActwk)[29] = ((Sint16 *)pActwk)[29];
+                pNewWork->swgun.origin_x = pWork->swgun.origin_x;
 
-                ((Sint16 *)pNewActwk)[31] = (Uint16)(pActwk - actwk);
-                pNewActwk->actfree[10] = d1;
+                pNewWork->swgun.master_index = (Uint16)(pActwk - actwk);
+                pNewWork->swgun.switch_index = d1;
                 a2 = &tbl[d1 * 2];
                 pNewActwk->xposi.w.h = pActwk->xposi.w.h + *a2++;
                 pNewActwk->yposi.w.h = pActwk->yposi.w.h + *a2++;
-                ((Sint16 *)pNewActwk)[27] = pNewActwk->yposi.w.h;
+                pNewWork->swgun.origin_y = pNewActwk->yposi.w.h;
             }
             ++d1;
         }
@@ -81,28 +144,29 @@ static void swgun4_init(sprite_status *pActwk) {
 static void swgun4_move(sprite_status *pActwk) {
     sprite_status *a1;
     Sint16 d0;
+    swgun4_work *pWork = swgun4_get_work(pActwk);
 
     switch_move(pActwk);
 
-    a1 = &actwk[((Sint16 *)pActwk)[31]];
-    d0 = ((Sint16 *)a1)[32];
+    a1 = &actwk[pWork->swgun.master_index];
+    d0 = swgun4_get_work(a1)->swgun.active_switch_index;
     if (d0 == 0)
         return;
 
-    if (pActwk->actfree[4] == 0) {
+    if (pWork->swgun.triggered_sound == 0) {
         soundset(191);
-        pActwk->actfree[4] = 255;
+        pWork->swgun.triggered_sound = 255;
     }
 
-    if ((Uint16)((Uint16)pActwk->actfree[5] + 16) < 256) {
-        pActwk->actfree[5] += 16;
+    if ((Uint16)((Uint16)pWork->swgun.press_ramp + 16) < 256) {
+        pWork->swgun.press_ramp += 16;
         return;
     }
-    pActwk->actfree[5] += 16;
+    pWork->swgun.press_ramp += 16;
 
     pActwk->r_no0 += 2;
     ride_on_clr(pActwk, &actwk[0]);
-    pActwk->actfree[15] = pActwk->actfree[14] = 0;
+    pWork->swgun.reward_subtimer = pWork->swgun.reward_timer = 0;
     pActwk->patno = 2;
 }
 
@@ -110,8 +174,8 @@ static void swgun4_move1(sprite_status *pActwk) {
     sprite_status *a1;
     void (*tbl[4])(sprite_status *) = {&hariset, &bp1000, &awaset, &ring4set};
 
-    a1 = &actwk[((Sint16 *)pActwk)[31]];
-    tbl[a1->actfree[11]](pActwk);
+    a1 = &actwk[swgun4_get_work(pActwk)->swgun.master_index];
+    tbl[swgun4_get_work(a1)->swgun.reward_type](pActwk);
 }
 
 static void switch_move(sprite_status *pActwk) {
@@ -119,47 +183,51 @@ static void switch_move(sprite_status *pActwk) {
     sprite_status *pActwk_m;
     Uint16 d0, d1;
     Sint16 r;
+    swgun4_work *pWork = swgun4_get_work(pActwk);
     Uint8 tbl[42] = {2, 1, 0, 3, 3, 2, 1, 0, 3, 3, 2, 2, 0, 3,
                      3, 2, 2, 1, 2, 2, 1, 0, 3, 3, 3, 2, 2, 1,
                      0, 3, 3, 3, 2, 2, 1, 0, 0, 0, 0, 0, 0, 0};
 
-    pActwk->actfree[6] = pActwk->actfree[7];
+    pWork->swgun.previous_pressed = pWork->swgun.current_pressed;
 
     pPlayerwk = &actwk[0];
     r = hitchk_u(pActwk, pPlayerwk);
     if (r) {
-        pActwk->actfree[7] = 255;
+        pWork->swgun.current_pressed = 255;
     } else {
-        pActwk->actfree[7] = 0;
+        pWork->swgun.current_pressed = 0;
         goto label1;
     }
     if (pPlayerwk->yspeed.w < 0)
         goto label1;
-    if (pActwk->actfree[4])
+    if (pWork->swgun.triggered_sound)
         goto label1;
-    pActwk_m = &actwk[((Sint16 *)pActwk)[31]];
-    ((Sint16 *)pActwk_m)[32] = (Uint16)(pActwk - actwk);
+    pActwk_m = &actwk[pWork->swgun.master_index];
+    swgun4_get_work(pActwk_m)->swgun.active_switch_index =
+        (Uint16)(pActwk - actwk);
 
-    d0 = pActwk->actfree[10];
+    d0 = pWork->swgun.switch_index;
     d0 *= 6;
     d1 = pltime.b.b3;
     d1 &= 255;
     d1 /= 10;
     d1 &= 7;
     d0 += d1;
-    pActwk->actfree[11] = tbl[d0];
+    pWork->swgun.reward_type = tbl[d0];
 
-    pActwk_m->actfree[11] = pActwk->actfree[11];
+    swgun4_get_work(pActwk_m)->swgun.reward_type = pWork->swgun.reward_type;
 
 label1:
-    if (pActwk->actfree[6] == 0 && pActwk->actfree[7] == 255) {
+    if (pWork->swgun.previous_pressed == 0 &&
+        pWork->swgun.current_pressed == 255) {
         pPlayerwk->yposi.w.h += 8;
         pActwk->yposi.w.h += 4;
         pActwk->patno = 1;
         pActwk->sprvsize -= 4;
     }
 
-    if (pActwk->actfree[6] == 255 && pActwk->actfree[7] == 0) {
+    if (pWork->swgun.previous_pressed == 255 &&
+        pWork->swgun.current_pressed == 0) {
         pPlayerwk->yposi.w.h -= 8;
         pActwk->yposi.w.h -= 4;
         pActwk->patno = 0;
@@ -171,54 +239,57 @@ static void hariset(sprite_status *pActwk) {
     sprite_status *pMaster;
     sprite_status *pSlave;
     sprite_status *pNewActwk;
+    swgun4_work *pWork = swgun4_get_work(pActwk);
 
-    if (pActwk->actfree[14]) {
+    if (pWork->swgun.reward_timer) {
         frameout(pActwk);
         return;
     }
-    pMaster = &actwk[((Sint16 *)pActwk)[31]];
-    pSlave = &actwk[((Sint16 *)pMaster)[32]];
+    pMaster = &actwk[pWork->swgun.master_index];
+    pSlave = &actwk[swgun4_get_work(pMaster)->swgun.active_switch_index];
     if (pActwk != pSlave) {
-        if (pActwk->actfree[10] != 4) {
+        if (pWork->swgun.switch_index != 4) {
             if (actwkchk(&pNewActwk) == 0) {
                 pNewActwk->actno = 34;
                 pNewActwk->xposi.w.h = pActwk->xposi.w.h;
 
-                ((Sint16 *)pNewActwk)[29] = ((Sint16 *)pActwk)[29];
-                pNewActwk->yposi.w.h = ((Sint16 *)pActwk)[27];
+                swgun4_get_work(pNewActwk)->swgun.origin_x =
+                    pWork->swgun.origin_x;
+                pNewActwk->yposi.w.h = pWork->swgun.origin_y;
             }
         }
     }
-    ++pActwk->actfree[14];
+    ++pWork->swgun.reward_timer;
 }
 
 static void awaset(sprite_status *pActwk) {
     sprite_status *pMaster;
     sprite_status *pSlave;
     sprite_status *pNewActwk;
+    swgun4_work *pWork = swgun4_get_work(pActwk);
 
-    pMaster = &actwk[((Sint16 *)pActwk)[31]];
-    pSlave = &actwk[((Sint16 *)pMaster)[32]];
+    pMaster = &actwk[pWork->swgun.master_index];
+    pSlave = &actwk[swgun4_get_work(pMaster)->swgun.active_switch_index];
     if (pActwk == pSlave) {
-        if ((Uint16)((Uint16)pActwk->actfree[14] + 1) > 255) {
+        if ((Uint16)((Uint16)pWork->swgun.reward_timer + 1) > 255) {
             frameout(pActwk);
         }
-        ++pActwk->actfree[14];
+        ++pWork->swgun.reward_timer;
         return;
     }
-    if ((Uint16)((Uint16)pActwk->actfree[15] + 4) <= 255) {
-        pActwk->actfree[15] += 4;
+    if ((Uint16)((Uint16)pWork->swgun.reward_subtimer + 4) <= 255) {
+        pWork->swgun.reward_subtimer += 4;
         return;
     }
-    pActwk->actfree[15] += 4;
+    pWork->swgun.reward_subtimer += 4;
     if (actwkchk(&pNewActwk) == 0) {
         pNewActwk->actno = 32;
         pNewActwk->xposi.w.h = pActwk->xposi.w.h;
-        pNewActwk->yposi.w.h = ((Sint16 *)pActwk)[27];
+        pNewActwk->yposi.w.h = pWork->swgun.origin_y;
         pNewActwk->userflag.b.h = 2;
     }
-    ++pActwk->actfree[14];
-    if (pActwk->actfree[14] >= 2) {
+    ++pWork->swgun.reward_timer;
+    if (pWork->swgun.reward_timer >= 2) {
         frameout(pActwk);
     }
 }
@@ -227,20 +298,21 @@ static void ring4set(sprite_status *pActwk) {
     sprite_status *pMaster;
     sprite_status *pNewActwk;
     Sint16 d0;
+    swgun4_work *pWork = swgun4_get_work(pActwk);
     char tbl[22] = {-32, 0, 32, 64, 96, 127, 96, 64, 32, 0, -32,
                     -32, 0, 32, 64, 96, 127, 96, 64, 32, 0, -32};
 
-    pMaster = &actwk[((Sint16 *)pActwk)[31]];
+    pMaster = &actwk[pWork->swgun.master_index];
     if (pActwk != pMaster) {
         frameout(pActwk);
         return;
     }
-    if ((Uint16)pActwk->actfree[14] + 16 < 256) {
-        pActwk->actfree[14] += 16;
+    if ((Uint16)pWork->swgun.reward_timer + 16 < 256) {
+        pWork->swgun.reward_timer += 16;
         return;
     }
-    pActwk->actfree[14] += 16;
-    if (pActwk->actfree[15] >= 21) {
+    pWork->swgun.reward_timer += 16;
+    if (pWork->swgun.reward_subtimer >= 21) {
         frameout(pActwk);
         return;
     }
@@ -250,24 +322,25 @@ static void ring4set(sprite_status *pActwk) {
         d0 = pActwk->yposi.w.h;
         d0 -= 384;
         pNewActwk->yposi.w.h = d0;
-        d0 = tbl[pActwk->actfree[15]];
+        d0 = tbl[pWork->swgun.reward_subtimer];
         d0 += pActwk->xposi.w.h;
         pNewActwk->xposi.w.h = d0;
     }
-    ++pActwk->actfree[15];
+    ++pWork->swgun.reward_subtimer;
 }
 
 static void bp1000(sprite_status *pActwk) {
     sprite_status *pMaster;
     sprite_status *pSlave;
     sprite_status *pNewActwk;
+    swgun4_work *pWork = swgun4_get_work(pActwk);
 
-    if (pActwk->actfree[14]) {
+    if (pWork->swgun.reward_timer) {
         frameout(pActwk);
         return;
     }
-    pMaster = &actwk[((Sint16 *)pActwk)[31]];
-    pSlave = &actwk[((Sint16 *)pMaster)[32]];
+    pMaster = &actwk[pWork->swgun.master_index];
+    pSlave = &actwk[swgun4_get_work(pMaster)->swgun.active_switch_index];
     if (pMaster != pSlave) {
         scoreup(100);
         if (actwkchk(&pNewActwk) == 0) {
@@ -276,7 +349,7 @@ static void bp1000(sprite_status *pActwk) {
             pNewActwk->yposi.w.h = pActwk->yposi.w.h;
         }
     }
-    ++pActwk->actfree[14];
+    ++pWork->swgun.reward_timer;
 }
 
 static sprite_pattern ringsp0 = {1, {{-8, -8, 0, 362}}};
@@ -302,6 +375,7 @@ void ring4(sprite_status *pActwk) {
 }
 
 static void ring4_init(sprite_status *pActwk) {
+    swgun4_work *pWork = swgun4_get_work(pActwk);
 
     pActwk->r_no0 += 2;
     pActwk->sprvsize = 8;
@@ -312,23 +386,24 @@ static void ring4_init(sprite_status *pActwk) {
     pActwk->sprpri = 3;
     pActwk->colino = 71;
     pActwk->sprhsize = 8;
-    ((Sint16 *)pActwk)[30] = 2048;
+    pWork->ring.spin_speed = 2048;
     pActwk->yspeed.w = 256;
-    pActwk->actfree[16] = 255;
-    pActwk->actfree[17] = 48;
+    pWork->ring.lifetime = 255;
+    pWork->ring.bounce_delay = 48;
 
     ring4_move(pActwk);
 }
 
 static void ring4_move(sprite_status *pActwk) {
     Sint16 d0, d1;
+    swgun4_work *pWork = swgun4_get_work(pActwk);
 
     speedset2(pActwk);
     pActwk->yspeed.w += 24;
 
-    if (pActwk->actfree[17]) {
-        --pActwk->actfree[17];
-        if (pActwk->actfree[17])
+    if (pWork->ring.bounce_delay) {
+        --pWork->ring.bounce_delay;
+        if (pWork->ring.bounce_delay)
             goto label1;
     }
 
@@ -341,16 +416,16 @@ static void ring4_move(sprite_status *pActwk) {
         pActwk->yspeed.w *= -1;
     }
 label1:
-    d0 = ((Sint16 *)pActwk)[29];
-    d0 += ((Sint16 *)pActwk)[30];
-    ((Sint16 *)pActwk)[29] = d0;
+    d0 = pWork->ring.spin_angle;
+    d0 += pWork->ring.spin_speed;
+    pWork->ring.spin_angle = d0;
     d0 >>= 12;
     d0 &= 3;
     pActwk->patno = d0;
-    ((Sint16 *)pActwk)[30] -= 8;
+    pWork->ring.spin_speed -= 8;
 
-    --pActwk->actfree[16];
-    if (pActwk->actfree[16] == 0) {
+    --pWork->ring.lifetime;
+    if (pWork->ring.lifetime == 0) {
         ring4_erase(pActwk);
         return;
     }

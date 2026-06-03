@@ -1,9 +1,48 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "brunko4.h"
 #include "../action.h"
 #include "../actset.h"
 #include "../etc.h"
 #include "../ridechk.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint8 unused0[8];
+    Sint16 origin_y;
+    Sint16 helper_parent_index;
+    Sint16 origin_x;
+    Sint8 helper_y_offset;
+    Sint8 helper_x_offset;
+    Uint8 angle_high;
+    Uint8 angle_low;
+    Uint8 link_id;
+} brunko4_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(brunko4_work, origin_y) == 8,
+               "brunko4_work.origin_y offset");
+_Static_assert(offsetof(brunko4_work, helper_parent_index) == 10,
+               "brunko4_work.helper_parent_index offset");
+_Static_assert(offsetof(brunko4_work, origin_x) == 12,
+               "brunko4_work.origin_x offset");
+_Static_assert(offsetof(brunko4_work, helper_y_offset) == 14,
+               "brunko4_work.helper_y_offset offset");
+_Static_assert(offsetof(brunko4_work, helper_x_offset) == 15,
+               "brunko4_work.helper_x_offset offset");
+_Static_assert(offsetof(brunko4_work, angle_high) == 16,
+               "brunko4_work.angle_high offset");
+_Static_assert(offsetof(brunko4_work, angle_low) == 17,
+               "brunko4_work.angle_low offset");
+_Static_assert(offsetof(brunko4_work, link_id) == 18,
+               "brunko4_work.link_id offset");
+_Static_assert(sizeof(brunko4_work) <= sizeof(((sprite_status *)0)->actfree),
+               "brunko4_work fits in actfree");
+
+static brunko4_work *brunko4_get_work(sprite_status *pActwk) {
+    return (brunko4_work *)pActwk->actfree;
+}
 
 #if defined(R42A)
 #define SPRITE_BRUNKO4_BASE 476
@@ -28,7 +67,7 @@ void brunko4(sprite_status *pActwk) {
     tbl[pActwk->r_no0 / 2](pActwk);
     actionsub(pActwk);
 
-    wD0 = ((Sint16 *)pActwk)[29] & -128;
+    wD0 = brunko4_get_work(pActwk)->origin_x & -128;
     wD1 = (scra_h_posit.w.h - 128) & -128;
     wD0 -= wD1;
     if ((Uint16)wD0 <= 640)
@@ -59,30 +98,33 @@ static void brunko_init(sprite_status *pActwk) {
 
     pActwk->sprhsize = 32;
     pActwk->sprvsize = 10;
-    pActwk->actfree[16] = 192;
+    brunko4_get_work(pActwk)->angle_high = 192;
 
-    if (pActwk->actfree[18] == 6) {
+    if (brunko4_get_work(pActwk)->link_id == 6) {
         if (actwkchk2(pActwk, &subActwk) == 0) {
             subActwk->actno = 39;
-            ((Sint16 *)subActwk)[28] = (Uint16)(Uint8)(pActwk - actwk);
-            ((char *)subActwk)[61] = -16;
-            subActwk->actfree[14] = 16;
+            brunko4_get_work(subActwk)->helper_parent_index =
+                (Uint16)(Uint8)(pActwk - actwk);
+            brunko4_get_work(subActwk)->helper_x_offset = -16;
+            brunko4_get_work(subActwk)->helper_y_offset = 16;
             subActwk->userflag.b.h = (Uint8)(pActwk->userflag.b.h & 15);
         }
     }
 
-    if (!pActwk->actfree[18]) {
-        ((Sint16 *)pActwk)[29] = pActwk->xposi.w.h;
-        ((Sint16 *)pActwk)[27] = pActwk->yposi.w.h;
+    if (!brunko4_get_work(pActwk)->link_id) {
+        brunko4_get_work(pActwk)->origin_x = pActwk->xposi.w.h;
+        brunko4_get_work(pActwk)->origin_y = pActwk->yposi.w.h;
 
         id = 6;
         for (i = 0; i < 6; ++i) {
             if (actwkchk(&subActwk) == 0) {
                 subActwk->actno = 41;
-                ((Sint16 *)subActwk)[29] = ((Sint16 *)pActwk)[29];
-                ((Sint16 *)subActwk)[27] = ((Sint16 *)pActwk)[27];
+                brunko4_get_work(subActwk)->origin_x =
+                    brunko4_get_work(pActwk)->origin_x;
+                brunko4_get_work(subActwk)->origin_y =
+                    brunko4_get_work(pActwk)->origin_y;
                 subActwk->userflag.b.h = pActwk->userflag.b.h;
-                subActwk->actfree[18] = id;
+                brunko4_get_work(subActwk)->link_id = id;
                 subActwk->patno = 2;
                 if (id == 6)
                     subActwk->patno = 1;
@@ -102,7 +144,7 @@ static void brunko_move(sprite_status *pActwk) {
     xposi_bak.l = pActwk->xposi.l;
     yposi_bak.l = pActwk->yposi.l;
     brunko4_posiset(pActwk);
-    if (pActwk->actfree[18] == 6) {
+    if (brunko4_get_work(pActwk)->link_id == 6) {
         xposi_bak.l = pActwk->xposi.l - xposi_bak.l;
         yposi_bak.l = pActwk->yposi.l - yposi_bak.l;
         xposi_f = xposi_bak.l & 0x80000000;
@@ -122,19 +164,20 @@ static void brunko4_posiset(sprite_status *pActwk) {
     Uint16 sin, cos, sinf, cosf, wD3, wD4;
     Uint8 bD0;
     Sint32 i;
+    brunko4_work *pWork = brunko4_get_work(pActwk);
 
-    temp.b.h = ((char *)pActwk)[62];
-    temp.b.l = ((char *)pActwk)[63];
+    temp.b.h = pWork->angle_high;
+    temp.b.l = pWork->angle_low;
     if (!(pActwk->userflag.b.h & 16))
         temp.w -= 128;
     else
         temp.w += 256;
-    pActwk->actfree[16] = temp.b.h;
-    pActwk->actfree[17] = temp.b.l;
+    pWork->angle_high = temp.b.h;
+    pWork->angle_low = temp.b.l;
 
-    sinset(pActwk->actfree[16], (Sint16 *)&sin, (Sint16 *)&cos);
+    sinset(pWork->angle_high, (Sint16 *)&sin, (Sint16 *)&cos);
     wD3 = wD4 = 0;
-    bD0 = pActwk->actfree[18];
+    bD0 = pWork->link_id;
     if (bD0) {
         do {
             wD3 += sin;
@@ -148,8 +191,8 @@ static void brunko4_posiset(sprite_status *pActwk) {
         wD3 = wD3 >> 1 | sinf;
     for (i = 4; i > 0; --i)
         wD4 = wD4 >> 1 | cosf;
-    wD3 += ((Uint16 *)pActwk)[27];
-    wD4 += ((Uint16 *)pActwk)[29];
+    wD3 += (Uint16)pWork->origin_y;
+    wD4 += (Uint16)pWork->origin_x;
     pActwk->yposi.w.h = wD3;
     pActwk->xposi.w.h = wD4;
 }

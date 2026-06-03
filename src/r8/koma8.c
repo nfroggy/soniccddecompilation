@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "koma8.h"
 #include "../action.h"
@@ -13,6 +15,47 @@
 #define SPRITE_KOMA8_BASE 304
 #endif
 
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 unused0[8];
+    Sint16 ground_y;
+    Uint8 unused10[2];
+    Sint16 origin_x;
+    Uint8 unused14[2];
+    Sint16 travel_range;
+} koma8_work;
+
+typedef struct {
+    Uint8 unused0[10];
+    Uint16 parent_index;
+    Uint8 unused12[3];
+    Uint8 timer;
+} koma8_spark_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(koma8_work, ground_y) == 8,
+               "koma8_work.ground_y offset");
+_Static_assert(offsetof(koma8_work, origin_x) == 12,
+               "koma8_work.origin_x offset");
+_Static_assert(offsetof(koma8_work, travel_range) == 16,
+               "koma8_work.travel_range offset");
+_Static_assert(sizeof(koma8_work) <= sizeof(((sprite_status *)0)->actfree),
+               "koma8_work fits in actfree");
+_Static_assert(offsetof(koma8_spark_work, parent_index) == 10,
+               "koma8_spark_work.parent_index offset");
+_Static_assert(offsetof(koma8_spark_work, timer) == 15,
+               "koma8_spark_work.timer offset");
+_Static_assert(sizeof(koma8_spark_work) <= sizeof(((sprite_status *)0)->actfree),
+               "koma8_spark_work fits in actfree");
+
+static koma8_work *koma8_get_work(sprite_status *komawk) {
+    return (koma8_work *)komawk->actfree;
+}
+
+static koma8_spark_work *koma8_get_spark_work(sprite_status *sprwk) {
+    return (koma8_spark_work *)sprwk->actfree;
+}
+
 static void koma_init(sprite_status *komawk);
 static void koma_move(sprite_status *komawk);
 static void koma_move2(sprite_status *komawk);
@@ -24,13 +67,17 @@ static sprite_pattern kom01 = {1, {{-8, -8, 0, SPRITE_KOMA8_BASE + 1}}};
 sprite_pattern *koma8pat[2] = {&kom00, &kom01};
 
 void koma8(sprite_status *komawk) {
+    koma8_work *work = koma8_get_work(komawk);
     void (*tbl[3])(sprite_status *) = {&koma_init, &koma_move, &koma_move2};
+
     tbl[komawk->r_no0 / 2](komawk);
-    frameout_s00(komawk, ((Sint16 *)komawk)[29]);
+    frameout_s00(komawk, work->origin_x);
 }
 
 static void koma_init(sprite_status *komawk) {
+    koma8_work *work = koma8_get_work(komawk);
     sprite_status *sprwk;
+    koma8_spark_work *spark;
 
     komawk->r_no0 += 2;
     komawk->actflg |= 4;
@@ -38,32 +85,34 @@ static void koma_init(sprite_status *komawk) {
     komawk->patbase = koma8pat;
     komawk->sprhsize = 8;
     komawk->sprvsize = 6;
-    ((Sint16 *)komawk)[29] = komawk->xposi.w.h;
+    work->origin_x = komawk->xposi.w.h;
     komawk->xspeed.w = 256;
 
     if (actwkchk2(komawk, &sprwk) != 0) {
         frameout(komawk);
         return;
     };
+    spark = koma8_get_spark_work(sprwk);
     sprwk->actno = 10;
     sprwk->xposi.w.h = komawk->xposi.w.h;
     sprwk->yposi.w.h = komawk->yposi.w.h - 16;
-    sprwk->actfree[15] = 240;
-    ((Uint16 *)sprwk)[28] = komawk - actwk;
+    spark->timer = 240;
+    spark->parent_index = komawk - actwk;
     sprwk->userflag.b.h = komawk->userflag.b.h & 15;
 
-    ((Sint16 *)komawk)[31] = 80;
+    work->travel_range = 80;
     if (komawk->userflag.b.h < 0)
-        ((Sint16 *)komawk)[31] = 64;
+        work->travel_range = 64;
     koma_move(komawk);
 }
 
 static void koma_move(sprite_status *komawk) {
+    koma8_work *work = koma8_get_work(komawk);
     Sint16 colli_data;
 
     if ((colli_data = emycol_d(komawk)) < 0) {
         komawk->yposi.w.h += colli_data;
-        ((Sint16 *)komawk)[27] = komawk->yposi.w.h;
+        work->ground_y = komawk->yposi.w.h;
         komawk->r_no0 += 2;
     } else {
         ++komawk->yposi.w.h;
@@ -71,6 +120,7 @@ static void koma_move(sprite_status *komawk) {
 }
 
 static void koma_move2(sprite_status *komawk) {
+    koma8_work *work = koma8_get_work(komawk);
     Sint16 colli_data, pos_data;
 
     if (komawk->xspeed.w >= 0)
@@ -80,9 +130,9 @@ static void koma_move2(sprite_status *komawk) {
     if (colli_data < 7)
         goto label1;
 
-    if ((pos_data = komawk->xposi.w.h - ((Sint16 *)komawk)[29]) < 0)
+    if ((pos_data = komawk->xposi.w.h - work->origin_x) < 0)
         pos_data = -pos_data;
-    if (pos_data >= ((Sint16 *)komawk)[31])
+    if (pos_data >= work->travel_range)
         goto label1;
 
     if ((colli_data = emycol_d(komawk)) < -7)

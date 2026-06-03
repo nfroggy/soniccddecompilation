@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "yago.h"
 #include "../action.h"
@@ -5,6 +7,37 @@
 #include "../dircol.h"
 #include "../suicide.h"
 #include "playsub4.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint32 move_distance;
+    Sint32 ground_x_speed;
+    Sint16 timer;
+    Sint32 jet_y_speed;
+    Sint32 jet_x_speed;
+    Sint8 unused18[2];
+    Sint16 origin_x;
+} yago_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(yago_work, move_distance) == 0,
+               "yago_work.move_distance offset");
+_Static_assert(offsetof(yago_work, ground_x_speed) == 4,
+               "yago_work.ground_x_speed offset");
+_Static_assert(offsetof(yago_work, timer) == 8,
+               "yago_work.timer offset");
+_Static_assert(offsetof(yago_work, jet_y_speed) == 10,
+               "yago_work.jet_y_speed offset");
+_Static_assert(offsetof(yago_work, jet_x_speed) == 14,
+               "yago_work.jet_x_speed offset");
+_Static_assert(offsetof(yago_work, origin_x) == 20,
+               "yago_work.origin_x offset");
+_Static_assert(sizeof(yago_work) <= sizeof(((sprite_status *)0)->actfree),
+               "yago_work fits in actfree");
+
+static yago_work *yago_get_work(sprite_status *pActwk) {
+    return (yago_work *)pActwk->actfree;
+}
 
 #if defined(R41A)
 #define SPRITE_YAGO_BASE 490
@@ -61,7 +94,7 @@ void yago(sprite_status *pActwk) {
 static void act_disp(sprite_status *pActwk) {
     patchg(pActwk, pat_chg);
     actionsub(pActwk);
-    frameout_s00(pActwk, ((Sint16 *)pActwk)[33]);
+    frameout_s00(pActwk, yago_get_work(pActwk)->origin_x);
 }
 
 static void yago_e(sprite_status *pActwk) {
@@ -74,7 +107,7 @@ static void yago_e(sprite_status *pActwk) {
 }
 
 static void act_init(sprite_status *pActwk) {
-    ((Sint16 *)pActwk)[33] = pActwk->xposi.w.h;
+    yago_get_work(pActwk)->origin_x = pActwk->xposi.w.h;
     pActwk->r_no0 += 2;
     pActwk->actflg = 4;
     pActwk->colino = 47;
@@ -94,18 +127,19 @@ static void act_fall(sprite_status *pActwk) {
     } else {
 
         pActwk->r_no0 += 2;
-        *(Sint32 *)&pActwk->actfree[0] = 5242880;
-        *(Sint32 *)&pActwk->actfree[4] = -16384;
+        yago_get_work(pActwk)->move_distance = 5242880;
+        yago_get_work(pActwk)->ground_x_speed = -16384;
         act_disp(pActwk);
     }
 }
 
 static void act_lr(sprite_status *pActwk) {
+    yago_work *pWork = yago_get_work(pActwk);
     Sint16 temp;
 
-    *(Sint32 *)&pActwk->actfree[0] += -16384;
-    if (*(Sint32 *)&pActwk->actfree[0] >= 0) {
-        pActwk->xposi.l += *(Sint32 *)&pActwk->actfree[4];
+    pWork->move_distance += -16384;
+    if (pWork->move_distance >= 0) {
+        pActwk->xposi.l += pWork->ground_x_speed;
         pActwk->yposi.w.h += emycol_d(pActwk) - 5;
         if (pActwk->actflg & 1)
             temp = emycol_r(pActwk, pActwk->sprhs);
@@ -127,36 +161,40 @@ static void act_lr(sprite_status *pActwk) {
             temp -= 64;
 
             pActwk->r_no0 += 6;
-            ((Sint16 *)pActwk)[27] = 7;
+            pWork->timer = 7;
             act_disp(pActwk);
             return;
         }
     }
 
     pActwk->r_no0 += 2;
-    ((Sint16 *)pActwk)[27] = 31;
+    pWork->timer = 31;
     act_disp(pActwk);
 }
 
 static void act_rev(sprite_status *pActwk) {
-    --((Sint16 *)pActwk)[27];
-    if (((Sint16 *)pActwk)[27]) {
+    yago_work *pWork = yago_get_work(pActwk);
+
+    --pWork->timer;
+    if (pWork->timer) {
         act_disp(pActwk);
         return;
     }
 
     pActwk->r_no0 += 2;
-    ((Sint16 *)pActwk)[27] = 31;
-    *(Sint32 *)&pActwk->actfree[0] = 5242880;
-    *(Sint32 *)&pActwk->actfree[4] *= -1;
+    pWork->timer = 31;
+    pWork->move_distance = 5242880;
+    pWork->ground_x_speed *= -1;
     pActwk->actflg ^= 1;
     pActwk->cddat ^= 1;
     act_disp(pActwk);
 }
 
 static void act_rev1(sprite_status *pActwk) {
-    --((Sint16 *)pActwk)[27];
-    if (((Sint16 *)pActwk)[27]) {
+    yago_work *pWork = yago_get_work(pActwk);
+
+    --pWork->timer;
+    if (pWork->timer) {
         act_disp(pActwk);
         return;
     }
@@ -166,46 +204,51 @@ static void act_rev1(sprite_status *pActwk) {
 }
 
 static void act_jet(sprite_status *pActwk) {
-    --((Sint16 *)pActwk)[27];
-    if (((Sint16 *)pActwk)[27]) {
+    yago_work *pWork = yago_get_work(pActwk);
+
+    --pWork->timer;
+    if (pWork->timer) {
         act_disp(pActwk);
         return;
     }
 
     pActwk->r_no0 += 2;
-    ((Sint16 *)pActwk)[27] = 31;
+    pWork->timer = 31;
     act_disp(pActwk);
 }
 
 static void act_jet1(sprite_status *pActwk) {
+    yago_work *pWork = yago_get_work(pActwk);
+
     pActwk->yposi.l += 8192;
-    --((Sint16 *)pActwk)[27];
-    if (((Sint16 *)pActwk)[27]) {
+    --pWork->timer;
+    if (pWork->timer) {
         act_disp(pActwk);
         return;
     }
 
     pActwk->r_no0 += 2;
-    ((Sint32 *)pActwk)[15] = -294912;
+    pWork->jet_x_speed = -294912;
     if (pActwk->actflg & 1)
-        ((Sint32 *)pActwk)[15] *= -1;
+        pWork->jet_x_speed *= -1;
 
-    ((Sint32 *)pActwk)[14] = -98304;
+    pWork->jet_y_speed = -98304;
     act_disp(pActwk);
 }
 
 static void act_jet2(sprite_status *pActwk) {
+    yago_work *pWork = yago_get_work(pActwk);
     Sint16 temp;
 
-    pActwk->xposi.l += ((Sint32 *)pActwk)[15];
+    pActwk->xposi.l += pWork->jet_x_speed;
     if (pActwk->actflg & 1)
         temp = emycol_r(pActwk, pActwk->sprhs);
     else
         temp = emycol_l(pActwk, -(char)pActwk->sprhs);
     if (temp - 5 >= 0) {
-        pActwk->yposi.l += ((Sint32 *)pActwk)[14];
-        if (((Sint32 *)pActwk)[14] < 0)
-            ((Sint32 *)pActwk)[14] += 8192;
+        pActwk->yposi.l += pWork->jet_y_speed;
+        if (pWork->jet_y_speed < 0)
+            pWork->jet_y_speed += 8192;
 
         frameout_s(pActwk);
         act_disp(pActwk);
@@ -214,7 +257,7 @@ static void act_jet2(sprite_status *pActwk) {
 
     pActwk->r_no0 = 6;
 
-    ((Sint16 *)pActwk)[27] = 31;
+    pWork->timer = 31;
     act_disp(pActwk);
 }
 
@@ -229,7 +272,7 @@ static void act_fall1(sprite_status *pActwk) {
 
     pActwk->r_no0 = 6;
     pActwk->yposi.w.h += temp;
-    ((Sint16 *)pActwk)[27] = 31;
+    yago_get_work(pActwk)->timer = 31;
     act_disp(pActwk);
 }
 
@@ -243,7 +286,7 @@ static void yago_b(sprite_status *pActwk) {
 }
 
 static void act_init_(sprite_status *pActwk) {
-    ((Sint16 *)pActwk)[33] = pActwk->xposi.w.h;
+    yago_get_work(pActwk)->origin_x = pActwk->xposi.w.h;
     pActwk->r_no0 += 2;
     pActwk->actflg = 4;
     pActwk->colino = 47;
@@ -266,41 +309,44 @@ static void act_fall_(sprite_status *pActwk) {
 
         pActwk->r_no0 += 2;
         pActwk->yposi.w.h += temp - 5;
-        *(Sint32 *)&pActwk->actfree[0] = 5242880;
-        *(Sint32 *)&pActwk->actfree[4] = -16384;
+        yago_get_work(pActwk)->move_distance = 5242880;
+        yago_get_work(pActwk)->ground_x_speed = -16384;
         act_disp(pActwk);
     }
 }
 
 static void act_jet1_(sprite_status *pActwk) {
+    yago_work *pWork = yago_get_work(pActwk);
+
     pActwk->yposi.l += 10240;
-    --((Sint16 *)pActwk)[27];
-    if (((Sint16 *)pActwk)[27]) {
+    --pWork->timer;
+    if (pWork->timer) {
         act_disp(pActwk);
         return;
     }
 
     pActwk->r_no0 += 2;
-    ((Sint32 *)pActwk)[15] = -65536;
+    pWork->jet_x_speed = -65536;
     if (pActwk->actflg & 1)
-        ((Sint32 *)pActwk)[15] *= -1;
+        pWork->jet_x_speed *= -1;
 
-    ((Sint32 *)pActwk)[14] = -98304;
+    pWork->jet_y_speed = -98304;
     act_disp(pActwk);
 }
 
 static void act_jet2_(sprite_status *pActwk) {
+    yago_work *pWork = yago_get_work(pActwk);
     Sint16 temp;
 
-    pActwk->xposi.l += ((Sint32 *)pActwk)[15];
+    pActwk->xposi.l += pWork->jet_x_speed;
     if (pActwk->actflg & 1)
         temp = emycol_r(pActwk, pActwk->sprhs);
     else
         temp = emycol_l(pActwk, -(char)pActwk->sprhs);
     if (temp >= 0) {
-        pActwk->yposi.l += ((Sint32 *)pActwk)[14];
-        ((Sint32 *)pActwk)[14] += 4096;
-        if (((Sint32 *)pActwk)[14] < 0) {
+        pActwk->yposi.l += pWork->jet_y_speed;
+        pWork->jet_y_speed += 4096;
+        if (pWork->jet_y_speed < 0) {
             act_disp(pActwk);
             return;
         }
@@ -316,6 +362,6 @@ static void act_jet2_(sprite_status *pActwk) {
 
     pActwk->r_no0 += 2;
 
-    ((Sint16 *)pActwk)[27] = 31;
+    pWork->timer = 31;
     act_disp(pActwk);
 }

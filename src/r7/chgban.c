@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "chgban.h"
 #include "../action.h"
@@ -5,6 +7,7 @@
 #include "../etc.h"
 #include "../loader2.h"
 #include "../playsub.h"
+#include "../player_work.h"
 
 #if defined(R73C) || defined(R73D)
 #define SPRITE_CHGBAN_BASE 453
@@ -49,6 +52,51 @@ static void playset_g(sprite_status *pActwk, sprite_status *pMstadr,
 static void gspdset(sprite_status *pMstadr, sprite_status *pGawaadr);
 static void gun7_coli(sprite_status *pActwk);
 static void gun7set(sprite_status *pActwk);
+
+#pragma pack(push, 1)
+typedef struct {
+    union {
+        Uint8 timer;
+        Sint32 master_index;
+        struct {
+            Uint8 unused0[2];
+            Sint16 gun_return_x;
+        };
+    };
+    Sint32 player_index;
+    Uint8 wait_timer;
+    Uint8 unused9;
+    Sint16 frameout_x;
+    Sint32 side0_index;
+    Sint32 side1_index;
+    Uint8 frameout_requested;
+} chgban_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(chgban_work, timer) == 0,
+               "chgban_work.timer offset");
+_Static_assert(offsetof(chgban_work, master_index) == 0,
+               "chgban_work.master_index offset");
+_Static_assert(offsetof(chgban_work, gun_return_x) == 2,
+               "chgban_work.gun_return_x offset");
+_Static_assert(offsetof(chgban_work, player_index) == 4,
+               "chgban_work.player_index offset");
+_Static_assert(offsetof(chgban_work, wait_timer) == 8,
+               "chgban_work.wait_timer offset");
+_Static_assert(offsetof(chgban_work, frameout_x) == 10,
+               "chgban_work.frameout_x offset");
+_Static_assert(offsetof(chgban_work, side0_index) == 12,
+               "chgban_work.side0_index offset");
+_Static_assert(offsetof(chgban_work, side1_index) == 16,
+               "chgban_work.side1_index offset");
+_Static_assert(offsetof(chgban_work, frameout_requested) == 20,
+               "chgban_work.frameout_requested offset");
+_Static_assert(sizeof(chgban_work) <= sizeof(((sprite_status *)0)->actfree),
+               "chgban_work fits in actfree");
+
+static chgban_work *chgban_get_work(sprite_status *pActwk) {
+    return (chgban_work *)pActwk->actfree;
+}
 
 static char srevtbl0[9] = {0, 0, 0, 0, 1, 1, 1, 0, 0};
 static char srevtbl1[9] = {2, 0, 0, 0, 1, 1, 3, 2, 2};
@@ -175,8 +223,8 @@ static void chgban_init(sprite_status *pActwk) {
 static void chgban_move0(sprite_status *pActwk) {
     Sint16 xsz, xdst, ysz, ydst;
 
-    if (pActwk->actfree[0]) {
-        --pActwk->actfree[0];
+    if (chgban_get_work(pActwk)->timer) {
+        --chgban_get_work(pActwk)->timer;
         return;
     }
 
@@ -191,11 +239,11 @@ static void chgban_move0(sprite_status *pActwk) {
         ydst >= ysz * 2) {
         if (((pActwk->sproffset & 32768) && prio_flag) ||
             (!(pActwk->sproffset & 32768) && !prio_flag)) {
-            pActwk->actfree[0] = 60;
+            chgban_get_work(pActwk)->timer = 60;
             pActwk->r_no0 += 2;
         }
     } else {
-        pActwk->actfree[0] = 60;
+        chgban_get_work(pActwk)->timer = 60;
         pActwk->r_no0 += 2;
         prio_flag ^= 1;
     }
@@ -219,7 +267,7 @@ static void chgban_move2(sprite_status *pActwk) {
 void spring_r(sprite_status *pActwk) {
     Sint32 mstwkno, gawa0wkno, gawa1wkno;
 
-    if (pActwk->r_no0 >= 4 && pActwk->actfree[20]) {
+    if (pActwk->r_no0 >= 4 && chgban_get_work(pActwk)->frameout_requested) {
         frameout(pActwk);
         return;
     }
@@ -238,15 +286,15 @@ void spring_r(sprite_status *pActwk) {
     if (pActwk->r_no0 != 2)
         return;
 
-    mstwkno = *(Sint32 *)&pActwk->actfree[0];
-    gawa0wkno = *(Sint32 *)&pActwk->actfree[12];
-    gawa1wkno = *(Sint32 *)&pActwk->actfree[16];
+    mstwkno = chgban_get_work(pActwk)->master_index;
+    gawa0wkno = chgban_get_work(pActwk)->side0_index;
+    gawa1wkno = chgban_get_work(pActwk)->side1_index;
 
-    if (frameout_s00(pActwk, ((Sint16 *)pActwk)[28]) != 0) {
+    if (frameout_s00(pActwk, chgban_get_work(pActwk)->frameout_x) != 0) {
 
-        actwk[mstwkno].actfree[20] = 1;
-        actwk[gawa0wkno].actfree[20] = 1;
-        actwk[gawa1wkno].actfree[20] = 1;
+        chgban_get_work(&actwk[mstwkno])->frameout_requested = 1;
+        chgban_get_work(&actwk[gawa0wkno])->frameout_requested = 1;
+        chgban_get_work(&actwk[gawa1wkno])->frameout_requested = 1;
     }
 }
 
@@ -256,7 +304,7 @@ static void spr_r_init(sprite_status *pActwk) {
     Uint8 r_nowk;
 
     pActwk->r_no0 += 2;
-    ((Sint16 *)pActwk)[28] = pActwk->xposi.w.h;
+    chgban_get_work(pActwk)->frameout_x = pActwk->xposi.w.h;
     pActwk->actflg |= 4;
     pActwk->sproffset = 768;
     pActwk->patbase = spr_rpat;
@@ -288,14 +336,14 @@ static void spr_r_init(sprite_status *pActwk) {
         pNewact->actno = 30;
         pNewact->actflg |= 4;
         pNewact->xposi.w.h = pActwk->xposi.w.h;
-        ((Sint16 *)pNewact)[28] = pActwk->xposi.w.h;
+        chgban_get_work(pNewact)->frameout_x = pActwk->xposi.w.h;
         pNewact->yposi.w.h = pActwk->yposi.w.h;
 
         if (i == 2) {
             pNewact->sproffset = 1312;
             pNewact->patbase = spring90pat2;
             pNewact->sprpri = 5;
-            *(Sint32 *)&pActwk->actfree[0] = pNewact - actwk;
+            chgban_get_work(pActwk)->master_index = pNewact - actwk;
         } else {
             pNewact->sproffset = 768;
             pNewact->patbase = spr_rpat;
@@ -303,14 +351,14 @@ static void spr_r_init(sprite_status *pActwk) {
             pNewact->sprvsize = 32;
 
             if (i == 1) {
-                *(Sint32 *)&pActwk->actfree[12] = pNewact - actwk;
+                chgban_get_work(pActwk)->side0_index = pNewact - actwk;
             } else {
-                *(Sint32 *)&pActwk->actfree[16] = pNewact - actwk;
+                chgban_get_work(pActwk)->side1_index = pNewact - actwk;
             }
         }
 
         pNewact->userflag.b.h = pActwk->userflag.b.h;
-        *(Sint32 *)&pNewact->actfree[0] = pActwk - actwk;
+        chgban_get_work(pNewact)->master_index = pActwk - actwk;
         pNewact->r_no0 = r_nowk;
 
         if (i == 2) {
@@ -327,7 +375,7 @@ static void spr_r_move0(sprite_status *pActwk) {
     sprite_status *pMstwk;
 
     if (!pActwk->userflag.b.l) {
-        pMstwk = &actwk[*(Sint32 *)&pActwk->actfree[0]];
+        pMstwk = &actwk[chgban_get_work(pActwk)->master_index];
 
         if (pMstwk->r_no0 < 6 || pMstwk->userflag.b.l == 2) {
 
@@ -346,7 +394,7 @@ static void spr_r_move1(sprite_status *pActwk) {
 static void spr_r_move2(sprite_status *pActwk) {
     sprite_status *pMstadr, *pPlayerwk;
 
-    pPlayerwk = &actwk[*(Sint32 *)&pActwk->actfree[4]];
+    pPlayerwk = &actwk[chgban_get_work(pActwk)->player_index];
 
     if (pActwk->userflag.b.h) {
 
@@ -360,10 +408,10 @@ static void spr_r_move2(sprite_status *pActwk) {
             spr_r_set(pActwk);
         } else {
             pActwk->userflag.b.l = 4;
-            pMstadr = &actwk[*(Sint32 *)&pActwk->actfree[0]];
+            pMstadr = &actwk[chgban_get_work(pActwk)->master_index];
             plspdset(pActwk, pPlayerwk, pMstadr->patcnt);
 
-            actwk[0].actfree[2] &= 254;
+            player_work_get(&actwk[0])->status_flags &= 254;
             soundset(206);
 
             patchg(pActwk, springchg);
@@ -371,16 +419,16 @@ static void spr_r_move2(sprite_status *pActwk) {
             spr_r_set(pActwk);
         }
     } else {
-        if (!pActwk->actfree[8]) {
+        if (!chgban_get_work(pActwk)->wait_timer) {
 
             patchg(pActwk, springchg);
 
             spr_r_set(pActwk);
-        } else if (--pActwk->actfree[8] != 0) {
+        } else if (--chgban_get_work(pActwk)->wait_timer != 0) {
 
             spr_r_set(pActwk);
         } else {
-            actwk[0].actfree[2] &= 254;
+            player_work_get(&actwk[0])->status_flags &= 254;
             soundset(206);
 
             patchg(pActwk, springchg);
@@ -400,10 +448,10 @@ static void spr_r_move3(sprite_status *pActwk) {
 
     if (pActwk->userflag.b.h) {
 
-        pMstwk = &actwk[*(Sint32 *)&pActwk->actfree[0]];
-        pGawawk = &actwk[*(Sint32 *)&pMstwk->actfree[12]];
+        pMstwk = &actwk[chgban_get_work(pActwk)->master_index];
+        pGawawk = &actwk[chgban_get_work(pMstwk)->side0_index];
         pGawawk->userflag.b.l = 0;
-        pGawawk = &actwk[*(Sint32 *)&pMstwk->actfree[16]];
+        pGawawk = &actwk[chgban_get_work(pMstwk)->side1_index];
         pGawawk->userflag.b.l = 0;
         pActwk->userflag.b.l = 0;
     }
@@ -454,9 +502,9 @@ static void spr_r_move5(sprite_status *pActwk) {
 static void spr_r_move6(sprite_status *pActwk) {
     sprite_status *pMstwk;
 
-    if (!(--pActwk->actfree[8])) {
-        pMstwk = &actwk[*(Sint32 *)&pActwk->actfree[0]];
-        pMstwk = &actwk[*(Sint32 *)&pMstwk->actfree[0]];
+    if (!(--chgban_get_work(pActwk)->wait_timer)) {
+        pMstwk = &actwk[chgban_get_work(pActwk)->master_index];
+        pMstwk = &actwk[chgban_get_work(pMstwk)->master_index];
         pMstwk->userflag.b.l = 2;
         pActwk->r_no0 = pActwk->r_no1;
         soundset(192);
@@ -497,17 +545,17 @@ static void gun7_init(sprite_status *pActwk) {
 static void gun7_move0(sprite_status *pActwk) { gun7_coli(pActwk); }
 
 static void gun7_move1(sprite_status *pActwk) {
-    if (pActwk->actfree[0]) {
+    if (chgban_get_work(pActwk)->timer) {
         speedset2(pActwk);
 
-        if (--pActwk->actfree[0])
+        if (--chgban_get_work(pActwk)->timer)
             return;
         pActwk->xspeed.w *= -1;
 
     } else {
         speedset2(pActwk);
 
-        if (pActwk->xposi.w.h == ((Sint16 *)pActwk)[24]) {
+        if (pActwk->xposi.w.h == chgban_get_work(pActwk)->gun_return_x) {
             pActwk->r_no0 -= 2;
         }
     }
@@ -563,7 +611,7 @@ static void spr_r_set(sprite_status *pActwk) {
     }
 
     pActwk->sproffset = 1312;
-    pMstwk = &actwk[*(Sint32 *)&pActwk->actfree[0]];
+    pMstwk = &actwk[chgban_get_work(pActwk)->master_index];
     patcntwk = pMstwk->patcnt;
 
     if (!(patcntwk & 1)) {
@@ -592,7 +640,7 @@ static Uint32 coli0(sprite_status *pActwk, sprite_status *pPlayerwk,
 
     if (pPlayerwk->r_no0 == 4) {
         pPlayerwk->r_no0 -= 2;
-        ((Sint16 *)pPlayerwk)[26] = 120;
+        player_work_get(pPlayerwk)->damage_invulnerability_timer = 120;
     }
 
     if (pPlayerwk->mstno.b.h == 43 || pPlayerwk->r_no0 >= 6) {
@@ -620,8 +668,8 @@ static void playset(sprite_status *pActwk, sprite_status *pPlayerwk) {
     sprite_status *pMstwk;
     Sint16 cntwk;
 
-    pPlayerwk->actfree[18] = 0;
-    pPlayerwk->actfree[2] |= 1;
+    player_work_get(pPlayerwk)->jump_started = 0;
+    player_work_get(pPlayerwk)->status_flags |= 1;
     pPlayerwk->cddat |= 4;
     pPlayerwk->sprvsize = 14;
     pPlayerwk->sprhs = 7;
@@ -630,11 +678,11 @@ static void playset(sprite_status *pActwk, sprite_status *pPlayerwk) {
     prio_sav = (pPlayerwk->sproffset & 32768) >> 8;
     pPlayerwk->sproffset &= 32767;
 
-    *(Sint32 *)&pActwk->actfree[4] = pPlayerwk - actwk;
-    pActwk->actfree[8] = 60;
+    chgban_get_work(pActwk)->player_index = pPlayerwk - actwk;
+    chgban_get_work(pActwk)->wait_timer = 60;
     pActwk->r_no0 += 2;
 
-    pMstwk = &actwk[*(Sint32 *)&pActwk->actfree[0]];
+    pMstwk = &actwk[chgban_get_work(pActwk)->master_index];
     cntwk = pposiset(pActwk, pMstwk, pPlayerwk, ppositbl0);
 
     plspdset(pActwk, pPlayerwk, cntwk);
@@ -706,7 +754,7 @@ static void g_move0(sprite_status *pActwk, Uint8 *pPatTbl, Uint8 *pRevTbl,
     sprite_status *pMstwk, *pMstwk2, *pPlayerwk;
     Uint8 cntwk;
 
-    pMstwk = &actwk[*(Sint32 *)&pActwk->actfree[0]];
+    pMstwk = &actwk[chgban_get_work(pActwk)->master_index];
     cntwk = pMstwk->patcnt;
 
     pActwk->patno = pPatTbl[cntwk];
@@ -719,12 +767,12 @@ static void g_move0(sprite_status *pActwk, Uint8 *pPatTbl, Uint8 *pRevTbl,
 
     if (pActwk->userflag.b.h) {
 
-        pMstwk2 = &actwk[*(Sint32 *)&pActwk->actfree[0]];
-        pMstwk2 = &actwk[*(Sint32 *)&pMstwk2->actfree[0]];
+        pMstwk2 = &actwk[chgban_get_work(pActwk)->master_index];
+        pMstwk2 = &actwk[chgban_get_work(pMstwk2)->master_index];
 
         if (pMstwk2->userflag.b.l) {
             if (pMstwk2->userflag.b.l == 2 && !pActwk->userflag.b.l) {
-                pPlayerwk = &actwk[*(Sint32 *)&pMstwk2->actfree[4]];
+                pPlayerwk = &actwk[chgban_get_work(pMstwk2)->player_index];
                 pposiset(pMstwk2, pMstwk, pPlayerwk, (char *)pPposiTbl);
             }
         } else {
@@ -743,32 +791,32 @@ static void playset_g(sprite_status *pActwk, sprite_status *pMstadr,
                       sprite_status *pPlayerwk, Uint8 *pPposiTbl) {
     sprite_status *pMstwk, *pGawaadr, *pMstsv;
 
-    pPlayerwk->actfree[18] = 0;
-    pPlayerwk->actfree[2] |= 1;
+    player_work_get(pPlayerwk)->jump_started = 0;
+    player_work_get(pPlayerwk)->status_flags |= 1;
     pPlayerwk->cddat |= 4;
     pPlayerwk->sprvsize = 14;
     pPlayerwk->sprhs = 7;
     pPlayerwk->mstno.b.h = 2;
 
-    pMstwk = &actwk[*(Sint32 *)&pActwk->actfree[0]];
-    pMstwk = &actwk[*(Sint32 *)&pMstwk->actfree[0]];
+    pMstwk = &actwk[chgban_get_work(pActwk)->master_index];
+    pMstwk = &actwk[chgban_get_work(pMstwk)->master_index];
     pMstwk->r_no0 += 2;
     pMstwk->userflag.b.l = 1;
-    *(Sint32 *)&pMstwk->actfree[4] = pPlayerwk - actwk;
+    chgban_get_work(pMstwk)->player_index = pPlayerwk - actwk;
     pposiset(pMstwk, pMstadr, pPlayerwk, (char *)pPposiTbl);
 
-    pMstwk = &actwk[*(Sint32 *)&pActwk->actfree[0]];
+    pMstwk = &actwk[chgban_get_work(pActwk)->master_index];
 
     if (pActwk->r_no0 == 10) {
-        pGawaadr = &actwk[*(Sint32 *)&pMstwk->actfree[16]];
+        pGawaadr = &actwk[chgban_get_work(pMstwk)->side1_index];
     } else {
-        pGawaadr = &actwk[*(Sint32 *)&pMstwk->actfree[12]];
+        pGawaadr = &actwk[chgban_get_work(pMstwk)->side0_index];
     }
 
     pGawaadr->r_no1 = pGawaadr->r_no0;
     pMstsv = pMstadr;
-    pMstadr = &actwk[*(Sint32 *)&pActwk->actfree[0]];
-    pMstadr = &actwk[*(Sint32 *)&pMstadr->actfree[0]];
+    pMstadr = &actwk[chgban_get_work(pActwk)->master_index];
+    pMstadr = &actwk[chgban_get_work(pMstadr)->master_index];
 
     if (pGawaadr->r_no0 == 10) {
         pMstadr->userflag.b.h = 2;
@@ -798,7 +846,7 @@ static void gspdset(sprite_status *pMstadr, sprite_status *pGawaadr) {
     cntwk *= 2;
     pGawaadr->xspeed.w = pGspdTbl[cntwk];
     pGawaadr->yspeed.w = pGspdTbl[cntwk + 1];
-    pGawaadr->actfree[8] = 26;
+    chgban_get_work(pGawaadr)->wait_timer = 26;
 }
 
 static void gun7_coli(sprite_status *pActwk) {
@@ -814,7 +862,7 @@ static void gun7_coli(sprite_status *pActwk) {
 static void gun7set(sprite_status *pActwk) {
     sprite_status *pNewact, *pGunact;
 
-    actwk[0].actfree[2] = 0;
+    player_work_get(&actwk[0])->status_flags = 0;
     pNewact = pGunact = 0;
 
     if (actwkchk(&pNewact) == 0) {
@@ -834,8 +882,8 @@ static void gun7set(sprite_status *pActwk) {
     soundset(206);
 
     pActwk->r_no0 += 2;
-    ((Sint16 *)pActwk)[24] = pActwk->xposi.w.h;
-    pActwk->actfree[0] = 6;
+    chgban_get_work(pActwk)->gun_return_x = pActwk->xposi.w.h;
+    chgban_get_work(pActwk)->timer = 6;
 
     if (pActwk->xposi.w.h < actwk[0].xposi.w.h) {
 

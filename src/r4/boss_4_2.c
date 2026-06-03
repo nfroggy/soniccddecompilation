@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "boss_4_2.h"
 #include "../action.h"
@@ -6,6 +8,7 @@
 #include "../goal.h"
 #include "../io.h"
 #include "../loader2.h"
+#include "../player_work.h"
 #include "../score.h"
 #include "playsub4.h"
 
@@ -15,6 +18,84 @@ typedef struct {
     Sint32 xspd;
     Sint32 yspd;
 } tama;
+
+#pragma pack(push, 1)
+typedef struct {
+    union {
+        Sint16 word0;
+        struct {
+            Uint8 timer;
+            Uint8 laugh_timer;
+        };
+    };
+    Uint8 flags;
+    Uint8 bubble_slot;
+    Sint16 parent_index;
+    Sint16 child_index;
+    Uint8 spread_count;
+    Uint8 bubble_position_index;
+    union {
+        Sint16 angle;
+        struct {
+            Uint8 angle_low;
+            Uint8 angle_high;
+        };
+    };
+    Sint16 angular_speed;
+    union {
+        Sint32 xy_offset;
+        struct {
+            Sint16 x_offset;
+            Sint16 y_offset;
+        };
+    };
+    union {
+        Sint32 radial_speed;
+        struct {
+            Sint16 radial_speed_low;
+            Sint16 radius;
+        };
+    };
+} egg4_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(egg4_work, timer) == 0,
+               "egg4_work.timer offset");
+_Static_assert(offsetof(egg4_work, word0) == 0, "egg4_work.word0 offset");
+_Static_assert(offsetof(egg4_work, laugh_timer) == 1,
+               "egg4_work.laugh_timer offset");
+_Static_assert(offsetof(egg4_work, flags) == 2, "egg4_work.flags offset");
+_Static_assert(offsetof(egg4_work, bubble_slot) == 3,
+               "egg4_work.bubble_slot offset");
+_Static_assert(offsetof(egg4_work, parent_index) == 4,
+               "egg4_work.parent_index offset");
+_Static_assert(offsetof(egg4_work, child_index) == 6,
+               "egg4_work.child_index offset");
+_Static_assert(offsetof(egg4_work, spread_count) == 8,
+               "egg4_work.spread_count offset");
+_Static_assert(offsetof(egg4_work, bubble_position_index) == 9,
+               "egg4_work.bubble_position_index offset");
+_Static_assert(offsetof(egg4_work, angle) == 10, "egg4_work.angle offset");
+_Static_assert(offsetof(egg4_work, angle_high) == 11,
+               "egg4_work.angle_high offset");
+_Static_assert(offsetof(egg4_work, angular_speed) == 12,
+               "egg4_work.angular_speed offset");
+_Static_assert(offsetof(egg4_work, xy_offset) == 14,
+               "egg4_work.xy_offset offset");
+_Static_assert(offsetof(egg4_work, x_offset) == 14,
+               "egg4_work.x_offset offset");
+_Static_assert(offsetof(egg4_work, y_offset) == 16,
+               "egg4_work.y_offset offset");
+_Static_assert(offsetof(egg4_work, radial_speed) == 18,
+               "egg4_work.radial_speed offset");
+_Static_assert(offsetof(egg4_work, radius) == 20,
+               "egg4_work.radius offset");
+_Static_assert(sizeof(egg4_work) <= sizeof(((sprite_status *)0)->actfree),
+               "egg4_work fits in actfree");
+
+static egg4_work *egg4_get_work(sprite_status *pActwk) {
+    return (egg4_work *)pActwk->actfree;
+}
 
 static void egg4_warai_chk(sprite_status *pActwk);
 static void egg4_warai(sprite_status *pActwk);
@@ -82,11 +163,11 @@ static Uint32 (*egg4_act_tbl[14])(sprite_status *) = {
 extern Uint16 scr_dir_tbl[];
 
 void egg4(sprite_status *pActwk) {
-    pActwk->actfree[2] &= 191;
-    if (!pActwk->actfree[1]) {
+    egg4_get_work(pActwk)->flags &= 191;
+    if (!egg4_get_work(pActwk)->laugh_timer) {
 
         egg4_warai_chk(pActwk);
-    } else if (--pActwk->actfree[1] == 0) {
+    } else if (--egg4_get_work(pActwk)->laugh_timer == 0) {
         pActwk->mstno.b.h = 0;
         pActwk->patno = 0;
         pActwk->patcnt = 0;
@@ -103,7 +184,8 @@ void egg4(sprite_status *pActwk) {
 static void egg4_warai_chk(sprite_status *pActwk) {
     if (!pActwk->mstno.b.h) {
 
-        if (((Sint16 *)&actwk[0])[26] || actwk[0].r_no0 == 6) {
+        if (player_work_get(&actwk[0])->damage_invulnerability_timer ||
+            actwk[0].r_no0 == 6) {
 
             egg4_warai(pActwk);
         }
@@ -111,7 +193,7 @@ static void egg4_warai_chk(sprite_status *pActwk) {
 }
 
 static void egg4_warai(sprite_status *pActwk) {
-    pActwk->actfree[1] = 120;
+    egg4_get_work(pActwk)->laugh_timer = 120;
     pActwk->mstno.b.h = 1;
     pActwk->patno = 0;
     pActwk->patcnt = 0;
@@ -138,8 +220,8 @@ static void make_egg4meca(sprite_status *pActwk) {
     sprite_status *pNewact;
 
     if (actwkchk(&pNewact) == 0) {
-        ((Sint16 *)pActwk)[26] = pNewact - actwk;
-        ((Sint16 *)pNewact)[25] = pActwk - actwk;
+        egg4_get_work(pActwk)->child_index = pNewact - actwk;
+        egg4_get_work(pNewact)->parent_index = pActwk - actwk;
         pNewact->actno = 77;
         pNewact->xposi.w.h = pActwk->xposi.w.h;
         pNewact->yposi.w.h = pActwk->yposi.w.h;
@@ -203,22 +285,24 @@ static Uint32 egg4_awademo1(sprite_status *pActwk) {
     sprite_status *pNewact;
 
     egg4_posiini(pActwk);
-    ++pActwk->actfree[0];
+    ++egg4_get_work(pActwk)->timer;
 
-    if (pActwk->actfree[0] == 10) {
+    if (egg4_get_work(pActwk)->timer == 10) {
         make_awa2(pActwk, &pNewact);
     }
 
-    if (pActwk->actfree[0] == 20 || pActwk->actfree[0] >= 30) {
+    if (egg4_get_work(pActwk)->timer == 20 ||
+        egg4_get_work(pActwk)->timer >= 30) {
 
         soundset(182);
 
-        pActwk->actfree[0] = 0;
+        egg4_get_work(pActwk)->timer = 0;
         make_awa(pActwk, &pNewact);
 
-        pNewact->actfree[3] = pActwk->actfree[3]++;
+        egg4_get_work(pNewact)->bubble_slot =
+            egg4_get_work(pActwk)->bubble_slot++;
 
-        if (pActwk->actfree[3] == 16) {
+        if (egg4_get_work(pActwk)->bubble_slot == 16) {
             pActwk->r_no0 = 8;
         }
     }
@@ -243,7 +327,7 @@ static void make_awa(sprite_status *pActwk, sprite_status **pNewact) {
 
     if (actwkchk(&pMakeact) == 0) {
         *pNewact = pMakeact;
-        ((Sint16 *)pMakeact)[25] = pActwk - actwk;
+        egg4_get_work(pMakeact)->parent_index = pActwk - actwk;
         pMakeact->actno = 79;
         pMakeact->xposi.w.h = pActwk->xposi.w.h;
         pMakeact->yposi.w.h = 1464;
@@ -258,8 +342,8 @@ static void make_awa2(sprite_status *pActwk, sprite_status **pNewact) {
 static Uint32 egg4_awademo2(sprite_status *pActwk) {
     egg4_posiini(pActwk);
 
-    if (++pActwk->actfree[0] == 150) {
-        pActwk->actfree[0] = 0;
+    if (++egg4_get_work(pActwk)->timer == 150) {
+        egg4_get_work(pActwk)->timer = 0;
         pActwk->r_no0 = 10;
     }
 
@@ -267,14 +351,14 @@ static Uint32 egg4_awademo2(sprite_status *pActwk) {
 }
 
 static Uint32 egg4_awademo3(sprite_status *pActwk) {
-    if (++pActwk->actfree[0] == 150) {
+    if (++egg4_get_work(pActwk)->timer == 150) {
         pActwk->r_no0 = 12;
-        ((Sint16 *)pActwk)[33] = 96;
+        egg4_get_work(pActwk)->radius = 96;
         pActwk->yspeed.w = 64;
-        ((Sint16 *)pActwk)[28] = 0;
-        ((Sint16 *)pActwk)[30] = 96;
-        ((Sint16 *)pActwk)[31] = 0;
-        ((Sint16 *)pActwk)[23] = 0;
+        egg4_get_work(pActwk)->angle = 0;
+        egg4_get_work(pActwk)->x_offset = 96;
+        egg4_get_work(pActwk)->y_offset = 0;
+        egg4_get_work(pActwk)->word0 = 0;
     }
 
     return 1;
@@ -283,19 +367,19 @@ static Uint32 egg4_awademo3(sprite_status *pActwk) {
 static Uint32 egg4_movel(sprite_status *pActwk) {
     egg4_hitchk(pActwk);
 
-    ((Sint16 *)pActwk)[28] += 256;
-    if (((Sint16 *)pActwk)[28] == 2048) {
+    egg4_get_work(pActwk)->angle += 256;
+    if (egg4_get_work(pActwk)->angle == 2048) {
         make_tama(pActwk);
     }
 
-    if (((Uint16 *)pActwk)[28] == 32768) {
+    if ((Uint16)egg4_get_work(pActwk)->angle == 32768) {
 
-        pActwk->actfree[0] = 0;
+        egg4_get_work(pActwk)->timer = 0;
         pActwk->r_no0 = 16;
-        pActwk->actfree[2] |= 16;
+        egg4_get_work(pActwk)->flags |= 16;
     } else {
-        pActwk->xposi.w.h -= ((Sint16 *)pActwk)[30];
-        pActwk->yposi.w.h -= ((Sint16 *)pActwk)[31];
+        pActwk->xposi.w.h -= egg4_get_work(pActwk)->x_offset;
+        pActwk->yposi.w.h -= egg4_get_work(pActwk)->y_offset;
         egg4_posiset(pActwk);
     }
 
@@ -310,9 +394,9 @@ static void egg4_hitchk(sprite_status *pActwk) {
     if (pActwk->colicnt != 1)
         return;
 
-    pActwk->actfree[0] = 0;
+    egg4_get_work(pActwk)->timer = 0;
     pActwk->r_no0 = 18;
-    pActwk->actfree[2] |= 128;
+    egg4_get_work(pActwk)->flags |= 128;
     pActwk->mstno.b.h = 2;
     pActwk->patno = pActwk->patcnt = pActwk->pattim = pActwk->pattimm = 0;
     egg4_die(pActwk);
@@ -332,7 +416,7 @@ static void make_tama(sprite_status *pActwk) {
         if (actwkchk(&pNewact) != 0)
             break;
 
-        ((Sint16 *)pNewact)[25] = pActwk - actwk;
+        egg4_get_work(pNewact)->parent_index = pActwk - actwk;
         pNewact->actno = 78;
         pNewact->xposi.w.h = pActwk->xposi.w.h;
         pNewact->yposi.w.h = pActwk->yposi.w.h;
@@ -346,9 +430,9 @@ static void make_tama(sprite_status *pActwk) {
             xspdwk = -xspdwk;
         }
 
-        ((Sint16 *)pNewact)[30] = xposwk;
-        ((Sint16 *)pNewact)[31] = tama_tbl[i].ypos;
-        ((Sint32 *)pNewact)[16] = xspdwk;
+        egg4_get_work(pNewact)->x_offset = xposwk;
+        egg4_get_work(pNewact)->y_offset = tama_tbl[i].ypos;
+        egg4_get_work(pNewact)->radial_speed = xspdwk;
         sprite_status_set_xspeed_yspeed(pNewact, tama_tbl[i].yspd);
     }
 }
@@ -357,16 +441,16 @@ static void egg4_posiset(sprite_status *pActwk) {
     Sint16 sinwk, coswk;
     int_union xwk, ywk;
 
-    sinset(pActwk->actfree[11], &sinwk, &coswk);
-    xwk.l = ((Sint16 *)pActwk)[33];
+    sinset(egg4_get_work(pActwk)->angle_high, &sinwk, &coswk);
+    xwk.l = egg4_get_work(pActwk)->radius;
     ywk.l = pActwk->yspeed.w;
     ywk.l *= sinwk;
     xwk.l *= coswk;
     ywk.l >>= 8;
     xwk.l >>= 8;
 
-    ((Sint16 *)pActwk)[30] = xwk.w.l;
-    ((Sint16 *)pActwk)[31] = ywk.w.l;
+    egg4_get_work(pActwk)->x_offset = xwk.w.l;
+    egg4_get_work(pActwk)->y_offset = ywk.w.l;
     pActwk->xposi.w.h += xwk.w.l;
     pActwk->yposi.w.h += ywk.w.l;
 }
@@ -374,19 +458,19 @@ static void egg4_posiset(sprite_status *pActwk) {
 static Uint32 egg4_mover(sprite_status *pActwk) {
     egg4_hitchk(pActwk);
 
-    ((Sint16 *)pActwk)[28] -= 256;
-    if (((Sint16 *)pActwk)[28] == 30720) {
+    egg4_get_work(pActwk)->angle -= 256;
+    if (egg4_get_work(pActwk)->angle == 30720) {
         make_tama(pActwk);
     }
 
-    if (((Sint16 *)pActwk)[28] == 0) {
+    if (egg4_get_work(pActwk)->angle == 0) {
 
-        pActwk->actfree[0] = 0;
+        egg4_get_work(pActwk)->timer = 0;
         pActwk->r_no0 = 16;
-        pActwk->actfree[2] |= 16;
+        egg4_get_work(pActwk)->flags |= 16;
     } else {
-        pActwk->xposi.w.h -= ((Sint16 *)pActwk)[30];
-        pActwk->yposi.w.h -= ((Sint16 *)pActwk)[31];
+        pActwk->xposi.w.h -= egg4_get_work(pActwk)->x_offset;
+        pActwk->yposi.w.h -= egg4_get_work(pActwk)->y_offset;
         egg4_posiset(pActwk);
     }
 
@@ -398,34 +482,35 @@ static Uint32 egg4_wait(sprite_status *pActwk) {
     char cnt;
     sprite_status *pChildact;
 
-    pActwk->actfree[2] &= 207;
+    egg4_get_work(pActwk)->flags &= 207;
     egg4_hitchk(pActwk);
-    ++pActwk->actfree[0];
+    ++egg4_get_work(pActwk)->timer;
 
-    if ((Sint32)pActwk->actfree[0] == 48) {
+    if ((Sint32)egg4_get_work(pActwk)->timer == 48) {
 
-        pChildact = &actwk[((Sint16 *)pActwk)[26]];
+        pChildact = &actwk[egg4_get_work(pActwk)->child_index];
         pChildact->actflg ^= 1;
         pChildact->cddat ^= 1;
         pActwk->actflg ^= 1;
         pActwk->cddat ^= 1;
-    } else if (pActwk->actfree[0] == 96) {
+    } else if (egg4_get_work(pActwk)->timer == 96) {
 
-        pActwk->actfree[0] = 0;
+        egg4_get_work(pActwk)->timer = 0;
         if (pActwk->cddat & 1) {
 
-            pActwk->actfree[2] |= 8;
+            egg4_get_work(pActwk)->flags |= 8;
             pActwk->r_no0 = 14;
         } else {
-            pActwk->actfree[2] &= 247;
+            egg4_get_work(pActwk)->flags &= 247;
             pActwk->r_no0 = 12;
         }
 
-        while ((cnt = awaposi_cnt_tbl[pActwk->actfree[9]]) >= 0) {
-            if (pActwk->actfree[3] > cnt)
+        while ((cnt = awaposi_cnt_tbl[egg4_get_work(pActwk)
+                                          ->bubble_position_index]) >= 0) {
+            if (egg4_get_work(pActwk)->bubble_slot > cnt)
                 break;
 
-            ++pActwk->actfree[9];
+            ++egg4_get_work(pActwk)->bubble_position_index;
             pActwk->r_no0 = 22;
         }
     }
@@ -434,25 +519,25 @@ static Uint32 egg4_wait(sprite_status *pActwk) {
 }
 
 static Uint32 egg4_die(sprite_status *pActwk) {
-    ++pActwk->actfree[0];
+    ++egg4_get_work(pActwk)->timer;
 
-    if (pActwk->actfree[0] < 60) {
+    if (egg4_get_work(pActwk)->timer < 60) {
         bom_set(pActwk);
-    } else if (pActwk->actfree[0] == 60) {
+    } else if (egg4_get_work(pActwk)->timer == 60) {
 
         pActwk->mstno.b.h = 3;
-        pActwk->actfree[1] = 255;
+        egg4_get_work(pActwk)->laugh_timer = 255;
         pActwk->patno = pActwk->patcnt = pActwk->pattim = pActwk->pattimm = 0;
 
         pActwk->patno = 1;
-    } else if (pActwk->actfree[0] == 61) {
+    } else if (egg4_get_work(pActwk)->timer == 61) {
 
-        pActwk->actfree[0] = 0;
+        egg4_get_work(pActwk)->timer = 0;
         pActwk->r_no0 = 20;
         pActwk->actflg |= 1;
         pActwk->cddat |= 1;
-        actwk[((Sint16 *)pActwk)[26]].actflg |= 1;
-        actwk[((Sint16 *)pActwk)[26]].cddat |= 1;
+        actwk[egg4_get_work(pActwk)->child_index].actflg |= 1;
+        actwk[egg4_get_work(pActwk)->child_index].cddat |= 1;
         scoreup(100);
     }
 
@@ -467,7 +552,7 @@ static void bom_set(sprite_status *pActwk) {
     sprite_status *pNewact;
 
     tmwk.l = 0;
-    tmwk.b.b4 = pActwk->actfree[0];
+    tmwk.b.b4 = egg4_get_work(pActwk)->timer;
     wk = tmwk.l;
     tmwk.w.l = wk % 4;
     tmwk.w.h = wk / 4;
@@ -488,7 +573,7 @@ static void bom_set(sprite_status *pActwk) {
 }
 
 static Uint32 egg4_esc(sprite_status *pActwk) {
-    if (++pActwk->actfree[0] < 60) {
+    if (++egg4_get_work(pActwk)->timer < 60) {
         return 1;
     }
 
@@ -496,7 +581,7 @@ static Uint32 egg4_esc(sprite_status *pActwk) {
     if (pActwk->xposi.w.h >= 2864) {
 
         pActwk->r_no0 = 4;
-        frameout(&actwk[((Sint16 *)pActwk)[26]]);
+        frameout(&actwk[egg4_get_work(pActwk)->child_index]);
     }
 
     return 1;
@@ -505,18 +590,18 @@ static Uint32 egg4_esc(sprite_status *pActwk) {
 static Uint32 egg4_movec(sprite_status *pActwk) {
     int_union offswk;
 
-    ++pActwk->actfree[0];
+    ++egg4_get_work(pActwk)->timer;
 
-    switch (pActwk->actfree[0]) {
+    switch (egg4_get_work(pActwk)->timer) {
 
     case 20:
         egg4_warai(pActwk);
-        pActwk->actfree[8] = 0;
-        pActwk->actfree[2] |= 32;
+        egg4_get_work(pActwk)->spread_count = 0;
+        egg4_get_work(pActwk)->flags |= 32;
         break;
 
     case 21:
-        pActwk->actfree[2] &= 223;
+        egg4_get_work(pActwk)->flags &= 223;
         break;
 
     case 45:
@@ -524,7 +609,7 @@ static Uint32 egg4_movec(sprite_status *pActwk) {
         break;
     }
 
-    if (pActwk->actfree[2] & 8) {
+    if (egg4_get_work(pActwk)->flags & 8) {
 
         pActwk->xposi.l += 65536;
         if (pActwk->xposi.w.h >= 2736)
@@ -538,21 +623,21 @@ static Uint32 egg4_movec(sprite_status *pActwk) {
     return 1;
 
 label1:
-    ((Sint32 *)pActwk)[15] *= -1;
-    ((Uint16 *)pActwk)[28] += 32768;
+    egg4_get_work(pActwk)->xy_offset *= -1;
+    egg4_get_work(pActwk)->angle += 32768;
     pActwk->xposi.w.h = 2640;
     pActwk->xposi.w.l = 0;
 
-    offswk.w.h = ((Sint16 *)pActwk)[30];
-    offswk.w.l = ((Sint16 *)pActwk)[31];
+    offswk.w.h = egg4_get_work(pActwk)->x_offset;
+    offswk.w.l = egg4_get_work(pActwk)->y_offset;
     pActwk->xposi.l += offswk.l;
 
     pActwk->yposi.w.h = 1312;
     pActwk->yposi.w.l = 0;
 
-    pActwk->actfree[0] = 0;
+    egg4_get_work(pActwk)->timer = 0;
     pActwk->r_no0 = 16;
-    pActwk->actfree[2] |= 16;
+    egg4_get_work(pActwk)->flags |= 16;
 
     return 1;
 }
@@ -615,7 +700,7 @@ static void egg4meca_ini(sprite_status *pActwk) {
 static void egg4meca_01(sprite_status *pActwk) {
     sprite_status *pEggact;
 
-    pEggact = &actwk[((Sint16 *)pActwk)[25]];
+    pEggact = &actwk[egg4_get_work(pActwk)->parent_index];
     pActwk->xposi.w.h = pEggact->xposi.w.h;
     pActwk->yposi.w.h = pEggact->yposi.w.h;
 }
@@ -648,12 +733,12 @@ static Uint32 egg4awa_ini(sprite_status *pActwk) {
         RndNum.w.l += 128;
     }
 
-    ((Sint16 *)pActwk)[29] = RndNum.w.l;
+    egg4_get_work(pActwk)->angular_speed = RndNum.w.l;
 
     uRndNum.l = random();
     uRndNum.w.h = 0;
     uRndNum.w.l = (Sint16)(uRndNum.l % 16 + 10);
-    ((Sint16 *)pActwk)[33] = uRndNum.w.l;
+    egg4_get_work(pActwk)->radius = uRndNum.w.l;
 
     egg4awa_deru(pActwk);
 }
@@ -669,20 +754,20 @@ static Uint32 egg4awa_deru(sprite_status *pActwk) {
             return egg4awa_out(pActwk);
         }
     } else {
-        pEggact = &actwk[((Sint16 *)pActwk)[25]];
+        pEggact = &actwk[egg4_get_work(pActwk)->parent_index];
         if (pEggact->yposi.w.h >= pActwk->yposi.w.h) {
 
             if ((xwk = pActwk->xposi.w.h - pEggact->xposi.w.h) >= 0) {
 
-                ((Uint16 *)pActwk)[28] = 32768;
+                egg4_get_work(pActwk)->angle = 32768;
             } else {
-                ((Uint16 *)pActwk)[28] = 0;
+                egg4_get_work(pActwk)->angle = 0;
             }
 
-            ((Sint16 *)pActwk)[33] = xwk;
+            egg4_get_work(pActwk)->radius = xwk;
             pActwk->yspeed.w = xwk;
-            ((Sint16 *)pActwk)[30] = -xwk;
-            ((Sint16 *)pActwk)[31] = 0;
+            egg4_get_work(pActwk)->x_offset = -xwk;
+            egg4_get_work(pActwk)->y_offset = 0;
             pActwk->xposi.w.h = pEggact->xposi.w.h;
             pActwk->yposi.w.h = pEggact->yposi.w.h;
             pActwk->r_no0 = 4;
@@ -691,9 +776,9 @@ static Uint32 egg4awa_deru(sprite_status *pActwk) {
         }
     }
 
-    ((Sint16 *)pActwk)[28] += ((Sint16 *)pActwk)[29];
+    egg4_get_work(pActwk)->angle += egg4_get_work(pActwk)->angular_speed;
 
-    pActwk->xposi.w.h -= ((Sint16 *)pActwk)[30];
+    pActwk->xposi.w.h -= egg4_get_work(pActwk)->x_offset;
     egg4_posiset(pActwk);
 
     if (pActwk->patcnt == 4) {
@@ -709,27 +794,27 @@ static Uint32 egg4awa_tuku(sprite_status *pActwk) {
     sprite_status *pEggact;
     Sint16 RadSpd;
 
-    pEggact = &actwk[((Sint16 *)pActwk)[25]];
+    pEggact = &actwk[egg4_get_work(pActwk)->parent_index];
     pActwk->xposi.w.h = pEggact->xposi.w.h;
     pActwk->yposi.w.h = pEggact->yposi.w.h;
     egg4_posiset(pActwk);
 
-    if ((RadSpd = ((Sint16 *)pActwk)[29]) >= 0) {
+    if ((RadSpd = egg4_get_work(pActwk)->angular_speed) >= 0) {
         RadSpd *= -1;
     }
 
-    ((Sint16 *)pActwk)[28] += RadSpd;
+    egg4_get_work(pActwk)->angle += RadSpd;
     if (pEggact->r_no0 == 10) {
-        ((Sint16 *)pActwk)[30] = 0;
-        ((Sint16 *)pActwk)[31] = 0;
+        egg4_get_work(pActwk)->x_offset = 0;
+        egg4_get_work(pActwk)->y_offset = 0;
         pActwk->r_no0 = 6;
         pActwk->xposi.l = pEggact->xposi.l;
         pActwk->yposi.l = pEggact->yposi.l;
 
-        RadSpd = (char)pActwk->actfree[3];
+        RadSpd = (char)egg4_get_work(pActwk)->bubble_slot;
         RadSpd = (Uint16)RadSpd << 12;
-        ((Sint16 *)pActwk)[28] = RadSpd;
-        ((Sint16 *)pActwk)[33] = 16;
+        egg4_get_work(pActwk)->angle = RadSpd;
+        egg4_get_work(pActwk)->radius = 16;
         pActwk->yspeed.w = 16;
     }
 
@@ -740,20 +825,20 @@ static Uint32 egg4awa_hiro(sprite_status *pActwk) {
     Sint32 flg;
     sprite_status *pEggact;
 
-    if (pActwk->actfree[2] & 2) {
+    if (egg4_get_work(pActwk)->flags & 2) {
         awa_hitchk(pActwk);
     }
 
     flg = 0;
 
-    pEggact = &actwk[((Sint16 *)pActwk)[25]];
+    pEggact = &actwk[egg4_get_work(pActwk)->parent_index];
     pActwk->xposi.l = pEggact->xposi.l;
     pActwk->yposi.l = pEggact->yposi.l;
 
-    if ((Sint32)((Sint16 *)pActwk)[33] < 48) {
-        ((Sint32 *)pActwk)[16] += 16384;
+    if ((Sint32)egg4_get_work(pActwk)->radius < 48) {
+        egg4_get_work(pActwk)->radial_speed += 16384;
     } else {
-        ((Sint16 *)pActwk)[33] = 48;
+        egg4_get_work(pActwk)->radius = 48;
         ++flg;
     }
 
@@ -764,11 +849,11 @@ static Uint32 egg4awa_hiro(sprite_status *pActwk) {
         ++flg;
     }
 
-    if (pEggact->actfree[2] & 8) {
+    if (egg4_get_work(pEggact)->flags & 8) {
 
-        ((Sint16 *)pActwk)[28] += 1152;
+        egg4_get_work(pActwk)->angle += 1152;
     } else {
-        ((Sint16 *)pActwk)[28] -= 1152;
+        egg4_get_work(pActwk)->angle -= 1152;
     }
 
     egg4_posiset(pActwk);
@@ -780,14 +865,14 @@ static Uint32 egg4awa_hiro(sprite_status *pActwk) {
 
     if (flg == 2) {
         pActwk->r_no0 = 8;
-        flg = pActwk->actfree[2];
+        flg = egg4_get_work(pActwk)->flags;
 
-        if (!(pActwk->actfree[2] & 2)) {
+        if (!(egg4_get_work(pActwk)->flags & 2)) {
             pActwk->colino = 255;
             pActwk->colicnt = 2;
         }
 
-        pActwk->actfree[2] |= 2;
+        egg4_get_work(pActwk)->flags |= 2;
     }
 
     patchg(pActwk, egg4awa_pchg);
@@ -799,13 +884,13 @@ static void awa_hitchk(sprite_status *pActwk) {
     sprite_status *pEggact;
     Uint8 flgwk;
 
-    pEggact = &actwk[((Sint16 *)pActwk)[25]];
+    pEggact = &actwk[egg4_get_work(pActwk)->parent_index];
     if (pEggact->r_no0 != 20) {
         if (pActwk->colino)
             return;
 
-        flgwk = pEggact->actfree[2];
-        pEggact->actfree[2] |= 64;
+        flgwk = egg4_get_work(pEggact)->flags;
+        egg4_get_work(pEggact)->flags |= 64;
         if (flgwk & 64) {
 
             pActwk->colino = 255;
@@ -817,34 +902,34 @@ static void awa_hitchk(sprite_status *pActwk) {
     pActwk->r_no0 = 12;
     pActwk->mstno.b.h = 4;
     pActwk->patno = pActwk->patcnt = pActwk->pattim = pActwk->pattimm = 0;
-    --pEggact->actfree[3];
+    --egg4_get_work(pEggact)->bubble_slot;
     egg4awa_del(pActwk);
 }
 
 static Uint32 egg4awa_roll(sprite_status *pActwk) {
     sprite_status *pEggact;
 
-    pEggact = &actwk[((Sint16 *)pActwk)[25]];
+    pEggact = &actwk[egg4_get_work(pActwk)->parent_index];
     pActwk->xposi.l = pEggact->xposi.l;
     pActwk->yposi.l = pEggact->yposi.l;
 
-    if (pEggact->actfree[2] & 16) {
+    if (egg4_get_work(pEggact)->flags & 16) {
         pActwk->r_no0 = 10;
         return egg4awa_ychg(pActwk);
     }
 
-    if (pEggact->actfree[2] & 32) {
+    if (egg4_get_work(pEggact)->flags & 32) {
         pActwk->r_no0 = 16;
         pActwk->sprpri = 3;
         return egg4awa_chi(pActwk);
     }
 
     awa_hitchk(pActwk);
-    if (pEggact->actfree[2] & 8) {
+    if (egg4_get_work(pEggact)->flags & 8) {
 
-        ((Sint16 *)pActwk)[28] += 384;
+        egg4_get_work(pActwk)->angle += 384;
     } else {
-        ((Sint16 *)pActwk)[28] -= 384;
+        egg4_get_work(pActwk)->angle -= 384;
     }
 
     egg4_posiset(pActwk);
@@ -856,17 +941,17 @@ static Uint32 egg4awa_ychg(sprite_status *pActwk) {
 
     awa_hitchk(pActwk);
 
-    pEggact = &actwk[((Sint16 *)pActwk)[25]];
+    pEggact = &actwk[egg4_get_work(pActwk)->parent_index];
     pActwk->xposi.l = pEggact->xposi.l;
     pActwk->yposi.l = pEggact->yposi.l;
 
     if (pActwk->r_no1) {
 
-        ((Sint32 *)pActwk)[16] -= 65536;
-        if (((Sint32 *)pActwk)[16] > -3145728) {
+        egg4_get_work(pActwk)->radial_speed -= 65536;
+        if (egg4_get_work(pActwk)->radial_speed > -3145728) {
             ychg_ret(pActwk, pEggact);
         } else {
-            ((Sint32 *)pActwk)[16] = 3145728;
+            egg4_get_work(pActwk)->radial_speed = 3145728;
             pActwk->r_no0 = 8;
 
             ychg_rad_endproc(pActwk);
@@ -874,7 +959,7 @@ static Uint32 egg4awa_ychg(sprite_status *pActwk) {
             pActwk->r_no1 = 0;
         }
     } else {
-        if ((((Sint32 *)pActwk)[16] -= 65536) < 0) {
+        if ((egg4_get_work(pActwk)->radial_speed -= 65536) < 0) {
 
             ++pActwk->r_no1;
         }
@@ -891,14 +976,14 @@ static void ychg_ret(sprite_status *pActwk, sprite_status *pEggwk) {
 
     spdwk = 1152;
 
-    if (!(pEggwk->actfree[2]) & 8) {
+    if (!(egg4_get_work(pEggwk)->flags) & 8) {
         spdwk *= -1;
     }
 
-    ((Sint16 *)pActwk)[28] += spdwk;
+    egg4_get_work(pActwk)->angle += spdwk;
 
-    radwk = pActwk->actfree[11] - 64;
-    if (pEggwk->actfree[2] & 8) {
+    radwk = egg4_get_work(pActwk)->angle_high - 64;
+    if (egg4_get_work(pEggwk)->flags & 8) {
         radwk ^= 128;
     }
 
@@ -915,14 +1000,14 @@ static void ychg_ret(sprite_status *pActwk, sprite_status *pEggwk) {
 static void ychg_rad_endproc(sprite_status *pActwk) {
     Uint16 radwk;
 
-    radwk = ((Uint16 *)pActwk)[28];
+    radwk = egg4_get_work(pActwk)->angle;
 
     if (radwk < 16384) {
 
-        ((Uint16 *)pActwk)[28] = 32768 - radwk;
+        egg4_get_work(pActwk)->angle = 32768 - radwk;
 
     } else {
-        ((Uint16 *)pActwk)[28] = 32768 - radwk;
+        egg4_get_work(pActwk)->angle = 32768 - radwk;
     }
 }
 
@@ -947,32 +1032,32 @@ static Uint32 egg4awa_chi(sprite_status *pActwk) {
 
     awa_hitchk(pActwk);
 
-    pEggact = &actwk[((Sint16 *)pActwk)[25]];
+    pEggact = &actwk[egg4_get_work(pActwk)->parent_index];
     pActwk->xposi.l = pEggact->xposi.l;
     pActwk->yposi.l = pEggact->yposi.l;
-    ((Sint32 *)pActwk)[16] -= 65536;
+    egg4_get_work(pActwk)->radial_speed -= 65536;
     sprite_status_add_xspeed_yspeed(pActwk, -65536);
 
-    if (((Sint32 *)pActwk)[16] <= 0x100000) {
+    if (egg4_get_work(pActwk)->radial_speed <= 0x100000) {
 
-        cntwk = pEggact->actfree[3];
+        cntwk = egg4_get_work(pEggact)->bubble_slot;
         radwk = rad_tbl[cntwk];
-        radwk *= pEggact->actfree[8];
-        ((Sint16 *)pActwk)[28] = radwk;
+        radwk *= egg4_get_work(pEggact)->spread_count;
+        egg4_get_work(pActwk)->angle = radwk;
 
-        ++pEggact->actfree[8];
+        ++egg4_get_work(pEggact)->spread_count;
 
-        ((Sint32 *)pActwk)[16] = 0x100000;
+        egg4_get_work(pActwk)->radial_speed = 0x100000;
         sprite_status_set_xspeed_yspeed(pActwk, 0x100000);
         pActwk->r_no0 = 6;
     }
 
     awa_hitchk(pActwk);
-    if (pEggact->actfree[2] & 8) {
+    if (egg4_get_work(pEggact)->flags & 8) {
 
-        ((Sint16 *)pActwk)[28] += 1152;
+        egg4_get_work(pActwk)->angle += 1152;
     } else {
-        ((Sint16 *)pActwk)[28] -= 1152;
+        egg4_get_work(pActwk)->angle -= 1152;
     }
 
     egg4_posiset(pActwk);
@@ -1010,17 +1095,17 @@ static Uint32 egg4tama_ini(sprite_status *pActwk) {
 static Uint32 egg4tama_01(sprite_status *pActwk) {
     sprite_status *pEggact;
 
-    pEggact = &actwk[((Sint16 *)pActwk)[25]];
-    if (pEggact->actfree[2] & 128) {
+    pEggact = &actwk[egg4_get_work(pActwk)->parent_index];
+    if (egg4_get_work(pEggact)->flags & 128) {
         return egg4tama_kill(pActwk);
     }
 
     pActwk->xposi.w.h = pEggact->xposi.w.h;
     pActwk->yposi.w.h = pEggact->yposi.w.h;
-    pActwk->xposi.w.h += ((Sint16 *)pActwk)[30];
-    pActwk->yposi.w.h += ((Sint16 *)pActwk)[31];
+    pActwk->xposi.w.h += egg4_get_work(pActwk)->x_offset;
+    pActwk->yposi.w.h += egg4_get_work(pActwk)->y_offset;
 
-    if (++pActwk->actfree[0] == 45) {
+    if (++egg4_get_work(pActwk)->timer == 45) {
         pActwk->colino = 254;
         pActwk->colicnt = 2;
         pActwk->r_no0 += 2;
@@ -1032,12 +1117,12 @@ static Uint32 egg4tama_01(sprite_status *pActwk) {
 static Uint32 egg4tama_02(sprite_status *pActwk) {
     sprite_status *pEggact;
 
-    pEggact = &actwk[((Sint16 *)pActwk)[25]];
-    if (pEggact->actfree[2] & 128) {
+    pEggact = &actwk[egg4_get_work(pActwk)->parent_index];
+    if (egg4_get_work(pEggact)->flags & 128) {
         return egg4tama_kill(pActwk);
     }
 
-    pActwk->xposi.l += ((Sint32 *)pActwk)[16];
+    pActwk->xposi.l += egg4_get_work(pActwk)->radial_speed;
     pActwk->yposi.l += sprite_status_get_xspeed_yspeed(pActwk);
 
     if (frameout_chk(pActwk) != 0) {

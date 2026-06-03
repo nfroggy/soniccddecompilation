@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "dai8.h"
 #include "../action.h"
@@ -14,6 +16,34 @@
 #endif
 
 static void act_init(sprite_status *actionwk);
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint16 timer;
+    Sint16 parent_index;
+    Sint16 origin_x;
+    Sint16 origin_y;
+    Uint8 unused8[13];
+    Uint8 ride_pressed;
+} dai8_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(dai8_work, timer) == 0,
+               "dai8_work.timer offset");
+_Static_assert(offsetof(dai8_work, parent_index) == 2,
+               "dai8_work.parent_index offset");
+_Static_assert(offsetof(dai8_work, origin_x) == 4,
+               "dai8_work.origin_x offset");
+_Static_assert(offsetof(dai8_work, origin_y) == 6,
+               "dai8_work.origin_y offset");
+_Static_assert(offsetof(dai8_work, ride_pressed) == 21,
+               "dai8_work.ride_pressed offset");
+_Static_assert(sizeof(dai8_work) <= sizeof(((sprite_status *)0)->actfree),
+               "dai8_work fits in actfree");
+
+static dai8_work *dai8_get_work(sprite_status *actionwk) {
+    return (dai8_work *)actionwk->actfree;
+}
 
 static char p00[47] = {0, 5, 5, 5, 5, 5, 4, 4, 4, 5, 5, 5, 5, 5, 4, 4,
                        4, 3, 3, 3, 3, 3, 2, 2, 2, 3, 3, 3, 3, 3, 2, 2,
@@ -38,20 +68,22 @@ sprite_pattern *pat_dai8[8] = {&pat00, &pat01, &pat02,   &pat03,
                                &pat04, &pat05, &patnull, &pat00};
 
 void dai8(sprite_status *actionwk) {
+    dai8_work *work = dai8_get_work(actionwk);
     Sint16 ano;
 
     if (actionwk->userflag.b.h < 0) {
-        ano = ((Sint16 *)actionwk)[24];
+        ano = work->parent_index;
+        dai8_work *parent_work = dai8_get_work(&actwk[ano]);
         if (actwk[ano].actno != 44) {
             frameout(actionwk);
             return;
         }
-        if (((Sint16 *)actionwk)[25] != ((Sint16 *)&actwk[ano])[25]) {
+        if (work->origin_x != parent_work->origin_x) {
 
             frameout(actionwk);
             return;
         }
-        if (((Sint16 *)actionwk)[26] != ((Sint16 *)&actwk[ano])[26]) {
+        if (work->origin_y != parent_work->origin_y) {
 
             frameout(actionwk);
             return;
@@ -77,7 +109,7 @@ void dai8(sprite_status *actionwk) {
     }
     actionsub(actionwk);
     if (actionwk->userflag.b.h >= 0) {
-        frameout_s00(actionwk, ((Sint16 *)actionwk)[25]);
+        frameout_s00(actionwk, work->origin_x);
     }
 }
 
@@ -99,7 +131,7 @@ static void act_init(sprite_status *actionwk) {
         a5tbl = tbl02;
         break;
     }
-    ((Sint16 *)actionwk)[23] = *a5tbl++;
+    dai8_get_work(actionwk)->timer = *a5tbl++;
     act_init_sub(actionwk, actionwk);
 
     d6 = *a5tbl++;
@@ -109,9 +141,9 @@ static void act_init(sprite_status *actionwk) {
             break;
         }
         a1->actno = actionwk->actno;
-        ((Sint16 *)a1)[24] = (Uint16)(actionwk - actwk);
+        dai8_get_work(a1)->parent_index = (Uint16)(actionwk - actwk);
         a1->userflag.b.h = -1;
-        ((Sint16 *)a1)[23] = *a5tbl++;
+        dai8_get_work(a1)->timer = *a5tbl++;
         a1->xposi.w.h = actionwk->xposi.w.h + *a5tbl++;
         a1->yposi.w.h = actionwk->yposi.w.h + *a5tbl++;
         act_init_sub(actionwk, a1);
@@ -128,44 +160,52 @@ void act_init_sub(sprite_status *actionwk, sprite_status *a6) {
     a6->patbase = pat_dai8;
     a6->patno = 6;
     a6->r_no0 = 2;
-    ((Sint16 *)a6)[25] = actionwk->xposi.w.h;
-    ((Sint16 *)a6)[26] = actionwk->yposi.w.h;
+    dai8_get_work(a6)->origin_x = actionwk->xposi.w.h;
+    dai8_get_work(a6)->origin_y = actionwk->yposi.w.h;
 }
 
 void act_wait(sprite_status *actionwk) {
-    if (--((Sint16 *)actionwk)[23] != 0)
+    dai8_work *work = dai8_get_work(actionwk);
+
+    if (--work->timer != 0)
         return;
     actionwk->r_no0 += 2;
 }
 
 void act_appear(sprite_status *actionwk) {
+    dai8_work *work = dai8_get_work(actionwk);
+
     patchg(actionwk, (Uint8 **)pchg);
     if (actionwk->patno == 0) {
-        ((Sint16 *)actionwk)[23] = 120;
+        work->timer = 120;
         actionwk->r_no0 += 2;
     }
 }
 
 void act_on(sprite_status *actionwk) {
-    if (ridechk(actionwk, &actwk[0]) != 0)
-        actionwk->actfree[21] = 255;
-    else
-        actionwk->actfree[21] = 0;
+    dai8_work *work = dai8_get_work(actionwk);
 
-    if (--((Sint16 *)actionwk)[23] != 0)
+    if (ridechk(actionwk, &actwk[0]) != 0)
+        work->ride_pressed = 255;
+    else
+        work->ride_pressed = 0;
+
+    if (--work->timer != 0)
         return;
     actionwk->mstno.w = 511;
     actionwk->r_no0 += 2;
-    if (actionwk->actfree[21] != 0) {
+    if (work->ride_pressed != 0) {
         ride_on_clr(actionwk, &actwk[0]);
     }
 }
 
 void act_off(sprite_status *actionwk) {
+    dai8_work *work = dai8_get_work(actionwk);
+
     patchg(actionwk, (Uint8 **)pchg);
 
     if (actionwk->patno == 0) {
-        ((Sint16 *)actionwk)[23] = 120;
+        work->timer = 120;
         actionwk->r_no0 -= 2;
     }
 }

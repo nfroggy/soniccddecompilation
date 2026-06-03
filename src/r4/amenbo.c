@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "amenbo.h"
 #include "../action.h"
@@ -5,6 +7,52 @@
 #include "../loader2.h"
 #include "../suicide.h"
 #include "playsub4.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint16 stop_timer;
+    Sint32 velocity_x;
+    Sint32 acceleration_x;
+    Sint32 deceleration_x;
+    Sint32 palette_style;
+    Sint16 shot_timer;
+    Sint16 origin_x;
+} amenbo_work;
+
+typedef struct {
+    Uint8 unused0[88];
+    Sint16 projectile_owner_index;
+} amenbo_projectile_legacy_slot;
+#pragma pack(pop)
+
+_Static_assert(offsetof(amenbo_work, stop_timer) == 0,
+               "amenbo_work.stop_timer offset");
+_Static_assert(offsetof(amenbo_work, velocity_x) == 2,
+               "amenbo_work.velocity_x offset");
+_Static_assert(offsetof(amenbo_work, acceleration_x) == 6,
+               "amenbo_work.acceleration_x offset");
+_Static_assert(offsetof(amenbo_work, deceleration_x) == 10,
+               "amenbo_work.deceleration_x offset");
+_Static_assert(offsetof(amenbo_work, palette_style) == 14,
+               "amenbo_work.palette_style offset");
+_Static_assert(offsetof(amenbo_work, shot_timer) == 18,
+               "amenbo_work.shot_timer offset");
+_Static_assert(offsetof(amenbo_work, origin_x) == 20,
+               "amenbo_work.origin_x offset");
+_Static_assert(sizeof(amenbo_work) <= sizeof(((sprite_status *)0)->actfree),
+               "amenbo_work fits in actfree");
+_Static_assert(offsetof(amenbo_projectile_legacy_slot, projectile_owner_index) ==
+                   88,
+               "amenbo projectile owner legacy offset");
+
+static amenbo_work *amenbo_get_work(sprite_status *pActwk) {
+    return (amenbo_work *)pActwk->actfree;
+}
+
+static amenbo_projectile_legacy_slot *
+amenbo_get_projectile_legacy_slot(sprite_status *pActwk) {
+    return (amenbo_projectile_legacy_slot *)pActwk;
+}
 
 #if defined(R41A)
 #define SPRITE_AMENBO_BASE 479
@@ -58,8 +106,8 @@ void amenbo(sprite_status *pActwk) {
 
     if (pActwk->userflag.b.h < 0) {
 
-        pActwk->xposi.l += ((Sint32 *)pActwk)[12];
-        if (((Sint32 *)pActwk)[15] == 0)
+        pActwk->xposi.l += amenbo_get_work(pActwk)->velocity_x;
+        if (amenbo_get_work(pActwk)->palette_style == 0)
             patchg(pActwk, pchg_b);
         else
             patchg(pActwk, pchg_e);
@@ -83,26 +131,27 @@ static void act_init(sprite_status *pActwk) {
     pActwk->sprhsize = 20;
     pActwk->sprvsize = 12;
     pActwk->colino = 49;
-    ((Sint16 *)pActwk)[32] = 120;
-    ((Sint16 *)pActwk)[33] = pActwk->xposi.w.h;
+    amenbo_get_work(pActwk)->shot_timer = 120;
+    amenbo_get_work(pActwk)->origin_x = pActwk->xposi.w.h;
     if (!pActwk->userflag.b.h) {
         pActwk->patbase = pat_amenbo_e;
-        ((Sint32 *)pActwk)[15] = 1;
-        ((Sint32 *)pActwk)[13] = -1536;
-        ((Sint32 *)pActwk)[14] = 256;
+        amenbo_get_work(pActwk)->palette_style = 1;
+        amenbo_get_work(pActwk)->acceleration_x = -1536;
+        amenbo_get_work(pActwk)->deceleration_x = 256;
     } else {
         pActwk->patbase = pat_amenbo_b;
-        ((Sint32 *)pActwk)[15] = 0;
-        ((Sint32 *)pActwk)[13] = -512;
-        ((Sint32 *)pActwk)[14] = 192;
+        amenbo_get_work(pActwk)->palette_style = 0;
+        amenbo_get_work(pActwk)->acceleration_x = -512;
+        amenbo_get_work(pActwk)->deceleration_x = 192;
     }
     act_accel(pActwk);
 }
 
 static void act_accel(sprite_status *pActwk) {
     Sint32 lD5, lD6;
+    amenbo_work *pWork = amenbo_get_work(pActwk);
 
-    lD6 = ((Sint32 *)pActwk)[12] + ((Sint32 *)pActwk)[13];
+    lD6 = pWork->velocity_x + pWork->acceleration_x;
     if (!pActwk->userflag.b.h)
         lD5 = -98304;
     else
@@ -112,7 +161,7 @@ static void act_accel(sprite_status *pActwk) {
         lD6 = lD5;
 
         pActwk->r_no0 += 2;
-        ((Sint32 *)pActwk)[13] *= -1;
+        pWork->acceleration_x *= -1;
     } else {
 
         lD5 = -lD5;
@@ -122,15 +171,15 @@ static void act_accel(sprite_status *pActwk) {
         lD6 = lD5;
 
         pActwk->r_no0 += 2;
-        ((Sint32 *)pActwk)[13] *= -1;
+        pWork->acceleration_x *= -1;
     }
 
 label1:
-    ((Sint32 *)pActwk)[12] = lD6;
+    pWork->velocity_x = lD6;
     if (!pActwk->userflag.b.h)
         act_tama(pActwk);
 
-    if (((Sint32 *)pActwk)[15] == 0)
+    if (pWork->palette_style == 0)
         patchg(pActwk, pchg_b);
     else
         patchg(pActwk, pchg_e);
@@ -140,24 +189,25 @@ label1:
 static void act_decel(sprite_status *pActwk) {
     Sint32 lD6;
     Uint8 temp0, temp1;
+    amenbo_work *pWork = amenbo_get_work(pActwk);
 
-    lD6 = ((Sint32 *)pActwk)[12] + ((Sint32 *)pActwk)[14];
+    lD6 = pWork->velocity_x + pWork->deceleration_x;
     temp0 = temp1 = 0;
-    if (((Sint32 *)pActwk)[12] < 0)
+    if (pWork->velocity_x < 0)
         temp0 = 255;
     if (lD6 < 0)
         temp1 = 255;
     if (temp0 ^ temp1) {
         pActwk->r_no0 += 2;
-        ((Sint32 *)pActwk)[14] *= -1;
+        pWork->deceleration_x *= -1;
         lD6 = 0;
         if (!pActwk->userflag.b.h)
-            ((Sint16 *)pActwk)[23] = 60;
+            pWork->stop_timer = 60;
         else
-            ((Sint16 *)pActwk)[23] = 60;
+            pWork->stop_timer = 60;
     }
 
-    ((Sint32 *)pActwk)[12] = lD6;
+    pWork->velocity_x = lD6;
     if (!pActwk->userflag.b.h)
         act_tama(pActwk);
 
@@ -165,15 +215,17 @@ static void act_decel(sprite_status *pActwk) {
 }
 
 static void act_stop(sprite_status *pActwk) {
-    --((Sint16 *)pActwk)[23];
-    if (((Sint16 *)pActwk)[23] <= 0) {
+    amenbo_work *pWork = amenbo_get_work(pActwk);
+
+    --pWork->stop_timer;
+    if (pWork->stop_timer <= 0) {
         pActwk->r_no0 += 2;
         pActwk->actflg ^= 1;
         pActwk->cddat ^= 1;
         if (!pActwk->userflag.b.h)
-            ((Sint16 *)pActwk)[23] = 60;
+            pWork->stop_timer = 60;
         else
-            ((Sint16 *)pActwk)[23] = 60;
+            pWork->stop_timer = 60;
     }
 
     if (!pActwk->userflag.b.h)
@@ -183,30 +235,31 @@ static void act_stop(sprite_status *pActwk) {
 }
 
 static void act_stop1(sprite_status *pActwk) {
-    --((Sint16 *)pActwk)[23];
-    if (((Sint16 *)pActwk)[23] <= 0)
+    --amenbo_get_work(pActwk)->stop_timer;
+    if (amenbo_get_work(pActwk)->stop_timer <= 0)
         pActwk->r_no0 = 2;
 
     act_move0(pActwk);
 }
 
 static void act_move0(sprite_status *pActwk) {
-    pActwk->xposi.l += ((Sint32 *)pActwk)[12];
+    pActwk->xposi.l += amenbo_get_work(pActwk)->velocity_x;
     pActwk->yposi.w.h = waterposi - 8;
 }
 
 static void act_tama(sprite_status *pActwk) {
     sprite_status *subActwk;
 
-    --((Sint16 *)pActwk)[32];
-    if (((Sint16 *)pActwk)[32] <= 0) {
-        ((Sint16 *)pActwk)[32] = 120;
+    --amenbo_get_work(pActwk)->shot_timer;
+    if (amenbo_get_work(pActwk)->shot_timer <= 0) {
+        amenbo_get_work(pActwk)->shot_timer = 120;
         if (act_check(pActwk) != 0) {
 
             if (actwkchk(&subActwk) == 0) {
                 subActwk->actno = pActwk->actno;
                 subActwk->userflag.b.h = -1;
-                ((Sint16 *)subActwk)[44] = (Uint8)(pActwk - actwk);
+                amenbo_get_projectile_legacy_slot(subActwk)
+                    ->projectile_owner_index = (Uint8)(pActwk - actwk);
                 subActwk->xposi.w.h = pActwk->xposi.w.h;
                 subActwk->yposi.w.h = pActwk->yposi.w.h;
                 subActwk->actflg = pActwk->actflg;
@@ -217,12 +270,13 @@ static void act_tama(sprite_status *pActwk) {
                 subActwk->sprvsize = 4;
                 subActwk->colino = 178;
                 subActwk->patbase = pActwk->patbase;
-                ((Sint32 *)subActwk)[15] = ((Sint32 *)pActwk)[15];
+                amenbo_get_work(subActwk)->palette_style =
+                    amenbo_get_work(pActwk)->palette_style;
                 subActwk->mstno.b.h = 1;
                 if (!(subActwk->actflg & 1))
-                    ((Sint32 *)subActwk)[12] = -0x20000;
+                    amenbo_get_work(subActwk)->velocity_x = -0x20000;
                 else
-                    ((Sint32 *)subActwk)[12] = 0x20000;
+                    amenbo_get_work(subActwk)->velocity_x = 0x20000;
                 if ((char)pActwk->actflg < 0)
                     soundset(160);
             }

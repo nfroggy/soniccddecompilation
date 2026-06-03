@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "kama.h"
 #include "../action.h"
@@ -7,6 +9,42 @@
 #include "../loader2.h"
 #include "../playsub.h"
 #include "../suicide.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint16 gravity;
+    Sint16 timer;
+    union {
+        Uint8 copied_userflag;
+        Uint8 parent_flags;
+    };
+    Uint8 unused5;
+    Uint16 parent_index;
+    Sint16 origin_x;
+    Sint16 display_timer;
+} kama_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(kama_work, gravity) == 0,
+               "kama_work.gravity offset");
+_Static_assert(offsetof(kama_work, timer) == 2,
+               "kama_work.timer offset");
+_Static_assert(offsetof(kama_work, copied_userflag) == 4,
+               "kama_work.copied_userflag offset");
+_Static_assert(offsetof(kama_work, parent_flags) == 4,
+               "kama_work.parent_flags offset");
+_Static_assert(offsetof(kama_work, parent_index) == 6,
+               "kama_work.parent_index offset");
+_Static_assert(offsetof(kama_work, origin_x) == 8,
+               "kama_work.origin_x offset");
+_Static_assert(offsetof(kama_work, display_timer) == 10,
+               "kama_work.display_timer offset");
+_Static_assert(sizeof(kama_work) <= sizeof(((sprite_status *)0)->actfree),
+               "kama_work fits in actfree");
+
+static kama_work *kama_get_work(sprite_status *pActwk) {
+    return (kama_work *)pActwk->actfree;
+}
 
 #if defined(R31A) || defined(R31B) || defined(R32A)
 #define SPRITE_KAMA_BASE 465
@@ -129,8 +167,10 @@ void ene_kama(sprite_status *pActwk) {
 }
 
 void kama_init(sprite_status *pActwk) {
-    ((char *)pActwk)[50] = pActwk->userflag.b.h;
-    if (((char *)pActwk)[50] >= 0) {
+    kama_work *work = kama_get_work(pActwk);
+
+    work->copied_userflag = pActwk->userflag.b.h;
+    if ((char)work->copied_userflag >= 0) {
         pActwk->patno = 1;
         pActwk->patbase = kamapat;
     } else {
@@ -197,7 +237,7 @@ void kama_wait(sprite_status *pActwk) {
 
                 pActwk->mstno.b.h = 2;
                 set_wpkama(pActwk);
-                ((Sint16 *)pActwk)[24] = 120;
+                kama_get_work(pActwk)->timer = 120;
                 pActwk->r_no0 += 2;
                 kama_atck(pActwk);
                 return;
@@ -210,21 +250,21 @@ void kama_wait(sprite_status *pActwk) {
 }
 
 void kama_atck(sprite_status *pActwk) {
-    --((Uint16 *)pActwk)[24];
-    if (((Uint16 *)pActwk)[24] != 0)
+    --kama_get_work(pActwk)->timer;
+    if (kama_get_work(pActwk)->timer != 0)
         kama_disp(pActwk);
     else {
 
         pActwk->mstno.b.h = 3;
-        ((Uint16 *)pActwk)[24] = 60;
+        kama_get_work(pActwk)->timer = 60;
         pActwk->r_no0 += 2;
         kama_pati(pActwk);
     }
 }
 
 void kama_pati(sprite_status *pActwk) {
-    --((Uint16 *)pActwk)[24];
-    if (((Uint16 *)pActwk)[24] != 0)
+    --kama_get_work(pActwk)->timer;
+    if (kama_get_work(pActwk)->timer != 0)
         kama_disp(pActwk);
     else {
 
@@ -266,15 +306,15 @@ void kama_move(sprite_status *pActwk) {
         }
     }
 
-    ((Sint16 *)pActwk)[24] = 72;
+    kama_get_work(pActwk)->timer = 72;
     pActwk->mstno.b.h = 3;
     pActwk->r_no0 += 2;
     kama_reve(pActwk);
 }
 
 void kama_reve(sprite_status *pActwk) {
-    --((Uint16 *)pActwk)[24];
-    if (((Uint16 *)pActwk)[24] == 0) {
+    --kama_get_work(pActwk)->timer;
+    if (kama_get_work(pActwk)->timer == 0) {
         pActwk->actflg = bchg(0, pActwk->actflg);
         pActwk->cddat = bchg(0, pActwk->cddat);
         pActwk->r_no0 -= 2;
@@ -308,12 +348,12 @@ void set_wpkama(sprite_status *pActwk) {
         if (actwkchk(&pActfree) == 0) {
             pActfree->actno = 37;
 
-            ((Uint16 *)pActfree)[26] = pActwk - actwk;
+            kama_get_work(pActfree)->parent_index = pActwk - actwk;
 
-            ((Sint16 *)pActfree)[24] = 64;
+            kama_get_work(pActfree)->timer = 64;
             pActfree->userflag.b.h = pActwk->userflag.b.h;
 
-            pActfree->actfree[4] = pActwk->actflg;
+            kama_get_work(pActfree)->parent_flags = pActwk->actflg;
 
             pActfree->yposi.w.h = pActwk->yposi.w.h - 4;
             if (!(pActwk->actflg & 1))
@@ -325,12 +365,12 @@ void set_wpkama(sprite_status *pActwk) {
         if (actwkchk(&pActfree) == 0) {
             pActfree->actno = 37;
 
-            ((Uint16 *)pActfree)[26] = pActwk - actwk;
+            kama_get_work(pActfree)->parent_index = pActwk - actwk;
 
-            ((Sint16 *)pActfree)[24] = 20;
+            kama_get_work(pActfree)->timer = 20;
             pActfree->userflag.b.h = pActwk->userflag.b.h;
 
-            pActfree->actfree[4] = pActwk->actflg;
+            kama_get_work(pActfree)->parent_flags = pActwk->actflg;
 
             pActfree->yposi.w.h = pActwk->yposi.w.h - 6;
             if (!(pActwk->actflg & 1))
@@ -345,7 +385,7 @@ void tama_kama(sprite_status *pActwk) {
     jmp_flg = 0;
     wpkama_tbl[pActwk->r_no0 / 2](pActwk);
     actionsub(pActwk);
-    frameout_s00(pActwk, ((Sint16 *)pActwk)[27]);
+    frameout_s00(pActwk, kama_get_work(pActwk)->origin_x);
     jmp_flg = 0;
 }
 
@@ -358,11 +398,11 @@ void wpkama_init(sprite_status *pActwk) {
     pActwk->sprvsize = 4;
     pActwk->sproffset = 9202;
     pActwk->patbase = wpkamapat;
-    ((Sint16 *)pActwk)[27] = pActwk->xposi.w.h;
+    kama_get_work(pActwk)->origin_x = pActwk->xposi.w.h;
 
     iD1 = 768;
 
-    if (!(pActwk->actfree[4] & 1)) {
+    if (!(kama_get_work(pActwk)->parent_flags & 1)) {
         pActwk->actflg |= 1;
         pActwk->cddat |= 1;
         iD1 = -iD1;
@@ -376,14 +416,14 @@ void wpkama_wait(sprite_status *pActwk) {
     Uint16 wD0;
     sprite_status *pActfree;
 
-    --((Uint16 *)pActwk)[24];
-    if (((Uint16 *)pActwk)[24] == 0) {
+    --kama_get_work(pActwk)->timer;
+    if (kama_get_work(pActwk)->timer == 0) {
         pActwk->r_no0 += 2;
         pActwk->colino = 135;
-        ((Sint16 *)pActwk)[28] = 60;
+        kama_get_work(pActwk)->display_timer = 60;
     }
 
-    wD0 = ((Uint16 *)pActwk)[26];
+    wD0 = kama_get_work(pActwk)->parent_index;
     pActfree = &actwk[wD0];
     if (pActfree->actno != 36)
         frameout(pActwk);
@@ -397,7 +437,7 @@ void wpkama_move(sprite_status *pActwk) {
     sprite_status *pPlaywk;
 
     movement(pActwk);
-    pActwk->yspeed.w += ((Sint16 *)pActwk)[23];
+    pActwk->yspeed.w += kama_get_work(pActwk)->gravity;
 
     if (pActwk->patno == 0) {
         if (pActwk->actflg & 128)
@@ -411,9 +451,9 @@ void wpkama_move(sprite_status *pActwk) {
 }
 
 void wpkama_disp(sprite_status *pActwk) {
-    --((Uint16 *)pActwk)[28];
-    if (((Uint16 *)pActwk)[28] == 0) {
-        ++((Uint16 *)pActwk)[28];
+    --kama_get_work(pActwk)->display_timer;
+    if (kama_get_work(pActwk)->display_timer == 0) {
+        ++kama_get_work(pActwk)->display_timer;
         pActwk->colino = 0;
     }
 
@@ -459,5 +499,5 @@ void wpkama_reve(sprite_status *pActwk, sprite_status *pPlaywk) {
 
     pActwk->xspeed.w += pPlaywk->xspeed.w;
     pActwk->yspeed.w = -2048;
-    ((Sint16 *)pActwk)[23] = 64;
+    kama_get_work(pActwk)->gravity = 64;
 }

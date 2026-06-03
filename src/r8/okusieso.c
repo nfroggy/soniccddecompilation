@@ -1,8 +1,40 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "okusieso.h"
 #include "../action.h"
 #include "../actset.h"
 #include "../ridechk.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 unused0[6];
+    Sint8 anim_phase;
+    Sint8 anim_timer;
+    Sint16 parent_index;
+    Uint8 unused10[2];
+    Sint16 base_y;
+    Uint8 unused14[6];
+    Uint8 flags;
+} okusieso_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(okusieso_work, anim_phase) == 6,
+               "okusieso_work.anim_phase offset");
+_Static_assert(offsetof(okusieso_work, anim_timer) == 7,
+               "okusieso_work.anim_timer offset");
+_Static_assert(offsetof(okusieso_work, parent_index) == 8,
+               "okusieso_work.parent_index offset");
+_Static_assert(offsetof(okusieso_work, base_y) == 12,
+               "okusieso_work.base_y offset");
+_Static_assert(offsetof(okusieso_work, flags) == 20,
+               "okusieso_work.flags offset");
+_Static_assert(sizeof(okusieso_work) <= sizeof(((sprite_status *)0)->actfree),
+               "okusieso_work fits in actfree");
+
+static okusieso_work *okusieso_get_work(sprite_status *pActwk) {
+    return (okusieso_work *)pActwk->actfree;
+}
 
 #if defined(R82)
 #define SPRITE_OKUSIESO_BASE 411
@@ -65,8 +97,8 @@ static void okusieso_init(sprite_status *pActwk) {
     pActwk->patno = 0;
     pActwk->sprhsize = 40;
     pActwk->sprvsize = 56;
-    pActwk->actfree[6] = 1;
-    pActwk->actfree[20] = 0;
+    okusieso_get_work(pActwk)->anim_phase = 1;
+    okusieso_get_work(pActwk)->flags = 0;
 
     if (actwkchk2(pActwk, &subActwk) == 0) {
         subActwk->r_no0 = 2;
@@ -78,13 +110,14 @@ static void okusieso_init(sprite_status *pActwk) {
         subActwk->sprhsize = 16;
         subActwk->sprvsize = 16;
         subActwk->yspeed.w = 0;
-        subActwk->actfree[20] = 0;
+        okusieso_get_work(subActwk)->flags = 0;
         subActwk->actno = pActwk->actno;
-        subActwk->actfree[20] |= 1;
+        okusieso_get_work(subActwk)->flags |= 1;
         subActwk->xposi.l = pActwk->xposi.l;
         subActwk->yposi.l = pActwk->yposi.l;
-        ((Sint16 *)subActwk)[29] = pActwk->yposi.w.h;
-        ((Sint16 *)subActwk)[27] = (Uint16)(Uint8)(pActwk - actwk);
+        okusieso_get_work(subActwk)->base_y = pActwk->yposi.w.h;
+        okusieso_get_work(subActwk)->parent_index =
+            (Uint16)(Uint8)(pActwk - actwk);
     } else
         return;
 
@@ -98,89 +131,92 @@ static void okusieso_init(sprite_status *pActwk) {
         subActwk->sprhsize = 40;
         subActwk->sprvsize = 12;
         subActwk->yspeed.w = 0;
-        subActwk->actfree[20] = 0;
+        okusieso_get_work(subActwk)->flags = 0;
         subActwk->actno = pActwk->actno;
-        subActwk->actfree[20] |= 2;
+        okusieso_get_work(subActwk)->flags |= 2;
         subActwk->xposi.l = pActwk->xposi.l;
         subActwk->yposi.l = pActwk->yposi.l;
-        ((Sint16 *)subActwk)[29] = pActwk->yposi.w.h;
+        okusieso_get_work(subActwk)->base_y = pActwk->yposi.w.h;
         subActwk->yposi.w.h = (Uint16)subActwk->yposi.w.h + 65492;
-        ((Sint16 *)subActwk)[27] = (Uint16)(Uint8)(pActwk - actwk);
+        okusieso_get_work(subActwk)->parent_index =
+            (Uint16)(Uint8)(pActwk - actwk);
     }
 }
 
 static void okusieso_move(sprite_status *pActwk) {
+    okusieso_work *work = okusieso_get_work(pActwk);
     Sint16 wD1;
     Uint8 patno_tbl[4] = {3, 2, 1, 2};
 
-    if (pActwk->actfree[20] & 8)
+    if (work->flags & 8)
         return;
 
-    if (pActwk->actfree[20] & 1) {
+    if (work->flags & 1) {
         ball_move(pActwk);
         return;
     }
-    if (pActwk->actfree[20] & 2) {
+    if (work->flags & 2) {
         dai_move(pActwk);
         return;
     }
-    if (!(pActwk->actfree[20] & 16))
+    if (!(work->flags & 16))
         return;
 
     if (time_stop)
         return;
 
     pActwk->yspeed.w = 0;
-    if (!(pActwk->actfree[20] & 64)) {
-        --((char *)pActwk)[52];
-        if (((char *)pActwk)[52] < 0) {
-            ((char *)pActwk)[53] = 5;
-            pActwk->actfree[20] |= 64;
+    if (!(work->flags & 64)) {
+        --work->anim_phase;
+        if (work->anim_phase < 0) {
+            work->anim_timer = 5;
+            work->flags |= 64;
             ++pActwk->patno;
         }
         return;
     }
 
-    if (!(pActwk->actfree[20] & 32)) {
-        --((char *)pActwk)[53];
-        if (((char *)pActwk)[53] >= 0)
+    if (!(work->flags & 32)) {
+        --work->anim_timer;
+        if (work->anim_timer >= 0)
             return;
 
         ++pActwk->patno;
-        ((char *)pActwk)[53] = 5;
+        work->anim_timer = 5;
         if (pActwk->patno < 4)
             return;
 
-        pActwk->actfree[20] |= 32;
-        ((char *)pActwk)[52] = 0;
-        ((char *)pActwk)[53] = 10;
+        work->flags |= 32;
+        work->anim_phase = 0;
+        work->anim_timer = 10;
 
         return;
     }
 
-    if (pActwk->actfree[20] & 4) {
+    if (work->flags & 4) {
 
         if (pActwk->patno != 4) {
             ++pActwk->patno;
-            ((char *)pActwk)[53] = 10;
+            work->anim_timer = 10;
         }
         return;
     }
-    --((char *)pActwk)[53];
-    if (((char *)pActwk)[53] < 0) {
-        ++((char *)pActwk)[52];
-        wD1 = ((char *)pActwk)[52];
+    --work->anim_timer;
+    if (work->anim_timer < 0) {
+        ++work->anim_phase;
+        wD1 = work->anim_phase;
         if (wD1 == 4) {
-            ((char *)pActwk)[52] = 0;
+            work->anim_phase = 0;
             wD1 = 0;
         }
 
         pActwk->patno = patno_tbl[wD1];
-        ((char *)pActwk)[53] = 10;
+        work->anim_timer = 10;
     }
 }
 
 static void ball_move(sprite_status *pActwk) {
+    okusieso_work *work = okusieso_get_work(pActwk);
     Sint16 subact;
     Sint16 wD1;
     Sint32 lD0;
@@ -188,24 +224,24 @@ static void ball_move(sprite_status *pActwk) {
     if (time_stop)
         goto label1;
 
-    subact = ((Sint16 *)pActwk)[27];
-    if (!(actwk[subact].actfree[20] & 16))
+    subact = work->parent_index;
+    if (!(okusieso_get_work(&actwk[subact])->flags & 16))
         goto label1;
 
-    if (!(pActwk->actfree[20] & 64)) {
+    if (!(work->flags & 64)) {
         pActwk->yspeed.w = -12288;
-        pActwk->actfree[20] |= 64;
+        work->flags |= 64;
         goto label1;
     }
 
     pActwk->yspeed.w += 256;
     if (pActwk->yspeed.w >= 0) {
-        wD1 = pActwk->yposi.w.h - ((Sint16 *)pActwk)[29];
+        wD1 = pActwk->yposi.w.h - work->base_y;
         if ((Uint16)wD1 <= 8) {
-            pActwk->yposi.w.h = ((Sint16 *)pActwk)[29] + 4;
-            subact = ((Sint16 *)pActwk)[27];
-            actwk[subact].actfree[20] |= 8;
-            pActwk->actfree[20] |= 8;
+            pActwk->yposi.w.h = work->base_y + 4;
+            subact = work->parent_index;
+            okusieso_get_work(&actwk[subact])->flags |= 8;
+            work->flags |= 8;
             actwk[subact].patno = 4;
             pActwk->yspeed.w = 0;
             goto label1;
@@ -229,6 +265,7 @@ label1:
 }
 
 static void dai_move(sprite_status *pActwk) {
+    okusieso_work *work = okusieso_get_work(pActwk);
     Sint16 subact;
     Sint16 wD1;
     Uint8 speed_tbl[5] = {0, 8, 16, 8, 0};
@@ -237,30 +274,30 @@ static void dai_move(sprite_status *pActwk) {
     if (time_stop)
         return;
 
-    subact = ((Sint16 *)pActwk)[27];
-    if (!(actwk[subact].actfree[20] & 16)) {
+    subact = work->parent_index;
+    if (!(okusieso_get_work(&actwk[subact])->flags & 16)) {
         if (ride_on_chk(pActwk, &actwk[0])) {
 
-            subact = ((Sint16 *)pActwk)[27];
-            actwk[subact].actfree[20] |= 16;
+            subact = work->parent_index;
+            okusieso_get_work(&actwk[subact])->flags |= 16;
         }
     } else {
 
-        subact = ((Sint16 *)pActwk)[27];
-        actwk[subact].actfree[20] |= 16;
+        subact = work->parent_index;
+        okusieso_get_work(&actwk[subact])->flags |= 16;
     }
 
-    subact = ((Sint16 *)pActwk)[27];
+    subact = work->parent_index;
     wD1 = actwk[subact].patno;
-    pActwk->yposi.w.h = ((Sint16 *)pActwk)[29] + ofs_tbl[wD1];
+    pActwk->yposi.w.h = work->base_y + ofs_tbl[wD1];
 
-    subact = ((Sint16 *)pActwk)[27];
+    subact = work->parent_index;
     wD1 = actwk[subact].patno;
     wD1 = speed_tbl[wD1];
     wD1 = (Uint16)wD1 << 8;
     pActwk->yspeed.w = wD1;
 
-    actwk[subact].actfree[20] &= 251;
+    okusieso_get_work(&actwk[subact])->flags &= 251;
     if (ride_on_chk(pActwk, &actwk[0]))
-        actwk[subact].actfree[20] |= 4;
+        okusieso_get_work(&actwk[subact])->flags |= 4;
 }

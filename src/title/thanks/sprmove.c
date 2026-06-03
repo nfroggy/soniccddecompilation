@@ -125,7 +125,6 @@ void sonic_ctrl(sprite_status_thanks *pActwk) {
     acttbl[pActwk->EXE_NO](pActwk);
     pActwk->XPOSI.w.h &= 511;
 }
-
 static void sonicinit(sprite_status_thanks *pActwk) {
     int_union ld0;
 
@@ -150,7 +149,7 @@ static void sonicinit(sprite_status_thanks *pActwk) {
     pActwk->Y_ACCEL.l = 0;
 
     pActwk->CGBASE = 25127;
-    pActwk->free[0] = 1;
+    thanks_get_work(pActwk)->state_value = 1;
     pActwk->PAT_ADR = &s_run_map;
     pActwk->SPR_TIMER = s_run_map.aPatDat[0].timer;
     pActwk->PAT_NO = 0;
@@ -205,7 +204,7 @@ static void sonicrun(sprite_status_thanks *pActwk) {
     }
     if (pActwk->XPOSI.w.h >= 376) {
         if (pActwk->XPOSI.w.h <= 392) {
-            ((Sint16 *)pActwk)[31] = 128;
+            thanks_get_work(pActwk)->pit_timer = 128;
             pActwk->EXE_NO = 12;
             return;
         }
@@ -316,7 +315,7 @@ static void s_standset(sprite_status_thanks *pActwk) {
     pActwk->PAT_NO = 0;
 
     pActwk->TM_CNT = 127;
-    pActwk->free[3] = 0;
+    thanks_get_work(pActwk)->action_flag = 0;
 
     pEmmy = &actwk[1];
     pEmmy->ACT_NO = 2;
@@ -334,7 +333,7 @@ static void sonicstand(sprite_status_thanks *pActwk) {
     --pActwk->TM_CNT;
     if (pActwk->TM_CNT >= 0)
         return;
-    if (pActwk->free[3]) {
+    if (thanks_get_work(pActwk)->action_flag) {
         pEmmy = &actwk[1];
         pEmmy->SPR_FLG &= 251;
         pActwk->EXE_NO = 7;
@@ -342,14 +341,14 @@ static void sonicstand(sprite_status_thanks *pActwk) {
     pActwk->PAT_ADR = &s_stand2_map;
     pActwk->SPR_TIMER = s_stand2_map.aPatDat[0].timer;
     pActwk->TM_CNT = 96;
-    pActwk->free[3] = 1;
+    thanks_get_work(pActwk)->action_flag = 1;
 }
 
 static void s_waitset(sprite_status_thanks *pActwk) {
     int_union ld0;
 
     pActwk->XPOSI.l &= 33554431;
-    pActwk->free[3] = 0;
+    thanks_get_work(pActwk)->action_flag = 0;
     pActwk->PAT_ADR = &s_wait_map;
     pActwk->SPR_TIMER = s_wait_map.aPatDat[0].timer;
     pActwk->PAT_NO = 0;
@@ -447,7 +446,7 @@ static void sonicexit(sprite_status_thanks *pActwk) {
     pActwk->SPR_TIMER = s_run_map.aPatDat[0].timer;
     pActwk->PAT_NO = 0;
 
-    pActwk->free[1] = 0;
+    thanks_get_work(pActwk)->secondary_state = 0;
     pActwk->TM_CNT = 96;
 
     pActwk->EXE_NO = 13;
@@ -461,7 +460,7 @@ static void sonicesc(sprite_status_thanks *pActwk) {
 
     pEmmy = &actwk[1];
     pMetal = &actwk[2];
-    if (pActwk->free[1] == 0) {
+    if (thanks_get_work(pActwk)->secondary_state == 0) {
         --pActwk->TM_CNT;
         if (pActwk->TM_CNT > 0)
             return;
@@ -484,7 +483,7 @@ static void sonicesc(sprite_status_thanks *pActwk) {
         pEmmy->SPR_FLG &= 251;
         pMetal->SPR_FLG &= 251;
 
-        pActwk->free[1] = 1;
+        thanks_get_work(pActwk)->secondary_state = 1;
     } else {
         escape_chk(pActwk);
     }
@@ -560,7 +559,7 @@ static void emmyinit(sprite_status_thanks *pActwk) {
     pActwk->Y_SPEED.l = 0;
 
     pActwk->CGBASE = 967;
-    pActwk->free[0] = 1;
+    thanks_get_work(pActwk)->state_value = 1;
 
     pActwk->Y_ACCEL.l = 0;
 
@@ -630,7 +629,7 @@ static void e_kissset(sprite_status_thanks *pActwk) {
         pActwk->SPR_FLG |= 128;
     else
         pActwk->SPR_FLG &= 127;
-    pActwk->free[4] = 12;
+    thanks_get_work(pActwk)->heart_timer_raw = 12;
     if (get_actwk(&pNewActwk) == 0) {
         heart_tm = 1;
         pNewActwk->ACT_NO = 7;
@@ -663,11 +662,11 @@ static void emmykiss(sprite_status_thanks *pActwk) {
             }
         }
     }
-    --((char *)pActwk)[62];
-    if (((char *)pActwk)[62] < 0) {
+    --thanks_get_work(pActwk)->heart_timer;
+    if (thanks_get_work(pActwk)->heart_timer < 0) {
         if (get_actwk(&pNewActwk) == 0) {
             pNewActwk->ACT_NO = 7;
-            ((char *)pActwk)[62] = 16;
+            thanks_get_work(pActwk)->heart_timer = 16;
         }
     }
 }
@@ -708,7 +707,7 @@ static void e_jumpset(sprite_status_thanks *pActwk) {
         }
     }
     pActwk->TM_CNT = 20;
-    pActwk->free[4] = 16;
+    thanks_get_work(pActwk)->heart_timer_raw = 16;
     if (get_actwk(&pNewActwk) == 0) {
         heart_tm = 1;
         pNewActwk->ACT_NO = 7;
@@ -730,11 +729,11 @@ static void emmyjump(sprite_status_thanks *pActwk) {
             pActwk->EXE_NO = 7;
         }
     }
-    --((char *)pActwk)[62];
-    if (((char *)pActwk)[62] < 0) {
+    --thanks_get_work(pActwk)->heart_timer;
+    if (thanks_get_work(pActwk)->heart_timer < 0) {
         if (get_actwk(&pNewActwk) == 0) {
             pNewActwk->ACT_NO = 7;
-            ((char *)pActwk)[62] = 16;
+            thanks_get_work(pActwk)->heart_timer = 16;
         }
     }
 }
@@ -770,9 +769,9 @@ static void e_catchset(sprite_status_thanks *pActwk) {
     pActwk->PAT_NO = 0;
     pActwk->SPR_TIMER = ecatch_map.aPatDat[0].timer;
 
-    pActwk->free[0] = 0;
+    thanks_get_work(pActwk)->state_value = 0;
 
-    pActwk->free[4] = 12;
+    thanks_get_work(pActwk)->heart_timer_raw = 12;
     if (get_actwk(&pNewActwk) == 0) {
         heart_tm = 1;
         pNewActwk->ACT_NO = 7;
@@ -799,20 +798,20 @@ static void emmy_catch(sprite_status_thanks *pActwk) {
 
     if (pSonic->EXE_NO >= 5) {
         if (pSonic->EXE_NO < 9) {
-            --((char *)pActwk)[62];
-            if (((char *)pActwk)[62] >= 0)
+            --thanks_get_work(pActwk)->heart_timer;
+            if (thanks_get_work(pActwk)->heart_timer >= 0)
                 return;
 
             if (get_actwk(&pNewActwk) == 0) {
                 pNewActwk->ACT_NO = 7;
-                ((char *)pActwk)[62] = 16;
+                thanks_get_work(pActwk)->heart_timer = 16;
                 return;
             }
         }
     }
     pActwk->TM_CNT = 40;
     pActwk->EXE_NO = 3;
-    pActwk->free[0] = 1;
+    thanks_get_work(pActwk)->state_value = 1;
 }
 
 static void e_turnset(sprite_status_thanks *pActwk) {
@@ -888,7 +887,7 @@ static void e_standset(sprite_status_thanks *pActwk) {
         pActwk->SPR_FLG |= 128;
     else
         pActwk->SPR_FLG &= 127;
-    pActwk->free[4] = 16;
+    thanks_get_work(pActwk)->heart_timer_raw = 16;
     if (get_actwk(&pNewActwk) == 0) {
         heart_tm = 1;
         pNewActwk->ACT_NO = 7;
@@ -982,7 +981,7 @@ static void metalsinit(sprite_status_thanks *pActwk) {
     pActwk->Y_ACCEL.l = 0;
 
     pActwk->CGBASE = 25785;
-    pActwk->free[0] = 3;
+    thanks_get_work(pActwk)->state_value = 3;
     pActwk->SPR_FLG |= 128;
 
     pActwk->PAT_ADR = &m_fly1_map;
@@ -1015,7 +1014,7 @@ static void m_flyset(sprite_status_thanks *pActwk) {
     pActwk->Y_ACCEL.l = 0;
 
     pActwk->CGBASE = 25785;
-    pActwk->free[0] = 3;
+    thanks_get_work(pActwk)->state_value = 3;
 
     pActwk->PAT_ADR = &m_fly1_map;
     pActwk->SPR_TIMER = m_fly1_map.aPatDat[0].timer;
@@ -1028,7 +1027,7 @@ static void m_flyset(sprite_status_thanks *pActwk) {
     pActwk->TM_CNT += 128;
 
     if (dsplaychk(pActwk) == 0) {
-        pActwk->free[2] = 1;
+        thanks_get_work(pActwk)->sound_flag = 1;
     }
     pActwk->EXE_NO = 2;
 }
@@ -1045,19 +1044,19 @@ static void metalsfly(sprite_status_thanks *pActwk) {
     m_sndchk(pActwk);
 
     if (pActwk->SPR_FLG & 4) {
-        pActwk->free[2] = 0;
+        thanks_get_work(pActwk)->sound_flag = 0;
         pActwk->EXE_NO = 13;
         return;
     }
     if (pSonic->ACT_NO == 0) {
-        pActwk->free[2] = 0;
+        thanks_get_work(pActwk)->sound_flag = 0;
         pActwk->EXE_NO = 15;
         return;
     }
     if (pActwk->XPOSI.w.h >= 376) {
         if (pActwk->XPOSI.w.h <= 392) {
-            pActwk->free[2] = 0;
-            ((Sint16 *)pActwk)[31] = 128;
+            thanks_get_work(pActwk)->sound_flag = 0;
+            thanks_get_work(pActwk)->pit_timer = 128;
             pActwk->EXE_NO = 14;
             return;
         }
@@ -1077,7 +1076,7 @@ static void metalsfly(sprite_status_thanks *pActwk) {
 
         if (myposichk(pActwk))
             return;
-        pActwk->free[2] = 0;
+        thanks_get_work(pActwk)->sound_flag = 0;
         pActwk->EXE_NO = 3;
     }
 }
@@ -1211,7 +1210,7 @@ static void m_startset(sprite_status_thanks *pActwk) {
 
     pActwk->TM_CNT = 16;
 
-    pActwk->free[3] = 0;
+    thanks_get_work(pActwk)->action_flag = 0;
 
     pActwk->EXE_NO = 10;
 }
@@ -1221,14 +1220,14 @@ static void metalstartcttbl(sprite_status_thanks *pActwk) {
 
     --pActwk->TM_CNT;
     if (pActwk->TM_CNT < 0) {
-        if (pActwk->free[3] == 0) {
+        if (thanks_get_work(pActwk)->action_flag == 0) {
             pActwk->YPOSI.w.h = 136;
             pActwk->PAT_ADR = &m_kamae_map;
             pActwk->SPR_TIMER = m_kamae_map.aPatDat[0].timer;
             pActwk->PAT_NO = 0;
 
             pActwk->TM_CNT = 48;
-            pActwk->free[3] = 1;
+            thanks_get_work(pActwk)->action_flag = 1;
         } else {
             pActwk->EXE_NO = 1;
         }
@@ -1255,20 +1254,20 @@ static void m_eraset(sprite_status_thanks *pActwk) {
 
     pActwk->TM_CNT = 32;
 
-    pActwk->free[3] = 0;
+    thanks_get_work(pActwk)->action_flag = 0;
     pActwk->EXE_NO = 12;
 }
 
 static void metalsera(sprite_status_thanks *pActwk) {
     --pActwk->TM_CNT;
     if (pActwk->TM_CNT < 0) {
-        if (pActwk->free[3] == 0) {
+        if (thanks_get_work(pActwk)->action_flag == 0) {
             pActwk->PAT_ADR = &m_era2_map;
             pActwk->SPR_TIMER = m_era2_map.aPatDat[0].timer;
             pActwk->PAT_NO = 0;
 
             pActwk->TM_CNT = 128;
-            pActwk->free[3] = 1;
+            thanks_get_work(pActwk)->action_flag = 1;
         } else {
             pActwk->EXE_NO = 9;
         }
@@ -1317,12 +1316,12 @@ static void heartinit(sprite_status_thanks *pActwk) {
     pActwk->Y_OFFSET = 0;
 
     pActwk->CGBASE = 967;
-    pActwk->free[0] = 3;
+    thanks_get_work(pActwk)->state_value = 3;
 
     pActwk->PAT_ADR = &eheart_map;
     pActwk->PAT_NO = 0;
 
-    pActwk->free[2] = 32;
+    thanks_get_work(pActwk)->sound_flag = 32;
 
     pActwk->EXE_NO = 1;
 }
@@ -1366,7 +1365,7 @@ static void pockyinit(sprite_status_thanks *pActwk) {
     pActwk->Y_ACCEL.l = 0;
     pActwk->CGBASE = 25989;
 
-    pActwk->free[0] = 3;
+    thanks_get_work(pActwk)->state_value = 3;
     pActwk->PAT_ADR = &pocky_map;
     pActwk->SPR_TIMER = pocky_map.aPatDat[0].timer;
     pActwk->PAT_NO = 0;
@@ -1405,7 +1404,7 @@ static void peckyinit(sprite_status_thanks *pActwk) {
     pActwk->Y_ACCEL.l = 0;
     pActwk->CGBASE = 25989;
 
-    pActwk->free[0] = 3;
+    thanks_get_work(pActwk)->state_value = 3;
     pActwk->PAT_ADR = &pecky_map;
     pActwk->SPR_TIMER = pecky_map.aPatDat[0].timer;
     pActwk->PAT_NO = 0;
@@ -1444,7 +1443,7 @@ static void rickyinit(sprite_status_thanks *pActwk) {
     pActwk->Y_ACCEL.l = 0;
 
     pActwk->CGBASE = 25989;
-    pActwk->free[0] = 3;
+    thanks_get_work(pActwk)->state_value = 3;
     pActwk->PAT_ADR = &ricky_map;
     pActwk->SPR_TIMER = ricky_map.aPatDat[0].timer;
     pActwk->PAT_NO = 0;
@@ -1483,7 +1482,7 @@ static void sheepinit(sprite_status_thanks *pActwk) {
     pActwk->Y_ACCEL.l = 0;
 
     pActwk->CGBASE = 25989;
-    pActwk->free[0] = 3;
+    thanks_get_work(pActwk)->state_value = 3;
     pActwk->PAT_ADR = &sheep_map;
     pActwk->SPR_TIMER = sheep_map.aPatDat[0].timer;
     pActwk->PAT_NO = 0;
@@ -1525,7 +1524,7 @@ static void flickyinit(sprite_status_thanks *pActwk) {
     pActwk->Y_OFFSET = 0;
 
     pActwk->CGBASE = 25989;
-    pActwk->free[0] = 3;
+    thanks_get_work(pActwk)->state_value = 3;
 
     pActwk->PAT_ADR = &flick_map;
     pActwk->SPR_TIMER = flick_map.aPatDat[0].timer;
@@ -1564,7 +1563,7 @@ static void incoinit(sprite_status_thanks *pActwk) {
     pActwk->Y_OFFSET = 0;
 
     pActwk->CGBASE = 25989;
-    pActwk->free[0] = 3;
+    thanks_get_work(pActwk)->state_value = 3;
 
     pActwk->PAT_ADR = &inco_map;
     pActwk->SPR_TIMER = inco_map.aPatDat[0].timer;
@@ -1603,7 +1602,7 @@ static void hatoinit(sprite_status_thanks *pActwk) {
     pActwk->Y_OFFSET = 0;
 
     pActwk->CGBASE = 25989;
-    pActwk->free[0] = 3;
+    thanks_get_work(pActwk)->state_value = 3;
 
     pActwk->PAT_ADR = &hato_map;
     pActwk->SPR_TIMER = hato_map.aPatDat[0].timer;
@@ -1799,8 +1798,8 @@ static void escape_chk(sprite_status_thanks *pActwk) {
 
 static void pit_in(sprite_status_thanks *pActwk) {
     pActwk->XPOSI.w.h = 390;
-    if (((Sint16 *)pActwk)[31] < 2) {
-        --((Sint16 *)pActwk)[31];
+    if (thanks_get_work(pActwk)->pit_timer < 2) {
+        --thanks_get_work(pActwk)->pit_timer;
         if (pActwk->X_SPEED.l >= 0) {
             pActwk->XPOSI.w.h = 400;
         } else {
@@ -1808,22 +1807,22 @@ static void pit_in(sprite_status_thanks *pActwk) {
         }
         pActwk->EXE_NO = 2;
     } else {
-        --((Sint16 *)pActwk)[31];
+        --thanks_get_work(pActwk)->pit_timer;
     }
 }
 
 static void m_sndchk(sprite_status_thanks *pActwk) {
-    if (pActwk->free[2])
+    if (thanks_get_work(pActwk)->sound_flag)
         return;
     if (pActwk->X_SPEED.l >= 0) {
         if (pActwk->XPOSI.w.h >= 6)
             return;
-        pActwk->free[2] = 1;
+        thanks_get_work(pActwk)->sound_flag = 1;
     } else {
         if (pActwk->XPOSI.w.h < 304)
             return;
         if (pActwk->XPOSI.w.h > 312)
             return;
-        pActwk->free[2] = 1;
+        thanks_get_work(pActwk)->sound_flag = 1;
     }
 }

@@ -3,8 +3,51 @@
 #include "../action.h"
 #include "../actset.h"
 #include "../loader2.h"
+#include "../player_work.h"
 #include "../ridechk.h"
 #include "coli8.h"
+#include <stddef.h>
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 unused0[8];
+    Sint16 origin_y;
+    Uint16 linked_actor_index;
+    Sint16 origin_x;
+    Uint8 follow_x_offset;
+    Uint8 follow_y_offset;
+    Uint8 timer;
+    Uint8 unused17;
+    Uint8 pattern_index;
+    Uint8 animation_index;
+    Uint8 paired_gate;
+} trap_r81_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(trap_r81_work, origin_y) == 8,
+               "trap_r81_work.origin_y offset");
+_Static_assert(offsetof(trap_r81_work, linked_actor_index) == 10,
+               "trap_r81_work.linked_actor_index offset");
+_Static_assert(offsetof(trap_r81_work, origin_x) == 12,
+               "trap_r81_work.origin_x offset");
+_Static_assert(offsetof(trap_r81_work, follow_x_offset) == 14,
+               "trap_r81_work.follow_x_offset offset");
+_Static_assert(offsetof(trap_r81_work, follow_y_offset) == 15,
+               "trap_r81_work.follow_y_offset offset");
+_Static_assert(offsetof(trap_r81_work, timer) == 16,
+               "trap_r81_work.timer offset");
+_Static_assert(offsetof(trap_r81_work, pattern_index) == 18,
+               "trap_r81_work.pattern_index offset");
+_Static_assert(offsetof(trap_r81_work, animation_index) == 19,
+               "trap_r81_work.animation_index offset");
+_Static_assert(offsetof(trap_r81_work, paired_gate) == 20,
+               "trap_r81_work.paired_gate offset");
+_Static_assert(sizeof(trap_r81_work) <= sizeof(((sprite_status *)0)->actfree),
+               "trap_r81_work fits in actfree");
+
+static inline trap_r81_work *trap_r81_work_get(sprite_status *trapwk) {
+    return (trap_r81_work *)trapwk->actfree;
+}
 
 static void dair8_init(sprite_status *trapwk);
 static void dair8_move(sprite_status *trapwk);
@@ -24,6 +67,7 @@ sprite_pattern *togedair8pat[1] = {&dai00};
 
 void togedair8(sprite_status *trapwk) {
     void (*tbl[2])(sprite_status *) = {&dair8_init, &dair8_move};
+    trap_r81_work *work = trap_r81_work_get(trapwk);
 
     if (trapwk->userflag.b.h < 0) {
         harir8(trapwk);
@@ -31,19 +75,20 @@ void togedair8(sprite_status *trapwk) {
     }
     tbl[trapwk->r_no0 / 2](trapwk);
     actionsub(trapwk);
-    frameout_s00(trapwk, ((Sint16 *)trapwk)[29]);
+    frameout_s00(trapwk, work->origin_x);
 }
 
 static void dair8_init(sprite_status *trapwk) {
     sprite_status *new_actwk;
+    trap_r81_work *work = trap_r81_work_get(trapwk);
 
     trapwk->r_no0 += 2;
     trapwk->actflg |= 4;
 
     trapwk->sprpri = 3;
     trapwk->patbase = togedair8pat;
-    ((Sint16 *)trapwk)[29] = trapwk->xposi.w.h;
-    ((Sint16 *)trapwk)[27] = trapwk->yposi.w.h;
+    work->origin_x = trapwk->xposi.w.h;
+    work->origin_y = trapwk->yposi.w.h;
     trapwk->sprhsize = trapwk->sprvsize = 16;
     if (actwkchk(&new_actwk) != 0) {
         frameout(trapwk);
@@ -54,8 +99,8 @@ static void dair8_init(sprite_status *trapwk) {
         new_actwk->actno = 10;
         new_actwk->xposi.w.h = trapwk->xposi.w.h;
         new_actwk->yposi.w.h = trapwk->yposi.w.h;
-        new_actwk->actfree[15] = 232;
-        ((Uint16 *)new_actwk)[28] = trapwk - actwk;
+        trap_r81_work_get(new_actwk)->follow_y_offset = 232;
+        trap_r81_work_get(new_actwk)->linked_actor_index = trapwk - actwk;
         new_actwk->userflag.b.h = trapwk->userflag.b.h;
         dair8_move(trapwk);
     } else {
@@ -63,8 +108,8 @@ static void dair8_init(sprite_status *trapwk) {
         new_actwk->userflag.b.h = -1;
         new_actwk->xposi.w.h = trapwk->xposi.w.h;
         new_actwk->yposi.w.h = trapwk->yposi.w.h;
-        new_actwk->actfree[15] = 232;
-        ((Uint16 *)new_actwk)[28] = trapwk - actwk;
+        trap_r81_work_get(new_actwk)->follow_y_offset = 232;
+        trap_r81_work_get(new_actwk)->linked_actor_index = trapwk - actwk;
         dair8_move(trapwk);
     }
 }
@@ -90,33 +135,36 @@ sprite_pattern *harir8pat[2] = {&har00, &har01};
 void harir8(sprite_status *trapwk) {
     Uint16 master;
     void (*tbl[2])(sprite_status *) = {&harir8_init, &harir8_move};
+    trap_r81_work *work = trap_r81_work_get(trapwk);
 
     tbl[trapwk->r_no0 / 2](trapwk);
     actionsub(trapwk);
-    if ((master = ((Uint16 *)trapwk)[28]) != 0) {
+    if ((master = work->linked_actor_index) != 0) {
 
         if (actwk[master].actno == 0) {
             frameout(trapwk);
             return;
         }
         trapwk->xposi.w.h =
-            actwk[master].xposi.w.h + (Sint16)(char)trapwk->actfree[14];
+            actwk[master].xposi.w.h + (Sint16)(char)work->follow_x_offset;
 
         trapwk->yposi.w.h =
-            actwk[master].yposi.w.h + (Sint16)(char)trapwk->actfree[15];
+            actwk[master].yposi.w.h + (Sint16)(char)work->follow_y_offset;
     }
 
-    frameout_s00(trapwk, ((Sint16 *)trapwk)[29]);
+    frameout_s00(trapwk, work->origin_x);
 }
 
 static void harir8_init(sprite_status *trapwk) {
+    trap_r81_work *work = trap_r81_work_get(trapwk);
+
     trapwk->r_no0 += 2;
     trapwk->actflg |= 4;
 
     trapwk->sprpri = 4;
     trapwk->patbase = harir8pat;
-    ((Sint16 *)trapwk)[29] = trapwk->xposi.w.h;
-    ((Sint16 *)trapwk)[27] = trapwk->yposi.w.h;
+    work->origin_x = trapwk->xposi.w.h;
+    work->origin_y = trapwk->yposi.w.h;
 
     trapwk->sprhsize = 16;
     trapwk->sprvsize = 8;
@@ -147,7 +195,7 @@ static void harir8_move(sprite_status *trapwk) {
 
         if (actwk[0].r_no0 >= 4)
             return;
-        if (((Sint16 *)&actwk[0])[26] != 0)
+        if (player_work_get(&actwk[0])->damage_invulnerability_timer != 0)
             return;
         actwk[0].yposi.l -= actwk[0].yspeed.w << 8;
         playdamageset(&actwk[0], trapwk);
@@ -197,10 +245,11 @@ sprite_pattern *anar8pat[18] = {&anal0, &anal1, &anal2, &anal3, &anal4, &anal5,
 
 void anar8(sprite_status *trapwk) {
     void (*tbl[3])(sprite_status *) = {&anar8_init, &anar8_move1, &anar8_move2};
+    trap_r81_work *work = trap_r81_work_get(trapwk);
 
     tbl[trapwk->r_no0 / 2](trapwk);
     actionsub(trapwk);
-    frameout_s00(trapwk, ((Sint16 *)trapwk)[29]);
+    frameout_s00(trapwk, work->origin_x);
 }
 
 static void anar8_ridechk(sprite_status *trapwk) { ridechk(trapwk, &actwk[0]); }
@@ -211,6 +260,7 @@ static void anar8_rideclr(sprite_status *trapwk) {
 
 static void anar8_init(sprite_status *trapwk) {
     sprite_status *new_actwk;
+    trap_r81_work *work = trap_r81_work_get(trapwk);
 
     trapwk->r_no0 += 2;
     trapwk->actflg |= 4;
@@ -221,13 +271,13 @@ static void anar8_init(sprite_status *trapwk) {
     trapwk->sprhsize = 4;
     trapwk->patno = 16;
 
-    if (trapwk->actfree[20] != 0) {
+    if (work->paired_gate != 0) {
         anar8_move1(trapwk);
         return;
     }
 
     trapwk->xposi.w.h -= 4;
-    ((Sint16 *)trapwk)[29] = trapwk->xposi.w.h;
+    work->origin_x = trapwk->xposi.w.h;
     if (actwkchk(&new_actwk) != 0) {
         frameout(trapwk);
         return;
@@ -235,24 +285,25 @@ static void anar8_init(sprite_status *trapwk) {
     new_actwk->actno = 55;
     new_actwk->xposi.w.h = trapwk->xposi.w.h + 128;
     new_actwk->yposi.w.h = trapwk->yposi.w.h;
-    ((Sint16 *)new_actwk)[29] = ((Sint16 *)trapwk)[29];
+    trap_r81_work_get(new_actwk)->origin_x = work->origin_x;
 
     new_actwk->mstno.w = 1;
-    new_actwk->actfree[20] = 1;
+    trap_r81_work_get(new_actwk)->paired_gate = 1;
     anar8_move1(trapwk);
 }
 
 static void anar8_move1(sprite_status *trapwk) {
     Sint16 x_adder;
     Uint8 *patchg_data;
+    trap_r81_work *work = trap_r81_work_get(trapwk);
 
-    if (trapwk->actfree[16] != 0) {
-        --trapwk->actfree[16];
+    if (work->timer != 0) {
+        --work->timer;
         anar8_rideclr(trapwk);
         return;
     }
 
-    if (trapwk->actfree[20] == 0) {
+    if (work->paired_gate == 0) {
         patchg_data = gater8pchgl;
         x_adder = 4;
     } else {
@@ -263,12 +314,12 @@ static void anar8_move1(sprite_status *trapwk) {
     if (trapwk->actflg & 128)
         soundset(164);
 
-    trapwk->patno = patchg_data[trapwk->actfree[19] * 2];
-    trapwk->sprhsize = patchg_data[trapwk->actfree[19] * 2 + 1];
+    trapwk->patno = patchg_data[work->animation_index * 2];
+    trapwk->sprhsize = patchg_data[work->animation_index * 2 + 1];
     trapwk->xposi.w.h += x_adder;
-    if (++trapwk->actfree[19] == 8) {
-        trapwk->actfree[16] = 60;
-        trapwk->actfree[19] = 0;
+    if (++work->animation_index == 8) {
+        work->timer = 60;
+        work->animation_index = 0;
         trapwk->r_no0 += 2;
     }
     anar8_ridechk(trapwk);
@@ -277,14 +328,15 @@ static void anar8_move1(sprite_status *trapwk) {
 static void anar8_move2(sprite_status *trapwk) {
     Sint16 x_adder;
     Uint8 *patchg_data;
+    trap_r81_work *work = trap_r81_work_get(trapwk);
 
-    if (trapwk->actfree[16] != 0) {
-        --trapwk->actfree[16];
+    if (work->timer != 0) {
+        --work->timer;
         anar8_ridechk(trapwk);
         return;
     }
 
-    if (trapwk->actfree[20] == 0) {
+    if (work->paired_gate == 0) {
         patchg_data = anar8pchgl;
         x_adder = -4;
     } else {
@@ -295,12 +347,12 @@ static void anar8_move2(sprite_status *trapwk) {
     if (trapwk->actflg & 128)
         soundset(164);
 
-    trapwk->patno = patchg_data[trapwk->actfree[19] * 2];
-    trapwk->sprhsize = patchg_data[trapwk->actfree[19] * 2 + 1];
+    trapwk->patno = patchg_data[work->animation_index * 2];
+    trapwk->sprhsize = patchg_data[work->animation_index * 2 + 1];
     trapwk->xposi.w.h += x_adder;
-    if (++trapwk->actfree[19] == 8) {
-        trapwk->actfree[16] = 60;
-        trapwk->actfree[19] = 0;
+    if (++work->animation_index == 8) {
+        work->timer = 60;
+        work->animation_index = 0;
         trapwk->patno = 16;
         trapwk->sprhsize = 0;
         trapwk->r_no0 -= 2;
@@ -352,11 +404,12 @@ sprite_pattern *futagor8pat[7] = {&fut00, &fut01, &fut02, &fut03,
 
 void futagor8(sprite_status *trapwk) {
     void (*tbl[2])(sprite_status *) = {&futagor8_init, &futagor8_move1};
+    trap_r81_work *work = trap_r81_work_get(trapwk);
 
     tbl[trapwk->r_no0 / 2](trapwk);
     futagor8_ridechk(trapwk);
     actionsub(trapwk);
-    frameout_s00(trapwk, ((Sint16 *)trapwk)[29]);
+    frameout_s00(trapwk, work->origin_x);
 }
 
 static void futagor8_ridechk(sprite_status *trapwk) {
@@ -364,28 +417,31 @@ static void futagor8_ridechk(sprite_status *trapwk) {
 }
 
 static void futagor8_init(sprite_status *trapwk) {
+    trap_r81_work *work = trap_r81_work_get(trapwk);
+
     trapwk->r_no0 += 2;
     trapwk->actflg |= 4;
     trapwk->sprpri = 3;
 
     trapwk->patbase = futagor8pat;
-    ((Sint16 *)trapwk)[29] = trapwk->xposi.w.h;
-    ((Sint16 *)trapwk)[27] = trapwk->yposi.w.h;
+    work->origin_x = trapwk->xposi.w.h;
+    work->origin_y = trapwk->yposi.w.h;
     futagor8_move1(trapwk);
 }
 
 static void futagor8_move1(sprite_status *trapwk) {
     Uint8 patchg_point;
+    trap_r81_work *work = trap_r81_work_get(trapwk);
 
-    if (trapwk->actfree[16] == 0) {
-        patchg_point = trapwk->actfree[18] * 4;
+    if (work->timer == 0) {
+        patchg_point = work->pattern_index * 4;
         trapwk->patno = futagor8_pchg[patchg_point];
-        trapwk->actfree[16] = futagor8_pchg[patchg_point + 1];
+        work->timer = futagor8_pchg[patchg_point + 1];
         trapwk->sprhsize = futagor8_pchg[patchg_point + 2];
         trapwk->sprvsize = futagor8_pchg[patchg_point + 3];
-    } else if (--trapwk->actfree[16] == 0) {
-        if (++trapwk->actfree[18] >= 12)
-            trapwk->actfree[18] = 0;
+    } else if (--work->timer == 0) {
+        if (++work->pattern_index >= 12)
+            work->pattern_index = 0;
     }
 
     if (trapwk->patno != 0)

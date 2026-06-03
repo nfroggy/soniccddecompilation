@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "kanabun.h"
 #include "../action.h"
@@ -5,6 +7,38 @@
 #include "../etc.h"
 #include "../playsub.h"
 #include "../suicide.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint8 unused0[4];
+    Sint32 y_base;
+    Sint16 wave_angle;
+    Sint16 wave_angle_step;
+    Uint8 **patch_data;
+    Sint16 origin_x;
+    Sint32 x_speed;
+} kanabun_work;
+#pragma pack(pop)
+
+_Static_assert(sizeof(Uint8 **) == 4, "kanabun_work uses the Win32 DLL layout");
+_Static_assert(offsetof(kanabun_work, y_base) == 4,
+               "kanabun_work.y_base offset");
+_Static_assert(offsetof(kanabun_work, wave_angle) == 8,
+               "kanabun_work.wave_angle offset");
+_Static_assert(offsetof(kanabun_work, wave_angle_step) == 10,
+               "kanabun_work.wave_angle_step offset");
+_Static_assert(offsetof(kanabun_work, patch_data) == 12,
+               "kanabun_work.patch_data offset");
+_Static_assert(offsetof(kanabun_work, origin_x) == 16,
+               "kanabun_work.origin_x offset");
+_Static_assert(offsetof(kanabun_work, x_speed) == 18,
+               "kanabun_work.x_speed offset");
+_Static_assert(sizeof(kanabun_work) <= sizeof(((sprite_status *)0)->actfree),
+               "kanabun_work fits in actfree");
+
+static kanabun_work *kanabun_get_work(sprite_status *pActwk) {
+    return (kanabun_work *)pActwk->actfree;
+}
 
 static sprite_pattern pat_e00 = {1, {{-16, -16, 128, 415}}};
 static sprite_pattern pat_e01 = {1, {{-16, -16, 128, 416}}};
@@ -42,6 +76,7 @@ void kanabun(sprite_status *pActwk) {
     int_union poswk;
     Sint32 spdwk;
     Sint16 sinwk, coswk;
+    kanabun_work *pWork = kanabun_get_work(pActwk);
 
     if (enemy_suicide(pActwk))
         return;
@@ -55,53 +90,54 @@ void kanabun(sprite_status *pActwk) {
         pActwk->sprhs = 16;
         pActwk->sprhsize = 16;
         pActwk->sprvsize = 16;
-        ((Sint16 *)pActwk)[31] = pActwk->xposi.w.h;
-        ((Sint16 *)pActwk)[26] = pActwk->yposi.w.h;
-        ((Sint16 *)pActwk)[25] = -32768;
+        pWork->origin_x = pActwk->xposi.w.h;
+        pWork->y_base =
+            (Sint32)(((Uint32)(Uint16)pActwk->yposi.w.h << 16) |
+                     (Uint16)-32768);
 
         if (!pActwk->userflag.b.h) {
             pActwk->patbase = pat_kanabun_e;
-            *(Uint8 ***)&pActwk->actfree[12] = pchg_e;
-            ((Sint16 *)pActwk)[28] = -512;
-            ((Sint32 *)pActwk)[16] = -16384;
+            pWork->patch_data = pchg_e;
+            pWork->wave_angle_step = -512;
+            pWork->x_speed = -16384;
         } else {
             pActwk->patbase = pat_kanabun_b;
-            *(Uint8 ***)&pActwk->actfree[12] = pchg_b;
-            ((Sint16 *)pActwk)[28] = -256;
-            ((Sint32 *)pActwk)[16] = -16384;
+            pWork->patch_data = pchg_b;
+            pWork->wave_angle_step = -256;
+            pWork->x_speed = -16384;
         }
     }
 
-    poswk.l = spdwk = pActwk->xposi.l + ((Sint32 *)pActwk)[16];
+    poswk.l = spdwk = pActwk->xposi.l + pWork->x_speed;
     poswk.l = (Uint32)poswk.l >> 16 & 65535 | poswk.l << 16 & -65536;
 
-    if ((poswk.w.l -= ((Sint16 *)pActwk)[31]) < 0) {
+    if ((poswk.w.l -= pWork->origin_x) < 0) {
         poswk.w.l *= -1;
     }
 
     if (poswk.w.l > 64) {
-        ((Sint32 *)pActwk)[16] *= -1;
-        spdwk += ((Sint32 *)pActwk)[16];
+        pWork->x_speed *= -1;
+        spdwk += pWork->x_speed;
         pActwk->actflg ^= 1;
         pActwk->cddat ^= 1;
-        ((Sint16 *)pActwk)[27] = 0;
+        pWork->wave_angle = 0;
         pActwk->mstno.w = 255;
     }
 
     pActwk->xposi.l = spdwk;
-    poswk.w.l = ((Sint16 *)pActwk)[27] + ((Sint16 *)pActwk)[28];
+    poswk.w.l = pWork->wave_angle + pWork->wave_angle_step;
 
-    ((Sint16 *)pActwk)[27] = poswk.w.l;
+    pWork->wave_angle = poswk.w.l;
     poswk.w.l = (Uint16)poswk.w.l >> 8;
     sinset(poswk.w.l, &sinwk, &coswk);
     poswk.w.l = sinwk;
     poswk.l = (Uint32)poswk.l >> 16 & 65535 | poswk.l << 16 & -65536;
     poswk.l >>= 2;
-    poswk.l += *(Sint32 *)&pActwk->actfree[4];
+    poswk.l += pWork->y_base;
     pActwk->yposi.l = poswk.l;
 
-    patchg(pActwk, *(Uint8 ***)&pActwk->actfree[12]);
+    patchg(pActwk, pWork->patch_data);
     pActwk->colino = tbl0[pActwk->patno >> 1];
     actionsub(pActwk);
-    frameout_s00(pActwk, ((Sint16 *)pActwk)[31]);
+    frameout_s00(pActwk, pWork->origin_x);
 }

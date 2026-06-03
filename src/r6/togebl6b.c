@@ -1,8 +1,63 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "togebl6a.h"
 #include "../action.h"
 #include "../actset.h"
 #include "../etc.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    union {
+        struct {
+            Sint16 angle;
+            Sint16 angular_speed;
+            Uint16 child_index[4];
+        };
+        struct {
+            union {
+                Sint32 target_x_long;
+                struct {
+                    Uint16 target_x_fraction;
+                    Sint16 target_x;
+                };
+            };
+            union {
+                Sint32 target_y_long;
+                struct {
+                    Uint16 target_y_fraction;
+                    Sint16 target_y;
+                };
+            };
+        };
+    };
+    Uint8 unused12[8];
+    Uint16 parent_index;
+} togeball6b_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(togeball6b_work, angle) == 0,
+               "togeball6b_work.angle offset");
+_Static_assert(offsetof(togeball6b_work, angular_speed) == 2,
+               "togeball6b_work.angular_speed offset");
+_Static_assert(offsetof(togeball6b_work, child_index) == 4,
+               "togeball6b_work.child_index offset");
+_Static_assert(offsetof(togeball6b_work, target_x_long) == 0,
+               "togeball6b_work.target_x_long offset");
+_Static_assert(offsetof(togeball6b_work, target_x) == 2,
+               "togeball6b_work.target_x offset");
+_Static_assert(offsetof(togeball6b_work, target_y_long) == 4,
+               "togeball6b_work.target_y_long offset");
+_Static_assert(offsetof(togeball6b_work, target_y) == 6,
+               "togeball6b_work.target_y offset");
+_Static_assert(offsetof(togeball6b_work, parent_index) == 20,
+               "togeball6b_work.parent_index offset");
+_Static_assert(sizeof(togeball6b_work) <= sizeof(((sprite_status *)0)->actfree),
+               "togeball6b_work fits in actfree");
+
+static togeball6b_work *togeball6b_get_work(sprite_status *actionwk) {
+    return (togeball6b_work *)actionwk->actfree;
+}
 
 static void act_init(sprite_status *actionwk);
 static void act_move(sprite_status *actionwk);
@@ -33,6 +88,7 @@ void togeball_main(sprite_status *actionwk) {
 }
 
 static void act_init(sprite_status *actionwk) {
+    togeball6b_work *work = togeball6b_get_work(actionwk);
     sprite_status *a1;
 
     actionwk->r_no0 += 2;
@@ -42,16 +98,16 @@ static void act_init(sprite_status *actionwk) {
     actionwk->sprvsize = 8;
     actionwk->patbase = pat_chg;
     actionwk->sproffset = 1016;
-    ((Sint16 *)actionwk)[24] = 256;
+    work->angular_speed = 256;
     if (actionwk->userflag.b.h != 0)
-        ((Sint16 *)actionwk)[24] = -((Sint16 *)actionwk)[24];
+        work->angular_speed = -work->angular_speed;
 
     if (actwkchk2(actionwk, &a1) != 0) {
         frameout(actionwk);
         return;
     }
-    ((Uint16 *)a1)[33] = actionwk - actwk;
-    ((Uint16 *)actionwk)[25] = a1 - actwk;
+    togeball6b_get_work(a1)->parent_index = actionwk - actwk;
+    work->child_index[0] = a1 - actwk;
     a1->actno = actionwk->actno;
     a1->userflag.b.h = -1;
     a1->sprhsize = 8;
@@ -61,8 +117,8 @@ static void act_init(sprite_status *actionwk) {
         frameout(actionwk);
         return;
     }
-    ((Uint16 *)a1)[33] = actionwk - actwk;
-    ((Uint16 *)actionwk)[26] = a1 - actwk;
+    togeball6b_get_work(a1)->parent_index = actionwk - actwk;
+    work->child_index[1] = a1 - actwk;
     a1->actno = actionwk->actno;
     a1->userflag.b.h = -1;
     a1->sprhsize = 8;
@@ -72,8 +128,8 @@ static void act_init(sprite_status *actionwk) {
         frameout(actionwk);
         return;
     }
-    ((Uint16 *)a1)[33] = actionwk - actwk;
-    ((Uint16 *)actionwk)[27] = a1 - actwk;
+    togeball6b_get_work(a1)->parent_index = actionwk - actwk;
+    work->child_index[2] = a1 - actwk;
     a1->actno = actionwk->actno;
     a1->userflag.b.h = -1;
     a1->sprhsize = 8;
@@ -83,8 +139,8 @@ static void act_init(sprite_status *actionwk) {
         frameout(actionwk);
         return;
     }
-    ((Uint16 *)a1)[33] = actionwk - actwk;
-    ((Uint16 *)actionwk)[27] = a1 - actwk;
+    togeball6b_get_work(a1)->parent_index = actionwk - actwk;
+    work->child_index[2] = a1 - actwk;
     a1->actno = actionwk->actno;
     a1->userflag.b.h = -1;
     a1->sprhsize = 8;
@@ -94,8 +150,8 @@ static void act_init(sprite_status *actionwk) {
         frameout(actionwk);
         return;
     }
-    ((Uint16 *)a1)[33] = actionwk - actwk;
-    ((Uint16 *)actionwk)[28] = a1 - actwk;
+    togeball6b_get_work(a1)->parent_index = actionwk - actwk;
+    work->child_index[3] = a1 - actwk;
     a1->actno = actionwk->actno;
     a1->userflag.b.h = -1;
     a1->sprhsize = 8;
@@ -103,14 +159,15 @@ static void act_init(sprite_status *actionwk) {
 }
 
 static void act_move(sprite_status *actionwk) {
+    togeball6b_work *work = togeball6b_get_work(actionwk);
     Sint16 d0;
     Uint16 sin, cos;
     Sint32 d0l, d1l, d2l, d3l, d4l, d5l;
     sprite_status *a1;
 
-    d0 = ((Sint16 *)actionwk)[24];
-    ((Sint16 *)actionwk)[23] += d0;
-    d0 = ((Sint16 *)actionwk)[23];
+    d0 = work->angular_speed;
+    work->angle += d0;
+    d0 = work->angle;
     d0 >>= 8;
 
     sinset(d0, (Sint16 *)&sin, (Sint16 *)&cos);
@@ -127,19 +184,19 @@ static void act_move(sprite_status *actionwk) {
     d3l = d1l;
     d0l >>= 1;
     d1l >>= 1;
-    a1 = &actwk[((Uint16 *)actionwk)[25]];
-    *(Sint32 *)&a1->actfree[4] = actionwk->yposi.l + d0l;
-    *(Sint32 *)&a1->actfree[0] = actionwk->xposi.l + d1l;
-    a1 = &actwk[((Uint16 *)actionwk)[26]];
-    *(Sint32 *)&a1->actfree[4] = actionwk->yposi.l + d2l;
-    *(Sint32 *)&a1->actfree[0] = actionwk->xposi.l + d3l;
-    a1 = &actwk[((Uint16 *)actionwk)[27]];
-    *(Sint32 *)&a1->actfree[4] = actionwk->yposi.l + d0l + d2l;
-    *(Sint32 *)&a1->actfree[0] = actionwk->xposi.l + d1l + d3l;
+    a1 = &actwk[work->child_index[0]];
+    togeball6b_get_work(a1)->target_y_long = actionwk->yposi.l + d0l;
+    togeball6b_get_work(a1)->target_x_long = actionwk->xposi.l + d1l;
+    a1 = &actwk[work->child_index[1]];
+    togeball6b_get_work(a1)->target_y_long = actionwk->yposi.l + d2l;
+    togeball6b_get_work(a1)->target_x_long = actionwk->xposi.l + d3l;
+    a1 = &actwk[work->child_index[2]];
+    togeball6b_get_work(a1)->target_y_long = actionwk->yposi.l + d0l + d2l;
+    togeball6b_get_work(a1)->target_x_long = actionwk->xposi.l + d1l + d3l;
 
-    a1 = &actwk[((Uint16 *)actionwk)[28]];
-    *(Sint32 *)&a1->actfree[4] = actionwk->yposi.l + d4l;
-    *(Sint32 *)&a1->actfree[0] = actionwk->xposi.l + d5l;
+    a1 = &actwk[work->child_index[3]];
+    togeball6b_get_work(a1)->target_y_long = actionwk->yposi.l + d4l;
+    togeball6b_get_work(a1)->target_x_long = actionwk->xposi.l + d5l;
 }
 
 void togeball_opt(sprite_status *actionwk) {
@@ -152,7 +209,7 @@ void togeball_opt(sprite_status *actionwk) {
         act_move2(actionwk);
         break;
     }
-    a1 = &actwk[((Uint16 *)actionwk)[33]];
+    a1 = &actwk[togeball6b_get_work(actionwk)->parent_index];
     if (a1->actno != 45) {
         frameout(actionwk);
         return;
@@ -170,6 +227,8 @@ void act_init2(sprite_status *actionwk) {
 }
 
 void act_move2(sprite_status *actionwk) {
-    actionwk->xposi.w.h = ((Sint16 *)actionwk)[24];
-    actionwk->yposi.w.h = ((Sint16 *)actionwk)[26];
+    togeball6b_work *work = togeball6b_get_work(actionwk);
+
+    actionwk->xposi.w.h = work->target_x;
+    actionwk->yposi.w.h = work->target_y;
 }

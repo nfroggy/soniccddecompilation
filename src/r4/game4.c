@@ -828,8 +828,8 @@ void watercoli(void) {
         if (actwk[0].yposi.w.h >= watercolitbl[i + 3].w)
             continue;
 
-        if (((char *)&watercolitbl[i + 6])[1] == 1) {
-            if (!(switchflag[((char *)&watercolitbl[i + 6])[0]] & 64))
+        if (watercolitbl[i + 6].b.h == 1) {
+            if (!(switchflag[watercolitbl[i + 6].b.l] & 64))
                 return;
         }
 
@@ -844,8 +844,8 @@ void watercoli(void) {
         actwk[0].mstno.b.h = 15;
         actwk[0].cddat |= 2;
 
-        if (((char *)&watercolitbl[i + 6])[1] == 2) {
-            if (switchflag[((char *)&watercolitbl[i + 6])[0]] & 32) {
+        if (watercolitbl[i + 6].b.h == 2) {
+            if (switchflag[watercolitbl[i + 6].b.l] & 32) {
                 actwk[0].xspeed.w *= -1;
                 actwk[0].yspeed.w *= -1;
             }
@@ -886,3 +886,4 @@ dlink_export ExportedFunctions = {&game_init,
                                   &SetDebugFlag,
                                   &GetRoundStr,
                                   0};
+

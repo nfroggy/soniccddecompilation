@@ -281,7 +281,7 @@ PALETTEENTRY ta_stage_col[2][8][16] = {{{{15, 0, 15, 1},
                                          {207, 140, 15, 1},
                                          {143, 72, 79, 1}}}};
 extern PALETTEENTRY *lpcolorwk;
-static Sint16 clchgcnt[4];
+static Uint16 clchgcnt[4];
 
 void TAColorSet(Sint32 mode) {
     Sint32 i;
@@ -328,7 +328,7 @@ void TAColorChgSP6(void) {
     d5 = 2;
     d6 = 0;
     d7 = 24;
-    d0 = (Sint16)(cntplus((Uint16 *)clchgcnt, d5, d6, d7) & 65534);
+    d0 = (Sint16)(cntplus(clchgcnt, d5, d6, d7) & 65534);
 
     d0 >>= 1;
     lpPeDest = &lpcolorwk[33];
@@ -336,3 +336,4 @@ void TAColorChgSP6(void) {
         *lpPeDest++ = tbl0[d0++];
     }
 }
+

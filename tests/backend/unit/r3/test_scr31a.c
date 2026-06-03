@@ -842,10 +842,10 @@ static void test_scr31a_scrollwrt_and_mapwrt_emit_grid_writes(
 static void test_scr31a_direct_vram_and_zone_water_writer(test_context *ctx) {
     POINT tile = {0, 0};
     int_union *out;
-    Uint16 *src;
+    Sint16 *src;
     Uint16 bands[3] = {0, 16, 32767};
-    Uint16 source[8] = {100, 101, 102, 103, 104, 105, 106, 107};
-    Uint16 d2 = 0;
+    Sint16 source[8] = {100, 101, 102, 103, 104, 105, 106, 107};
+    Sint16 d2 = 0;
     Uint16 d4 = 0;
 
     reset_scr31a_state();

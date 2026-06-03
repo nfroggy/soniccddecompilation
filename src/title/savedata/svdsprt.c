@@ -118,7 +118,7 @@ Uint32 CreateCharSprt(char c, Sint32 kind, Sint32 nBlockNo, Sint32 nSprNum) {
         if (hSprMes[nSprNum] != 0)
             return 0;
 
-        sprCreate((Sint32 *)&hSprMes[nSprNum]);
+        sprCreate(&hSprMes[nSprNum]);
 
         point.x = nPosiXSprMes[nSprNum];
         point.y = 10;
@@ -136,7 +136,7 @@ Uint32 CreateCharSprt(char c, Sint32 kind, Sint32 nBlockNo, Sint32 nSprNum) {
         if (hSprFile[nBlockNo - 2][nSprNum] != 0)
             return 0;
 
-        sprCreate((Sint32 *)&hSprFile[nBlockNo - 2][nSprNum]);
+        sprCreate(&hSprFile[nBlockNo - 2][nSprNum]);
 
         point.x = nPosiXSprFile[nSprNum].x;
         point.y = (nBlockNo - 2) * 32 + 32 + nPosiXSprFile[nSprNum].y;

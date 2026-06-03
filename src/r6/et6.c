@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "et6.h"
 #include "../action.h"
@@ -6,6 +8,38 @@
 #include "../playsub.h"
 #include "../ridechk.h"
 #include "../score.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    union {
+        Uint8 explosion_timer;
+        Uint8 reset_timer;
+        Uint16 hover_counter;
+        Sint16 hover_counter_signed;
+    };
+    Sint16 explosion_table_offset;
+    Uint8 unused4[2];
+    Sint16 origin_y;
+    Sint16 hover_direction;
+} et6_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(et6_work, explosion_timer) == 0,
+               "et6_work.explosion_timer offset");
+_Static_assert(offsetof(et6_work, hover_counter) == 0,
+               "et6_work.hover_counter offset");
+_Static_assert(offsetof(et6_work, explosion_table_offset) == 2,
+               "et6_work.explosion_table_offset offset");
+_Static_assert(offsetof(et6_work, origin_y) == 6,
+               "et6_work.origin_y offset");
+_Static_assert(offsetof(et6_work, hover_direction) == 8,
+               "et6_work.hover_direction offset");
+_Static_assert(sizeof(et6_work) <= sizeof(((sprite_status *)0)->actfree),
+               "et6_work fits in actfree");
+
+static et6_work *et6_get_work(sprite_status *actionwk) {
+    return (et6_work *)actionwk->actfree;
+}
 
 static void m_init(sprite_status *actionwk);
 static void m_wait(sprite_status *actionwk);
@@ -64,6 +98,7 @@ void et(sprite_status *actionwk) {
 }
 
 static void m_init(sprite_status *actionwk) {
+    et6_work *work = et6_get_work(actionwk);
     Uint16 *a1;
     Uint16 d0;
 
@@ -80,10 +115,10 @@ static void m_init(sprite_status *actionwk) {
 
     actionwk->patbase = pat_et;
 
-    ((Sint16 *)actionwk)[24] = 0;
-    ((Sint16 *)actionwk)[26] = actionwk->yposi.w.h;
-    ((Sint16 *)actionwk)[23] = 4;
-    ((Sint16 *)actionwk)[27] = 1;
+    work->explosion_table_offset = 0;
+    work->origin_y = actionwk->yposi.w.h;
+    work->hover_counter_signed = 4;
+    work->hover_direction = 1;
 
     d0 = 0;
     if (generate_flag == 0)
@@ -99,6 +134,7 @@ static void m_init(sprite_status *actionwk) {
 }
 
 static void m_wait(sprite_status *actionwk) {
+    et6_work *work = et6_get_work(actionwk);
     Sint32 d0;
     sprite_status *a1;
 
@@ -108,7 +144,7 @@ static void m_wait(sprite_status *actionwk) {
 
     if (actionwk->colicnt != 0) {
         actionwk->colino = 0;
-        ((Sint16 *)actionwk)[23] = 0;
+        work->hover_counter_signed = 0;
         actionwk->patno = 7;
         actionwk->r_no0 += 2;
         generate_flag = 1;
@@ -124,24 +160,25 @@ static void m_wait(sprite_status *actionwk) {
 }
 
 void m_die(sprite_status *actionwk) {
+    et6_work *work = et6_get_work(actionwk);
     sprite_status *a1;
     char d0;
     Sint16 d5, d6, a6;
 
-    a6 = ((Sint16 *)actionwk)[24];
+    a6 = work->explosion_table_offset;
     d0 = tbl0[a6++];
     if (d0 < 0) {
 
         actionwk->r_no0 += 2;
-        ((char *)actionwk)[46] = 8;
+        work->reset_timer = 8;
         return;
     }
-    ++((char *)actionwk)[46];
-    if (((char *)actionwk)[46] != d0)
+    ++work->explosion_timer;
+    if (work->explosion_timer != d0)
         return;
     d5 = tbl0[a6++];
     d6 = tbl0[a6++];
-    ((Sint16 *)actionwk)[24] = a6;
+    work->explosion_table_offset = a6;
     if (actwkchk(&a1) != 0)
         return;
     a1->actno = 24;
@@ -155,26 +192,29 @@ void m_die(sprite_status *actionwk) {
 }
 
 void m1wait(sprite_status *actionwk) {
-    if (--actionwk->actfree[0])
+    et6_work *work = et6_get_work(actionwk);
+
+    if (--work->reset_timer)
         return;
     actionwk->r_no0 -= 6;
-    actionwk->yposi.w.h = ((Sint16 *)actionwk)[26];
+    actionwk->yposi.w.h = work->origin_y;
     soundset(217);
 }
 
 void a_hover(sprite_status *actionwk) {
+    et6_work *work = et6_get_work(actionwk);
     Uint16 d0;
 
-    ++((Uint16 *)actionwk)[23];
-    d0 = ((Uint16 *)actionwk)[23];
+    ++work->hover_counter;
+    d0 = work->hover_counter;
     d0 &= 7;
     if (d0 == 0) {
 
-        d0 = ((Uint16 *)actionwk)[27];
+        d0 = work->hover_direction;
         actionwk->yposi.w.h += d0;
     }
-    d0 = ((Uint16 *)actionwk)[23];
+    d0 = work->hover_counter;
     d0 &= 31;
     if (d0 == 0)
-        ((Sint16 *)actionwk)[27] = -((Sint16 *)actionwk)[27];
+        work->hover_direction = -work->hover_direction;
 }

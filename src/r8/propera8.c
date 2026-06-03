@@ -1,9 +1,39 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "propera8.h"
 #include "../action.h"
 #include "../actset.h"
 #include "../dircol.h"
 #include "../playsub.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint16 timer;
+    Sint32 x_speed;
+    Sint16 base_x;
+    Uint8 unused8[10];
+    Sint16 child_y_offset;
+    Sint16 parent_index;
+} propera8_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(propera8_work, timer) == 0,
+               "propera8_work.timer offset");
+_Static_assert(offsetof(propera8_work, x_speed) == 2,
+               "propera8_work.x_speed offset");
+_Static_assert(offsetof(propera8_work, base_x) == 6,
+               "propera8_work.base_x offset");
+_Static_assert(offsetof(propera8_work, child_y_offset) == 18,
+               "propera8_work.child_y_offset offset");
+_Static_assert(offsetof(propera8_work, parent_index) == 20,
+               "propera8_work.parent_index offset");
+_Static_assert(sizeof(propera8_work) <= sizeof(((sprite_status *)0)->actfree),
+               "propera8_work fits in actfree");
+
+static propera8_work *propera8_get_work(sprite_status *actionwk) {
+    return (propera8_work *)actionwk->actfree;
+}
 
 static char p00[4] = {10, 0, 1, -1};
 static char p01[8] = {2, 0, 1, 2, 3, 4, 5, -1};
@@ -44,20 +74,21 @@ void propera0(sprite_status *actionwk) {
     }
     patchg(actionwk, (Uint8 **)pchg);
     actionsub(actionwk);
-    frameout_s00(actionwk, ((Sint16 *)actionwk)[26]);
+    frameout_s00(actionwk, propera8_get_work(actionwk)->base_x);
 }
 
 void a_init(sprite_status *actionwk) {
+    propera8_work *work = propera8_get_work(actionwk);
     sprite_status *a1, *a2;
 
-    ((Sint16 *)actionwk)[26] = actionwk->xposi.w.h;
+    work->base_x = actionwk->xposi.w.h;
 
     actionwk->r_no0 += 2;
     actionwk->actflg |= 4;
     actionwk->sprpri = 4;
     actionwk->sproffset = 874;
-    ((Sint16 *)actionwk)[23] = 128;
-    ((Sint32 *)actionwk)[12] = 65536;
+    work->timer = 128;
+    work->x_speed = 65536;
     actionwk->patbase = pat_propera;
     actionwk->sprhs = 8;
     actionwk->sprhsize = 8;
@@ -69,7 +100,7 @@ void a_init(sprite_status *actionwk) {
     }
 
     a1->actno = actionwk->actno;
-    ((Uint16 *)a1)[33] = actionwk - actwk;
+    propera8_get_work(a1)->parent_index = actionwk - actwk;
     a1->userflag.b.h = 1;
     a2 = a1;
     if (actwkchk2(actionwk, &a1) != 0) {
@@ -78,16 +109,16 @@ void a_init(sprite_status *actionwk) {
     }
 
     a1->actno = actionwk->actno;
-    ((Uint16 *)a1)[33] = actionwk - actwk;
+    propera8_get_work(a1)->parent_index = actionwk - actwk;
     a1->userflag.b.h = -1;
-    ((Sint16 *)a1)[32] = -44;
-    ((Sint16 *)a2)[32] = 20;
+    propera8_get_work(a1)->child_y_offset = -44;
+    propera8_get_work(a2)->child_y_offset = 20;
     a2->actflg |= 2;
     a2->cddat |= 2;
 
     a_init_sub(a1);
     a_init_sub(a2);
-    ((Uint16 *)a2)[33] = actionwk - actwk;
+    propera8_get_work(a2)->parent_index = actionwk - actwk;
 }
 
 void a_init_sub(sprite_status *actionwk) {
@@ -112,25 +143,27 @@ void a_fall(sprite_status *actionwk) {
 }
 
 void a_move(sprite_status *actionwk) {
+    propera8_work *work = propera8_get_work(actionwk);
     Sint16 d1;
 
-    actionwk->xposi.l += ((Sint32 *)actionwk)[12];
+    actionwk->xposi.l += work->x_speed;
     d1 = emycol_d(actionwk);
     actionwk->yposi.w.h += d1;
-    if (--((Sint16 *)actionwk)[23] != 0)
+    if (--work->timer != 0)
         return;
-    ((Sint32 *)actionwk)[12] = -((Sint32 *)actionwk)[12];
+    work->x_speed = -work->x_speed;
 
-    ((Sint16 *)actionwk)[23] = 128;
+    work->timer = 128;
 }
 
 void propera1(sprite_status *actionwk) {
+    propera8_work *work = propera8_get_work(actionwk);
     void (*tbl[9])(sprite_status *) = {&b_init,   &b_close,   &b_close1,
                                        &b_closed, &b_closed1, &b_open,
                                        &b_open1,  &b_opend,   &b_opend1};
     Sint16 ano;
 
-    ano = ((Sint16 *)actionwk)[33];
+    ano = work->parent_index;
     if (actwk[ano].actno != 40) {
         frameout(actionwk);
         return;
@@ -139,7 +172,7 @@ void propera1(sprite_status *actionwk) {
     tbl[actionwk->r_no0 / 2](actionwk);
     actionwk->xposi.w.h = actwk[ano].xposi.w.h;
     actionwk->yposi.w.h = actwk[ano].yposi.w.h;
-    actionwk->yposi.w.h += ((Sint16 *)actionwk)[32];
+    actionwk->yposi.w.h += work->child_y_offset;
     actionsub(actionwk);
 }
 
@@ -154,57 +187,73 @@ void b_init(sprite_status *actionwk) {
 }
 
 void b_close(sprite_status *actionwk) {
+    propera8_work *work = propera8_get_work(actionwk);
+
     actionwk->patno = 6;
-    ((Sint16 *)actionwk)[23] = 5;
+    work->timer = 5;
     actionwk->colino = 0;
     actionwk->r_no0 += 2;
     b_close1(actionwk);
 }
 
 void b_close1(sprite_status *actionwk) {
-    if (--((Sint16 *)actionwk)[23] != 0)
+    propera8_work *work = propera8_get_work(actionwk);
+
+    if (--work->timer != 0)
         return;
     actionwk->r_no0 += 2;
     b_closed(actionwk);
 }
 
 void b_closed(sprite_status *actionwk) {
+    propera8_work *work = propera8_get_work(actionwk);
+
     actionwk->patno = 7;
-    ((Sint16 *)actionwk)[23] = 73;
+    work->timer = 73;
     actionwk->r_no0 += 2;
     b_closed1(actionwk);
 }
 
 void b_closed1(sprite_status *actionwk) {
-    if (--((Sint16 *)actionwk)[23] != 0)
+    propera8_work *work = propera8_get_work(actionwk);
+
+    if (--work->timer != 0)
         return;
     actionwk->r_no0 += 2;
     b_open(actionwk);
 }
 
 void b_open(sprite_status *actionwk) {
+    propera8_work *work = propera8_get_work(actionwk);
+
     actionwk->patno = 6;
-    ((Sint16 *)actionwk)[23] = 5;
+    work->timer = 5;
     actionwk->r_no0 += 2;
 }
 
 void b_open1(sprite_status *actionwk) {
-    if (--((Sint16 *)actionwk)[23] != 0)
+    propera8_work *work = propera8_get_work(actionwk);
+
+    if (--work->timer != 0)
         return;
     actionwk->r_no0 += 2;
     b_opend(actionwk);
 }
 
 void b_opend(sprite_status *actionwk) {
+    propera8_work *work = propera8_get_work(actionwk);
+
     actionwk->mstno.w = 255;
-    ((Sint16 *)actionwk)[23] = 73;
+    work->timer = 73;
     actionwk->colino = 168;
     actionwk->colicnt = 0;
     actionwk->r_no0 += 2;
 }
 
 void b_opend1(sprite_status *actionwk) {
-    if (--((Sint16 *)actionwk)[23] != 0) {
+    propera8_work *work = propera8_get_work(actionwk);
+
+    if (--work->timer != 0) {
         patchg(actionwk, (Uint8 **)pchg1);
         return;
     }

@@ -143,7 +143,8 @@ void scrbinit(Sint16 xWk, Sint16 yWk) {
     scrb_h_posit.w.h = (Uint16)(xWk / 64 * 3);
 
     for (i = 0; i < 10; ++i) {
-        ((Sint32 *)hscrollwork)[i] = 0;
+        hscrollwork[i * 2] = 0;
+        hscrollwork[i * 2 + 1] = 0;
     }
 }
 
@@ -156,7 +157,6 @@ void scroll(void) {
     Uint16 z32b_kawatbl[3] = {64, 528, 32767};
     Sint16 *pHScrollWork;
     int_union *pHScrollBuff;
-    int_union *pHscrWk;
     Sint32 i, j;
     Uint16 wD1, wD3, wD4, wD5;
     int_union lD0, lD2, lD3;
@@ -200,16 +200,13 @@ void scroll(void) {
     scrflagz.b.h = 0;
     scrflagc.b.h = 0;
 
-    pHscrWk = (int_union *)hscrollwork;
     for (i = 0; i < 10; ++i) {
-        pHscrWk->l += LineSpdTbl[i];
-        ++pHscrWk;
+        hscrollwork_add_pair(i * 2, LineSpdTbl[i]);
     }
     wD1 = 0;
     for (; i < 74; ++i) {
         lD2.l = ((Sint32)wD1 << 8) + 32768;
-        pHscrWk->l += lD2.l;
-        ++pHscrWk;
+        hscrollwork_add_pair(i * 2, lD2.l);
         ++wD1;
     }
 
@@ -247,10 +244,9 @@ void scroll(void) {
         *pHScrollWork++ = lD0.w.l;
     }
 
-    pHscrWk = (int_union *)hscrollwork;
     for (i = 9; i >= 0; --i) {
-        wD1 = -(pHscrWk->w.h + scrb_h_posit.w.h);
-        ++pHscrWk;
+        wD1 = -(hscrollwork_get_pair((9 - i) * 2).w.h +
+                scrb_h_posit.w.h);
         for (j = z32b_cnttbl[i]; j >= 0; --j) {
             *pHScrollWork++ = wD1;
         }
@@ -322,8 +318,8 @@ void scroll(void) {
         pHScrollWork += (Uint32)lD0.w.l / 2;
         waterdirec.w += 64;
 
-        zonescrsetsub0(&pHScrollBuff, (Uint16 **)&pHScrollWork, z32b_kawatbl,
-                       awasintbl, wD1, (Uint16 *)&lD2.w.l, &wD4);
+        zonescrsetsub0(&pHScrollBuff, &pHScrollWork, z32b_kawatbl,
+                       awasintbl, wD1, &lD2.w.l, &wD4);
 
     } else {
         wD1 -= wD3;
@@ -356,10 +352,10 @@ void scroll(void) {
     }
 }
 
-void zonescrsetsub0(int_union **ppA1, Uint16 **ppA2, Uint16 *pA3, Uint8 *pA4,
-                    Uint16 wD1, Uint16 *pwD2, Uint16 *pwD4) {
+void zonescrsetsub0(int_union **ppA1, Sint16 **ppA2, Uint16 *pA3, Uint8 *pA4,
+                    Uint16 wD1, Sint16 *pwD2, Uint16 *pwD4) {
     int_union *pA1;
-    Uint16 *pA2;
+    Sint16 *pA2;
     Uint16 wD3, wD6;
     int_union lD0;
     Sint32 i;

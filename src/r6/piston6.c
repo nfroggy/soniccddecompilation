@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "piston6.h"
 #include "../action.h"
@@ -15,6 +17,38 @@
 static sprite_pattern nullpat = {1, {{0, 0, 0, 0}}};
 static sprite_pattern piston6pat0 = {1, {{-32, -40, 0, SPRITE_PISTON6_BASE}}};
 sprite_pattern *piston6pat[2] = {&piston6pat0, &nullpat};
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 unused0[8];
+    Sint16 base_y;
+    Uint16 parent_index;
+    Sint16 base_x;
+    Uint8 unused14[2];
+    Uint8 wait_timer;
+    Uint8 extension;
+    Uint8 retracting;
+} piston6_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(piston6_work, base_y) == 8,
+               "piston6_work.base_y offset");
+_Static_assert(offsetof(piston6_work, parent_index) == 10,
+               "piston6_work.parent_index offset");
+_Static_assert(offsetof(piston6_work, base_x) == 12,
+               "piston6_work.base_x offset");
+_Static_assert(offsetof(piston6_work, wait_timer) == 16,
+               "piston6_work.wait_timer offset");
+_Static_assert(offsetof(piston6_work, extension) == 17,
+               "piston6_work.extension offset");
+_Static_assert(offsetof(piston6_work, retracting) == 18,
+               "piston6_work.retracting offset");
+_Static_assert(sizeof(piston6_work) <= sizeof(((sprite_status *)0)->actfree),
+               "piston6_work fits in actfree");
+
+static piston6_work *piston6_get_work(sprite_status *actionwk) {
+    return (piston6_work *)actionwk->actfree;
+}
 
 void piston6(sprite_status *actionwk) {
     if (actionwk->userflag.b.h < 0) {
@@ -35,6 +69,7 @@ void piston6(sprite_status *actionwk) {
 void piston6_ridechk(sprite_status *actionwk) { ridechk(actionwk, &actwk[0]); }
 
 void piston6_init(sprite_status *actionwk) {
+    piston6_work *work = piston6_get_work(actionwk);
     sprite_status *a1;
 
     actionwk->r_no0 += 2;
@@ -44,8 +79,8 @@ void piston6_init(sprite_status *actionwk) {
     actionwk->patbase = piston6pat;
     actionwk->sprvsize = 40;
     actionwk->sprhsize = 32;
-    ((Sint16 *)actionwk)[29] = actionwk->xposi.w.h;
-    ((Sint16 *)actionwk)[27] = actionwk->yposi.w.h;
+    work->base_x = actionwk->xposi.w.h;
+    work->base_y = actionwk->yposi.w.h;
     if (actwkchk(&a1) == 0)
         pis6_setdata(actionwk, a1, 32);
     if (actwkchk(&a1) == 0)
@@ -53,20 +88,21 @@ void piston6_init(sprite_status *actionwk) {
 }
 
 void piston6_move(sprite_status *actionwk) {
+    piston6_work *work = piston6_get_work(actionwk);
     Sint16 d0;
 
     piston6_sub(actionwk);
-    d0 = actionwk->actfree[17];
+    d0 = work->extension;
     d0 = -d0;
-    d0 += ((Sint16 *)actionwk)[27];
+    d0 += work->base_y;
     actionwk->yposi.w.h = d0;
 
-    if (actionwk->actfree[18] != 0) {
-        if (actionwk->actfree[16] == 0)
+    if (work->retracting != 0) {
+        if (work->wait_timer == 0)
             goto label1;
     }
 
-    if (actionwk->actfree[17] >= 33) {
+    if (work->extension >= 33) {
         ride_on_clr(actionwk, &actwk[0]);
         return;
     }
@@ -75,32 +111,34 @@ label1:
 }
 
 void piston6_sub(sprite_status *actionwk) {
-    if (actionwk->actfree[16] != 0) {
-        if (--actionwk->actfree[16] != 0)
+    piston6_work *work = piston6_get_work(actionwk);
+
+    if (work->wait_timer != 0) {
+        if (--work->wait_timer != 0)
             return;
     }
 
-    if (actionwk->actfree[18] != 0) {
-        --actionwk->actfree[17];
-        if ((char)actionwk->actfree[17] > 0)
+    if (work->retracting != 0) {
+        --work->extension;
+        if ((Sint8)work->extension > 0)
             return;
-        actionwk->actfree[17] = actionwk->actfree[18] = 0;
+        work->extension = work->retracting = 0;
 
-        actionwk->actfree[16] = 60;
+        work->wait_timer = 60;
     } else {
 
-        actionwk->actfree[17] += 8;
-        if (actionwk->actfree[17] < 80)
+        work->extension += 8;
+        if (work->extension < 80)
             return;
-        actionwk->actfree[17] = 80;
-        actionwk->actfree[18] = 1;
-        actionwk->actfree[16] = 60;
+        work->extension = 80;
+        work->retracting = 1;
+        work->wait_timer = 60;
     }
 }
 
 void pis6_setdata(sprite_status *actionwk, sprite_status *a1, Sint16 d0) {
     a1->actno = 32;
-    ((Uint16 *)a1)[28] = actionwk - actwk;
+    piston6_get_work(a1)->parent_index = actionwk - actwk;
     a1->userflag.b.h = -1;
     a1->xposi.w.h = actionwk->xposi.w.h + d0;
     a1->yposi.w.h = actionwk->yposi.w.h;
@@ -112,9 +150,10 @@ void pis6_setdata(sprite_status *actionwk, sprite_status *a1, Sint16 d0) {
 }
 
 void piston6_side(sprite_status *actionwk) {
+    piston6_work *work = piston6_get_work(actionwk);
     sprite_status *a1;
 
-    a1 = &actwk[((Uint16 *)actionwk)[28]];
+    a1 = &actwk[work->parent_index];
     if (a1->actno != 32) {
         frameout(actionwk);
         return;

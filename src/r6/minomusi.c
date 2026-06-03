@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "minomusi.h"
 #include "../action.h"
@@ -13,6 +15,34 @@
 #endif
 
 static Sint16 act_check(sprite_status *actionwk, sprite_status *pw);
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint16 timer;
+    Uint8 unused2[4];
+    Sint32 y_speed;
+    Sint16 top_y;
+    Sint16 bottom_y;
+    Uint16 parent_index;
+} minomusi_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(minomusi_work, timer) == 0,
+               "minomusi_work.timer offset");
+_Static_assert(offsetof(minomusi_work, y_speed) == 6,
+               "minomusi_work.y_speed offset");
+_Static_assert(offsetof(minomusi_work, top_y) == 10,
+               "minomusi_work.top_y offset");
+_Static_assert(offsetof(minomusi_work, bottom_y) == 12,
+               "minomusi_work.bottom_y offset");
+_Static_assert(offsetof(minomusi_work, parent_index) == 14,
+               "minomusi_work.parent_index offset");
+_Static_assert(sizeof(minomusi_work) <= sizeof(((sprite_status *)0)->actfree),
+               "minomusi_work fits in actfree");
+
+static minomusi_work *minomusi_get_work(sprite_status *actionwk) {
+    return (minomusi_work *)actionwk->actfree;
+}
 
 static sprite_pattern nullpat = {1, {{0, 0, 0, 0}}};
 static sprite_pattern ito01 = {1, {{-4, -12, 0, SPRITE_MINOMUSI_BASE}}};
@@ -64,6 +94,7 @@ void body(sprite_status *actionwk) {
 }
 
 void body_init(sprite_status *actionwk) {
+    minomusi_work *work = minomusi_get_work(actionwk);
     sprite_status *a1;
 
     actionwk->r_no0 += 2;
@@ -76,8 +107,8 @@ void body_init(sprite_status *actionwk) {
     actionwk->sproffset = 9352;
     actionwk->colino = 52;
     actionwk->yposi.w.h += 8;
-    ((Sint16 *)actionwk)[28] = actionwk->yposi.w.h;
-    ((Sint16 *)actionwk)[29] = actionwk->yposi.w.h + 95;
+    work->top_y = actionwk->yposi.w.h;
+    work->bottom_y = actionwk->yposi.w.h + 95;
     if (actionwk->userflag.b.h == 0)
         actionwk->patbase = pat_minomusi_e;
     else
@@ -100,18 +131,22 @@ void body_init(sprite_status *actionwk) {
     a1->sprvsize = 32;
     a1->sprhs = 1;
     a1->sprhsize = 1;
-    ((Uint16 *)a1)[30] = actionwk - actwk;
+    minomusi_get_work(a1)->parent_index = actionwk - actwk;
 }
 
 void body_wait(sprite_status *actionwk) {
+    minomusi_work *work = minomusi_get_work(actionwk);
+
     actionwk->r_no0 += 2;
     actionwk->patno = 9;
-    ((Sint16 *)actionwk)[23] = 121;
+    work->timer = 121;
     body_wait1(actionwk);
 }
 
 void body_wait1(sprite_status *actionwk) {
-    if (--((Sint16 *)actionwk)[23] != 0)
+    minomusi_work *work = minomusi_get_work(actionwk);
+
+    if (--work->timer != 0)
         return;
     if (act_check(actionwk, &actwk[0]))
         actionwk->r_no0 += 2;
@@ -138,16 +173,19 @@ static Sint16 act_check(sprite_status *actionwk, sprite_status *pw) {
 }
 
 void body_down(sprite_status *actionwk) {
+    minomusi_work *work = minomusi_get_work(actionwk);
+
     actionwk->r_no0 += 2;
-    ((Sint32 *)actionwk)[13] = 524288;
+    work->y_speed = 524288;
     body_down1(actionwk);
 }
 
 void body_down1(sprite_status *actionwk) {
+    minomusi_work *work = minomusi_get_work(actionwk);
     Sint16 d0;
 
-    actionwk->yposi.l += ((Sint32 *)actionwk)[13];
-    d0 = ((Sint16 *)actionwk)[29] - actionwk->yposi.w.h;
+    actionwk->yposi.l += work->y_speed;
+    d0 = work->bottom_y - actionwk->yposi.w.h;
     if (d0 <= 0) {
         actionwk->yposi.w.h += d0;
         actionwk->r_no0 = 14;
@@ -155,19 +193,22 @@ void body_down1(sprite_status *actionwk) {
 }
 
 void body_up(sprite_status *actionwk) {
+    minomusi_work *work = minomusi_get_work(actionwk);
+
     actionwk->r_no0 += 2;
     if (actionwk->userflag.b.h != 0)
-        ((Sint32 *)actionwk)[13] = 0x20000;
+        work->y_speed = 0x20000;
     else
-        ((Sint32 *)actionwk)[13] = 458752;
+        work->y_speed = 458752;
     body_up1(actionwk);
 }
 
 void body_up1(sprite_status *actionwk) {
+    minomusi_work *work = minomusi_get_work(actionwk);
     Sint16 d0;
 
-    actionwk->yposi.l -= ((Sint32 *)actionwk)[13];
-    d0 = ((Sint16 *)actionwk)[28] - actionwk->yposi.w.h;
+    actionwk->yposi.l -= work->y_speed;
+    d0 = work->top_y - actionwk->yposi.w.h;
     if (d0 >= 0) {
         actionwk->yposi.w.h += d0;
         actionwk->r_no0 = 2;
@@ -175,6 +216,7 @@ void body_up1(sprite_status *actionwk) {
 }
 
 void body_stay(sprite_status *actionwk) {
+    minomusi_work *work = minomusi_get_work(actionwk);
     Sint16 d0, d1;
 
     actionwk->r_no0 += 2;
@@ -185,14 +227,15 @@ void body_stay(sprite_status *actionwk) {
         d0 = 61;
         d1 = 511;
     }
-    ((Sint16 *)actionwk)[23] = d0;
+    work->timer = d0;
     actionwk->mstno.w = d1;
 }
 
 void body_stay1(sprite_status *actionwk) {
+    minomusi_work *work = minomusi_get_work(actionwk);
     sprite_status *a1;
 
-    if (--((Sint16 *)actionwk)[23] == 0)
+    if (--work->timer == 0)
         actionwk->r_no0 = 10;
 
     patchg(actionwk, (Uint8 **)pchg);
@@ -217,7 +260,7 @@ void body_stay1(sprite_status *actionwk) {
     a1->sprvsize = actionwk->sprvsize;
     a1->sprhs = actionwk->sprhs;
     a1->sprhsize = actionwk->sprhsize;
-    ((Uint16 *)a1)[30] = actionwk - actwk;
+    minomusi_get_work(a1)->parent_index = actionwk - actwk;
 
     a1->colino = 181;
     if ((char)actionwk->actflg < 0)
@@ -225,9 +268,10 @@ void body_stay1(sprite_status *actionwk) {
 }
 
 void hari(sprite_status *actionwk) {
+    minomusi_work *work = minomusi_get_work(actionwk);
     sprite_status *a1;
 
-    a1 = &actwk[((Uint16 *)actionwk)[30]];
+    a1 = &actwk[work->parent_index];
     if (a1->patcnt == 1)
         frameout(actionwk);
     else
@@ -235,22 +279,23 @@ void hari(sprite_status *actionwk) {
 }
 
 void ito(sprite_status *actionwk) {
+    minomusi_work *work = minomusi_get_work(actionwk);
     sprite_status *a1;
     Sint16 d0;
 
-    a1 = &actwk[((Uint16 *)actionwk)[30]];
+    a1 = &actwk[work->parent_index];
     if (a1->actno != 51) {
         frameout(actionwk);
         return;
     }
 
-    d0 = (a1->yposi.w.h - ((Sint16 *)a1)[28] - 24) >> 3;
+    d0 = (a1->yposi.w.h - minomusi_get_work(a1)->top_y - 24) >> 3;
     if (d0 < 0)
         d0 = 0;
 
     actionwk->patno = d0;
     d0 <<= 2;
-    d0 += ((Sint16 *)a1)[28] + 16;
+    d0 += minomusi_get_work(a1)->top_y + 16;
     actionwk->yposi.w.h = d0;
     actionsub(actionwk);
 }

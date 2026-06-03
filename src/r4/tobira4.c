@@ -1,8 +1,52 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "tobira4.h"
 #include "../action.h"
 #include "../actset.h"
 #include "../ridechk.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 unused0[6];
+    Uint8 switch_index;
+    Uint8 door_type;
+    Sint16 origin_y;
+    Uint8 unused10[2];
+    Sint16 origin_x;
+    Sint16 player_x;
+    Uint8 open_amount;
+    Uint8 open_limit;
+    Uint8 closing;
+    Uint8 unused19;
+    Sint16 player_y;
+} tobira4_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(tobira4_work, switch_index) == 6,
+               "tobira4_work.switch_index offset");
+_Static_assert(offsetof(tobira4_work, door_type) == 7,
+               "tobira4_work.door_type offset");
+_Static_assert(offsetof(tobira4_work, origin_y) == 8,
+               "tobira4_work.origin_y offset");
+_Static_assert(offsetof(tobira4_work, origin_x) == 12,
+               "tobira4_work.origin_x offset");
+_Static_assert(offsetof(tobira4_work, player_x) == 14,
+               "tobira4_work.player_x offset");
+_Static_assert(offsetof(tobira4_work, open_amount) == 16,
+               "tobira4_work.open_amount offset");
+_Static_assert(offsetof(tobira4_work, open_limit) == 17,
+               "tobira4_work.open_limit offset");
+_Static_assert(offsetof(tobira4_work, closing) == 18,
+               "tobira4_work.closing offset");
+_Static_assert(offsetof(tobira4_work, player_y) == 20,
+               "tobira4_work.player_y offset");
+_Static_assert(sizeof(tobira4_work) <= sizeof(((sprite_status *)0)->actfree),
+               "tobira4_work fits in actfree");
+
+static tobira4_work *tobira4_get_work(sprite_status *pActwk) {
+    return (tobira4_work *)pActwk->actfree;
+}
 
 #if defined(R41A)
 #define SPRITE_TOBIRA4_BASE 512
@@ -27,6 +71,7 @@ void tobira4(sprite_status *pActwk) {
 }
 
 void tobira4_init(sprite_status *pActwk) {
+    tobira4_work *work = tobira4_get_work(pActwk);
     Uint8 d0, d1;
     Uint8 tbl[20] = {64, 8, 128, 2,  64,  8, 128, 2,  8,   32,
                      64, 1, 8,   64, 128, 0, 8,   64, 128, 0};
@@ -36,44 +81,45 @@ void tobira4_init(sprite_status *pActwk) {
     pActwk->sproffset = 17472;
     pActwk->sprpri = 2;
     pActwk->patbase = tobira4pat;
-    ((Sint16 *)pActwk)[29] = pActwk->xposi.w.h;
-    ((Sint16 *)pActwk)[27] = pActwk->yposi.w.h;
+    work->origin_x = pActwk->xposi.w.h;
+    work->origin_y = pActwk->yposi.w.h;
 
     d1 = d0 = pActwk->userflag.b.h;
     d1 &= 15;
-    pActwk->actfree[6] = d1;
+    work->switch_index = d1;
     d0 >>= 4;
     d0 &= 15;
-    pActwk->actfree[7] = d0;
+    work->door_type = d0;
     d0 <<= 2;
     pActwk->sprhsize = tbl[d0];
     pActwk->sprvsize = tbl[d0 + 1];
-    pActwk->actfree[17] = tbl[d0 + 2];
+    work->open_limit = tbl[d0 + 2];
     pActwk->patno = tbl[d0 + 3];
 }
 
 void tobira4_move(sprite_status *pActwk) {
+    tobira4_work *work = tobira4_get_work(pActwk);
     Uint8 d0;
 
-    d0 = pActwk->actfree[6];
+    d0 = work->switch_index;
     if (!(switchflag[d0] & 128)) {
-        pActwk->actfree[18] = 255;
+        work->closing = 255;
     } else {
-        pActwk->actfree[18] = 0;
+        work->closing = 0;
     }
 
-    if (pActwk->actfree[7] != 4) {
-        if (pActwk->actfree[16]) {
-            pActwk->actfree[18] = 0;
+    if (work->door_type != 4) {
+        if (work->open_amount) {
+            work->closing = 0;
         }
     }
-    ((Sint16 *)pActwk)[30] = actwk[0].xposi.w.h;
-    ((Sint16 *)pActwk)[33] = actwk[0].yposi.w.h;
+    work->player_x = actwk[0].xposi.w.h;
+    work->player_y = actwk[0].yposi.w.h;
     tobira4_cnt(pActwk);
     hitchk(pActwk, &actwk[0]);
 
-    if (pActwk->actfree[7] != 4) {
-        if (pActwk->actfree[16] == pActwk->actfree[17]) {
+    if (work->door_type != 4) {
+        if (work->open_amount == work->open_limit) {
             pActwk->r_no0 += 2;
         }
     }
@@ -85,7 +131,7 @@ void cl_type1(sprite_status *pActwk) {
 
     pPlayerwk = &actwk[0];
     d0 = pActwk->yposi.w.h;
-    if (d0 < ((Sint16 *)pActwk)[33]) {
+    if (d0 < tobira4_get_work(pActwk)->player_y) {
         d0 = pPlayerwk->sprvsize;
         d0 += pPlayerwk->yposi.w.h;
         if (d0 >= pActwk->yposi.w.h)
@@ -112,7 +158,7 @@ void cl_type2(sprite_status *pActwk) {
 
     pPlayerwk = &actwk[0];
     d0 = pActwk->xposi.w.h;
-    if (d0 < ((Sint16 *)pActwk)[30]) {
+    if (d0 < tobira4_get_work(pActwk)->player_x) {
         d0 = pPlayerwk->sprhs;
         d0 += pPlayerwk->xposi.w.h;
         if (d0 >= pActwk->xposi.w.h)
@@ -137,14 +183,16 @@ void tobira4_chek(sprite_status *pActwk) {
     void (*tbl[5])(sprite_status *) = {&cl_type1, &cl_type1, &cl_type2,
                                        &cl_type2, &cl_type2};
 
-    tbl[pActwk->actfree[7]](pActwk);
+    tbl[tobira4_get_work(pActwk)->door_type](pActwk);
     hitchk(pActwk, &actwk[0]);
 }
 
 void tobira4_clse(sprite_status *pActwk) {
-    pActwk->actfree[18] = 255;
+    tobira4_work *work = tobira4_get_work(pActwk);
+
+    work->closing = 255;
     tobira4_cnt(pActwk);
-    if (pActwk->actfree[16] == 0) {
+    if (work->open_amount == 0) {
         pActwk->r_no0 = 2;
     }
     hitchk(pActwk, &actwk[0]);
@@ -154,9 +202,9 @@ void type1(sprite_status *pActwk) {
     Sint16 d0;
 
     tobira4_sub(pActwk);
-    d0 = (Uint16)pActwk->actfree[16];
+    d0 = (Uint16)tobira4_get_work(pActwk)->open_amount;
     d0 *= -1;
-    d0 += ((Sint16 *)pActwk)[29];
+    d0 += tobira4_get_work(pActwk)->origin_x;
     pActwk->xposi.w.h = d0;
 }
 
@@ -164,8 +212,8 @@ void type2(sprite_status *pActwk) {
     Sint16 d0;
 
     tobira4_sub(pActwk);
-    d0 = (Uint16)pActwk->actfree[16];
-    d0 += ((Sint16 *)pActwk)[29];
+    d0 = (Uint16)tobira4_get_work(pActwk)->open_amount;
+    d0 += tobira4_get_work(pActwk)->origin_x;
     pActwk->xposi.w.h = d0;
 }
 
@@ -173,9 +221,9 @@ void type3(sprite_status *pActwk) {
     Sint16 d0;
 
     tobira4_sub(pActwk);
-    d0 = (Uint16)pActwk->actfree[16];
+    d0 = (Uint16)tobira4_get_work(pActwk)->open_amount;
     d0 *= -1;
-    d0 += ((Sint16 *)pActwk)[27];
+    d0 += tobira4_get_work(pActwk)->origin_y;
     pActwk->yposi.w.h = d0;
 }
 
@@ -183,29 +231,31 @@ void type4(sprite_status *pActwk) {
     Sint16 d0;
 
     tobira4_sub(pActwk);
-    d0 = (Uint16)pActwk->actfree[16];
-    d0 += ((Sint16 *)pActwk)[27];
+    d0 = (Uint16)tobira4_get_work(pActwk)->open_amount;
+    d0 += tobira4_get_work(pActwk)->origin_y;
     pActwk->yposi.w.h = d0;
 }
 
 void tobira4_cnt(sprite_status *pActwk) {
     void (*tbl[5])(sprite_status *) = {&type1, &type2, &type3, &type4, &type3};
 
-    tbl[pActwk->actfree[7]](pActwk);
+    tbl[tobira4_get_work(pActwk)->door_type](pActwk);
 }
 
 void tobira4_sub(sprite_status *pActwk) {
-    if (pActwk->actfree[18]) {
-        if (pActwk->actfree[16] >= 8) {
-            pActwk->actfree[16] -= 8;
+    tobira4_work *work = tobira4_get_work(pActwk);
+
+    if (work->closing) {
+        if (work->open_amount >= 8) {
+            work->open_amount -= 8;
             return;
         }
-        pActwk->actfree[16] = 0;
+        work->open_amount = 0;
     } else {
-        pActwk->actfree[16] += 8;
-        if (pActwk->actfree[16] < pActwk->actfree[17])
+        work->open_amount += 8;
+        if (work->open_amount < work->open_limit)
             return;
 
-        pActwk->actfree[16] = pActwk->actfree[17];
+        work->open_amount = work->open_limit;
     }
 }

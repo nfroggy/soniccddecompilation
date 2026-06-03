@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "hachi8.h"
 #include "../action.h"
@@ -6,6 +8,77 @@
 #include "../suicide.h"
 
 extern void patchg(sprite_status *patchgwk, Uint8 **pat_dat);
+
+#pragma pack(push, 1)
+typedef struct {
+    union {
+        Sint32 x_speed;
+        struct {
+            Sint16 ball_angle;
+            Sint16 ball_angle_speed;
+        };
+    };
+    union {
+        Sint16 turn_timer_reset;
+        Sint16 ball_angle_step;
+    };
+    union {
+        Sint16 turn_timer;
+        Sint16 chain_count;
+    };
+    union {
+        struct {
+            Sint16 wave_phase;
+            Sint16 wave_delta;
+            Sint16 wave_shift;
+            Sint16 origin_x;
+            Sint16 origin_y;
+            Sint16 first_ball_index;
+            Sint16 second_ball_index;
+        };
+        struct {
+            Uint8 chain_link_indices[10];
+            Uint8 unused18[2];
+            Sint16 parent_index;
+        };
+    };
+} hachi8_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(hachi8_work, x_speed) == 0,
+               "hachi8_work.x_speed offset");
+_Static_assert(offsetof(hachi8_work, ball_angle) == 0,
+               "hachi8_work.ball_angle offset");
+_Static_assert(offsetof(hachi8_work, ball_angle_speed) == 2,
+               "hachi8_work.ball_angle_speed offset");
+_Static_assert(offsetof(hachi8_work, turn_timer_reset) == 4,
+               "hachi8_work.turn_timer_reset offset");
+_Static_assert(offsetof(hachi8_work, turn_timer) == 6,
+               "hachi8_work.turn_timer offset");
+_Static_assert(offsetof(hachi8_work, chain_link_indices) == 8,
+               "hachi8_work.chain_link_indices offset");
+_Static_assert(offsetof(hachi8_work, wave_phase) == 8,
+               "hachi8_work.wave_phase offset");
+_Static_assert(offsetof(hachi8_work, wave_delta) == 10,
+               "hachi8_work.wave_delta offset");
+_Static_assert(offsetof(hachi8_work, wave_shift) == 12,
+               "hachi8_work.wave_shift offset");
+_Static_assert(offsetof(hachi8_work, origin_x) == 14,
+               "hachi8_work.origin_x offset");
+_Static_assert(offsetof(hachi8_work, origin_y) == 16,
+               "hachi8_work.origin_y offset");
+_Static_assert(offsetof(hachi8_work, first_ball_index) == 18,
+               "hachi8_work.first_ball_index offset");
+_Static_assert(offsetof(hachi8_work, second_ball_index) == 20,
+               "hachi8_work.second_ball_index offset");
+_Static_assert(offsetof(hachi8_work, parent_index) == 20,
+               "hachi8_work.parent_index offset");
+_Static_assert(sizeof(hachi8_work) <= sizeof(((sprite_status *)0)->actfree),
+               "hachi8_work fits in actfree");
+
+static hachi8_work *hachi8_get_work(sprite_status *actionwk) {
+    return (hachi8_work *)actionwk->actfree;
+}
 
 static void ball(sprite_status *actionwk);
 static void ball_move(sprite_status *actionwk);
@@ -36,6 +109,7 @@ void hachi8(sprite_status *actionwk) {
 }
 
 void body(sprite_status *actionwk) {
+    hachi8_work *work = hachi8_get_work(actionwk);
     sprite_status *a1;
 
     if (enemy_suicide(actionwk) == -1)
@@ -54,21 +128,21 @@ void body(sprite_status *actionwk) {
     actionwk->sprvsize = 16;
     actionwk->colino = 46;
     actionwk->sproffset = 9301;
-    ((Sint16 *)actionwk)[30] = actionwk->xposi.w.h;
-    ((Sint16 *)actionwk)[31] = actionwk->yposi.w.h;
-    ((Sint16 *)actionwk)[26] = 0;
+    work->origin_x = actionwk->xposi.w.h;
+    work->origin_y = actionwk->yposi.w.h;
+    work->turn_timer = 0;
     if (actionwk->userflag.b.h == 0) {
         actionwk->patbase = pat_hachi8_e;
-        *(Sint32 *)&actionwk->actfree[0] = -65536;
-        ((Sint16 *)actionwk)[25] = 128;
-        ((Sint16 *)actionwk)[28] = 1024;
-        ((Sint16 *)actionwk)[29] = 3;
+        work->x_speed = -65536;
+        work->turn_timer_reset = 128;
+        work->wave_delta = 1024;
+        work->wave_shift = 3;
     } else {
         actionwk->patbase = pat_hachi8_b;
-        *(Sint32 *)&actionwk->actfree[0] = -32768;
-        ((Sint16 *)actionwk)[25] = 256;
-        ((Sint16 *)actionwk)[28] = 768;
-        ((Sint16 *)actionwk)[29] = 4;
+        work->x_speed = -32768;
+        work->turn_timer_reset = 256;
+        work->wave_delta = 768;
+        work->wave_shift = 4;
     }
 
     if (actwkchk2(actionwk, &a1) != 0) {
@@ -76,8 +150,8 @@ void body(sprite_status *actionwk) {
         return;
     }
     a1->actno = actionwk->actno;
-    ((Uint16 *)actionwk)[32] = a1 - actwk;
-    ((Uint16 *)a1)[33] = actionwk - actwk;
+    work->first_ball_index = a1 - actwk;
+    hachi8_get_work(a1)->parent_index = actionwk - actwk;
     a1->actflg = actionwk->actflg;
     a1->sproffset = actionwk->sproffset;
     a1->patbase = actionwk->patbase;
@@ -96,8 +170,8 @@ void body(sprite_status *actionwk) {
     }
 
     a1->actno = actionwk->actno;
-    ((Uint16 *)actionwk)[33] = a1 - actwk;
-    ((Uint16 *)a1)[33] = actionwk - actwk;
+    work->second_ball_index = a1 - actwk;
+    hachi8_get_work(a1)->parent_index = actionwk - actwk;
     a1->actflg = actionwk->actflg;
     a1->sproffset = actionwk->sproffset;
     a1->patbase = actionwk->patbase;
@@ -108,37 +182,39 @@ void body(sprite_status *actionwk) {
 }
 
 void body_move(sprite_status *actionwk) {
+    hachi8_work *work = hachi8_get_work(actionwk);
     Uint16 d0, sin, cos;
     Sint32 d0l;
     Sint16 t;
 
-    actionwk->xposi.l += *(Sint32 *)&actionwk->actfree[0];
-    --((Sint16 *)actionwk)[26];
-    t = ((Sint16 *)actionwk)[26];
+    actionwk->xposi.l += work->x_speed;
+    --work->turn_timer;
+    t = work->turn_timer;
     if (t < 0) {
-        ((Sint32 *)actionwk)[13] = ((Sint16 *)actionwk)[25];
+        work->turn_timer = work->turn_timer_reset;
 
-        *(Sint32 *)&actionwk->actfree[0] = -*(Sint32 *)&actionwk->actfree[0];
+        work->x_speed = -work->x_speed;
 
         actionwk->actflg ^= 1;
         actionwk->cddat ^= 1;
     }
 
-    actionwk->yposi.w.h = ((Sint16 *)actionwk)[31];
+    actionwk->yposi.w.h = work->origin_y;
     actionwk->yposi.w.l = 0;
-    ((Sint16 *)actionwk)[27] += ((Sint16 *)actionwk)[28];
+    work->wave_phase += work->wave_delta;
 
-    d0 = ((Sint16 *)actionwk)[27] >> 8;
+    d0 = work->wave_phase >> 8;
     sinset(d0, (Sint16 *)&sin, (Sint16 *)&cos);
     d0l = sin << 16;
-    d0l >>= ((Sint16 *)actionwk)[29];
+    d0l >>= work->wave_shift;
     actionwk->yposi.l += d0l;
     patchg(actionwk, (Uint8 **)pchg);
     actionsub(actionwk);
-    frameout_s00(actionwk, ((Sint16 *)actionwk)[30]);
+    frameout_s00(actionwk, work->origin_x);
 }
 
 static void ball(sprite_status *actionwk) {
+    hachi8_work *work = hachi8_get_work(actionwk);
     sprite_status *a1;
     Sint16 i, d6;
 
@@ -155,16 +231,16 @@ static void ball(sprite_status *actionwk) {
     actionwk->patno = 3;
     actionwk->colino = 175;
     if (actionwk->userflag.b.l == -1) {
-        ((Sint16 *)actionwk)[23] = 2048;
-        ((Sint16 *)actionwk)[25] = 8;
-        ((Sint16 *)actionwk)[26] = 9;
+        work->ball_angle = 2048;
+        work->ball_angle_step = 8;
+        work->chain_count = 9;
     } else {
-        ((Sint16 *)actionwk)[23] = 4096;
-        ((Sint16 *)actionwk)[25] = 8;
-        ((Sint16 *)actionwk)[26] = 3;
+        work->ball_angle = 4096;
+        work->ball_angle_step = 8;
+        work->chain_count = 3;
     }
 
-    d6 = ((Sint16 *)actionwk)[26];
+    d6 = work->chain_count;
 
     for (i = 0; i <= d6; ++i) {
         if (actwkchk2(actionwk, &a1) != 0) {
@@ -174,8 +250,8 @@ static void ball(sprite_status *actionwk) {
         }
 
         a1->actno = actionwk->actno;
-        actionwk->actfree[i + 8] = a1 - actwk;
-        ((Uint16 *)a1)[33] = ((Uint16 *)actionwk)[33];
+        work->chain_link_indices[i] = a1 - actwk;
+        hachi8_get_work(a1)->parent_index = (Uint16)work->parent_index;
 
         a1->actflg = actionwk->actflg;
         a1->sproffset = actionwk->sproffset;
@@ -189,28 +265,29 @@ static void ball(sprite_status *actionwk) {
 }
 
 static void ball_move(sprite_status *actionwk) {
+    hachi8_work *work = hachi8_get_work(actionwk);
     int_union d2, d3;
     Sint16 d0, d6, i, ano;
     Uint16 sin, cos;
     Sint32 d4, d5;
 
-    ((Sint16 *)actionwk)[24] += ((Sint16 *)actionwk)[25];
+    work->ball_angle_speed += work->ball_angle_step;
 
-    d6 = ((Sint16 *)actionwk)[23];
-    ((Sint16 *)actionwk)[23] += ((Sint16 *)actionwk)[24];
+    d6 = work->ball_angle;
+    work->ball_angle += work->ball_angle_speed;
 
-    if ((((Sint16 *)actionwk)[25] >= 0 && ((Uint16 *)actionwk)[24] < 16384 &&
-         ((Uint16 *)actionwk)[23] >= 16384) ||
-        (((Sint16 *)actionwk)[25] < 0 && ((Uint16 *)actionwk)[24] >= 16384 &&
-         ((Uint16 *)actionwk)[23] < 16384)) {
-        ((Sint16 *)actionwk)[25] = -((Sint16 *)actionwk)[25];
+    if ((work->ball_angle_step >= 0 && (Uint16)work->ball_angle_speed < 16384 &&
+         (Uint16)work->ball_angle >= 16384) ||
+        (work->ball_angle_step < 0 && (Uint16)work->ball_angle_speed >= 16384 &&
+         (Uint16)work->ball_angle < 16384)) {
+        work->ball_angle_step = -work->ball_angle_step;
     }
 
-    d6 = ((Sint16 *)actionwk)[26];
-    ano = ((Uint16 *)actionwk)[33];
+    d6 = work->chain_count;
+    ano = (Uint16)work->parent_index;
     d5 = actwk[ano].yposi.l + 786432;
     d4 = actwk[ano].xposi.l;
-    d0 = ((Sint16 *)actionwk)[23] >> 8;
+    d0 = work->ball_angle >> 8;
     sinset(d0, (Sint16 *)&sin, (Sint16 *)&cos);
     d3.l = sin;
     d2.l = cos;
@@ -224,7 +301,7 @@ static void ball_move(sprite_status *actionwk) {
     for (i = 0; i <= d6; ++i) {
         d5 += d3.l;
         d4 += d2.l;
-        ano = actionwk->actfree[i + 8];
+        ano = work->chain_link_indices[i];
         actwk[ano].yposi.l = d5;
         actwk[ano].xposi.l = d4;
     }
@@ -253,7 +330,7 @@ void kusari(sprite_status *actionwk) {
 void kusari_move(sprite_status *actionwk) {
     Sint16 ano;
 
-    ano = ((Uint16 *)actionwk)[33];
+    ano = (Uint16)hachi8_get_work(actionwk)->parent_index;
     if (actwk[ano].actno != 46) {
         frameout(actionwk);
         return;

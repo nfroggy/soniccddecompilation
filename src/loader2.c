@@ -7,10 +7,10 @@ static Uint32 SE_DashReq;
 void GetRoundStr(Uint16 StageNo, Uint8 Time_Flag, char *buf) {
     Uint8 stage, round;
 
-    round = ((short_union *)&StageNo)->b.h + 1;
+    round = (Uint8)(StageNo >> 8) + 1;
     if (round > 1)
         ++round;
-    stage = ((short_union *)&StageNo)->b.l + 1;
+    stage = (Uint8)StageNo + 1;
 
     *buf++ = (Uint8)(round + 48);
     *buf++ = (Uint8)(stage + 48);

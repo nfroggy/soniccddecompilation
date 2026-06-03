@@ -1,7 +1,51 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "shoot5.h"
 #include "../actset.h"
 #include "../loader2.h"
+#include "../player_work.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint8 unused0[4];
+    union {
+        Sint16 travel_timer;
+        struct {
+            Uint8 travel_timer_low;
+            Sint8 travel_timer_high;
+        };
+    };
+    Sint8 unused6[6];
+    Sint16 target_x;
+    Sint16 target_y;
+    Uint8 route_length;
+    Uint8 route_offset;
+    Sint16 *route_points;
+} shoot5_work;
+#pragma pack(pop)
+
+_Static_assert(sizeof(Sint16 *) == 4, "shoot5_work uses the Win32 DLL layout");
+_Static_assert(offsetof(shoot5_work, travel_timer) == 4,
+               "shoot5_work.travel_timer offset");
+_Static_assert(offsetof(shoot5_work, travel_timer_high) == 5,
+               "shoot5_work.travel_timer_high offset");
+_Static_assert(offsetof(shoot5_work, target_x) == 12,
+               "shoot5_work.target_x offset");
+_Static_assert(offsetof(shoot5_work, target_y) == 14,
+               "shoot5_work.target_y offset");
+_Static_assert(offsetof(shoot5_work, route_length) == 16,
+               "shoot5_work.route_length offset");
+_Static_assert(offsetof(shoot5_work, route_offset) == 17,
+               "shoot5_work.route_offset offset");
+_Static_assert(offsetof(shoot5_work, route_points) == 18,
+               "shoot5_work.route_points offset");
+_Static_assert(sizeof(shoot5_work) <= sizeof(((sprite_status *)0)->actfree),
+               "shoot5_work fits in actfree");
+
+static shoot5_work *shoot5_get_work(sprite_status *pActwk) {
+    return (shoot5_work *)pActwk->actfree;
+}
 
 static void shooterinit(sprite_status *pActwk);
 static void shootermove(sprite_status *pActwk);
@@ -123,6 +167,7 @@ label3:
 static void shooterinit(sprite_status *pActwk) {
     Sint16 *a2;
     Sint16 d0;
+    shoot5_work *pWork = shoot5_get_work(pActwk);
 
     pActwk->actflg = 4;
     pActwk->sprpri = 1;
@@ -132,19 +177,22 @@ static void shooterinit(sprite_status *pActwk) {
     d0 = (Uint16)pActwk->userflag.b.h;
     d0 &= 127;
     a2 = shooterpositbl[d0];
-    ((Sint16 *)pActwk)[31] = *a2++;
-    ((Sint16 **)pActwk)[16] = a2;
-    ((Sint16 *)pActwk)[29] = *a2++;
-    ((Sint16 *)pActwk)[30] = *a2++;
+    pWork->route_length = (Uint8)*a2++;
+    pWork->route_offset = 0;
+    pWork->route_points = a2;
+    pWork->target_x = *a2++;
+    pWork->target_y = *a2++;
 
     shootermove(pActwk);
 }
 
 static void shootermove(sprite_status *pActwk) {
     sprite_status *pPlayerwk;
+    player_work *pPlayerWork;
     Sint16 d0, d1;
 
     pPlayerwk = &actwk[0];
+    pPlayerWork = player_work_get(pPlayerwk);
     d0 = pPlayerwk->xposi.w.h;
     d0 -= pActwk->xposi.w.h;
     d0 += 16;
@@ -155,14 +203,14 @@ static void shootermove(sprite_status *pActwk) {
     d1 += 16;
     if ((Uint16)d1 >= 32)
         return;
-    if (pPlayerwk->actfree[2])
+    if (pPlayerWork->status_flags)
         return;
     if (pPlayerwk->r_no0 == 4) {
         pPlayerwk->r_no0 -= 2;
-        ((Sint16 *)pPlayerwk)[26] = 120;
+        pPlayerWork->damage_invulnerability_timer = 120;
     }
     pActwk->r_no0 += 2;
-    pPlayerwk->actfree[2] = 129;
+    pPlayerWork->status_flags = 129;
     pPlayerwk->mstno.b.h = 2;
     pPlayerwk->mspeed.w = 2560;
     pPlayerwk->xspeed.w = 0;
@@ -172,7 +220,7 @@ static void shootermove(sprite_status *pActwk) {
     pPlayerwk->cddat |= 2;
     pPlayerwk->xposi.w.h = pActwk->xposi.w.h;
     pPlayerwk->yposi.w.h = pActwk->yposi.w.h;
-    pActwk->actfree[8] = 0;
+    shoot5_get_work(pActwk)->unused6[2] = 0;
     soundset(145);
 }
 
@@ -187,25 +235,26 @@ static void shootermove3(sprite_status *pActwk) {
     Sint16 *a2;
     Sint32 d0, d2, d3;
     Uint8 d1;
+    shoot5_work *pWork = shoot5_get_work(pActwk);
 
     pPlayerwk = &actwk[0];
-    --((char *)pActwk)[51];
-    if (((char *)pActwk)[51] < 0) {
+    --pWork->travel_timer_high;
+    if (pWork->travel_timer_high < 0) {
 
-        pPlayerwk->xposi.w.h = ((Sint16 *)pActwk)[29];
-        pPlayerwk->yposi.w.h = ((Sint16 *)pActwk)[30];
-        d1 = pActwk->actfree[17];
+        pPlayerwk->xposi.w.h = pWork->target_x;
+        pPlayerwk->yposi.w.h = pWork->target_y;
+        d1 = pWork->route_offset;
         d1 = (char)d1 + 4;
-        if (d1 >= pActwk->actfree[16]) {
+        if (d1 >= pWork->route_length) {
 
             d1 = 0;
             goto label1;
         }
-        pActwk->actfree[17] = d1;
-        a2 = ((Sint16 **)pActwk)[16];
+        pWork->route_offset = d1;
+        a2 = pWork->route_points;
         a2 += d1 / 2;
-        ((Sint16 *)pActwk)[29] = *a2++;
-        ((Sint16 *)pActwk)[30] = *a2++;
+        pWork->target_x = *a2++;
+        pWork->target_y = *a2++;
         shooterspdset(pActwk);
         return;
     }
@@ -223,7 +272,7 @@ static void shootermove3(sprite_status *pActwk) {
 label1:
     pPlayerwk->yposi.w.h &= 2047;
     pActwk->r_no0 = 0;
-    pPlayerwk->actfree[2] = 0;
+    player_work_get(pPlayerwk)->status_flags = 0;
     pActwk->r_no1 = 2;
 }
 
@@ -231,6 +280,7 @@ void shooterspdset(sprite_status *pActwk) {
     sprite_status *pPlayerwk;
     int_union ld0, ld1;
     Sint16 d2, d3, tmp;
+    shoot5_work *pWork = shoot5_get_work(pActwk);
 
     pPlayerwk = &actwk[0];
     ld0.l = 0;
@@ -243,7 +293,7 @@ void shooterspdset(sprite_status *pActwk) {
 label1:
     d2 = d3 = 2560;
 label2:
-    ld0.w.l = ((Sint16 *)pActwk)[29];
+    ld0.w.l = pWork->target_x;
     if (ld0.w.l < pPlayerwk->xposi.w.h) {
         ld0.w.l -= pPlayerwk->xposi.w.h;
         ld0.w.l *= -1;
@@ -252,7 +302,7 @@ label2:
         ld0.w.l -= pPlayerwk->xposi.w.h;
     }
     ld1.l = 0;
-    ld1.w.l = ((Sint16 *)pActwk)[30];
+    ld1.w.l = pWork->target_y;
     if (ld1.w.l < pPlayerwk->yposi.w.h) {
         ld1.w.l -= pPlayerwk->yposi.w.h;
         ld1.w.l *= -1;
@@ -262,7 +312,7 @@ label2:
     }
     if ((Uint16)ld1.w.l >= (Uint16)ld0.w.l) {
         ld1.l = 0;
-        ld1.w.l = ((Sint16 *)pActwk)[30];
+        ld1.w.l = pWork->target_y;
         ld1.w.l -= pPlayerwk->yposi.w.h;
         tmp = ld1.w.h;
         ld1.w.h = ld1.w.l;
@@ -270,7 +320,7 @@ label2:
         ld1.w.l = ld1.l / d3;
 
         ld0.l = 0;
-        ld0.w.l = ((Sint16 *)pActwk)[29];
+        ld0.w.l = pWork->target_x;
         ld0.w.l -= pPlayerwk->xposi.w.h;
         if (ld0.w.l) {
             tmp = ld0.w.h;
@@ -283,10 +333,10 @@ label2:
         if (ld1.w.l < 0) {
             ld1.w.l *= -1;
         }
-        ((Sint16 *)pActwk)[25] = ld1.w.l;
+        pWork->travel_timer = ld1.w.l;
     } else {
         ld0.l = 0;
-        ld0.w.l = ((Sint16 *)pActwk)[29];
+        ld0.w.l = pWork->target_x;
         ld0.w.l -= pPlayerwk->xposi.w.h;
         tmp = ld0.w.h;
         ld0.w.h = ld0.w.l;
@@ -294,7 +344,7 @@ label2:
         ld0.w.l = ld0.l / d2;
 
         ld1.l = 0;
-        ld1.w.l = ((Sint16 *)pActwk)[30];
+        ld1.w.l = pWork->target_y;
         ld1.w.l -= pPlayerwk->yposi.w.h;
         if (ld1.w.l) {
             tmp = ld1.w.h;
@@ -307,6 +357,6 @@ label2:
         if (ld0.w.l < 0) {
             ld0.w.l *= -1;
         }
-        ((Sint16 *)pActwk)[25] = ld0.w.l;
+        pWork->travel_timer = ld0.w.l;
     }
 }

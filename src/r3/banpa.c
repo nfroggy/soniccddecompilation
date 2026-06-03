@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "banpa.h"
 #include "../action.h"
@@ -7,6 +9,27 @@
 static void act_init(sprite_status *bumperwk);
 static void act_move(sprite_status *bumperwk);
 
+#pragma pack(push, 1)
+typedef struct {
+    Sint32 speed;
+    Uint16 timer;
+    Uint16 interval;
+    Uint8 unused8[12];
+    Sint16 origin_x;
+} banpa_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(banpa_work, speed) == 0, "banpa_work.speed offset");
+_Static_assert(offsetof(banpa_work, timer) == 4, "banpa_work.timer offset");
+_Static_assert(offsetof(banpa_work, interval) == 6, "banpa_work.interval offset");
+_Static_assert(offsetof(banpa_work, origin_x) == 20, "banpa_work.origin_x offset");
+_Static_assert(sizeof(banpa_work) <= sizeof(((sprite_status *)0)->actfree),
+               "banpa_work fits in actfree");
+
+static banpa_work *banpa_get_work(sprite_status *bumperwk) {
+    return (banpa_work *)bumperwk->actfree;
+}
+
 static sprite_pattern bmp00 = {1, {{-32, -16, 0, 315}}};
 sprite_pattern *banpa_pat[1] = {&bmp00};
 
@@ -15,11 +38,13 @@ void banpa(sprite_status *bumperwk) {
 
     act_tbl[bumperwk->r_no0 / 2](bumperwk);
     actionsub(bumperwk);
-    frameout_s00(bumperwk, ((Sint16 *)bumperwk)[33]);
+    frameout_s00(bumperwk, banpa_get_work(bumperwk)->origin_x);
 }
 
 static void act_init(sprite_status *bumperwk) {
-    ((Sint16 *)bumperwk)[33] = bumperwk->xposi.w.h;
+    banpa_work *work = banpa_get_work(bumperwk);
+
+    work->origin_x = bumperwk->xposi.w.h;
 
     bumperwk->r_no0 += 2;
     bumperwk->patbase = banpa_pat;
@@ -30,19 +55,21 @@ static void act_init(sprite_status *bumperwk) {
     bumperwk->sprpri = 1;
     bumperwk->colino = 231;
 
-    ((Sint16 *)bumperwk)[26] = 192;
-    ((Sint16 *)bumperwk)[25] = 96;
+    work->interval = 192;
+    work->timer = 96;
     if (!((Uint8)bumperwk->userflag.b.h & 128)) {
-        ((Sint16 *)bumperwk)[26] = 160;
-        ((Sint16 *)bumperwk)[25] = 80;
+        work->interval = 160;
+        work->timer = 80;
     }
     if (bumperwk->userflag.b.h & 64)
-        *(Sint32 *)&bumperwk->actfree[0] = 65536;
+        work->speed = 65536;
     else
-        *(Sint32 *)&bumperwk->actfree[0] = -65536;
+        work->speed = -65536;
 }
 
 static void act_move(sprite_status *bumperwk) {
+    banpa_work *work = banpa_get_work(bumperwk);
+
     if (bumperwk->colicnt != 0) {
         if ((char)bumperwk->actflg < 0)
             soundset(181);
@@ -75,13 +102,13 @@ static void act_move(sprite_status *bumperwk) {
         }
     }
     if (bumperwk->userflag.b.h < 0)
-        bumperwk->xposi.l += *(Sint32 *)&bumperwk->actfree[0];
+        bumperwk->xposi.l += work->speed;
     else
-        bumperwk->yposi.l += *(Sint32 *)&bumperwk->actfree[0];
+        bumperwk->yposi.l += work->speed;
 
-    if (--((Uint16 *)bumperwk)[25] == 0) {
-        ((Uint16 *)bumperwk)[25] = ((Uint16 *)bumperwk)[26];
+    if (--work->timer == 0) {
+        work->timer = work->interval;
 
-        *(Sint32 *)&bumperwk->actfree[0] *= -1;
+        work->speed *= -1;
     }
 }

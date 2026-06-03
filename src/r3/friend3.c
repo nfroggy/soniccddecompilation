@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "friend3.h"
 #include "../action.h"
@@ -6,6 +8,55 @@
 #include "../etc.h"
 #include "../playsub.h"
 #include "../suicide.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    union {
+        struct {
+            Sint16 base_x;
+            Sint16 base_y;
+            Uint8 angle;
+            Sint8 angle_delta;
+        };
+        struct {
+            Uint8 unused0[2];
+            Sint32 x_speed;
+            Sint32 y_speed;
+        };
+    };
+    Uint8 unused10[10];
+    union {
+        Uint16 movie_parent_index;
+        struct {
+            Uint8 unused20;
+            Uint8 movie_done;
+        };
+    };
+} friend3_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(friend3_work, base_x) == 0,
+               "friend3_work.base_x offset");
+_Static_assert(offsetof(friend3_work, base_y) == 2,
+               "friend3_work.base_y offset");
+_Static_assert(offsetof(friend3_work, angle) == 4,
+               "friend3_work.angle offset");
+_Static_assert(offsetof(friend3_work, angle_delta) == 5,
+               "friend3_work.angle_delta offset");
+_Static_assert(offsetof(friend3_work, x_speed) == 2,
+               "friend3_work.x_speed offset");
+_Static_assert(offsetof(friend3_work, y_speed) == 6,
+               "friend3_work.y_speed offset");
+_Static_assert(offsetof(friend3_work, movie_parent_index) == 20,
+               "friend3_work.movie_parent_index offset");
+_Static_assert(offsetof(friend3_work, movie_done) == 21,
+               "friend3_work.movie_done offset");
+_Static_assert(sizeof(friend3_work) <= sizeof(((sprite_status *)0)->actfree),
+               "friend3_work fits in actfree");
+
+static friend3_work *friend3_get_work(sprite_status *actionwk) {
+    return (friend3_work *)actionwk->actfree;
+}
 
 #if defined(R31A) || defined(R31B) || defined(R32A)
 #define SPRITE_FRIEND3_BASE 538
@@ -72,6 +123,8 @@ void inco(sprite_status *actionwk) {
 }
 
 static void t_init(sprite_status *actionwk) {
+    friend3_work *work = friend3_get_work(actionwk);
+
     actionwk->r_no0 += 2;
     actionwk->actflg = 4;
 
@@ -80,8 +133,8 @@ static void t_init(sprite_status *actionwk) {
     actionwk->sprpri = 1;
     actionwk->sprhsize = 8;
     actionwk->patbase = pat_friend0;
-    ((Sint16 *)actionwk)[23] = actionwk->xposi.w.h;
-    ((Sint16 *)actionwk)[24] = actionwk->yposi.w.h;
+    work->base_x = actionwk->xposi.w.h;
+    work->base_y = actionwk->yposi.w.h;
     actionwk->actflg ^= 1, actionwk->cddat ^= 1;
     set_sproffset(actionwk);
 
@@ -92,40 +145,42 @@ static void t_init(sprite_status *actionwk) {
     } else {
         actionwk->sprpri = 1;
         actionwk->sproffset |= 32768;
-        actionwk->actfree[4] = 1;
-        actionwk->actfree[5] = 1;
+        work->angle = 1;
+        work->angle_delta = 1;
     }
 }
 
 static void t_move(sprite_status *actionwk) {
+    friend3_work *work = friend3_get_work(actionwk);
     char d0, d1;
 
     t_roll(actionwk, 1, 1);
-    d1 = d0 = (char)actionwk->actfree[4] + (char)actionwk->actfree[5];
+    d1 = d0 = (char)work->angle + work->angle_delta;
     d1 += 126;
     if (d1 >= 0) {
-        d0 = actionwk->actfree[4];
-        actionwk->actfree[5] = -actionwk->actfree[5];
+        d0 = work->angle;
+        work->angle_delta = -work->angle_delta;
         actionwk->actflg ^= 1, actionwk->cddat ^= 1;
     }
 
-    actionwk->actfree[4] = d0;
+    work->angle = d0;
     patchg(actionwk, (Uint8 **)pchg0);
     actionsub(actionwk);
-    frameout_s00(actionwk, ((Sint16 *)actionwk)[23]);
+    frameout_s00(actionwk, work->base_x);
 }
 
 static void t_movie(sprite_status *actionwk) {
+    friend3_work *work = friend3_get_work(actionwk);
     sprite_status *a1;
 
-    a1 = &actwk[((Uint16 *)actionwk)[33]];
-    if (a1->actno != 56 || a1->actfree[21]) {
+    a1 = &actwk[work->movie_parent_index];
+    if (a1->actno != 56 || friend3_get_work(a1)->movie_done) {
         frameout(actionwk);
         return;
     }
     t_roll(actionwk, 3, 4);
-    actionwk->actfree[4] += 4;
-    if (!(actionwk->actfree[4] & 127))
+    work->angle += 4;
+    if (!(work->angle & 127))
         actionwk->actflg ^= 1, actionwk->cddat ^= 1;
 
     patchg(actionwk, (Uint8 **)pchg0);
@@ -133,13 +188,14 @@ static void t_movie(sprite_status *actionwk) {
 }
 
 static void t_roll(sprite_status *actionwk, Sint16 d2, Sint16 d3) {
+    friend3_work *work = friend3_get_work(actionwk);
     Sint16 sin, cos;
 
-    sinset(actionwk->actfree[4], &sin, &cos);
+    sinset(work->angle, &sin, &cos);
     cos >>= d2;
     sin >>= d3;
-    actionwk->xposi.w.h = cos + ((Sint16 *)actionwk)[23];
-    actionwk->yposi.w.h = sin + ((Sint16 *)actionwk)[24];
+    actionwk->xposi.w.h = cos + work->base_x;
+    actionwk->yposi.w.h = sin + work->base_y;
 }
 
 void pocky(sprite_status *actionwk) {
@@ -176,19 +232,20 @@ static void p_init(sprite_status *actionwk) {
         actionwk->r_no0 = 8;
         actionwk->actflg ^= 1, actionwk->cddat ^= 1;
     } else {
-        ((Sint32 *)actionwk)[12] = 65536;
-        ((Sint32 *)actionwk)[13] = -0x40000;
+        friend3_get_work(actionwk)->x_speed = 65536;
+        friend3_get_work(actionwk)->y_speed = -0x40000;
     }
 }
 
 static void p_move(sprite_status *actionwk) {
+    friend3_work *work = friend3_get_work(actionwk);
     Sint16 d1;
 
-    actionwk->xposi.l += ((Sint32 *)actionwk)[12];
-    actionwk->yposi.l += ((Sint32 *)actionwk)[13];
+    actionwk->xposi.l += work->x_speed;
+    actionwk->yposi.l += work->y_speed;
 
-    ((Sint32 *)actionwk)[13] += 8192;
-    if (((Sint32 *)actionwk)[13] < 0)
+    work->y_speed += 8192;
+    if (work->y_speed < 0)
         actionwk->patno = 0;
     else
         actionwk->patno = 1;
@@ -196,7 +253,7 @@ static void p_move(sprite_status *actionwk) {
     if (d1 < 0) {
         actionwk->r_no0 += 2;
         actionwk->yposi.w.h += d1;
-        ((Sint32 *)actionwk)[13] = -0x40000;
+        work->y_speed = -0x40000;
     }
     p_end(actionwk);
 }
@@ -208,17 +265,18 @@ void p_end(sprite_status *actionwk) {
 
 void p_rev(sprite_status *actionwk) {
     actionwk->r_no0 = 2;
-    ((Sint32 *)actionwk)[12] = -((Sint32 *)actionwk)[12];
+    friend3_get_work(actionwk)->x_speed = -friend3_get_work(actionwk)->x_speed;
 
     actionwk->actflg ^= 1, actionwk->cddat ^= 1;
     p_end(actionwk);
 }
 
 static void p_movie(sprite_status *actionwk) {
+    friend3_work *work = friend3_get_work(actionwk);
     sprite_status *a1;
 
-    a1 = &actwk[((Uint16 *)actionwk)[33]];
-    if (a1->actno != 56 || a1->actfree[21]) {
+    a1 = &actwk[work->movie_parent_index];
+    if (a1->actno != 56 || friend3_get_work(a1)->movie_done) {
         frameout(actionwk);
         return;
     }

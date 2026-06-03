@@ -1,7 +1,10 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "sikake.h"
 #include "../action.h"
 #include "../actset.h"
+#include "../player_work.h"
 #include "../playsub.h"
 #include "../ridechk.h"
 #include "coli1.h"
@@ -11,6 +14,21 @@
 #else
 #define SPRITE_SIKAKE_BASE 471
 #endif
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 wobble_timer;
+} tobita1_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(tobita1_work, wobble_timer) == 0,
+               "tobita1_work.wobble_timer offset");
+_Static_assert(sizeof(tobita1_work) <= sizeof(((sprite_status *)0)->actfree),
+               "tobita1_work fits in actfree");
+
+static tobita1_work *tobita1_get_work(sprite_status *pActwk) {
+    return (tobita1_work *)pActwk->actfree;
+}
 
 static Uint8 tobita1chg0[16] = {2, 0, 1, 0, 2, 0, 1, 0,
                                 3, 4, 3, 5, 3, 4, 3, 255};
@@ -213,7 +231,7 @@ void tobita_ride_r(sprite_status *pActwk) {
         if (pPlayerwk->cddat & 2)
             pActwk->r_no0 = 10;
         if (pActwk->r_no0 == 10)
-            pActwk->actfree[0] = 64;
+            tobita1_get_work(pActwk)->wobble_timer = 64;
     }
 
     patchg(pActwk, tobita1chg);
@@ -230,7 +248,7 @@ void tobita_ride_l(sprite_status *pActwk) {
         if (pPlayerwk->cddat & 2)
             pActwk->r_no0 = 12;
         if (pActwk->r_no0 == 12)
-            pActwk->actfree[0] = 64;
+            tobita1_get_work(pActwk)->wobble_timer = 64;
     }
 
     patchg(pActwk, tobita1chg);
@@ -254,13 +272,13 @@ void tobita_yure_r(sprite_status *pActwk) {
             d0 = 2560;
         d0 *= -1;
         pPlayerwk->yspeed.w = d0;
-        pActwk->actfree[0] = 64;
+        tobita1_get_work(pActwk)->wobble_timer = 64;
         zflag = (pPlayerwk->cddat & 2) ? 0 : 1;
         pPlayerwk->cddat |= 2;
         if (zflag == 0)
-            pPlayerwk->actfree[18] = 0;
+            player_work_get(pPlayerwk)->jump_started = 0;
         pPlayerwk->cddat &= 223;
-        pPlayerwk->actfree[14] = 0;
+        player_work_get(pPlayerwk)->jump_lock = 0;
 
         pPlayerwk->sprvsize = 19;
         pPlayerwk->sprhs = 9;
@@ -275,13 +293,13 @@ void tobita_yure_r(sprite_status *pActwk) {
         }
     }
 
-    cnt = pActwk->actfree[0];
+    cnt = tobita1_get_work(pActwk)->wobble_timer;
     --cnt;
-    pActwk->actfree[0] = cnt;
+    tobita1_get_work(pActwk)->wobble_timer = cnt;
     if (cnt == 0) {
         pActwk->r_no0 = 2;
         pActwk->mstno.b.h = 3;
-        pActwk->actfree[0] = 64;
+        tobita1_get_work(pActwk)->wobble_timer = 64;
     }
 
     patchg(pActwk, tobita1chg);
@@ -305,13 +323,13 @@ void tobita_yure_l(sprite_status *pActwk) {
             d0 = 2560;
         d0 *= -1;
         pPlayerwk->yspeed.w = d0;
-        pActwk->actfree[0] = 64;
+        tobita1_get_work(pActwk)->wobble_timer = 64;
         zflag = (pPlayerwk->cddat & 2) ? 0 : 1;
         pPlayerwk->cddat |= 2;
         if (zflag == 0)
-            pPlayerwk->actfree[18] = 0;
+            player_work_get(pPlayerwk)->jump_started = 0;
         pPlayerwk->cddat &= 223;
-        pPlayerwk->actfree[14] = 0;
+        player_work_get(pPlayerwk)->jump_lock = 0;
 
         pPlayerwk->sprvsize = 19;
         pPlayerwk->sprhs = 9;
@@ -326,11 +344,11 @@ void tobita_yure_l(sprite_status *pActwk) {
         }
     }
 
-    cnt = pActwk->actfree[0];
+    cnt = tobita1_get_work(pActwk)->wobble_timer;
     --cnt;
-    pActwk->actfree[0] = cnt;
+    tobita1_get_work(pActwk)->wobble_timer = cnt;
     if (cnt == 0) {
-        pActwk->actfree[0] = 64;
+        tobita1_get_work(pActwk)->wobble_timer = 64;
         pActwk->r_no0 = 4;
         pActwk->mstno.b.h = 4;
     }
@@ -386,7 +404,8 @@ void hari_normal(sprite_status *pActwk) {
         goto label1;
 
     if (pPlayerwk->r_no0 < 4) {
-        if (pPlayerwk->actfree[6] == 0) {
+        if ((Uint8)player_work_get(pPlayerwk)->damage_invulnerability_timer ==
+            0) {
             pPlayerwk->yposi.w.h -= pPlayerwk->yspeed.w;
             playdamageset(pPlayerwk, pActwk);
         }

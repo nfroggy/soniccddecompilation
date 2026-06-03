@@ -222,6 +222,25 @@ extern int_union *lphscrollbuff;
 extern Sint16 playposiwk[128];
 extern sprite_statuses pbuffer[8];
 extern Sint16 hscrollwork[256];
+
+static inline int_union hscrollwork_get_pair(Sint32 word_offset) {
+    int_union value;
+    value.w.l = (Uint16)hscrollwork[word_offset];
+    value.w.h = hscrollwork[word_offset + 1];
+    return value;
+}
+
+static inline void hscrollwork_set_pair(Sint32 word_offset, int_union value) {
+    hscrollwork[word_offset] = value.w.l;
+    hscrollwork[word_offset + 1] = value.w.h;
+}
+
+static inline void hscrollwork_add_pair(Sint32 word_offset, Sint32 delta) {
+    int_union value = hscrollwork_get_pair(word_offset);
+    value.l += delta;
+    hscrollwork_set_pair(word_offset, value);
+}
+
 extern Uint8 flowwk[4096];
 extern Uint16 blockwk[1024][4];
 extern Uint16 *pmapwk;

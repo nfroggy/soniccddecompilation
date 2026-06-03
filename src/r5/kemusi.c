@@ -1,9 +1,48 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "kemusi.h"
 #include "../action.h"
 #include "../actset.h"
 #include "../dircol.h"
 #include "../suicide.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint16 step_delta;
+    Sint16 move_duration;
+    Sint16 move_timer;
+    Sint16 step_reset;
+    Sint16 step_counter;
+    Sint16 origin_x;
+    Sint16 landed_count;
+    Uint8 unused14[2];
+    Sint16 link_indices[3];
+} kemusi_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(kemusi_work, step_delta) == 0,
+               "kemusi_work.step_delta offset");
+_Static_assert(offsetof(kemusi_work, move_duration) == 2,
+               "kemusi_work.move_duration offset");
+_Static_assert(offsetof(kemusi_work, move_timer) == 4,
+               "kemusi_work.move_timer offset");
+_Static_assert(offsetof(kemusi_work, step_reset) == 6,
+               "kemusi_work.step_reset offset");
+_Static_assert(offsetof(kemusi_work, step_counter) == 8,
+               "kemusi_work.step_counter offset");
+_Static_assert(offsetof(kemusi_work, origin_x) == 10,
+               "kemusi_work.origin_x offset");
+_Static_assert(offsetof(kemusi_work, landed_count) == 12,
+               "kemusi_work.landed_count offset");
+_Static_assert(offsetof(kemusi_work, link_indices) == 16,
+               "kemusi_work.link_indices offset");
+_Static_assert(sizeof(kemusi_work) <= sizeof(((sprite_status *)0)->actfree),
+               "kemusi_work fits in actfree");
+
+static kemusi_work *kemusi_get_work(sprite_status *pActwk) {
+    return (kemusi_work *)pActwk->actfree;
+}
 
 static void kemusi_init(sprite_status *pActwk);
 static void kemusi_com(sprite_status *pActwk, sprite_status *pNewactwk);
@@ -22,6 +61,7 @@ sprite_pattern *pat_kemusi[4] = {&kemusi_pat0, &kemusi_pat1, &kemusi_pat2,
                                  &kemusi_pat3};
 
 void kemusi(sprite_status *pActwk) {
+    kemusi_work *work = kemusi_get_work(pActwk);
     sprite_status *pActwk1, *pActwk2, *pActwk3;
 
     void (*kemusi_move_tbl[5])(sprite_status *) = {
@@ -33,9 +73,9 @@ void kemusi(sprite_status *pActwk) {
     }
 
     if (pActwk->r_no0) {
-        pActwk1 = &actwk[((Sint16 *)pActwk)[31]];
-        pActwk2 = &actwk[((Sint16 *)pActwk)[32]];
-        pActwk3 = &actwk[((Sint16 *)pActwk)[33]];
+        pActwk1 = &actwk[work->link_indices[0]];
+        pActwk2 = &actwk[work->link_indices[1]];
+        pActwk3 = &actwk[work->link_indices[2]];
         if (pActwk1->actno != 34 || pActwk2->actno != 34 ||
             pActwk3->actno != 34) {
             frameout(pActwk);
@@ -46,18 +86,19 @@ void kemusi(sprite_status *pActwk) {
     kemusi_move_tbl[pActwk->r_no0 / 2](pActwk);
     actionsub(pActwk);
     if (!pActwk->userflag.b.l) {
-        frameout_s00(pActwk, ((Sint16 *)pActwk)[28]);
+        frameout_s00(pActwk, work->origin_x);
     }
 }
 
 static void kemusi_init(sprite_status *pActwk) {
+    kemusi_work *work = kemusi_get_work(pActwk);
     sprite_status *pNewactwk;
     sprite_status *pActwk1, *pActwk2, *pActwk3;
     Uint8 bD2, bD3, bD4;
     Sint16 wD0, wD1, wD5, wD6;
     Sint16 i;
 
-    ((Sint16 *)pActwk)[23] = 3;
+    work->step_delta = 3;
     pActwk->patno = 1;
     pActwk->sprvsize = 12;
     pActwk->colino = 51;
@@ -73,8 +114,8 @@ static void kemusi_init(sprite_status *pActwk) {
         wD1 = 12;
     }
 
-    ((Sint16 *)pActwk)[24] = wD0;
-    ((Sint16 *)pActwk)[26] = wD1;
+    work->move_duration = wD0;
+    work->step_reset = wD1;
 
     i = 16;
     wD6 = 2;
@@ -95,8 +136,8 @@ static void kemusi_init(sprite_status *pActwk) {
             frameout(pActwk);
             return;
         }
-        ((Sint16 *)((char *)pActwk + i))[23] = pNewactwk - actwk;
-        ((Sint16 *)pNewactwk)[23] = wD6;
+        work->link_indices[(i - 16) / 2] = pNewactwk - actwk;
+        kemusi_get_work(pNewactwk)->step_delta = wD6;
         wD5 += 12;
         pNewactwk->xposi.w.h = wD5;
         pNewactwk->patno = bD4;
@@ -105,26 +146,26 @@ static void kemusi_init(sprite_status *pActwk) {
         pNewactwk->actno = pActwk->actno;
         pNewactwk->userflag.b.h = pActwk->userflag.b.h;
         pNewactwk->yposi.w.h = pActwk->yposi.w.h;
-        ((Sint16 *)pNewactwk)[24] = ((Sint16 *)pActwk)[24];
-        ((Sint16 *)pNewactwk)[26] = ((Sint16 *)pActwk)[26];
+        kemusi_get_work(pNewactwk)->move_duration = work->move_duration;
+        kemusi_get_work(pNewactwk)->step_reset = work->step_reset;
         pNewactwk->userflag.b.l = -1;
         kemusi_com(pActwk, pNewactwk);
     }
-    pActwk1 = &actwk[((Sint16 *)pActwk)[31]];
-    pActwk2 = &actwk[((Sint16 *)pActwk)[32]];
-    pActwk3 = &actwk[((Sint16 *)pActwk)[33]];
+    pActwk1 = &actwk[work->link_indices[0]];
+    pActwk2 = &actwk[work->link_indices[1]];
+    pActwk3 = &actwk[work->link_indices[2]];
 
-    ((Sint16 *)pActwk1)[31] = pActwk - actwk;
-    ((Sint16 *)pActwk1)[32] = pActwk2 - actwk;
-    ((Sint16 *)pActwk1)[33] = pActwk3 - actwk;
+    kemusi_get_work(pActwk1)->link_indices[0] = pActwk - actwk;
+    kemusi_get_work(pActwk1)->link_indices[1] = pActwk2 - actwk;
+    kemusi_get_work(pActwk1)->link_indices[2] = pActwk3 - actwk;
 
-    ((Sint16 *)pActwk2)[31] = pActwk - actwk;
-    ((Sint16 *)pActwk2)[32] = pActwk1 - actwk;
-    ((Sint16 *)pActwk2)[33] = pActwk3 - actwk;
+    kemusi_get_work(pActwk2)->link_indices[0] = pActwk - actwk;
+    kemusi_get_work(pActwk2)->link_indices[1] = pActwk1 - actwk;
+    kemusi_get_work(pActwk2)->link_indices[2] = pActwk3 - actwk;
 
-    ((Sint16 *)pActwk3)[31] = pActwk - actwk;
-    ((Sint16 *)pActwk3)[32] = pActwk1 - actwk;
-    ((Sint16 *)pActwk3)[33] = pActwk2 - actwk;
+    kemusi_get_work(pActwk3)->link_indices[0] = pActwk - actwk;
+    kemusi_get_work(pActwk3)->link_indices[1] = pActwk1 - actwk;
+    kemusi_get_work(pActwk3)->link_indices[2] = pActwk2 - actwk;
 }
 
 static void kemusi_com(sprite_status *pActwk, sprite_status *pNewactwk) {
@@ -135,7 +176,7 @@ static void kemusi_com(sprite_status *pActwk, sprite_status *pNewactwk) {
     pNewactwk->sprhsize = 8;
     pNewactwk->sproffset = 9214;
     pNewactwk->patbase = pat_kemusi;
-    ((Sint16 *)pNewactwk)[28] = pActwk->xposi.w.h;
+    kemusi_get_work(pNewactwk)->origin_x = pActwk->xposi.w.h;
 }
 
 static void kemusi_fall(sprite_status *pActwk) {
@@ -148,29 +189,33 @@ static void kemusi_fall(sprite_status *pActwk) {
         pActwk->r_no0 += 2;
         pSubactwk = pActwk;
         if (pActwk->userflag.b.l) {
-            pSubactwk = &actwk[((Sint16 *)pActwk)[31]];
+            pSubactwk = &actwk[kemusi_get_work(pActwk)->link_indices[0]];
         }
-        ++((Sint16 *)pSubactwk)[29];
+        ++kemusi_get_work(pSubactwk)->landed_count;
     }
 }
 
 static void kemusi_stop(sprite_status *pActwk) {
+    kemusi_work *work = kemusi_get_work(pActwk);
+
     if (!pActwk->userflag.b.l) {
-        if (((Sint16 *)pActwk)[29] == 4) {
+        if (work->landed_count == 4) {
             pActwk->r_no0 += 2;
-            actwk[((Sint16 *)pActwk)[31]].r_no0 += 2;
-            actwk[((Sint16 *)pActwk)[32]].r_no0 += 2;
-            actwk[((Sint16 *)pActwk)[33]].r_no0 += 2;
+            actwk[work->link_indices[0]].r_no0 += 2;
+            actwk[work->link_indices[1]].r_no0 += 2;
+            actwk[work->link_indices[2]].r_no0 += 2;
             kemusi_move(pActwk);
         }
     }
 }
 
 static void kemusi_move(sprite_status *pActwk) {
+    kemusi_work *work = kemusi_get_work(pActwk);
+
     pActwk->r_no0 += 2;
-    ((Sint16 *)pActwk)[23] ^= 3;
-    ((Sint16 *)pActwk)[25] = ((Sint16 *)pActwk)[24];
-    ((Sint16 *)pActwk)[27] = ((Sint16 *)pActwk)[26];
+    work->step_delta ^= 3;
+    work->move_timer = work->move_duration;
+    work->step_counter = work->step_reset;
     if (!pActwk->userflag.b.l) {
         pActwk->patno ^= 1;
     }
@@ -178,12 +223,13 @@ static void kemusi_move(sprite_status *pActwk) {
 }
 
 static void kemusi_move1(sprite_status *pActwk) {
+    kemusi_work *work = kemusi_get_work(pActwk);
     Sint16 wD0;
 
-    if (!(((Sint16 *)pActwk)[27] -= ((Sint16 *)pActwk)[23])) {
-        ((Sint16 *)pActwk)[27] = ((Sint16 *)pActwk)[26];
+    if (!(work->step_counter -= work->step_delta)) {
+        work->step_counter = work->step_reset;
         kemusi_move1_move(pActwk);
-        wD0 = ((Sint16 *)pActwk)[28] - pActwk->xposi.w.h;
+        wD0 = work->origin_x - pActwk->xposi.w.h;
         if (wD0 < 0)
             wD0 *= -1;
         if (wD0 >= 80) {
@@ -199,7 +245,7 @@ static void kemusi_move1(sprite_status *pActwk) {
         pActwk->yposi.w.h += wD0;
     }
 
-    if (!(--((Sint16 *)pActwk)[25])) {
+    if (!(--work->move_timer)) {
         pActwk->r_no0 -= 2;
     }
 }

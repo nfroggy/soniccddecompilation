@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "boss_3.h"
 #include "../action.h"
@@ -8,9 +10,63 @@
 #include "../impfuncs.h"
 #include "../loader2.h"
 #include "../playsub.h"
+#include "../player_work.h"
 #include "../score.h"
 
 extern void colorset2(Sint32 ColorNo);
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 timer;
+    Uint8 flash_timer;
+    Uint8 flags;
+    Uint8 unused3;
+    Sint16 target_position;
+    Sint32 vertical_speed;
+    Uint16 child_index;
+    Uint16 support_index;
+    Sint16 x_acceleration;
+    union {
+        Sint16 y_acceleration;
+        struct {
+            Uint8 jaba_count;
+            Uint8 phase;
+        };
+    };
+    Sint16 max_y_speed;
+    Sint16 explosion_timer;
+} egg3_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(egg3_work, timer) == 0, "egg3_work.timer offset");
+_Static_assert(offsetof(egg3_work, flash_timer) == 1,
+               "egg3_work.flash_timer offset");
+_Static_assert(offsetof(egg3_work, flags) == 2, "egg3_work.flags offset");
+_Static_assert(offsetof(egg3_work, target_position) == 4,
+               "egg3_work.target_position offset");
+_Static_assert(offsetof(egg3_work, vertical_speed) == 6,
+               "egg3_work.vertical_speed offset");
+_Static_assert(offsetof(egg3_work, child_index) == 10,
+               "egg3_work.child_index offset");
+_Static_assert(offsetof(egg3_work, support_index) == 12,
+               "egg3_work.support_index offset");
+_Static_assert(offsetof(egg3_work, x_acceleration) == 14,
+               "egg3_work.x_acceleration offset");
+_Static_assert(offsetof(egg3_work, y_acceleration) == 16,
+               "egg3_work.y_acceleration offset");
+_Static_assert(offsetof(egg3_work, jaba_count) == 16,
+               "egg3_work.jaba_count offset");
+_Static_assert(offsetof(egg3_work, phase) == 17, "egg3_work.phase offset");
+_Static_assert(offsetof(egg3_work, max_y_speed) == 18,
+               "egg3_work.max_y_speed offset");
+_Static_assert(offsetof(egg3_work, explosion_timer) == 20,
+               "egg3_work.explosion_timer offset");
+_Static_assert(sizeof(egg3_work) <= sizeof(((sprite_status *)0)->actfree),
+               "egg3_work fits in actfree");
+
+static egg3_work *egg3_get_work(sprite_status *actionwk) {
+    return (egg3_work *)actionwk->actfree;
+}
 
 static sprite_pattern segg3_01 = {1, {{-24, -56, 0, 571}}};
 static sprite_pattern segg3_02 = {1, {{-24, -56, 0, 572}}};
@@ -105,25 +161,25 @@ void egg3dai_s_ini(sprite_status *actionwk) {
     actionwk->sprvsize = 16;
     actionwk->sproffset = 798;
     actionwk->patbase = egg3dai_s_pat;
-    ((Sint32 *)actionwk)[13] = -163840;
-    ((Sint16 *)actionwk)[25] = actionwk->yposi.w.h - 48;
+    egg3_get_work(actionwk)->vertical_speed = -163840;
+    egg3_get_work(actionwk)->target_position = actionwk->yposi.w.h - 48;
     actionwk->colino = 62;
     actionwk->colicnt = 2;
 
     if (actwkchk(&a1) != 0)
         return;
-    ((Uint16 *)a1)[28] = actionwk - actwk;
+    egg3_get_work(a1)->child_index = actionwk - actwk;
     a1->actno = 50;
     a1->xposi.w.h = actionwk->xposi.w.h - 48;
     a1->yposi.w.h = actionwk->yposi.w.h;
-    ((Uint16 *)actionwk)[28] = a1 - actwk;
+    egg3_get_work(actionwk)->child_index = a1 - actwk;
 }
 
 void egg3dai_s_chk(sprite_status *actionwk) {
     if (!actionwk->colino) {
         soundset(172);
         actionwk->r_no0 = 4;
-        actionwk->actfree[2] |= 4;
+        egg3_get_work(actionwk)->flags |= 4;
         actionwk->mstno.b.h = 1;
         actionwk->colicnt = 0;
     }
@@ -132,16 +188,16 @@ void egg3dai_s_chk(sprite_status *actionwk) {
 
 void egg3dai_s_up(sprite_status *actionwk) {
     jaba_s_chk(actionwk);
-    ++actionwk->actfree[0];
-    if (actionwk->actfree[0] >= 16) {
+    ++egg3_get_work(actionwk)->timer;
+    if (egg3_get_work(actionwk)->timer >= 16) {
         actionwk->mstno.b.h = 0;
         patchg(actionwk, (Uint8 **)egg3dai_s_pchg);
     }
 
-    actionwk->yposi.l += ((Sint32 *)actionwk)[13];
-    if (actionwk->yposi.w.h <= ((Sint16 *)actionwk)[25]) {
-        actionwk->actfree[2] &= 251;
-        actionwk->yposi.w.h = ((Sint16 *)actionwk)[25];
+    actionwk->yposi.l += egg3_get_work(actionwk)->vertical_speed;
+    if (actionwk->yposi.w.h <= egg3_get_work(actionwk)->target_position) {
+        egg3_get_work(actionwk)->flags &= 251;
+        actionwk->yposi.w.h = egg3_get_work(actionwk)->target_position;
         actionwk->r_no0 = 6;
     }
     actionsub(actionwk);
@@ -149,13 +205,13 @@ void egg3dai_s_up(sprite_status *actionwk) {
 
 void egg3dai_s_bom(sprite_status *actionwk) {
     jaba_s_chk(actionwk);
-    if (((Sint16 *)actionwk)[33] < 121) {
+    if (egg3_get_work(actionwk)->explosion_timer < 121) {
         bom_set_dai(actionwk);
         actionsub(actionwk);
     }
 
-    if (actionwk->actfree[2] & 2) {
-        frameout(&actwk[((Uint16 *)actionwk)[28]]);
+    if (egg3_get_work(actionwk)->flags & 2) {
+        frameout(&actwk[egg3_get_work(actionwk)->child_index]);
         frameout(actionwk);
     }
 }
@@ -163,13 +219,13 @@ void egg3dai_s_bom(sprite_status *actionwk) {
 void jaba_s_chk(sprite_status *actionwk) {
     sprite_status *a1;
 
-    if (actionwk->actfree[2] & 2)
+    if (egg3_get_work(actionwk)->flags & 2)
         return;
 
     a1 = &actwk[0];
     if (a1->xposi.w.h < 1152 || a1->yposi.w.h >= 1308)
         return;
-    actionwk->actfree[2] |= 2;
+    egg3_get_work(actionwk)->flags |= 2;
     sub_sync(103);
 
     if (actwkchk(&a1) != 0)
@@ -183,10 +239,10 @@ void jaba_s_chk(sprite_status *actionwk) {
 void egg3flash(sprite_status *actionwk) {
     Sint32 d0;
 
-    if (actionwk->actfree[1] == 0)
+    if (egg3_get_work(actionwk)->flash_timer == 0)
         return;
 
-    if (actionwk->actfree[1] >> 1 & 1) {
+    if (egg3_get_work(actionwk)->flash_timer >> 1 & 1) {
         d0 = 5;
         actionwk->patno |= 1;
     } else {
@@ -194,12 +250,12 @@ void egg3flash(sprite_status *actionwk) {
         actionwk->patno &= 254;
     }
 
-    --actionwk->actfree[1];
+    --egg3_get_work(actionwk)->flash_timer;
     colorset2(d0);
 }
 
 void egg3dai_l(sprite_status *actionwk) {
-    if (actionwk->actfree[17]) {
+    if (egg3_get_work(actionwk)->phase) {
 
         if ((Uint8)scra_vline < 176) {
             scra_vline += 6;
@@ -230,7 +286,7 @@ label1:
         egg3dai_l_end(actionwk);
         break;
     }
-    if (actionwk->actfree[2] & 1)
+    if (egg3_get_work(actionwk)->flags & 1)
         return;
     egg3flash(actionwk);
     actionsub(actionwk);
@@ -250,23 +306,23 @@ void egg3dai_l_ini(sprite_status *actionwk) {
 
     if (actwkchk2(actionwk, &a1) != 0)
         return;
-    ((Uint16 *)actionwk)[29] = a1 - actwk;
-    ((Uint16 *)a1)[28] = actionwk - actwk;
+    egg3_get_work(actionwk)->support_index = a1 - actwk;
+    egg3_get_work(a1)->child_index = actionwk - actwk;
     a1->actno = 51;
     a1->xposi.w.h = actionwk->xposi.w.h;
     a1->yposi.w.h = actionwk->yposi.w.h - 48;
 
     if (actwkchk2(actionwk, &a1) != 0)
         return;
-    ((Uint16 *)actionwk)[28] = a1 - actwk;
-    ((Uint16 *)a1)[28] = actionwk - actwk;
+    egg3_get_work(actionwk)->child_index = a1 - actwk;
+    egg3_get_work(a1)->child_index = actionwk - actwk;
     a1->actno = 50;
     a1->xposi.w.h = actionwk->xposi.w.h - 64;
     a1->yposi.w.h = actionwk->yposi.w.h;
 
     if (actwkchk2(actionwk, &a1) != 0)
         return;
-    ((Uint16 *)a1)[28] = actionwk - actwk;
+    egg3_get_work(a1)->child_index = actionwk - actwk;
     a1->actno = 61;
     a1->xposi.w.h = actionwk->xposi.w.h;
 }
@@ -275,7 +331,7 @@ void egg3dai_l_demo(sprite_status *actionwk) {
     sprite_status *a1;
     Sint16 d0, d1, d2;
 
-    a1 = &actwk[((Uint16 *)actionwk)[28]];
+    a1 = &actwk[egg3_get_work(actionwk)->child_index];
     a1->mstno.b.h = 1;
 
     a1 = &actwk[0];
@@ -286,11 +342,11 @@ void egg3dai_l_demo(sprite_status *actionwk) {
         goto label2;
     if (d0 >= d2) {
     label1:
-        if (((Sint16 *)actionwk)[25] == d0)
-            actionwk->actfree[2] &= 251;
+        if (egg3_get_work(actionwk)->target_position == d0)
+            egg3_get_work(actionwk)->flags &= 251;
         else
-            actionwk->actfree[2] |= 4;
-        ((Sint16 *)actionwk)[25] = d0;
+            egg3_get_work(actionwk)->flags |= 4;
+        egg3_get_work(actionwk)->target_position = d0;
         actionwk->yposi.w.h = d0;
         return;
     }
@@ -299,14 +355,14 @@ void egg3dai_l_demo(sprite_status *actionwk) {
     goto label1;
 label2:
     actionwk->yposi.w.h = d1;
-    actionwk->actfree[2] &= 251;
+    egg3_get_work(actionwk)->flags &= 251;
     actionwk->r_no0 = 4;
-    ((Sint32 *)actionwk)[13] = -163840;
-    ((Sint16 *)actionwk)[25] = actionwk->yposi.w.h - 72;
+    egg3_get_work(actionwk)->vertical_speed = -163840;
+    egg3_get_work(actionwk)->target_position = actionwk->yposi.w.h - 72;
     actionwk->colino = 63;
     actionwk->colicnt = 4;
 
-    a1 = &actwk[((Uint16 *)actionwk)[28]];
+    a1 = &actwk[egg3_get_work(actionwk)->child_index];
     a1->mstno.b.h = 0;
 }
 
@@ -314,9 +370,9 @@ Sint16 jabaopen_chk(sprite_status *actionwk) {
     Sint16 jabaopen_tbl[4] = {496, 424, 352, 272};
     Sint16 d0, d1;
 
-    if (actionwk->actfree[16] >= 4)
+    if (egg3_get_work(actionwk)->jaba_count >= 4)
         return 1;
-    d0 = actionwk->actfree[16];
+    d0 = egg3_get_work(actionwk)->jaba_count;
 
     d0 = jabaopen_tbl[d0];
 
@@ -351,11 +407,11 @@ void jaba_open(sprite_status *actionwk) {
         return;
     a1->actno = 63;
     a1->xposi.w.h = 896;
-    a1->yposi.w.h = jabapos_tbl[actionwk->actfree[16]++];
+    a1->yposi.w.h = jabapos_tbl[egg3_get_work(actionwk)->jaba_count++];
 }
 
 void egg3dai_l_hit(sprite_status *actionwk) {
-    switch (actionwk->actfree[17]) {
+    switch (egg3_get_work(actionwk)->phase) {
     case 0:
 
     case 1:
@@ -365,16 +421,16 @@ void egg3dai_l_hit(sprite_status *actionwk) {
         hitact3(actionwk);
     }
 
-    ++actionwk->actfree[17];
+    ++egg3_get_work(actionwk)->phase;
 }
 
 void hitact2(sprite_status *actionwk) {
     sprite_status *a1;
 
-    a1 = &actwk[((Uint16 *)actionwk)[29]];
+    a1 = &actwk[egg3_get_work(actionwk)->support_index];
     a1->r_no0 = 4;
     a1->mstno.b.h = 1;
-    ((Sint32 *)a1)[13] = -360448;
+    egg3_get_work(a1)->vertical_speed = -360448;
     egg3dai_l_hit2(actionwk);
 }
 
@@ -383,10 +439,10 @@ void hitact3(sprite_status *actionwk) {
 
     actionwk->patno = 4;
 
-    a1 = &actwk[((Uint16 *)actionwk)[29]];
+    a1 = &actwk[egg3_get_work(actionwk)->support_index];
     a1->r_no0 = 6;
-    a1->actfree[0] = 0;
-    ((Sint16 *)a1)[25] = actionwk->yposi.w.h - 64;
+    egg3_get_work(a1)->timer = 0;
+    egg3_get_work(a1)->target_position = actionwk->yposi.w.h - 64;
 
     actionwk->patno = 2;
     a1->sproffset = 1020;
@@ -396,16 +452,16 @@ void hitact3(sprite_status *actionwk) {
 
 void egg3dai_l_hit2(sprite_status *actionwk) {
     soundset(172);
-    ((Sint16 *)actionwk)[33] = 0;
+    egg3_get_work(actionwk)->explosion_timer = 0;
     actionwk->r_no0 = 6;
-    actionwk->actfree[1] = 16;
+    egg3_get_work(actionwk)->flash_timer = 16;
     if (actionwk->colicnt != 1) {
         egg3dai_l_up(actionwk);
         return;
     }
     scoreup(100);
     actionwk->colino = 0;
-    ((Sint16 *)actionwk)[25] = actionwk->yposi.w.h - 112;
+    egg3_get_work(actionwk)->target_position = actionwk->yposi.w.h - 112;
     if (!generate_flag)
         sub_sync(20);
     else
@@ -415,7 +471,7 @@ void egg3dai_l_hit2(sprite_status *actionwk) {
 }
 
 void jaba_last(sprite_status *actionwk) {
-    if (actionwk->actfree[16] != 3)
+    if (egg3_get_work(actionwk)->jaba_count != 3)
         return;
     if (jabaopen_chk(actionwk))
         return;
@@ -424,7 +480,7 @@ void jaba_last(sprite_status *actionwk) {
 }
 
 void egg3dai_l_up(sprite_status *actionwk) {
-    switch (actionwk->actfree[17] - 1) {
+    switch (egg3_get_work(actionwk)->phase - 1) {
     case 0:
         bom_set_cannon(actionwk);
         break;
@@ -436,37 +492,37 @@ void egg3dai_l_up(sprite_status *actionwk) {
         break;
     }
 
-    actionwk->actfree[2] |= 4;
+    egg3_get_work(actionwk)->flags |= 4;
     jaba_last(actionwk);
-    actionwk->yposi.l += ((Sint32 *)actionwk)[13];
-    if (actionwk->yposi.w.h > ((Sint16 *)actionwk)[25])
+    actionwk->yposi.l += egg3_get_work(actionwk)->vertical_speed;
+    if (actionwk->yposi.w.h > egg3_get_work(actionwk)->target_position)
         return;
 
-    actionwk->actfree[2] &= 251;
-    actionwk->yposi.w.h = ((Sint16 *)actionwk)[25];
+    egg3_get_work(actionwk)->flags &= 251;
+    actionwk->yposi.w.h = egg3_get_work(actionwk)->target_position;
     if (actionwk->colicnt != 1) {
-        actionwk->actfree[0] = 0;
+        egg3_get_work(actionwk)->timer = 0;
         actionwk->colino = 63;
         actionwk->r_no0 = 4;
-        ((Sint16 *)actionwk)[25] = actionwk->yposi.w.h - 72;
+        egg3_get_work(actionwk)->target_position = actionwk->yposi.w.h - 72;
     } else {
         genecolor();
-        actionwk->actfree[0] = 0;
+        egg3_get_work(actionwk)->timer = 0;
         actionwk->r_no0 = 8;
-        ((Sint16 *)actionwk)[25] = actionwk->yposi.w.h - 16;
+        egg3_get_work(actionwk)->target_position = actionwk->yposi.w.h - 16;
     }
 }
 
 void egg3dai_l_bom(sprite_status *actionwk) {
     bom_set_dai(actionwk);
     jaba_last(actionwk);
-    ++actionwk->actfree[0];
-    if (actionwk->actfree[0] == 4) {
+    ++egg3_get_work(actionwk)->timer;
+    if (egg3_get_work(actionwk)->timer == 4) {
         actionwk->patno = 6;
     }
 
-    actionwk->yposi.l += ((Sint32 *)actionwk)[13];
-    if (actionwk->yposi.w.h > ((Sint16 *)actionwk)[25])
+    actionwk->yposi.l += egg3_get_work(actionwk)->vertical_speed;
+    if (actionwk->yposi.w.h > egg3_get_work(actionwk)->target_position)
         return;
     actionwk->r_no0 = 10;
 }
@@ -476,10 +532,10 @@ void egg3dai_l_end(sprite_status *actionwk) {
 
     bom_set_dai(actionwk);
     jaba_last(actionwk);
-    if (!(actionwk->actfree[2] & 1))
+    if (!(egg3_get_work(actionwk)->flags & 1))
         return;
-    if (actionwk->actfree[16] == 4) {
-        a1 = &actwk[((Uint16 *)actionwk)[28]];
+    if (egg3_get_work(actionwk)->jaba_count == 4) {
+        a1 = &actwk[egg3_get_work(actionwk)->child_index];
         frameout(a1);
         frameout(actionwk);
     }
@@ -488,32 +544,32 @@ void egg3dai_l_end(sprite_status *actionwk) {
 void bom_set_dai(sprite_status *actionwk) {
     sprite_status *a1;
 
-    ++((Sint16 *)actionwk)[33];
-    if (((Sint16 *)actionwk)[33] != 120) {
-        if (((Sint16 *)actionwk)[33] < 120)
+    ++egg3_get_work(actionwk)->explosion_timer;
+    if (egg3_get_work(actionwk)->explosion_timer != 120) {
+        if (egg3_get_work(actionwk)->explosion_timer < 120)
             bom_set(actionwk, bomtbl_dai);
     } else {
-        actionwk->actfree[2] |= 1;
-        a1 = &actwk[((Uint16 *)actionwk)[28]];
-        a1->actfree[2] |= 1;
+        egg3_get_work(actionwk)->flags |= 1;
+        a1 = &actwk[egg3_get_work(actionwk)->child_index];
+        egg3_get_work(a1)->flags |= 1;
     }
 }
 
 void bom_set_cannon(sprite_status *actionwk) {
-    ++((Sint16 *)actionwk)[33];
-    if (((Sint16 *)actionwk)[33] < 4)
+    ++egg3_get_work(actionwk)->explosion_timer;
+    if (egg3_get_work(actionwk)->explosion_timer < 4)
         bom_set(actionwk, bomtbl_cannon);
 }
 
 void bom_set_ctrl(sprite_status *actionwk) {
-    ++((Sint16 *)actionwk)[33];
-    if (((Sint16 *)actionwk)[33] < 4)
+    ++egg3_get_work(actionwk)->explosion_timer;
+    if (egg3_get_work(actionwk)->explosion_timer < 4)
         bom_set(actionwk, bomtbl_ctrl);
 }
 
 void bom_set_ctrl2(sprite_status *actionwk) {
-    ++((Sint16 *)actionwk)[33];
-    if (((Sint16 *)actionwk)[33] > 2)
+    ++egg3_get_work(actionwk)->explosion_timer;
+    if (egg3_get_work(actionwk)->explosion_timer > 2)
         return;
     bom_set(actionwk, bomtbl_ctrl2);
 }
@@ -524,7 +580,7 @@ void bom_set(sprite_status *actionwk, char *tbl) {
     sprite_status *a1;
 
     a2 = tbl;
-    d2 = ((Sint16 *)actionwk)[33];
+    d2 = egg3_get_work(actionwk)->explosion_timer;
     d0 = a2[0];
     if (d2 % d0 != 0)
         return;
@@ -571,28 +627,28 @@ void egg3_ini(sprite_status *actionwk) {
     actionwk->sprvsize = 16;
     actionwk->sproffset = 798;
     actionwk->patbase = egg3_pat;
-    ((Sint16 *)actionwk)[25] = actionwk->yposi.w.h - 16;
+    egg3_get_work(actionwk)->target_position = actionwk->yposi.w.h - 16;
 }
 
 void egg3_norm(sprite_status *actionwk) {
     sprite_status *a1;
 
-    a1 = &actwk[((Uint16 *)actionwk)[28]];
+    a1 = &actwk[egg3_get_work(actionwk)->child_index];
     actionwk->yposi.w = a1->yposi.w;
 }
 
 void egg3_tobi(sprite_status *actionwk) {
     sprite_status *a1;
 
-    actionwk->yposi.l += ((Sint32 *)actionwk)[13];
-    ((Sint32 *)actionwk)[13] += 12288;
-    a1 = &actwk[((Uint16 *)actionwk)[28]];
+    actionwk->yposi.l += egg3_get_work(actionwk)->vertical_speed;
+    egg3_get_work(actionwk)->vertical_speed += 12288;
+    a1 = &actwk[egg3_get_work(actionwk)->child_index];
     if (actionwk->yposi.w.h < a1->yposi.w.h)
         return;
 
     actionwk->yposi.w.h = a1->yposi.w.h;
     actionwk->r_no0 = 2;
-    if (a1->actfree[17] != 2) {
+    if (egg3_get_work(a1)->phase != 2) {
         actionwk->mstno.w = 1;
     } else {
         a1->patno = 2;
@@ -603,18 +659,18 @@ void egg3_tobi(sprite_status *actionwk) {
 
 void egg3_esc1(sprite_status *actionwk) {
     actionwk->yposi.l += -0x40000;
-    if (actionwk->yposi.w.h <= ((Sint16 *)actionwk)[25]) {
+    if (actionwk->yposi.w.h <= egg3_get_work(actionwk)->target_position) {
         actionwk->mstno.w = 1024;
         actionwk->sprpri = 3;
-        actionwk->yposi.w.h = ((Sint16 *)actionwk)[25];
+        actionwk->yposi.w.h = egg3_get_work(actionwk)->target_position;
         actionwk->r_no0 = 8;
-        ((Sint16 *)actionwk)[25] = actionwk->xposi.w.h + 560;
+        egg3_get_work(actionwk)->target_position = actionwk->xposi.w.h + 560;
     }
 }
 
 void egg3_esc2(sprite_status *actionwk) {
     actionwk->xposi.l += 0x40000;
-    if (actionwk->xposi.w.h < ((Sint16 *)actionwk)[25])
+    if (actionwk->xposi.w.h < egg3_get_work(actionwk)->target_position)
         return;
 
     frameout(actionwk);
@@ -634,11 +690,11 @@ void egg3haguruma(sprite_status *actionwk) {
         actionwk->patbase = egg3haguruma_pat;
     }
 
-    if (actionwk->actfree[2] & 1)
+    if (egg3_get_work(actionwk)->flags & 1)
         return;
-    a1 = &actwk[((Uint16 *)actionwk)[28]];
+    a1 = &actwk[egg3_get_work(actionwk)->child_index];
     actionwk->yposi.w.h = a1->yposi.w.h;
-    if (a1->actfree[2] & 4) {
+    if (egg3_get_work(a1)->flags & 4) {
         patchg(actionwk, (Uint8 **)egg3haguruma_pchg);
     }
     actionsub(actionwk);
@@ -647,9 +703,9 @@ void egg3haguruma(sprite_status *actionwk) {
 void egg3cannon(sprite_status *actionwk) {
     sprite_status *a2;
 
-    a2 = &actwk[((Uint16 *)actionwk)[28]];
+    a2 = &actwk[egg3_get_work(actionwk)->child_index];
     actionwk->yposi.w.h = a2->yposi.w.h + 32;
-    if (a2->actfree[17]) {
+    if (egg3_get_work(a2)->phase) {
         frameout(actionwk);
         return;
     }
@@ -683,15 +739,15 @@ void egg3cannon_01(sprite_status *actionwk) {
     Sint32 d0;
     Sint16 d1;
 
-    a2 = &actwk[((Uint16 *)actionwk)[28]];
+    a2 = &actwk[egg3_get_work(actionwk)->child_index];
     if (actwk[0].yposi.w.h >= 1024)
         return;
-    if (a2->actfree[16])
+    if (egg3_get_work(a2)->jaba_count)
         return;
-    ++actionwk->actfree[0];
-    if (actionwk->actfree[0] >= 120) {
+    ++egg3_get_work(actionwk)->timer;
+    if (egg3_get_work(actionwk)->timer >= 120) {
 
-        actionwk->actfree[0] = 0;
+        egg3_get_work(actionwk)->timer = 0;
         actionwk->r_no0 = 4;
 
         if (actwkchk(&a1) != 0)
@@ -710,7 +766,7 @@ void egg3cannon_01(sprite_status *actionwk) {
         a1->xspeed.w = d0;
         a1->yspeed.w = 768;
 
-        a1->actfree[0] = 0;
+        egg3_get_work(a1)->timer = 0;
         a1->pattim = 0;
     }
 }
@@ -768,9 +824,9 @@ void punchbom_ini(sprite_status *actionwk) {
     actionwk->patbase = egg3punchbom_pat;
     actionwk->colino = 215;
 
-    ((Sint16 *)actionwk)[30] = 0;
-    ((Sint16 *)actionwk)[31] = 32;
-    ((Sint16 *)actionwk)[32] = 1536;
+    egg3_get_work(actionwk)->x_acceleration = 0;
+    egg3_get_work(actionwk)->y_acceleration = 32;
+    egg3_get_work(actionwk)->max_y_speed = 1536;
 }
 
 void punchbom_mov(sprite_status *actionwk) {
@@ -780,8 +836,8 @@ void punchbom_mov(sprite_status *actionwk) {
         punchbom_hit(actionwk);
         return;
     }
-    ++actionwk->actfree[0];
-    if (actionwk->actfree[0] >= 240) {
+    ++egg3_get_work(actionwk)->timer;
+    if (egg3_get_work(actionwk)->timer >= 240) {
         punchbom_kemini(actionwk);
         return;
     }
@@ -794,7 +850,7 @@ void punchbom_mov(sprite_status *actionwk) {
 
     add_spd3(actionwk);
 
-    if (actionwk->actfree[1] >> 1 & 1) {
+    if (egg3_get_work(actionwk)->flash_timer >> 1 & 1) {
 
         if (actionwk->yspeed.w >= 0) {
             d1 = emycol_d(actionwk);
@@ -845,7 +901,7 @@ void punchbom_hit(sprite_status *actionwk) {
     a1->cddat |= 2;
     a1->cddat &= 239;
     a1->cddat &= 223;
-    a1->actfree[18] = 0;
+    player_work_get(a1)->jump_started = 0;
     actionwk->mstno.b.h = 1;
     if (actionwk->cdsts)
         if (flagwork[actionwk->cdsts] < 138)
@@ -889,14 +945,14 @@ void punchbom_del(sprite_status *actionwk) { frameout(actionwk); }
 void add_spd3(sprite_status *actionwk) {
     Sint16 d0;
 
-    actionwk->yspeed.w += ((Sint16 *)actionwk)[31];
-    actionwk->xspeed.w += ((Sint16 *)actionwk)[30];
-    if (((Sint16 *)actionwk)[31] == 0) {
+    actionwk->yspeed.w += egg3_get_work(actionwk)->y_acceleration;
+    actionwk->xspeed.w += egg3_get_work(actionwk)->x_acceleration;
+    if (egg3_get_work(actionwk)->y_acceleration == 0) {
         add_spd(actionwk);
         return;
     }
-    if (((Sint16 *)actionwk)[31] > 0) {
-        d0 = ((Sint16 *)actionwk)[32];
+    if (egg3_get_work(actionwk)->y_acceleration > 0) {
+        d0 = egg3_get_work(actionwk)->max_y_speed;
         if (actionwk->yspeed.w < d0) {
             add_spd(actionwk);
         } else {
@@ -904,7 +960,7 @@ void add_spd3(sprite_status *actionwk) {
             add_spd(actionwk);
         }
     } else {
-        d0 = ((Sint16 *)actionwk)[32];
+        d0 = egg3_get_work(actionwk)->max_y_speed;
         if (actionwk->yspeed.w > d0) {
             add_spd(actionwk);
         } else {
@@ -915,8 +971,8 @@ void add_spd3(sprite_status *actionwk) {
 }
 
 void add_spd2(sprite_status *actionwk) {
-    actionwk->yspeed.w += ((Sint16 *)actionwk)[31];
-    actionwk->xspeed.w += ((Sint16 *)actionwk)[30];
+    actionwk->yspeed.w += egg3_get_work(actionwk)->y_acceleration;
+    actionwk->xspeed.w += egg3_get_work(actionwk)->x_acceleration;
     add_spd(actionwk);
 }
 

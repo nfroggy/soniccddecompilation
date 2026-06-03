@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "friend8.h"
 #include "../action.h"
@@ -21,6 +23,43 @@ static void t_roll(sprite_status *actionwk, Sint16 d2, Sint16 d3);
 static void p_init(sprite_status *actionwk);
 static void p_move(sprite_status *actionwk);
 static void set_sproffset(sprite_status *actionwk);
+
+#pragma pack(push, 1)
+typedef struct {
+    union {
+        struct {
+            Sint16 base_x;
+            Sint16 base_y;
+            Uint8 angle;
+            Sint8 angle_delta;
+        };
+        struct {
+            Uint8 unused0[2];
+            Sint32 x_speed;
+            Sint32 y_speed;
+        };
+    };
+} friend8_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(friend8_work, base_x) == 0,
+               "friend8_work.base_x offset");
+_Static_assert(offsetof(friend8_work, base_y) == 2,
+               "friend8_work.base_y offset");
+_Static_assert(offsetof(friend8_work, angle) == 4,
+               "friend8_work.angle offset");
+_Static_assert(offsetof(friend8_work, angle_delta) == 5,
+               "friend8_work.angle_delta offset");
+_Static_assert(offsetof(friend8_work, x_speed) == 2,
+               "friend8_work.x_speed offset");
+_Static_assert(offsetof(friend8_work, y_speed) == 6,
+               "friend8_work.y_speed offset");
+_Static_assert(sizeof(friend8_work) <= sizeof(((sprite_status *)0)->actfree),
+               "friend8_work fits in actfree");
+
+static friend8_work *friend8_get_work(sprite_status *actionwk) {
+    return (friend8_work *)actionwk->actfree;
+}
 
 static sprite_pattern pat00 = {1, {{-8, -8, 0, SPRITE_FRIEND8_BASE}}};
 static sprite_pattern pat01 = {1, {{-8, -8, 0, SPRITE_FRIEND8_BASE + 1}}};
@@ -62,6 +101,8 @@ void hato(sprite_status *actionwk) {
 }
 
 static void t_init(sprite_status *actionwk) {
+    friend8_work *work = friend8_get_work(actionwk);
+
     actionwk->r_no0 += 2;
     actionwk->actflg = 4;
 
@@ -70,41 +111,43 @@ static void t_init(sprite_status *actionwk) {
     actionwk->sprpri = 4;
     actionwk->sprhsize = 8;
     actionwk->patbase = pat_friend0;
-    ((Sint16 *)actionwk)[23] = actionwk->xposi.w.h;
-    ((Sint16 *)actionwk)[24] = actionwk->yposi.w.h;
+    work->base_x = actionwk->xposi.w.h;
+    work->base_y = actionwk->yposi.w.h;
     actionwk->actflg ^= 1, actionwk->cddat ^= 1;
     set_sproffset(actionwk);
 
-    actionwk->actfree[4] = 1;
-    actionwk->actfree[5] = 1;
+    work->angle = 1;
+    work->angle_delta = 1;
 }
 
 static void t_move(sprite_status *actionwk) {
+    friend8_work *work = friend8_get_work(actionwk);
     char d0, d1;
 
     t_roll(actionwk, 1, 1);
-    d1 = d0 = (char)actionwk->actfree[4] + (char)actionwk->actfree[5];
+    d1 = d0 = (char)work->angle + (char)work->angle_delta;
     d1 += 126;
     if (d1 >= 0) {
-        d0 = actionwk->actfree[4];
-        actionwk->actfree[5] = -actionwk->actfree[5];
+        d0 = work->angle;
+        work->angle_delta = -work->angle_delta;
         actionwk->actflg ^= 1, actionwk->cddat ^= 1;
     }
 
-    actionwk->actfree[4] = d0;
+    work->angle = d0;
     patchg(actionwk, (Uint8 **)pchg0);
     actionsub(actionwk);
-    frameout_s00(actionwk, ((Sint16 *)actionwk)[23]);
+    frameout_s00(actionwk, work->base_x);
 }
 
 static void t_roll(sprite_status *actionwk, Sint16 d2, Sint16 d3) {
+    friend8_work *work = friend8_get_work(actionwk);
     Sint16 sin, cos;
 
-    sinset(actionwk->actfree[4], &sin, &cos);
+    sinset(work->angle, &sin, &cos);
     cos >>= d2;
     sin >>= d3;
-    actionwk->xposi.w.h = cos + ((Sint16 *)actionwk)[23];
-    actionwk->yposi.w.h = sin + ((Sint16 *)actionwk)[24];
+    actionwk->xposi.w.h = cos + work->base_x;
+    actionwk->yposi.w.h = sin + work->base_y;
 }
 
 void sheep(sprite_status *actionwk) {
@@ -119,6 +162,8 @@ void sheep(sprite_status *actionwk) {
 }
 
 static void p_init(sprite_status *actionwk) {
+    friend8_work *work = friend8_get_work(actionwk);
+
     actionwk->r_no0 += 2;
     actionwk->actflg |= 4;
     actionwk->sprvsize = 7;
@@ -129,19 +174,20 @@ static void p_init(sprite_status *actionwk) {
 
     set_sproffset(actionwk);
 
-    ((Sint32 *)actionwk)[12] = 65536;
-    ((Sint32 *)actionwk)[13] = -0x40000;
+    work->x_speed = 65536;
+    work->y_speed = -0x40000;
 }
 
 static void p_move(sprite_status *actionwk) {
+    friend8_work *work = friend8_get_work(actionwk);
     Sint16 d1;
     Sint32 spd;
 
-    actionwk->xposi.l += ((Sint32 *)actionwk)[12];
-    actionwk->yposi.l += ((Sint32 *)actionwk)[13];
+    actionwk->xposi.l += work->x_speed;
+    actionwk->yposi.l += work->y_speed;
 
-    ((Sint32 *)actionwk)[13] += 8192;
-    spd = ((Sint32 *)actionwk)[13];
+    work->y_speed += 8192;
+    spd = work->y_speed;
     if (spd < 0)
         actionwk->patno = 0;
     else
@@ -150,8 +196,8 @@ static void p_move(sprite_status *actionwk) {
     if (d1 < 0) {
 
         actionwk->yposi.w.h += d1;
-        ((Sint32 *)actionwk)[13] = -0x40000;
-        ((Sint32 *)actionwk)[12] = -((Sint32 *)actionwk)[12];
+        work->y_speed = -0x40000;
+        work->x_speed = -work->x_speed;
 
         actionwk->actflg ^= 1, actionwk->cddat ^= 1;
     }

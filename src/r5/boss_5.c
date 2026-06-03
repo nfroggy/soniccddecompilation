@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "boss_5.h"
 #include "../action.h"
@@ -9,6 +11,103 @@
 #include "../ridechk.h"
 #include "../score.h"
 #include "scr53c.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    union {
+        struct {
+            Uint8 timer;
+            Uint8 anim_timer;
+        };
+        Sint16 timer_word;
+    };
+    Uint8 flags;
+    Uint8 phase;
+    Sint16 parent_index;
+    Sint16 child_index;
+    union {
+        Sint16 belt_actor_index;
+        Sint16 belt_speed;
+        Uint16 angle;
+        struct {
+            Uint8 angle_low;
+            Uint8 angle_high;
+        };
+    };
+    union {
+        Sint16 progress;
+        Uint16 progress_u;
+        Uint8 toggle;
+    };
+    union {
+        Sint16 saved_xspeed;
+        Sint16 target_y_inner;
+        Sint16 belt_progress;
+    };
+    union {
+        Sint16 saved_yspeed;
+        Sint16 target_y_outer;
+        Sint16 y_offset;
+    };
+    Sint32 velocity;
+    union {
+        Sint16 counter;
+        struct {
+            Uint8 palette_index;
+            Uint8 unused21;
+        };
+    };
+} egg5_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(egg5_work, timer) == 0, "egg5_work.timer offset");
+_Static_assert(offsetof(egg5_work, timer_word) == 0,
+               "egg5_work.timer_word offset");
+_Static_assert(offsetof(egg5_work, anim_timer) == 1,
+               "egg5_work.anim_timer offset");
+_Static_assert(offsetof(egg5_work, flags) == 2, "egg5_work.flags offset");
+_Static_assert(offsetof(egg5_work, phase) == 3, "egg5_work.phase offset");
+_Static_assert(offsetof(egg5_work, parent_index) == 4,
+               "egg5_work.parent_index offset");
+_Static_assert(offsetof(egg5_work, child_index) == 6,
+               "egg5_work.child_index offset");
+_Static_assert(offsetof(egg5_work, belt_actor_index) == 8,
+               "egg5_work.belt_actor_index offset");
+_Static_assert(offsetof(egg5_work, belt_speed) == 8,
+               "egg5_work.belt_speed offset");
+_Static_assert(offsetof(egg5_work, angle) == 8, "egg5_work.angle offset");
+_Static_assert(offsetof(egg5_work, angle_high) == 9,
+               "egg5_work.angle_high offset");
+_Static_assert(offsetof(egg5_work, progress) == 10,
+               "egg5_work.progress offset");
+_Static_assert(offsetof(egg5_work, progress_u) == 10,
+               "egg5_work.progress_u offset");
+_Static_assert(offsetof(egg5_work, toggle) == 10,
+               "egg5_work.toggle offset");
+_Static_assert(offsetof(egg5_work, saved_xspeed) == 12,
+               "egg5_work.saved_xspeed offset");
+_Static_assert(offsetof(egg5_work, target_y_inner) == 12,
+               "egg5_work.target_y_inner offset");
+_Static_assert(offsetof(egg5_work, belt_progress) == 12,
+               "egg5_work.belt_progress offset");
+_Static_assert(offsetof(egg5_work, saved_yspeed) == 14,
+               "egg5_work.saved_yspeed offset");
+_Static_assert(offsetof(egg5_work, target_y_outer) == 14,
+               "egg5_work.target_y_outer offset");
+_Static_assert(offsetof(egg5_work, y_offset) == 14,
+               "egg5_work.y_offset offset");
+_Static_assert(offsetof(egg5_work, velocity) == 16,
+               "egg5_work.velocity offset");
+_Static_assert(offsetof(egg5_work, counter) == 20,
+               "egg5_work.counter offset");
+_Static_assert(offsetof(egg5_work, palette_index) == 20,
+               "egg5_work.palette_index offset");
+_Static_assert(sizeof(egg5_work) <= sizeof(((sprite_status *)0)->actfree),
+               "egg5_work fits in actfree");
+
+static egg5_work *egg5_get_work(sprite_status *pActwk) {
+    return (egg5_work *)pActwk->actfree;
+}
 
 static Sint32 egg5_ini(sprite_status *pActwk);
 static Sint32 egg5_1(sprite_status *pActwk);
@@ -191,18 +290,18 @@ static Sint32 egg5_1(sprite_status *pActwk) {
     Sint16 subact;
     Sint32 ret;
 
-    if (!(pActwk->actfree[2] & 4)) {
-        subact = ((Sint16 *)pActwk)[25];
+    if (!(egg5_get_work(pActwk)->flags & 4)) {
+        subact = egg5_get_work(pActwk)->parent_index;
         pActwk->yposi.w.h = actwk[subact].yposi.w.h;
         if (actwk[subact].patno >= 4) {
 
-            if (!pActwk->actfree[0]) {
+            if (!egg5_get_work(pActwk)->timer) {
 
                 chg_mstno(2, pActwk);
-                pActwk->actfree[0] = 68;
+                egg5_get_work(pActwk)->timer = 68;
             } else {
-                --pActwk->actfree[0];
-                if (pActwk->actfree[0] == 20) {
+                --egg5_get_work(pActwk)->timer;
+                if (egg5_get_work(pActwk)->timer == 20) {
 
                     chg_mstno(0, pActwk);
                 }
@@ -212,7 +311,7 @@ static Sint32 egg5_1(sprite_status *pActwk) {
     }
 
     pActwk->sprpri = 3;
-    pActwk->actfree[0] = 0;
+    egg5_get_work(pActwk)->timer = 0;
     pActwk->r_no0 += 2;
     chg_mstno(3, pActwk);
     pActwk->yposi.w.h += 6;
@@ -237,8 +336,8 @@ void egg5meca1(sprite_status *pActwk) {
         &egg5meca1_normal};
 
     if (act_tbl[pActwk->r_no0 / 2](pActwk) != 0) {
-        subact = ((Sint16 *)pActwk)[26];
-        if (!(actwk[subact].actfree[2] & 8))
+        subact = egg5_get_work(pActwk)->child_index;
+        if (!(egg5_get_work(&actwk[subact])->flags & 8))
             actionsub(pActwk);
     }
 }
@@ -262,10 +361,10 @@ static Sint32 egg5meca1_ini(sprite_status *pActwk) {
 static Sint32 egg5meca1_scrset(sprite_status *pActwk) {
     Sint16 wD0;
 
-    if (!(pActwk->actfree[2] & 2)) {
+    if (!(egg5_get_work(pActwk)->flags & 2)) {
         if (scra_vline > 200) {
             bossflag = 5;
-            pActwk->actfree[2] |= 2;
+            egg5_get_work(pActwk)->flags |= 2;
         }
 
         scra_vline += 6;
@@ -277,7 +376,7 @@ static Sint32 egg5meca1_scrset(sprite_status *pActwk) {
     if (wD0 >= scralim_left) {
         if (actwk[0].xposi.w.h >= 3424) {
 
-            pActwk->actfree[2] &= 253;
+            egg5_get_work(pActwk)->flags &= 253;
             sub_sync(103);
             bossstart = 5;
             pActwk->r_no0 = 6;
@@ -320,15 +419,15 @@ static Sint32 egg5meca1_normal(sprite_status *pActwk) {
     Sint16 subact;
     Sint16 wD0;
 
-    subact = ((Sint16 *)pActwk)[26];
-    if (actwk[subact].actfree[2] & 128)
-        pActwk->actfree[20] = 8;
-    actwk[subact].actfree[2] &= 127;
+    subact = egg5_get_work(pActwk)->child_index;
+    if (egg5_get_work(&actwk[subact])->flags & 128)
+        egg5_get_work(pActwk)->palette_index = 8;
+    egg5_get_work(&actwk[subact])->flags &= 127;
 
-    if (pActwk->actfree[20]) {
-        --pActwk->actfree[20];
+    if (egg5_get_work(pActwk)->palette_index) {
+        --egg5_get_work(pActwk)->palette_index;
         wD0 = 2;
-        if (pActwk->actfree[20] & 2)
+        if (egg5_get_work(pActwk)->palette_index & 2)
             wD0 *= -1;
         scralim_down += wD0;
         scralim_n_down += wD0;
@@ -343,30 +442,30 @@ void egg5meca2(sprite_status *pActwk) {
         &egg5meca2_kezu, &egg5meca2_esc, &egg5meca2_end};
 
     if (act_tbl[pActwk->r_no0 / 2](pActwk) != 0) {
-        if (!(pActwk->actfree[2] & 8)) {
+        if (!(egg5_get_work(pActwk)->flags & 8)) {
 
             pActwk->xposi.w.h = 3536;
-            ++pActwk->actfree[1];
+            ++egg5_get_work(pActwk)->anim_timer;
 
-            if (pActwk->actfree[1] & 2) {
-                subact = ((Sint16 *)pActwk)[27];
-                if (((Sint16 *)&actwk[subact])[27] >= 1024) {
-                    if (((Sint16 *)&actwk[subact])[27] >= 1280) {
+            if (egg5_get_work(pActwk)->anim_timer & 2) {
+                subact = egg5_get_work(pActwk)->belt_actor_index;
+                if (egg5_get_work(&actwk[subact])->belt_actor_index >= 1024) {
+                    if (egg5_get_work(&actwk[subact])->belt_actor_index >= 1280) {
                         ++pActwk->xposi.w.h;
-                        if (!(pActwk->actfree[10] & 1)) {
-                            pActwk->actfree[10] ^= 1;
+                        if (!(egg5_get_work(pActwk)->toggle & 1)) {
+                            egg5_get_work(pActwk)->toggle ^= 1;
                             actionsub(pActwk);
                             return;
                         }
-                        pActwk->actfree[10] ^= 1;
+                        egg5_get_work(pActwk)->toggle ^= 1;
                         pActwk->xposi.w.h -= 2;
                         actionsub(pActwk);
                         return;
                     }
 
-                    if (pActwk->actfree[10] & 1)
+                    if (egg5_get_work(pActwk)->toggle & 1)
                         --pActwk->xposi.w.h;
-                    pActwk->actfree[10] ^= 1;
+                    egg5_get_work(pActwk)->toggle ^= 1;
                 }
             }
 
@@ -391,7 +490,7 @@ static Sint32 egg5meca2_ini(sprite_status *pActwk) {
     make_belt(pActwk);
     pActwk->colino = 62;
     pActwk->colicnt = 2;
-    ((Sint16 *)pActwk)[33] = 2400;
+    egg5_get_work(pActwk)->counter = 2400;
     ret = egg5meca2_ue(pActwk);
     return ret;
 }
@@ -408,22 +507,22 @@ static Sint32 egg5meca2_ue(sprite_status *pActwk) {
 static Sint32 egg5meca2_down1(sprite_status *pActwk) {
     Sint32 ret = 1;
 
-    ++pActwk->actfree[0];
-    if (pActwk->actfree[0] != 60) {
-        if (!(pActwk->actfree[0] & 1)) {
-            if (!(pActwk->actfree[0] & 2))
+    ++egg5_get_work(pActwk)->timer;
+    if (egg5_get_work(pActwk)->timer != 60) {
+        if (!(egg5_get_work(pActwk)->timer & 1)) {
+            if (!(egg5_get_work(pActwk)->timer & 2))
                 pActwk->yposi.w.h -= 2;
             else
                 pActwk->yposi.w.h += 2;
         }
     } else {
 
-        pActwk->actfree[0] = 0;
+        egg5_get_work(pActwk)->timer = 0;
         pActwk->r_no0 += 2;
         sprite_status_set_xspeed_yspeed(pActwk, 77824);
-        chg_mstno2(1, ((Sint16 *)pActwk)[26]);
-        ((Sint16 *)pActwk)[30] = 648;
-        ((Sint16 *)pActwk)[29] = 640;
+        chg_mstno2(1, egg5_get_work(pActwk)->child_index);
+        egg5_get_work(pActwk)->target_y_outer = 648;
+        egg5_get_work(pActwk)->target_y_inner = 640;
         ret = egg5meca2_down2(pActwk);
     }
     return ret;
@@ -431,36 +530,36 @@ static Sint32 egg5meca2_down1(sprite_status *pActwk) {
 
 static Sint32 egg5meca2_down2(sprite_status *pActwk) {
 
-    if (pActwk->actfree[3] == 1) {
+    if (egg5_get_work(pActwk)->phase == 1) {
 
-        if (pActwk->yposi.w.h < ((Sint16 *)pActwk)[29]) {
+        if (pActwk->yposi.w.h < egg5_get_work(pActwk)->target_y_inner) {
 
             soundset(180);
-            ++pActwk->actfree[3];
+            ++egg5_get_work(pActwk)->phase;
         } else
             pActwk->yposi.l -= 32768;
         return 1;
     }
 
-    if (pActwk->yposi.w.h >= ((Sint16 *)pActwk)[30]) {
+    if (pActwk->yposi.w.h >= egg5_get_work(pActwk)->target_y_outer) {
 
         soundset(180);
-        pActwk->actfree[2] |= 128;
+        egg5_get_work(pActwk)->flags |= 128;
         make_hibana2(pActwk);
-        if (pActwk->actfree[3]) {
+        if (egg5_get_work(pActwk)->phase) {
 
             if (!pActwk->patno) {
                 soundset(196);
 
                 ++pActwk->patno;
-                chg_mstno2(0, ((Sint16 *)pActwk)[26]);
+                chg_mstno2(0, egg5_get_work(pActwk)->child_index);
             }
 
             pActwk->r_no0 = 8;
-            pActwk->actfree[3] = 0;
+            egg5_get_work(pActwk)->phase = 0;
             return 1;
         }
-        ++pActwk->actfree[3];
+        ++egg5_get_work(pActwk)->phase;
     } else
         pActwk->yposi.l += 77824;
     return 1;
@@ -472,37 +571,37 @@ static Sint32 egg5meca2_kezu(sprite_status *pActwk) {
     Sint16 meca2_ytbl[4] = {0, 8, 8, 8};
 
     my_rideonchk(pActwk);
-    if (((Sint16 *)pActwk)[33] % 6 == 0) {
-        if (!(pActwk->actfree[2] & 2))
+    if (egg5_get_work(pActwk)->counter % 6 == 0) {
+        if (!(egg5_get_work(pActwk)->flags & 2))
             make_hibana1();
-        pActwk->actfree[2] |= 2;
+        egg5_get_work(pActwk)->flags |= 2;
     } else
-        pActwk->actfree[2] &= 253;
+        egg5_get_work(pActwk)->flags &= 253;
 
-    if (((Sint16 *)pActwk)[33] <= 0) {
+    if (egg5_get_work(pActwk)->counter <= 0) {
 
-        pActwk->actfree[2] |= 4;
-        subact = ((Sint16 *)pActwk)[26];
-        actwk[subact].actfree[2] |= 4;
+        egg5_get_work(pActwk)->flags |= 4;
+        subact = egg5_get_work(pActwk)->child_index;
+        egg5_get_work(&actwk[subact])->flags |= 4;
         pActwk->r_no0 = 10;
         ++pActwk->patno;
 
-        subact = ((Sint16 *)pActwk)[25];
+        subact = egg5_get_work(pActwk)->parent_index;
         actwk[subact].r_no0 = 4;
         return 1;
     }
-    if (((Sint16 *)pActwk)[33] != 1800) {
-        if (((Sint16 *)pActwk)[33] != 1200) {
-            if (((Sint16 *)pActwk)[33] != 600)
+    if (egg5_get_work(pActwk)->counter != 1800) {
+        if (egg5_get_work(pActwk)->counter != 1200) {
+            if (egg5_get_work(pActwk)->counter != 600)
                 return 1;
         }
     }
 
     make_hibana2(pActwk);
     wD0 = meca2_ytbl[pActwk->patno];
-    ((Sint16 *)pActwk)[30] = pActwk->yposi.w.h + wD0;
+    egg5_get_work(pActwk)->target_y_outer = pActwk->yposi.w.h + wD0;
     wD0 /= 2;
-    ((Sint16 *)pActwk)[29] = pActwk->yposi.w.h + wD0;
+    egg5_get_work(pActwk)->target_y_inner = pActwk->yposi.w.h + wD0;
     pActwk->r_no0 = 6;
     ++pActwk->patno;
     return 1;
@@ -510,37 +609,37 @@ static Sint32 egg5meca2_kezu(sprite_status *pActwk) {
 
 static Sint32 egg5meca2_esc(sprite_status *pActwk) {
     my_rideonchk(pActwk);
-    ++pActwk->actfree[0];
-    if (pActwk->actfree[0] == 60) {
+    ++egg5_get_work(pActwk)->timer;
+    if (egg5_get_work(pActwk)->timer == 60) {
 
-        pActwk->actfree[0] = 0;
-        pActwk->actfree[1] = 0;
+        egg5_get_work(pActwk)->timer = 0;
+        egg5_get_work(pActwk)->anim_timer = 0;
         pActwk->r_no0 = 12;
 
         return 1;
     }
 
-    if (pActwk->actfree[0] % 18 == 0)
+    if (egg5_get_work(pActwk)->timer % 18 == 0)
         make_hibana2(pActwk);
     return 1;
 }
 
 static Sint32 egg5meca2_end(sprite_status *pActwk) {
-    if (pActwk->actfree[0] >= 120) {
+    if (egg5_get_work(pActwk)->timer >= 120) {
 
-        pActwk->actfree[2] |= 8;
+        egg5_get_work(pActwk)->flags |= 8;
         return 1;
     }
     my_rideonchk(pActwk);
-    ++pActwk->actfree[0];
+    ++egg5_get_work(pActwk)->timer;
     bom_set(pActwk);
-    if (!(pActwk->actfree[0] & 2)) {
+    if (!(egg5_get_work(pActwk)->timer & 2)) {
 
-        pActwk->actfree[2] |= 8;
+        egg5_get_work(pActwk)->flags |= 8;
         return 1;
     }
 
-    pActwk->actfree[2] &= 247;
+    egg5_get_work(pActwk)->flags &= 247;
     return 1;
 }
 
@@ -553,8 +652,8 @@ void egg5meca3(sprite_status *pActwk) {
     static void (*act_tbl[2])(sprite_status *) = {&egg5meca3_ini, &egg5meca3_1};
 
     act_tbl[pActwk->r_no0 / 2](pActwk);
-    subact = ((Sint16 *)pActwk)[25];
-    if (!(actwk[subact].actfree[2] & 8))
+    subact = egg5_get_work(pActwk)->parent_index;
+    if (!(egg5_get_work(&actwk[subact])->flags & 8))
         actionsub(pActwk);
 }
 
@@ -572,7 +671,7 @@ static void egg5meca3_ini(sprite_status *pActwk) {
 static void egg5meca3_1(sprite_status *pActwk) {
     Sint16 subact;
 
-    subact = ((Sint16 *)pActwk)[25];
+    subact = egg5_get_work(pActwk)->parent_index;
     pActwk->xposi.w.h = actwk[subact].xposi.w.h;
     pActwk->yposi.w.h = actwk[subact].yposi.w.h;
 }
@@ -582,8 +681,8 @@ void egg5pipe(sprite_status *pActwk) {
     static void (*act_tbl[2])(sprite_status *) = {&egg5pipe_ini, &egg5pipe_1};
 
     act_tbl[pActwk->r_no0 / 2](pActwk);
-    subact = ((Sint16 *)pActwk)[25];
-    if (!(actwk[subact].actfree[2] & 8))
+    subact = egg5_get_work(pActwk)->parent_index;
+    if (!(egg5_get_work(&actwk[subact])->flags & 8))
         actionsub(pActwk);
 }
 
@@ -602,7 +701,7 @@ static void egg5pipe_1(sprite_status *pActwk) {
     Sint16 subact;
     Sint16 temp;
 
-    subact = ((Sint16 *)pActwk)[25];
+    subact = egg5_get_work(pActwk)->parent_index;
     temp = (actwk[subact].yposi.w.h - pActwk->yposi.w.h) / 32;
     temp &= 255;
     pActwk->patno = temp;
@@ -638,8 +737,8 @@ static Sint32 egg5catch_1st(sprite_status *pActwk) {
     Sint16 subact;
     Sint32 ret = 1;
 
-    subact = ((Sint16 *)pActwk)[25];
-    subact = ((Sint16 *)&actwk[subact])[25];
+    subact = egg5_get_work(pActwk)->parent_index;
+    subact = egg5_get_work(&actwk[subact])->parent_index;
     if (actwk[subact].r_no0 != 2) {
 
         pActwk->r_no0 = 4;
@@ -658,17 +757,18 @@ static Sint32 egg5catch_return(sprite_status *pActwk) {
 
 static Sint32 egg5catch_wait(sprite_status *pActwk) {
     Sint16 subact;
+    egg5_work *work = egg5_get_work(pActwk);
     Sint32 ret = 1;
 
-    subact = ((Sint16 *)pActwk)[25];
-    subact = ((Sint16 *)&actwk[subact])[25];
-    if (((Sint16 *)&actwk[subact])[33] <= 210)
+    subact = work->parent_index;
+    subact = egg5_get_work(&actwk[subact])->parent_index;
+    if (egg5_get_work(&actwk[subact])->counter <= 210)
         ret = 0;
     else {
-        ++pActwk->actfree[0];
-        if (pActwk->actfree[0] == 180) {
+        ++work->timer;
+        if (work->timer == 180) {
 
-            pActwk->actfree[0] = 0;
+            work->timer = 0;
             soundset(203);
             pActwk->r_no0 = 8;
             lever_on(pActwk);
@@ -701,17 +801,19 @@ static Sint32 egg5catch_go2(sprite_status *pActwk) {
 }
 
 static Sint32 egg5catch_fire(sprite_status *pActwk) {
-    ++pActwk->actfree[0];
-    if (pActwk->actfree[0] == 30) {
+    egg5_work *work = egg5_get_work(pActwk);
+
+    ++work->timer;
+    if (work->timer == 30) {
 
         lever_on(pActwk);
-        pActwk->actfree[2] |= 64;
+        work->flags |= 64;
         chg_mstno(0, pActwk);
         return 1;
     }
-    if (pActwk->actfree[0] == 120) {
+    if (work->timer == 120) {
 
-        pActwk->actfree[0] = 0;
+        work->timer = 0;
         pActwk->r_no0 = 4;
         lever_off(pActwk);
     }
@@ -721,7 +823,7 @@ static Sint32 egg5catch_fire(sprite_status *pActwk) {
 static void lever_on(sprite_status *pActwk) {
     Sint16 subact;
 
-    subact = ((Sint16 *)pActwk)[25];
+    subact = egg5_get_work(pActwk)->parent_index;
     if (!actwk[subact].mstno.b.h) {
         chg_mstno2(0, subact);
         actwk[subact].patno = 1;
@@ -731,7 +833,7 @@ static void lever_on(sprite_status *pActwk) {
 static void lever_off(sprite_status *pActwk) {
     Sint16 subact;
 
-    subact = ((Sint16 *)pActwk)[25];
+    subact = egg5_get_work(pActwk)->parent_index;
     if (!actwk[subact].mstno.b.h) {
         chg_mstno2(0, subact);
         actwk[subact].patno = 0;
@@ -753,6 +855,7 @@ void egg5bomb(sprite_status *pActwk) {
 
 static Sint32 egg5bomb_ini(sprite_status *pActwk) {
     Sint32 ret;
+    egg5_work *work = egg5_get_work(pActwk);
 
     pActwk->r_no0 += 2;
     pActwk->actflg = 4;
@@ -763,8 +866,8 @@ static Sint32 egg5bomb_ini(sprite_status *pActwk) {
     pActwk->patbase = egg5bomb_pat;
     pActwk->colino = 253;
     pActwk->colicnt = 2;
-    ((Sint16 *)pActwk)[30] = -3;
-    ((Uint16 *)pActwk)[27] = 49152;
+    work->y_offset = -3;
+    work->angle = 49152;
     ret = egg5bomb_1(pActwk);
     return ret;
 }
@@ -773,7 +876,7 @@ static Sint32 egg5bomb_1(sprite_status *pActwk) {
     Sint16 subact;
     Sint32 ret = 1;
 
-    subact = ((Sint16 *)pActwk)[25];
+    subact = egg5_get_work(pActwk)->parent_index;
     pActwk->xposi.w.h = actwk[subact].xposi.w.h;
     if (actwk[subact].r_no0 == 10) {
         pActwk->r_no0 += 2;
@@ -786,26 +889,27 @@ static Sint32 egg5bomb_2(sprite_status *pActwk) {
     Sint16 subact;
     Sint16 sin, cos;
     Sint32 temp;
+    egg5_work *work = egg5_get_work(pActwk);
     Sint32 ret = 1;
 
-    subact = ((Sint16 *)pActwk)[25];
+    subact = work->parent_index;
     pActwk->xposi.w.h = actwk[subact].xposi.w.h;
-    if (actwk[subact].actfree[2] & 64) {
-        actwk[subact].actfree[2] &= 191;
+    if (egg5_get_work(&actwk[subact])->flags & 64) {
+        egg5_get_work(&actwk[subact])->flags &= 191;
 
         pActwk->r_no0 += 2;
         ret = egg5bomb_3(pActwk);
     } else {
-        actwk[subact].actfree[2] &= 191;
-        pActwk->yposi.w.h -= ((Sint16 *)pActwk)[30];
-        ((Uint16 *)pActwk)[27] += 1152;
-        sinset(pActwk->actfree[9], &sin, &cos);
+        egg5_get_work(&actwk[subact])->flags &= 191;
+        pActwk->yposi.w.h -= work->y_offset;
+        work->angle += 1152;
+        sinset(work->angle_high, &sin, &cos);
         temp = sin;
 
         temp *= 3;
         temp >>= 8;
         sin = (Uint16)temp;
-        ((Sint16 *)pActwk)[30] = sin;
+        work->y_offset = sin;
         pActwk->yposi.w.h += sin;
     }
     return ret;
@@ -818,8 +922,8 @@ static Sint32 egg5bomb_3(sprite_status *pActwk) {
     if (pActwk->colicnt > 2)
         ret = egg5bomb_hit(pActwk);
     else {
-        subact = ((Sint16 *)pActwk)[25];
-        if (actwk[subact].actfree[2] & 4)
+        subact = egg5_get_work(pActwk)->parent_index;
+        if (egg5_get_work(&actwk[subact])->flags & 4)
             ret = 0;
         else {
             pActwk->yposi.l += 139264;
@@ -835,17 +939,18 @@ static Sint32 egg5bomb_3(sprite_status *pActwk) {
 
 static Sint32 egg5bomb_4(sprite_status *pActwk) {
     Sint16 subact;
+    egg5_work *work = egg5_get_work(pActwk);
     Sint32 ret = 1;
 
     if (pActwk->colicnt > 2)
         ret = egg5bomb_hit(pActwk);
     else {
-        subact = ((Sint16 *)pActwk)[25];
-        if (actwk[subact].actfree[2] & 4)
+        subact = work->parent_index;
+        if (egg5_get_work(&actwk[subact])->flags & 4)
             ret = 0;
         else {
-            ++pActwk->actfree[0];
-            if (pActwk->actfree[0] == 8) {
+            ++work->timer;
+            if (work->timer == 8) {
 
                 make_bomb2(pActwk);
                 ret = 0;
@@ -875,6 +980,7 @@ static Sint32 bomb2_tbl[24] = {
 static Sint32 egg5bomb2_ini(sprite_status *pActwk) {
     Sint32 ret;
     Sint16 wD0;
+    egg5_work *work = egg5_get_work(pActwk);
 
     pActwk->r_no0 += 2;
     pActwk->actflg = 4;
@@ -891,7 +997,7 @@ static Sint32 egg5bomb2_ini(sprite_status *pActwk) {
     wD0 *= 6;
     pActwk->xposi.w.h += bomb2_tbl[wD0++];
     pActwk->yposi.w.h += bomb2_tbl[wD0++];
-    *(Sint32 *)&pActwk->actfree[16] = bomb2_tbl[wD0++];
+    work->velocity = bomb2_tbl[wD0++];
     sprite_status_set_xspeed_yspeed(pActwk, bomb2_tbl[wD0]);
 
     ret = egg5bomb2_1(pActwk);
@@ -899,15 +1005,16 @@ static Sint32 egg5bomb2_ini(sprite_status *pActwk) {
 }
 
 static Sint32 egg5bomb2_1(sprite_status *pActwk) {
+    egg5_work *work = egg5_get_work(pActwk);
     Sint32 ret = 1;
 
     if (pActwk->colicnt > 2)
         ret = egg5bomb_hit(pActwk);
     else {
-        ++pActwk->actfree[0];
-        if (pActwk->actfree[0] == 4) {
+        ++work->timer;
+        if (work->timer == 4) {
 
-            pActwk->actfree[0] = 0;
+            work->timer = 0;
             pActwk->r_no0 += 2;
             ret = egg5bomb2_2(pActwk);
         }
@@ -917,22 +1024,23 @@ static Sint32 egg5bomb2_1(sprite_status *pActwk) {
 
 static Sint32 egg5bomb2_2(sprite_status *pActwk) {
     Sint16 subact;
+    egg5_work *work = egg5_get_work(pActwk);
     Sint32 ret = 1;
     Sint16 wD0;
 
     if (pActwk->colicnt > 2)
         ret = egg5bomb_hit(pActwk);
     else {
-        subact = ((Sint16 *)pActwk)[25];
-        if (actwk[subact].actfree[2] & 4)
+        subact = work->parent_index;
+        if (egg5_get_work(&actwk[subact])->flags & 4)
             ret = 0;
         else {
-            pActwk->xposi.l += *(Sint32 *)&pActwk->actfree[16];
+            pActwk->xposi.l += work->velocity;
             pActwk->yposi.l += sprite_status_get_xspeed_yspeed(pActwk);
             wD0 = pActwk->userflag.b.h;
             wD0 *= 6;
             wD0 += 4;
-            *(Sint32 *)&pActwk->actfree[16] += bomb2_tbl[wD0++];
+            work->velocity += bomb2_tbl[wD0++];
             sprite_status_add_xspeed_yspeed(pActwk, bomb2_tbl[wD0]);
 
             if (pActwk->yposi.w.h >= 712)
@@ -971,6 +1079,7 @@ void egg5hibana(sprite_status *pActwk) {
 
 static Sint32 egg5hibana_ini(sprite_status *pActwk) {
     Sint32 ret;
+    egg5_work *work = egg5_get_work(pActwk);
 
     pActwk->r_no0 += 2;
     pActwk->actflg = 4;
@@ -979,9 +1088,9 @@ static Sint32 egg5hibana_ini(sprite_status *pActwk) {
     pActwk->sprvsize = 4;
     pActwk->sproffset = 8892;
     pActwk->patbase = egg5hibana_pat;
-    *(Sint32 *)&pActwk->actfree[16] = -0x20000;
+    work->velocity = -0x20000;
     sprite_status_set_xspeed_yspeed(pActwk, -0x20000);
-    if (!pActwk->actfree[3])
+    if (!work->phase)
         ret = egg5hibana_1(pActwk);
     else {
         pActwk->r_no0 += 2;
@@ -991,10 +1100,11 @@ static Sint32 egg5hibana_ini(sprite_status *pActwk) {
 }
 
 static Sint32 egg5hibana_1(sprite_status *pActwk) {
+    egg5_work *work = egg5_get_work(pActwk);
     Sint32 ret = 1;
 
-    *(Sint32 *)&pActwk->actfree[16] -= 4096;
-    pActwk->xposi.l += *(Sint32 *)&pActwk->actfree[16];
+    work->velocity -= 4096;
+    pActwk->xposi.l += work->velocity;
     if (pActwk->xposi.w.h <= 3448)
         ret = 0;
     else
@@ -1004,10 +1114,11 @@ static Sint32 egg5hibana_1(sprite_status *pActwk) {
 
 static Sint32 egg5hibana_2(sprite_status *pActwk) {
     Sint32 ret;
+    egg5_work *work = egg5_get_work(pActwk);
 
-    *(Sint32 *)&pActwk->actfree[16] -= 4096;
+    work->velocity -= 4096;
     sprite_status_add_xspeed_yspeed(pActwk, 8192);
-    pActwk->xposi.l += *(Sint32 *)&pActwk->actfree[16];
+    pActwk->xposi.l += work->velocity;
     pActwk->yposi.l += sprite_status_get_xspeed_yspeed(pActwk);
     ret = hibana_delchk(pActwk);
     return ret;
@@ -1101,7 +1212,7 @@ static void egg5belt_ini(sprite_status *pActwk) {
 static void egg5belt_0(sprite_status *pActwk) {
     Sint16 subact;
 
-    subact = ((Sint16 *)pActwk)[25];
+    subact = egg5_get_work(pActwk)->parent_index;
     if (actwk[subact].r_no0 != 2) {
 
         pActwk->r_no0 += 2;
@@ -1110,11 +1221,12 @@ static void egg5belt_0(sprite_status *pActwk) {
 }
 
 static void egg5belt_1(sprite_status *pActwk) {
+    egg5_work *work = egg5_get_work(pActwk);
     Sint16 wD1 = 0;
 
-    ++pActwk->actfree[1];
+    ++work->anim_timer;
 
-    if (pActwk->actfree[1] & 1)
+    if (work->anim_timer & 1)
         belt_anime(pActwk);
 
     if (actwk[0].xposi.w.h > 3464) {
@@ -1126,20 +1238,21 @@ static void egg5belt_1(sprite_status *pActwk) {
 
     if (wD1 == 1) {
 
-        ((Sint16 *)pActwk)[27] = 192;
+        work->belt_speed = 192;
         pActwk->r_no0 += 2;
     }
 }
 
 static void egg5belt_2(sprite_status *pActwk) {
     Sint16 subact;
+    egg5_work *work = egg5_get_work(pActwk);
     Sint32 wD6;
 
-    subact = ((Sint16 *)pActwk)[25];
-    if (actwk[subact].actfree[2] & 4) {
+    subact = work->parent_index;
+    if (egg5_get_work(&actwk[subact])->flags & 4) {
 
-        ((Sint16 *)pActwk)[27] -= 16;
-        if (((Sint16 *)pActwk)[27] <= 0) {
+        work->belt_speed -= 16;
+        if (work->belt_speed <= 0) {
 
             pActwk->r_no0 += 2;
 
@@ -1148,88 +1261,93 @@ static void egg5belt_2(sprite_status *pActwk) {
     }
 
     wD6 = chk_belt_on();
-    if (!(actwk[subact].actfree[2] & 4))
+    if (!(egg5_get_work(&actwk[subact])->flags & 4))
         wD6 = belt_spdset(pActwk);
 
     belt_sncspd(wD6, pActwk);
     belt_sncxmax(subact);
 
     belt_hitpnt(subact, pActwk);
-    ++pActwk->actfree[1];
+    ++work->anim_timer;
 
-    if (pActwk->actfree[1] & 1)
+    if (work->anim_timer & 1)
         belt_anime(pActwk);
 }
 
 static void egg5belt_3(sprite_status *pActwk) { pActwk + 1; }
 
 static Sint32 belt_spdset(sprite_status *pActwk) {
+    egg5_work *work = egg5_get_work(pActwk);
     Sint32 wD6;
 
     wD6 = chk_belt_on();
     if (wD6 <= 0) {
         if (wD6 == 0) {
-            if (actwk[0].xspeed.w < ((Sint16 *)pActwk)[27]) {
+            if (actwk[0].xspeed.w < work->belt_speed) {
 
-                ((Sint16 *)pActwk)[27] -= 7;
+                work->belt_speed -= 7;
                 goto label1;
             }
 
-            if (actwk[0].xspeed.w != ((Sint16 *)pActwk)[27]) {
+            if (actwk[0].xspeed.w != work->belt_speed) {
 
-                ((Sint16 *)pActwk)[27] += 8;
+                work->belt_speed += 8;
             }
 
             goto label1;
         }
 
-        ((Sint16 *)pActwk)[27] = 192;
+        work->belt_speed = 192;
 
         goto label1;
     }
 
-    --((Sint16 *)pActwk)[27];
+    --work->belt_speed;
 
 label1:
-    if (((Sint16 *)pActwk)[27] <= 192)
-        ((Sint16 *)pActwk)[27] = 192;
+    if (work->belt_speed <= 192)
+        work->belt_speed = 192;
     else {
 
-        if (((Sint16 *)pActwk)[27] >= 1488)
-            ((Sint16 *)pActwk)[27] = 1488;
+        if (work->belt_speed >= 1488)
+            work->belt_speed = 1488;
     }
     return wD6;
 }
 
 static void belt_hitpnt(Sint16 subact, sprite_status *pActwk) {
-    ((Sint16 *)pActwk)[28] += ((Sint16 *)pActwk)[27];
-    if (((Sint16 *)pActwk)[28] >= 1488) {
+    egg5_work *work = egg5_get_work(pActwk);
+    egg5_work *parent_work = egg5_get_work(&actwk[subact]);
 
-        --((Sint16 *)&actwk[subact])[33];
-        ((Sint16 *)pActwk)[28] -= 1488;
+    work->progress += work->belt_speed;
+    if (work->progress >= 1488) {
+
+        --parent_work->counter;
+        work->progress -= 1488;
     }
 }
 
 static void belt_sncspd(Sint32 wD6, sprite_status *pActwk) {
     int_union wD0;
+    egg5_work *work = egg5_get_work(pActwk);
 
     if (wD6 == 1) {
 
-        if (!(pActwk->actfree[2] & 16)) {
-            actwk[0].xspeed.w -= ((Sint16 *)pActwk)[29];
-            actwk[0].yspeed.w -= ((Sint16 *)pActwk)[30];
+        if (!(work->flags & 16)) {
+            actwk[0].xspeed.w -= work->saved_xspeed;
+            actwk[0].yspeed.w -= work->saved_yspeed;
         }
-        pActwk->actfree[2] |= 16;
+        work->flags |= 16;
     } else {
 
-        pActwk->actfree[2] &= 239;
-        ((Sint16 *)pActwk)[29] = actwk[0].xspeed.w;
-        ((Sint16 *)pActwk)[30] = actwk[0].yspeed.w;
+        work->flags &= 239;
+        work->saved_xspeed = actwk[0].xspeed.w;
+        work->saved_yspeed = actwk[0].yspeed.w;
 
         if (wD6 >= 0) {
 
             wD0.l = 0;
-            wD0.w.l = ((Sint16 *)pActwk)[27];
+            wD0.w.l = work->belt_speed;
 
             if (wD0.w.l - actwk[0].xspeed.w > 768) {
                 wD0.l = 0;
@@ -1243,24 +1361,25 @@ static void belt_sncspd(Sint32 wD6, sprite_status *pActwk) {
 }
 
 static void belt_sncxmax(Sint16 subact) {
-    if (!(actwk[subact].actfree[2] & 4)) {
+    if (!(egg5_get_work(&actwk[subact])->flags & 4)) {
         if (actwk[0].xposi.w.h >= 3464)
             actwk[0].xposi.w.h = 3464;
     }
 }
 
 static void belt_anime(sprite_status *pActwk) {
+    egg5_work *work = egg5_get_work(pActwk);
     Uint8 wD0;
 
-    if (((Sint16 *)pActwk)[27] > 1024) {
+    if (work->belt_speed > 1024) {
 
         wD0 = 1;
     } else {
-        if (((Sint16 *)pActwk)[27] > 768) {
+        if (work->belt_speed > 768) {
 
             wD0 = 1;
         } else {
-            if (((Sint16 *)pActwk)[27] > 512) {
+            if (work->belt_speed > 512) {
 
                 wD0 = 2;
             } else {
@@ -1270,9 +1389,9 @@ static void belt_anime(sprite_status *pActwk) {
         }
     }
 
-    ++pActwk->actfree[0];
-    if (wD0 <= pActwk->actfree[0]) {
-        pActwk->actfree[0] = 0;
+    ++work->timer;
+    if (wD0 <= work->timer) {
+        work->timer = 0;
         set_belt_col(pActwk);
     }
 }
@@ -1289,11 +1408,11 @@ static void set_belt_col(sprite_status *pActwk) {
         {0, 128, 0, 1},   {32, 192, 96, 1}, {0, 32, 0, 1},
         {32, 192, 96, 1}, {0, 32, 0, 1},    {0, 128, 0, 1}};
 
-    ((char *)pActwk)[66] += 3;
-    if (((char *)pActwk)[66] >= 9)
-        ((char *)pActwk)[66] = 0;
+    egg5_get_work(pActwk)->palette_index += 3;
+    if (egg5_get_work(pActwk)->palette_index >= 9)
+        egg5_get_work(pActwk)->palette_index = 0;
 
-    bA3 = ((char *)pActwk)[66];
+    bA3 = egg5_get_work(pActwk)->palette_index;
     pColorwk = &lpcolorwk[42];
     if (!generate_flag) {
         *pColorwk = belt_col_tblD[bA3];
@@ -1378,6 +1497,7 @@ void make_hibana1(void) {
 
 void make_hibana2(sprite_status *pActwk) {
     sprite_status *ppActwk;
+    egg5_work *new_work;
     Sint16 wD4;
     Sint32 i, j;
     Sint16 hibana_tbl[16] = {-24, 0,  -6, 0,  6,   0, 24, 0,
@@ -1388,8 +1508,9 @@ void make_hibana2(sprite_status *pActwk) {
     j = 0;
     for (i = 0; i < 8; ++i) {
         if (actwkchk(&ppActwk) == 0) {
-            ppActwk->actfree[3] = 1;
-            ((Sint16 *)ppActwk)[25] = (Uint16)(Uint8)(pActwk - actwk);
+            new_work = egg5_get_work(ppActwk);
+            new_work->phase = 1;
+            new_work->parent_index = (Uint16)(Uint8)(pActwk - actwk);
             ppActwk->actno = 32;
             ppActwk->xposi.w.h = pActwk->xposi.w.h;
             ppActwk->yposi.w.h = pActwk->yposi.w.h;
@@ -1402,18 +1523,19 @@ void make_hibana2(sprite_status *pActwk) {
 
 static void bom_set(sprite_status *pActwk) {
     sprite_status *ppActwk;
+    egg5_work *work = egg5_get_work(pActwk);
     Uint8 wD2, wD3;
     Sint16 bom_tbl[8] = {-16, -8, -32, 8, -16, 24, 32, 8};
 
-    if (pActwk->actfree[0] % 4 == 0) {
+    if (work->timer % 4 == 0) {
 
-        wD3 = pActwk->actfree[0];
+        wD3 = work->timer;
         wD3 /= 4;
         wD3 %= 4;
         wD2 = wD3 * 2;
         if (actwkchk(&ppActwk) == 0) {
 
-            ppActwk->actfree[0] = wD3;
+            egg5_get_work(ppActwk)->timer = wD3;
             ppActwk->actno = 35;
             ppActwk->xposi.w.h = pActwk->xposi.w.h;
             ppActwk->yposi.w.h = pActwk->yposi.w.h;
@@ -1428,8 +1550,10 @@ static void make_meca2(sprite_status *pActwk) {
     sprite_status *ppActwk;
 
     if (actwkchk(&ppActwk) == 0) {
-        ((Sint16 *)ppActwk)[25] = (Uint16)(Uint8)(pActwk - actwk);
-        ((Sint16 *)pActwk)[26] = (Uint16)(Uint8)(ppActwk - actwk);
+        egg5_get_work(ppActwk)->parent_index =
+            (Uint16)(Uint8)(pActwk - actwk);
+        egg5_get_work(pActwk)->child_index =
+            (Uint16)(Uint8)(ppActwk - actwk);
         ppActwk->actno = 52;
         ppActwk->xposi.w.h = pActwk->xposi.w.h;
         ppActwk->yposi.w.h = pActwk->yposi.w.h + 56;
@@ -1440,8 +1564,10 @@ static void make_egg5(sprite_status *pActwk) {
     sprite_status *ppActwk;
 
     if (actwkchk(&ppActwk) == 0) {
-        ((Sint16 *)ppActwk)[25] = (Uint16)(Uint8)(pActwk - actwk);
-        ((Sint16 *)pActwk)[26] = (Uint16)(Uint8)(ppActwk - actwk);
+        egg5_get_work(ppActwk)->parent_index =
+            (Uint16)(Uint8)(pActwk - actwk);
+        egg5_get_work(pActwk)->child_index =
+            (Uint16)(Uint8)(ppActwk - actwk);
         ppActwk->actno = 50;
         ppActwk->xposi.w.h = pActwk->xposi.w.h;
         ppActwk->yposi.w.h = pActwk->yposi.w.h;
@@ -1452,8 +1578,10 @@ static void make_catch(sprite_status *pActwk) {
     sprite_status *ppActwk;
 
     if (actwkchk(&ppActwk) == 0) {
-        ((Sint16 *)ppActwk)[25] = (Uint16)(Uint8)(pActwk - actwk);
-        ((Sint16 *)pActwk)[26] = (Uint16)(Uint8)(ppActwk - actwk);
+        egg5_get_work(ppActwk)->parent_index =
+            (Uint16)(Uint8)(pActwk - actwk);
+        egg5_get_work(pActwk)->child_index =
+            (Uint16)(Uint8)(ppActwk - actwk);
         ppActwk->actno = 55;
         ppActwk->xposi.w.h = pActwk->xposi.w.h - 128;
         ppActwk->yposi.w.h = pActwk->yposi.w.h - 68;
@@ -1464,7 +1592,8 @@ static void make_pipe(sprite_status *pActwk) {
     sprite_status *ppActwk;
 
     if (actwkchk(&ppActwk) == 0) {
-        ((Sint16 *)ppActwk)[25] = (Uint16)(Uint8)(pActwk - actwk);
+        egg5_get_work(ppActwk)->parent_index =
+            (Uint16)(Uint8)(pActwk - actwk);
         ppActwk->actno = 54;
         ppActwk->xposi.w.h = pActwk->xposi.w.h;
         ppActwk->yposi.w.h = pActwk->yposi.w.h;
@@ -1475,7 +1604,8 @@ static void make_meca3(sprite_status *pActwk) {
     sprite_status *ppActwk;
 
     if (actwkchk(&ppActwk) == 0) {
-        ((Sint16 *)ppActwk)[25] = (Uint16)(Uint8)(pActwk - actwk);
+        egg5_get_work(ppActwk)->parent_index =
+            (Uint16)(Uint8)(pActwk - actwk);
         ppActwk->actno = 53;
         ppActwk->xposi.w.h = pActwk->xposi.w.h;
         ppActwk->yposi.w.h = pActwk->yposi.w.h + 56;
@@ -1486,7 +1616,8 @@ static void make_bomb(sprite_status *pActwk) {
     sprite_status *ppActwk;
 
     if (actwkchk(&ppActwk) == 0) {
-        ((Sint16 *)ppActwk)[25] = (Uint16)(Uint8)(pActwk - actwk);
+        egg5_get_work(ppActwk)->parent_index =
+            (Uint16)(Uint8)(pActwk - actwk);
         ppActwk->actno = 56;
         ppActwk->xposi.w.h = pActwk->xposi.w.h;
         ppActwk->yposi.w.h = pActwk->yposi.w.h + 24;
@@ -1499,7 +1630,8 @@ static void make_bomb2(sprite_status *pActwk) {
 
     for (i = 3; i >= 0; --i) {
         if (actwkchk(&ppActwk) == 0) {
-            ((Sint16 *)ppActwk)[25] = (Uint16)(Uint8)(pActwk - actwk);
+            egg5_get_work(ppActwk)->parent_index =
+                (Uint16)(Uint8)(pActwk - actwk);
             ppActwk->actno = 57;
             ppActwk->xposi.w.h = pActwk->xposi.w.h;
             ppActwk->yposi.w.h = pActwk->yposi.w.h;
@@ -1513,8 +1645,10 @@ static void make_belt(sprite_status *pActwk) {
     sprite_status *ppActwk;
 
     if (actwkchk(&ppActwk) == 0) {
-        ((Sint16 *)ppActwk)[25] = (Uint16)(Uint8)(pActwk - actwk);
-        ((Sint16 *)pActwk)[27] = (Uint16)(Uint8)(ppActwk - actwk);
+        egg5_get_work(ppActwk)->parent_index =
+            (Uint16)(Uint8)(pActwk - actwk);
+        egg5_get_work(pActwk)->belt_actor_index =
+            (Uint16)(Uint8)(ppActwk - actwk);
         ppActwk->actno = 34;
     }
 }

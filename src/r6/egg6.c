@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "egg6.h"
 #include "../action.h"
@@ -5,6 +7,41 @@
 #include "../loader2.h"
 #include "../playsub.h"
 #include "../ridechk.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 unused0[2];
+    char *spawn_table;
+    Uint8 unused_after_spawn_table[21 - 2 - sizeof(char *)];
+    Uint8 spawn_timer;
+} egg6_work;
+
+typedef struct {
+    Sint32 fall_speed;
+    Sint16 target_y;
+} egg6_bomb_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(egg6_work, spawn_table) == 2,
+               "egg6_work.spawn_table offset");
+_Static_assert(offsetof(egg6_work, spawn_timer) == 21,
+               "egg6_work.spawn_timer offset");
+_Static_assert(sizeof(egg6_work) <= sizeof(((sprite_status *)0)->actfree),
+               "egg6_work fits in actfree");
+_Static_assert(offsetof(egg6_bomb_work, fall_speed) == 0,
+               "egg6_bomb_work.fall_speed offset");
+_Static_assert(offsetof(egg6_bomb_work, target_y) == 4,
+               "egg6_bomb_work.target_y offset");
+_Static_assert(sizeof(egg6_bomb_work) <= sizeof(((sprite_status *)0)->actfree),
+               "egg6_bomb_work fits in actfree");
+
+static egg6_work *egg6_get_work(sprite_status *eggwk) {
+    return (egg6_work *)eggwk->actfree;
+}
+
+static egg6_bomb_work *egg6_get_bomb_work(sprite_status *bombwk) {
+    return (egg6_bomb_work *)bombwk->actfree;
+}
 
 static void act_init(sprite_status *eggwk);
 static void act_check(sprite_status *eggwk);
@@ -50,6 +87,8 @@ static sprite_pattern bomb1 = {1, {{-8, -8, 0, 301}}};
 sprite_pattern *pat_bomb[2] = {&bomb0, &bomb1};
 
 static void act_init(sprite_status *eggwk) {
+    egg6_work *work = egg6_get_work(eggwk);
+
     if (generate_flag != 0) {
         stack_pointer = 1;
         frameout(eggwk);
@@ -64,7 +103,7 @@ static void act_init(sprite_status *eggwk) {
 
     eggwk->patbase = pat_egg6;
     eggwk->colino = 248;
-    ((char **)eggwk)[12] = tbl0;
+    work->spawn_table = tbl0;
 }
 
 static void act_check(sprite_status *eggwk) {
@@ -78,22 +117,23 @@ static void act_check(sprite_status *eggwk) {
 }
 
 static void act_make0(sprite_status *eggwk) {
+    egg6_work *work = egg6_get_work(eggwk);
     char *tbl_address, tbl_data;
     Sint16 position_data_x, position_data_y;
     sprite_status *new_actwk;
 
-    tbl_address = ((char **)eggwk)[12];
+    tbl_address = work->spawn_table;
     if ((tbl_data = *tbl_address++) < 0) {
         eggwk->r_no0 += 2;
         eggwk->patno = 1;
-        eggwk->actfree[21] = 60;
+        work->spawn_timer = 60;
         return;
     }
-    if (tbl_data != ++eggwk->actfree[21])
+    if (tbl_data != ++work->spawn_timer)
         return;
     position_data_x = *tbl_address++;
     position_data_y = *tbl_address++;
-    ((char **)eggwk)[12] = tbl_address;
+    work->spawn_table = tbl_address;
     if (actwkchk(&new_actwk) != 0)
         return;
     new_actwk->actno = 24;
@@ -104,7 +144,9 @@ static void act_make0(sprite_status *eggwk) {
 }
 
 static void act_wait(sprite_status *eggwk) {
-    if (--eggwk->actfree[21] == 0)
+    egg6_work *work = egg6_get_work(eggwk);
+
+    if (--work->spawn_timer == 0)
         eggwk->r_no0 += 2;
 }
 
@@ -124,7 +166,7 @@ static void act_make1(sprite_status *eggwk) {
         new_actwk->userflag.b.h = -1;
         new_actwk->xposi.w.h = eggwk->xposi.w.h + data_x;
         new_actwk->yposi.w.h = eggwk->yposi.w.h + data_y - 160;
-        ((Sint16 *)new_actwk)[25] = eggwk->yposi.w.h + 38;
+        egg6_get_bomb_work(new_actwk)->target_y = eggwk->yposi.w.h + 38;
     };
     frameout(eggwk);
 }
@@ -137,6 +179,8 @@ void bomb(sprite_status *bombwk) {
 }
 
 static void bomb_init(sprite_status *bombwk) {
+    egg6_bomb_work *work = egg6_get_bomb_work(bombwk);
+
     bombwk->r_no0 += 2;
     bombwk->actflg |= 4;
     bombwk->sprpri = 3;
@@ -144,13 +188,15 @@ static void bomb_init(sprite_status *bombwk) {
 
     bombwk->patbase = pat_bomb;
     bombwk->colino = 183;
-    *(Sint32 *)&bombwk->actfree[0] = 0;
+    work->fall_speed = 0;
 }
 
 static void bomb_fall(sprite_status *bombwk) {
-    bombwk->yposi.l += *(Sint32 *)&bombwk->actfree[0];
-    *(Sint32 *)&bombwk->actfree[0] += 1024;
-    if (bombwk->yposi.w.h >= ((Sint16 *)bombwk)[25])
+    egg6_bomb_work *work = egg6_get_bomb_work(bombwk);
+
+    bombwk->yposi.l += work->fall_speed;
+    work->fall_speed += 1024;
+    if (bombwk->yposi.w.h >= work->target_y)
         bombwk->r_no0 += 2;
     patchg(bombwk, pchg_bomb);
 }

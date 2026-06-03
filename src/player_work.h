@@ -16,8 +16,13 @@ typedef struct {
     Uint16 speed_shoes_timer;
     Uint8 floor_left;
     Uint8 floor_right;
-    Uint8 jump_lock;
-    Uint8 orbit_radius;
+    union {
+        struct {
+            Uint8 jump_lock;
+            Uint8 orbit_radius;
+        };
+        Sint16 death_y;
+    };
     Uint16 erase_timer;
     Uint8 jump_started;
     Uint8 ride_actor_index;
@@ -45,6 +50,8 @@ _Static_assert(offsetof(player_work, jump_lock) == 14,
                "player_work.jump_lock offset");
 _Static_assert(offsetof(player_work, orbit_radius) == 15,
                "player_work.orbit_radius offset");
+_Static_assert(offsetof(player_work, death_y) == 14,
+               "player_work.death_y offset");
 _Static_assert(offsetof(player_work, erase_timer) == 16,
                "player_work.erase_timer offset");
 _Static_assert(offsetof(player_work, jump_started) == 18,

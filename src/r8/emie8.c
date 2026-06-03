@@ -1,8 +1,35 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "emie8.h"
 #include "../action.h"
 #include "../impfuncs.h"
 #include "../playsub.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 flash_timer;
+    Uint8 flash_count;
+    Uint8 unused2;
+    Uint8 scripted_control_state;
+    Uint8 shake_timer;
+} emie8_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(emie8_work, flash_timer) == 0,
+               "emie8_work.flash_timer offset");
+_Static_assert(offsetof(emie8_work, flash_count) == 1,
+               "emie8_work.flash_count offset");
+_Static_assert(offsetof(emie8_work, scripted_control_state) == 3,
+               "emie8_work.scripted_control_state offset");
+_Static_assert(offsetof(emie8_work, shake_timer) == 4,
+               "emie8_work.shake_timer offset");
+_Static_assert(sizeof(emie8_work) <= sizeof(((sprite_status *)0)->actfree),
+               "emie8_work fits in actfree");
+
+static emie8_work *emie8_get_work(sprite_status *pActwk) {
+    return (emie8_work *)pActwk->actfree;
+}
 
 static void emie8_ini(sprite_status *pActwk);
 static void emie8_wait(sprite_status *pActwk);
@@ -103,15 +130,17 @@ static void emie8_j2(sprite_status *pActwk) {
 }
 
 static void emie8_l2(sprite_status *pActwk) {
+    emie8_work *work = emie8_get_work(pActwk);
+
     sMemSet(clchgtim, 127, sizeof(clchgtim));
 
     add_spd(pActwk);
 
     if (pActwk->xposi.w.h >= 3808) {
-        if (++pActwk->actfree[0] >= 8) {
-            pActwk->actfree[0] = 0;
+        if (++work->flash_timer >= 8) {
+            work->flash_timer = 0;
 
-            if (++pActwk->actfree[1] >= 8) {
+            if (++work->flash_count >= 8) {
 
                 time_flag |= 128;
                 gameflag.w = 2;
@@ -132,32 +161,40 @@ static void add_spd(sprite_status *pActwk) {
 }
 
 static void snc_ctrl(sprite_status *pActwk) {
-    snc_act_tbl[pActwk->actfree[3] / 2](pActwk, &actwk[0]);
+    emie8_work *work = emie8_get_work(pActwk);
+
+    snc_act_tbl[work->scripted_control_state / 2](pActwk, &actwk[0]);
 }
 
 static void emie8_snc_r(sprite_status *pActwk, sprite_status *pPlayerwk) {
+    emie8_work *work = emie8_get_work(pActwk);
+
     swdata.w = 2056;
     if (pPlayerwk->xposi.w.h < 3984)
         return;
 
-    pActwk->actfree[3] += 2;
+    work->scripted_control_state += 2;
     emie8_snc_l(pActwk, pPlayerwk);
 }
 
 static void emie8_snc_l(sprite_status *pActwk, sprite_status *pPlayerwk) {
+    emie8_work *work = emie8_get_work(pActwk);
+
     swdata.w = 1028;
     if (pPlayerwk->xposi.w.h > 3952)
         return;
 
-    pActwk->actfree[3] += 2;
+    work->scripted_control_state += 2;
     swdata.w = 0;
     emie8_snc_w(pActwk, pPlayerwk);
 }
 
 static void emie8_snc_w(sprite_status *pActwk, sprite_status *pPlayerwk) {
+    emie8_work *work = emie8_get_work(pActwk);
+
     if (pActwk->r_no0 >= 6) {
 
-        pActwk->actfree[3] += 2;
+        work->scripted_control_state += 2;
         pPlayerwk->mstno.b.h = 5;
     }
 }
@@ -192,12 +229,13 @@ static void flash_out8(void) {
 }
 
 static void emie8_jisin(sprite_status *pActwk) {
+    emie8_work *work = emie8_get_work(pActwk);
     Sint16 wk;
 
-    --pActwk->actfree[4];
+    --work->shake_timer;
     wk = -2;
 
-    if (pActwk->actfree[4] / 2 & 1) {
+    if (work->shake_timer / 2 & 1) {
         wk = -4;
     }
     scralim_down += wk;

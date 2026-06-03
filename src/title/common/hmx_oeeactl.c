@@ -576,7 +576,7 @@ Sint32 OESprCreate(Uint16 timing) {
         if (*infoSprtBmp[i].lphSpr != 0)
             continue;
 
-        sprCreate((Sint32 *)infoSprtBmp[i].lphSpr);
+        sprCreate(infoSprtBmp[i].lphSpr);
         hmx_sprite_set_position_module(s_ctx->sprites[*infoSprtBmp[i].lphSpr],
                                        infoSprtBmp[i].point.x,
                                        infoSprtBmp[i].point.y);
@@ -594,7 +594,7 @@ Sint32 OESprCreateIndx(Sint32 indx) {
 
     if (*infoSprtBmp[indx].lphSpr != 0)
         return 0;
-    sprCreate((Sint32 *)infoSprtBmp[indx].lphSpr);
+    sprCreate(infoSprtBmp[indx].lphSpr);
     hmx_sprite_set_position_module(s_ctx->sprites[*infoSprtBmp[indx].lphSpr],
                                    infoSprtBmp[indx].point.x,
                                    infoSprtBmp[indx].point.y);
@@ -691,7 +691,7 @@ void OEDeleteEA(void) {
     s_ctx->grd_bitmap_count = 0;
 }
 
-void sprCreate(Sint32 *handle) {
+void sprCreate(Uint32 *handle) {
     Sint32 i;
     for (i = 1; i < 512; ++i) {
         if (sprIdx[i] == 0) {

@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "boss_6.h"
 #include "../action.h"
@@ -8,10 +10,102 @@
 #include "../io.h"
 #include "../loader2.h"
 #include "../playsub.h"
+#include "../player_work.h"
 #include "../ridechk.h"
 #include "../score.h"
 #include "col6c.h"
 #include "coli6.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    union {
+        Sint16 timer_word;
+        struct {
+            Uint8 timer;
+            Uint8 anim_timer;
+        };
+    };
+    Uint8 flags;
+    Uint8 floor_index;
+    Uint16 parent_index;
+    Sint16 x_acceleration;
+    Sint16 y_acceleration;
+    union {
+        struct {
+            Uint8 state_timer;
+            Uint8 state;
+        };
+        Sint16 table_offset;
+    };
+    union {
+        struct {
+            Uint8 release_flag;
+            Uint8 hit_timer;
+        };
+        Sint16 ride_x_offset;
+    };
+    union {
+        struct {
+            Uint8 quake_timer;
+            Uint8 hit_count;
+        };
+        Sint16 ride_y_offset;
+    };
+    Sint16 bob_offset;
+    Uint8 bob_angle;
+    Uint8 side_selector;
+    Uint8 fade_timer;
+    Uint8 fade_count;
+} egg6_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(egg6_work, timer_word) == 0,
+               "egg6_work.timer_word offset");
+_Static_assert(offsetof(egg6_work, timer) == 0, "egg6_work.timer offset");
+_Static_assert(offsetof(egg6_work, anim_timer) == 1,
+               "egg6_work.anim_timer offset");
+_Static_assert(offsetof(egg6_work, flags) == 2, "egg6_work.flags offset");
+_Static_assert(offsetof(egg6_work, floor_index) == 3,
+               "egg6_work.floor_index offset");
+_Static_assert(offsetof(egg6_work, parent_index) == 4,
+               "egg6_work.parent_index offset");
+_Static_assert(offsetof(egg6_work, x_acceleration) == 6,
+               "egg6_work.x_acceleration offset");
+_Static_assert(offsetof(egg6_work, y_acceleration) == 8,
+               "egg6_work.y_acceleration offset");
+_Static_assert(offsetof(egg6_work, state_timer) == 10,
+               "egg6_work.state_timer offset");
+_Static_assert(offsetof(egg6_work, state) == 11, "egg6_work.state offset");
+_Static_assert(offsetof(egg6_work, table_offset) == 10,
+               "egg6_work.table_offset offset");
+_Static_assert(offsetof(egg6_work, release_flag) == 12,
+               "egg6_work.release_flag offset");
+_Static_assert(offsetof(egg6_work, hit_timer) == 13,
+               "egg6_work.hit_timer offset");
+_Static_assert(offsetof(egg6_work, ride_x_offset) == 12,
+               "egg6_work.ride_x_offset offset");
+_Static_assert(offsetof(egg6_work, quake_timer) == 14,
+               "egg6_work.quake_timer offset");
+_Static_assert(offsetof(egg6_work, hit_count) == 15,
+               "egg6_work.hit_count offset");
+_Static_assert(offsetof(egg6_work, ride_y_offset) == 14,
+               "egg6_work.ride_y_offset offset");
+_Static_assert(offsetof(egg6_work, bob_offset) == 16,
+               "egg6_work.bob_offset offset");
+_Static_assert(offsetof(egg6_work, bob_angle) == 18,
+               "egg6_work.bob_angle offset");
+_Static_assert(offsetof(egg6_work, side_selector) == 19,
+               "egg6_work.side_selector offset");
+_Static_assert(offsetof(egg6_work, fade_timer) == 20,
+               "egg6_work.fade_timer offset");
+_Static_assert(offsetof(egg6_work, fade_count) == 21,
+               "egg6_work.fade_count offset");
+_Static_assert(sizeof(egg6_work) <= sizeof(((sprite_status *)0)->actfree),
+               "egg6_work fits in actfree");
+
+static egg6_work *egg6_get_work(sprite_status *pActwk) {
+    return (egg6_work *)pActwk->actfree;
+}
 
 static Uint8 stbPatOff;
 static Uint8 stbStx;
@@ -57,28 +151,28 @@ void egg6boss(sprite_status *pActwk) {
 void egg6_hitchk(sprite_status *pActwk) {
     sprite_status *pActbp;
 
-    if (!(pActwk->actfree[2] & 1))
+    if (!(egg6_get_work(pActwk)->flags & 1))
         return;
 
-    if (pActwk->actfree[13] != 0) {
-        --pActwk->actfree[13];
-        if (pActwk->actfree[13] == 0)
+    if (egg6_get_work(pActwk)->hit_timer != 0) {
+        --egg6_get_work(pActwk)->hit_timer;
+        if (egg6_get_work(pActwk)->hit_timer == 0)
             egg6_coliset(pActwk);
         return;
     }
 
-    pActbp = &actwk[((Uint16 *)pActwk)[25]];
+    pActbp = &actwk[egg6_get_work(pActwk)->parent_index];
     if (pActwk->colino != 0) {
         if (pActbp->colino != 0)
             return;
     }
 
-    ++pActwk->actfree[15];
+    ++egg6_get_work(pActwk)->hit_count;
     pActwk->colino = 0;
     pActbp->colino = 0;
     pActwk->mstno.b.h = 1;
     pActwk->patno = 0;
-    pActwk->actfree[13] = 30;
+    egg6_get_work(pActwk)->hit_timer = 30;
 
     soundset(172);
 }
@@ -86,7 +180,7 @@ void egg6_hitchk(sprite_status *pActwk) {
 void egg6_coliset(sprite_status *pActwk) {
     sprite_status *pActbp;
 
-    pActbp = &actwk[((Uint16 *)pActwk)[25]];
+    pActbp = &actwk[egg6_get_work(pActwk)->parent_index];
     pActwk->colino = 60;
     pActwk->colicnt = 2;
     pActbp->colino = 61;
@@ -134,7 +228,7 @@ void egg6_ini(sprite_status *pActwk) {
         pActwk->sproffset = 1004;
         pActwk->patbase = egg6_pat;
 
-        pActwk->actfree[2] |= 1;
+        egg6_get_work(pActwk)->flags |= 1;
         egg6_coliset(pActwk);
 
         bossflag &= 240;
@@ -148,15 +242,15 @@ void egg6_ini(sprite_status *pActwk) {
         return;
     }
 
-    ++((Sint16 *)pActwk)[23];
-    if (((Sint16 *)pActwk)[23] != 120)
+    ++egg6_get_work(pActwk)->timer_word;
+    if (egg6_get_work(pActwk)->timer_word != 120)
         return;
 
-    ((Sint16 *)pActwk)[23] = 0;
+    egg6_get_work(pActwk)->timer_word = 0;
     pActwk->r_no0 = 4;
     pActwk->xspeed.w = 0;
     pActwk->yspeed.w = 768;
-    ((Sint16 *)pActwk)[27] = -1;
+    egg6_get_work(pActwk)->y_acceleration = -1;
 
     sub_sync(103);
 }
@@ -169,16 +263,16 @@ void egg6_down(sprite_status *pActwk) {
 
     wD0.w = 0;
     add_spd2(pActwk);
-    wD0.b.l = pActwk->actfree[3];
+    wD0.b.l = egg6_get_work(pActwk)->floor_index;
     wD0.w = down_pos[wD0.b.l];
     if ((Sint16)wD0.w > pActwk->yposi.w.h)
         return;
 
     pActwk->yposi.w.h = wD0.w;
     pActwk->r_no0 = 6;
-    ((Sint16 *)pActwk)[23] = 0;
-    pActwk->actfree[11] = 1;
-    pActwk->actfree[10] = 1;
+    egg6_get_work(pActwk)->timer_word = 0;
+    egg6_get_work(pActwk)->state = 1;
+    egg6_get_work(pActwk)->state_timer = 1;
 
     soundset(177);
 }
@@ -187,26 +281,26 @@ void egg6_hover(sprite_status *pActwk) {
     ushort_union wD0;
 
     wD0.w = get_snc_floor();
-    if (wD0.b.l < pActwk->actfree[3]) {
+    if (wD0.b.l < egg6_get_work(pActwk)->floor_index) {
 
         egg6_event_retry(pActwk);
         return;
     }
     fuwafuwa(pActwk);
-    if (pActwk->actfree[15] == 0) {
-        ++((Sint16 *)pActwk)[23];
-        if (((Sint16 *)pActwk)[23] < 300)
+    if (egg6_get_work(pActwk)->hit_count == 0) {
+        ++egg6_get_work(pActwk)->timer_word;
+        if (egg6_get_work(pActwk)->timer_word < 300)
             return;
     }
 
-    pActwk->actfree[11] = 0;
+    egg6_get_work(pActwk)->state = 0;
 
     pActwk->r_no0 = 8;
     pActwk->xspeed.w = 0;
     pActwk->yspeed.w = -256;
-    ((Sint16 *)pActwk)[27] = -16;
+    egg6_get_work(pActwk)->y_acceleration = -16;
 
-    ((Sint16 *)pActwk)[23] = 0;
+    egg6_get_work(pActwk)->timer_word = 0;
 }
 
 void fuwafuwa(sprite_status *pActwk) {
@@ -214,9 +308,9 @@ void fuwafuwa(sprite_status *pActwk) {
     Sint16 iCos;
     Uint8 bRad;
 
-    if (pActwk->actfree[3] == 3) {
-        ++pActwk->actfree[18];
-        bRad = pActwk->actfree[18];
+    if (egg6_get_work(pActwk)->floor_index == 3) {
+        ++egg6_get_work(pActwk)->bob_angle;
+        bRad = egg6_get_work(pActwk)->bob_angle;
 
         if ((bRad % 4) == 0)
             stbRad = -stbRad;
@@ -225,13 +319,13 @@ void fuwafuwa(sprite_status *pActwk) {
         return;
     }
 
-    pActwk->yposi.w.h -= ((Sint16 *)pActwk)[31];
+    pActwk->yposi.w.h -= egg6_get_work(pActwk)->bob_offset;
 
-    sinset(pActwk->actfree[18], &iSin, &iCos);
-    pActwk->actfree[18] += 2;
+    sinset(egg6_get_work(pActwk)->bob_angle, &iSin, &iCos);
+    egg6_get_work(pActwk)->bob_angle += 2;
     iSin <<= 2;
     iSin >>= 8;
-    ((Sint16 *)pActwk)[31] = iSin;
+    egg6_get_work(pActwk)->bob_offset = iSin;
     pActwk->yposi.w.h += iSin;
 }
 
@@ -240,22 +334,22 @@ void egg6_up(sprite_status *pActwk) {
     Sint16 up_pos[3] = {1064, 552, 304};
 
     add_spd2(pActwk);
-    wD0.w = pActwk->actfree[3];
+    wD0.w = egg6_get_work(pActwk)->floor_index;
     if (up_pos[wD0.w] < pActwk->yposi.w.h)
         return;
 
     pActwk->yposi.w.h = up_pos[wD0.w];
-    pActwk->actfree[10] = 0;
+    egg6_get_work(pActwk)->state_timer = 0;
     pActwk->r_no0 = 10;
-    pActwk->actfree[14] = 240;
-    ++pActwk->actfree[3];
+    egg6_get_work(pActwk)->quake_timer = 240;
+    ++egg6_get_work(pActwk)->floor_index;
 
-    if (pActwk->actfree[3] != 3) {
-        pActwk->actfree[11] = 1;
+    if (egg6_get_work(pActwk)->floor_index != 3) {
+        egg6_get_work(pActwk)->state = 1;
         soundset(163);
     }
 
-    pActwk->actfree[15] = 0;
+    egg6_get_work(pActwk)->hit_count = 0;
     pActwk->mstno.b.h = 0;
     pActwk->patno = 0;
 }
@@ -265,8 +359,8 @@ void egg6_event(sprite_status *pActwk) {
 
     fuwafuwa(pActwk);
 
-    ++((Sint16 *)pActwk)[23];
-    wDemoNo = ((Sint16 *)pActwk)[23];
+    ++egg6_get_work(pActwk)->timer_word;
+    wDemoNo = egg6_get_work(pActwk)->timer_word;
 
     switch (wDemoNo) {
     case 498:
@@ -281,12 +375,12 @@ void egg6_event(sprite_status *pActwk) {
         rakkabutu(pActwk);
         break;
     case 600:
-        pActwk->actfree[12] = 1;
+        egg6_get_work(pActwk)->release_flag = 1;
         rakkabutu(pActwk);
         break;
     case 630:
         bossflag |= 32;
-        pActwk->actfree[12] = 0;
+        egg6_get_work(pActwk)->release_flag = 0;
         rakkabutu(pActwk);
         break;
     case 840:
@@ -331,61 +425,61 @@ void beam_start(sprite_status *pActwk) {
 void rakkabutu(sprite_status *pActwk) {
     Uint16 wD0;
     Sint16 iD0;
-    if (((Sint16 *)pActwk)[23] <= 360) {
-        wD0 = ((Sint16 *)pActwk)[23] - 360;
+    if (egg6_get_work(pActwk)->timer_word <= 360) {
+        wD0 = egg6_get_work(pActwk)->timer_word - 360;
         make_gareki(pActwk, wD0);
     }
 
-    if (((Sint16 *)pActwk)[23] >= 180) {
-        wD0 = ((Sint16 *)pActwk)[23] - 180;
+    if (egg6_get_work(pActwk)->timer_word >= 180) {
+        wD0 = egg6_get_work(pActwk)->timer_word - 180;
         make_yuka(pActwk, wD0);
     }
 
-    if (pActwk->actfree[3] != 3)
+    if (egg6_get_work(pActwk)->floor_index != 3)
         return;
 
     if (pActwk->colino != 0) {
 
-        if (((Sint16 *)pActwk)[23] > 180)
+        if (egg6_get_work(pActwk)->timer_word > 180)
             return;
 
-        iD0 = ((Sint16 *)pActwk)[23] - 1;
+        iD0 = egg6_get_work(pActwk)->timer_word - 1;
         make_toge(pActwk, iD0);
         return;
     }
 
-    pActwk->actfree[2] &= 254;
-    ((Sint16 *)pActwk)[23] = 0;
+    egg6_get_work(pActwk)->flags &= 254;
+    egg6_get_work(pActwk)->timer_word = 0;
     pActwk->r_no0 = 12;
     soundset(199);
     pActwk->xspeed.w = 768;
     pActwk->yspeed.w = 256;
-    ((Sint16 *)pActwk)[27] = 16;
+    egg6_get_work(pActwk)->y_acceleration = 16;
 
     make_bakuha(pActwk);
     pActwk->mstno.b.h = 2;
     pActwk->patno = 0;
-    pActwk->actfree[11] = 255;
-    pActwk->actfree[10] = 255;
+    egg6_get_work(pActwk)->state = 255;
+    egg6_get_work(pActwk)->state_timer = 255;
 }
 
 void event_end(sprite_status *pActwk) {
 
-    if (pActwk->actfree[3] == 3) {
+    if (egg6_get_work(pActwk)->floor_index == 3) {
         egg6_event_retry(pActwk);
         return;
     }
 
-    ((Sint16 *)pActwk)[23] = 0;
+    egg6_get_work(pActwk)->timer_word = 0;
     pActwk->r_no0 = 4;
     pActwk->xspeed.w = 0;
     pActwk->yspeed.w = 768;
-    ((Sint16 *)pActwk)[27] = -1;
+    egg6_get_work(pActwk)->y_acceleration = -1;
 }
 
 void egg6_event_retry(sprite_status *pActwk) {
-    ((Sint16 *)pActwk)[23] = 360;
-    pActwk->actfree[10] = 0;
+    egg6_get_work(pActwk)->timer_word = 360;
+    egg6_get_work(pActwk)->state_timer = 0;
     pActwk->r_no0 = 10;
 }
 
@@ -401,21 +495,21 @@ void egg6_dead1(sprite_status *pActwk) {
     pActwk->mstno.b.h = 3;
     pActwk->patno = 0;
     pActwk->yposi.w.h = 672;
-    ((Sint16 *)pActwk)[23] = 0;
+    egg6_get_work(pActwk)->timer_word = 0;
 }
 
 void egg6_dead2(sprite_status *pActwk) {
     Sint16 sUsr_tm;
-    if (((Sint16 *)pActwk)[23] == 120)
+    if (egg6_get_work(pActwk)->timer_word == 120)
         bossstart &= 31;
 
-    if (((Sint16 *)pActwk)[23] <= 326)
+    if (egg6_get_work(pActwk)->timer_word <= 326)
         dead_snc_pos();
     else
         dead_snc_pos2();
 
-    ++((Sint16 *)pActwk)[23];
-    sUsr_tm = ((Sint16 *)pActwk)[23];
+    ++egg6_get_work(pActwk)->timer_word;
+    sUsr_tm = egg6_get_work(pActwk)->timer_word;
     if (sUsr_tm == 180) {
         door_open(pActwk);
         return;
@@ -457,21 +551,21 @@ void egg6_dead2(sprite_status *pActwk) {
 void enkei_in(sprite_status *pActwk) {
     Uint8 byTimer, byCnt;
 
-    byTimer = pActwk->actfree[20];
-    byCnt = pActwk->actfree[21];
+    byTimer = egg6_get_work(pActwk)->fade_timer;
+    byCnt = egg6_get_work(pActwk)->fade_count;
     fin_boss6(&byTimer, &byCnt);
-    pActwk->actfree[20] = byTimer;
-    pActwk->actfree[21] = byCnt;
+    egg6_get_work(pActwk)->fade_timer = byTimer;
+    egg6_get_work(pActwk)->fade_count = byCnt;
 }
 
 void enkei_out(sprite_status *pActwk) {
     Uint8 byTimer, byCnt;
 
-    byTimer = pActwk->actfree[20];
-    byCnt = pActwk->actfree[21];
+    byTimer = egg6_get_work(pActwk)->fade_timer;
+    byCnt = egg6_get_work(pActwk)->fade_count;
     fout_boss6(&byTimer, &byCnt);
-    pActwk->actfree[20] = byTimer;
-    pActwk->actfree[21] = byCnt;
+    egg6_get_work(pActwk)->fade_timer = byTimer;
+    egg6_get_work(pActwk)->fade_count = byCnt;
 }
 
 void egg6_flashout(void) {
@@ -493,7 +587,7 @@ void egg6_cgchg(sprite_status *pActwk) {
     pActwk->xposi.w.h = 2864;
     pActwk->yposi.w.h = 648;
 
-    pActbp = &actwk[((Uint16 *)pActwk)[25]];
+    pActbp = &actwk[egg6_get_work(pActwk)->parent_index];
     pActbp->yposi.w.h += 16;
     pActbp->sprpri = 1;
     pActbp->r_no0 += 2;
@@ -502,12 +596,12 @@ void egg6_cgchg(sprite_status *pActwk) {
 void dead2_end(sprite_status *pActwk) {
     colchg_start();
     pActwk->yspeed.w = 0;
-    ((Sint16 *)pActwk)[27] = 0;
+    egg6_get_work(pActwk)->y_acceleration = 0;
     pActwk->xspeed.w = 256;
-    ((Sint16 *)pActwk)[26] = 12;
+    egg6_get_work(pActwk)->x_acceleration = 12;
 
     pActwk->r_no0 = 16;
-    ((Sint16 *)pActwk)[23] = 0;
+    egg6_get_work(pActwk)->timer_word = 0;
     scralim_right = scr_dir_tbl[2];
     scralim_n_right = scr_dir_tbl[2];
     if (generate_flag == 0)
@@ -546,11 +640,11 @@ void egg6_dead4(sprite_status *pActwk) {
 }
 
 void genecolor_setchk(sprite_status *pActwk) {
-    if (pActwk->actfree[2] & 2)
+    if (egg6_get_work(pActwk)->flags & 2)
         return;
 
     if (actwk[0].xposi.w.h >= 3072) {
-        pActwk->actfree[2] |= 2;
+        egg6_get_work(pActwk)->flags |= 2;
         genecolor();
     }
 }
@@ -597,7 +691,7 @@ void egg6meca0_ini(sprite_status *pActwk) {
 void egg6meca0_01(sprite_status *pActwk) {
     sprite_status *pActbp;
 
-    pActbp = &actwk[((Uint16 *)pActwk)[25]];
+    pActbp = &actwk[egg6_get_work(pActwk)->parent_index];
     pActwk->xposi.w.h = pActbp->xposi.w.h;
     pActwk->yposi.w.h = pActbp->yposi.w.h - 16;
 }
@@ -632,26 +726,26 @@ void egg6meca1_01(sprite_status *pActwk) {
     char egg6meca1_pchg[5] = {0, 2, 1, 3, -1};
     sprite_status *pActbp;
 
-    pActbp = &actwk[((Uint16 *)pActwk)[25]];
+    pActbp = &actwk[egg6_get_work(pActwk)->parent_index];
     pActwk->xposi.w.h = pActbp->xposi.w.h;
     pActwk->yposi.w.h = pActbp->yposi.w.h;
     pActwk->yposi.w.h -= 64;
 
-    if (((char *)pActbp)[56] == 0)
+    if (egg6_get_work(pActbp)->state_timer == 0)
         return;
 
-    if (((char *)pActbp)[56] < 0) {
+    if ((char)egg6_get_work(pActbp)->state_timer < 0) {
 
         stbStx = 1;
         frameout(pActwk);
         return;
     }
-    if (((char *)pActbp)[56] == 1) {
+    if (egg6_get_work(pActbp)->state_timer == 1) {
 
         pActwk->pattimm = 20;
 
         pActwk->pattim = 2;
-        ++((char *)pActbp)[56];
+        ++egg6_get_work(pActbp)->state_timer;
         return;
     }
 
@@ -697,11 +791,11 @@ void egg6meca2_ini(sprite_status *pActwk) {
 void egg6meca2_01(sprite_status *pActwk) {
     sprite_status *pActbp;
 
-    pActbp = &actwk[((Uint16 *)pActwk)[25]];
+    pActbp = &actwk[egg6_get_work(pActwk)->parent_index];
     pActwk->xposi.w.h = pActbp->xposi.w.h;
     pActwk->yposi.w.h = pActbp->yposi.w.h;
     pActwk->yposi.w.h += 64;
-    pActwk->mstno.b.h = pActbp->actfree[11];
+    pActwk->mstno.b.h = egg6_get_work(pActbp)->state;
     if (pActwk->mstno.b.h < 0) {
         stbStx = 1;
         frameout(pActwk);
@@ -739,9 +833,9 @@ void egg6bakuha_ini(sprite_status *pActwk) {
 void egg6bakuha_01(sprite_status *pActwk) {
     sprite_status *pActbp;
 
-    pActbp = &actwk[((Uint16 *)pActwk)[25]];
-    ++((Sint16 *)pActwk)[23];
-    if (((Sint16 *)pActwk)[23] == 420) {
+    pActbp = &actwk[egg6_get_work(pActwk)->parent_index];
+    ++egg6_get_work(pActwk)->timer_word;
+    if (egg6_get_work(pActwk)->timer_word == 420) {
         frameout(pActwk);
         return;
     }
@@ -757,8 +851,8 @@ void egg6bakuha_01(sprite_status *pActwk) {
 }
 
 void egg6bakuha_02(sprite_status *pActwk) {
-    ++((Sint16 *)pActwk)[23];
-    if (((Sint16 *)pActwk)[23] == 24) {
+    ++egg6_get_work(pActwk)->timer_word;
+    if (egg6_get_work(pActwk)->timer_word == 24) {
         frameout(pActwk);
         return;
     }
@@ -804,18 +898,18 @@ void egg6toge_01(sprite_status *pActwk) {
 }
 
 void egg6toge_02(sprite_status *pActwk) {
-    ++((char *)pActwk)[47];
-    if (((char *)pActwk)[47] < 5) {
+    ++egg6_get_work(pActwk)->anim_timer;
+    if ((char)egg6_get_work(pActwk)->anim_timer < 5) {
         actionsub(pActwk);
         return;
     }
 
-    if (((char *)pActwk)[47] != 10)
+    if ((char)egg6_get_work(pActwk)->anim_timer != 10)
         return;
 
-    ++((char *)pActwk)[46];
-    if (((char *)pActwk)[46] != 7)
-        ((char *)pActwk)[47] = 0;
+    ++egg6_get_work(pActwk)->timer;
+    if ((char)egg6_get_work(pActwk)->timer != 7)
+        egg6_get_work(pActwk)->anim_timer = 0;
     else
         frameout(pActwk);
 }
@@ -870,8 +964,8 @@ static sprite_pattern **e6beam_tbl[3] = {egg6beam_pat, egg6beam2_pat,
                                          egg6beam3_pat};
 
 void egg6beam_ini(sprite_status *pActwk) {
-    pActwk->actfree[10] = 4;
-    pActwk->actfree[11] = 0;
+    egg6_get_work(pActwk)->state_timer = 4;
+    egg6_get_work(pActwk)->state = 0;
 
     pActwk->r_no0 = 2;
     pActwk->actflg = 4;
@@ -887,17 +981,17 @@ void egg6beam_01(sprite_status *pActwk) {
     Uint8 byD0;
     Uint8 bywk;
 
-    if (--pActwk->actfree[10] == 0) {
+    if (--egg6_get_work(pActwk)->state_timer == 0) {
 
-        pActwk->actfree[10] = 4;
-        if (++pActwk->actfree[11] > 2)
-            pActwk->actfree[11] = 0;
-        bywk = pActwk->actfree[11];
+        egg6_get_work(pActwk)->state_timer = 4;
+        if (++egg6_get_work(pActwk)->state > 2)
+            egg6_get_work(pActwk)->state = 0;
+        bywk = egg6_get_work(pActwk)->state;
         pActwk->patbase = e6beam_tbl[bywk];
     }
 
-    ++((char *)pActwk)[47];
-    byD0 = ((char *)pActwk)[47];
+    ++egg6_get_work(pActwk)->anim_timer;
+    byD0 = egg6_get_work(pActwk)->anim_timer;
     byD0 -= 30;
     if ((char)byD0 >= 0) {
         byD0 /= 3;
@@ -939,10 +1033,10 @@ void egg6yuka_ini(sprite_status *pActwk) {
     iD0.w = 0;
     iD0.b.l = pActwk->userflag.b.l;
     iD0.w <<= 3;
-    ((Sint16 *)pActwk)[28] = iD0.w;
+    egg6_get_work(pActwk)->table_offset = iD0.w;
 
     pActwk->yspeed.w = 0;
-    ((Sint16 *)pActwk)[27] = 11;
+    egg6_get_work(pActwk)->y_acceleration = 11;
 }
 
 static Sint16 yuka_tbl[24] = {1680, 1024, -1536, 11, 1680, 1024, -1536, 14,
@@ -954,8 +1048,8 @@ void egg6yuka_01(sprite_status *pActwk) {
 
     add_spd2(pActwk);
 
-    iD1 = ((Sint16 *)pActwk)[28];
-    iD1 += ((Sint16 *)pActwk)[30];
+    iD1 = egg6_get_work(pActwk)->table_offset;
+    iD1 += egg6_get_work(pActwk)->ride_y_offset;
     iD0 = yuka_tbl[iD1];
     if (iD0 > pActwk->yposi.w.h) {
         iD0 = yuka_tbl[iD1 + 1];
@@ -975,8 +1069,8 @@ void egg6yuka_02(sprite_status *pActwk) {
     Sint16 iD0, iD1;
     sprite_status *pActbp;
 
-    pActbp = &actwk[((Uint16 *)pActwk)[25]];
-    if (pActbp->actfree[12] == 0)
+    pActbp = &actwk[egg6_get_work(pActwk)->parent_index];
+    if (egg6_get_work(pActbp)->release_flag == 0)
         return;
 
     pActwk->r_no0 = 2;
@@ -985,14 +1079,14 @@ void egg6yuka_02(sprite_status *pActwk) {
     if (iD0 < 0)
         iD0 = -iD0;
 
-    ((Uint16 *)pActwk)[30] = 0;
+    egg6_get_work(pActwk)->ride_y_offset = 0;
     if (iD0 < 24)
-        ((Uint16 *)pActwk)[30] = 4;
+        egg6_get_work(pActwk)->ride_y_offset = 4;
 
-    iD1 = ((Uint16 *)pActwk)[28];
-    iD1 += ((Uint16 *)pActwk)[30];
+    iD1 = egg6_get_work(pActwk)->table_offset;
+    iD1 += egg6_get_work(pActwk)->ride_y_offset;
     pActwk->yspeed.w = yuka_tbl[iD1 + 2];
-    ((Sint16 *)pActwk)[27] = yuka_tbl[iD1 + 3];
+    egg6_get_work(pActwk)->y_acceleration = yuka_tbl[iD1 + 3];
 }
 
 void egg6_yuka_ridechk(sprite_status *pActwk) {
@@ -1000,11 +1094,11 @@ void egg6_yuka_ridechk(sprite_status *pActwk) {
 
     if (pActwk->yspeed.w == 0)
 
-        pActwk->actfree[18] = 0;
+        egg6_get_work(pActwk)->bob_angle = 0;
     else {
-        pActwk->actfree[18] = 4;
+        egg6_get_work(pActwk)->bob_angle = 4;
     }
-    pActwk->sprvsize = pActwk->sprvsize + pActwk->actfree[18];
+    pActwk->sprvsize = pActwk->sprvsize + egg6_get_work(pActwk)->bob_angle;
 
     if (actwk[0].actno != 0) {
         if (egg6_yuka_hasami_chk(pActwk) == 0) {
@@ -1020,7 +1114,7 @@ void egg6_yuka_ridechk(sprite_status *pActwk) {
                 actwk[0].yspeed.w = iSpd_sav;
         }
     }
-    pActwk->sprvsize = pActwk->sprvsize - pActwk->actfree[18];
+    pActwk->sprvsize = pActwk->sprvsize - egg6_get_work(pActwk)->bob_angle;
 }
 
 void egg6_yuka_ride_on(sprite_status *pActwk) {
@@ -1089,8 +1183,8 @@ void egg6door(sprite_status *pActwk) {
     if (pActwk->userflag.b.h >= 0) {
         Sint16 xwk, ywk;
 
-        xwk = ((Sint16 *)pActwk)[29];
-        ywk = ((Sint16 *)pActwk)[30];
+        xwk = egg6_get_work(pActwk)->ride_x_offset;
+        ywk = egg6_get_work(pActwk)->ride_y_offset;
         pActwk->xposi.w.h += xwk;
         pActwk->yposi.w.h += ywk;
         ride_on_chk(pActwk, &actwk[0]);
@@ -1116,9 +1210,9 @@ void egg6door_ini(sprite_status *pActwk) {
             pActwk->yspeed.w = -512;
             pActwk->r_no0 = 4;
 
-            ((Sint16 *)pActwk)[28] = -24576;
-            ((Sint16 *)pActwk)[29] = 20;
-            ((Sint16 *)pActwk)[30] = -26;
+            egg6_get_work(pActwk)->table_offset = -24576;
+            egg6_get_work(pActwk)->ride_x_offset = 20;
+            egg6_get_work(pActwk)->ride_y_offset = -26;
             pActwk->sprhsize = 8;
             pActwk->sprvsize = 80;
             return;
@@ -1129,9 +1223,9 @@ void egg6door_ini(sprite_status *pActwk) {
         pActwk->yspeed.w = 512;
         pActwk->r_no0 = 2;
 
-        ((Sint16 *)pActwk)[28] = 16384;
-        ((Sint16 *)pActwk)[29] = -20;
-        ((Sint16 *)pActwk)[30] = -10;
+        egg6_get_work(pActwk)->table_offset = 16384;
+        egg6_get_work(pActwk)->ride_x_offset = -20;
+        egg6_get_work(pActwk)->ride_y_offset = -10;
     } else {
 
         pActwk->sprhsize = 8;
@@ -1158,18 +1252,18 @@ void egg6door_closewait(sprite_status *pActwk) {
 void egg6door_move(sprite_status *pActwk) {
     short_union iD0;
     add_spd(pActwk);
-    ((Sint16 *)pActwk)[23] += pActwk->yspeed.w;
+    egg6_get_work(pActwk)->timer_word += pActwk->yspeed.w;
 
-    iD0.w = ((Sint16 *)pActwk)[28];
+    iD0.w = egg6_get_work(pActwk)->table_offset;
     if (iD0.w >= 0) {
 
-        if (iD0.w > ((Sint16 *)pActwk)[23])
+        if (iD0.w > egg6_get_work(pActwk)->timer_word)
             return;
 
         pActwk->r_no0 = 6;
     } else {
 
-        if (iD0.w < ((Sint16 *)pActwk)[23])
+        if (iD0.w < egg6_get_work(pActwk)->timer_word)
             return;
 
         pActwk->r_no0 = 10;
@@ -1217,7 +1311,7 @@ void egg6door_beamer(sprite_status *pActwk) {
         if (iD0.w >= 8)
             return;
 
-        if (((Sint16 *)pPlaywk)[26] != 0)
+        if (player_work_get(pPlaywk)->damage_invulnerability_timer != 0)
             return;
 
         if (actwk[0].r_no0 != 6 && !(actwk[0].cddat & 128))
@@ -1228,8 +1322,8 @@ void egg6door_beamer(sprite_status *pActwk) {
 void add_spd2(sprite_status *pActwk) {
     int_union lD0;
 
-    pActwk->xspeed.w += ((Sint16 *)pActwk)[26];
-    pActwk->yspeed.w += ((Sint16 *)pActwk)[27];
+    pActwk->xspeed.w += egg6_get_work(pActwk)->x_acceleration;
+    pActwk->yspeed.w += egg6_get_work(pActwk)->y_acceleration;
 
     lD0.l = pActwk->xspeed.w;
     pActwk->xposi.l += lD0.l << 8;
@@ -1262,7 +1356,7 @@ static Sint16 gareki_yini[3] = {1420, 908, 396};
 
 Sint16 get_gareki_y(sprite_status *pActwk) {
     Sint16 iD0;
-    iD0 = pActwk->actfree[3];
+    iD0 = egg6_get_work(pActwk)->floor_index;
     --iD0;
     return gareki_yini[iD0];
 }
@@ -1279,20 +1373,20 @@ void make_toge(sprite_status *pActwk, Sint16 iD0) {
     if (actwkchk(&pActfree) != 0)
         return;
 
-    ((Uint16 *)pActfree)[25] = pActwk - actwk;
+    egg6_get_work(pActfree)->parent_index = pActwk - actwk;
     pActfree->actno = 56;
 
     pActfree->yposi.w.h = get_gareki_y(pActwk);
 
     if ((iD2 & 65535) == 0) {
         if (actwk[0].xposi.w.h < 2752)
-            pActwk->actfree[19] = 1;
+            egg6_get_work(pActwk)->side_selector = 1;
         else
-            pActwk->actfree[19] = 0;
+            egg6_get_work(pActwk)->side_selector = 0;
     }
 
     iD1 = 32;
-    if (pActwk->actfree[19] != 0)
+    if (egg6_get_work(pActwk)->side_selector != 0)
         iD0 = 2592;
     else {
         iD1 = -iD1;
@@ -1320,12 +1414,12 @@ void make_yuka(sprite_status *pActwk, Sint16 iD0) {
 
     pActfree->userflag.b.h = (Uint8)iD2;
 
-    ((Uint16 *)pActfree)[25] = pActwk - actwk;
+    egg6_get_work(pActfree)->parent_index = pActwk - actwk;
     pActfree->actno = 61;
 
     pActfree->yposi.w.h = get_gareki_y(pActwk);
 
-    iD1 = pActwk->actfree[3] - 1;
+    iD1 = egg6_get_work(pActwk)->floor_index - 1;
     pActfree->userflag.b.l = (Uint8)iD1;
 
     iD1 <<= 2;
@@ -1346,7 +1440,7 @@ void make_gareki(sprite_status *pActwk, Sint16 iD0) {
     if (actwkchk(&pActfree) != 0)
         return;
 
-    ((Uint16 *)pActfree)[25] = pActwk - actwk;
+    egg6_get_work(pActfree)->parent_index = pActwk - actwk;
     pActfree->actno = 57;
 
     pActfree->yposi.w.h = get_gareki_y(pActwk);
@@ -1363,9 +1457,9 @@ void make_gareki(sprite_status *pActwk, Sint16 iD0) {
 
     pActfree->yspeed.w = 256;
 
-    ((Sint16 *)pActfree)[27] = 8;
+    egg6_get_work(pActfree)->y_acceleration = 8;
     iD0 = lD0.w.l & 15;
-    ((Sint16 *)pActfree)[27] += iD0;
+    egg6_get_work(pActfree)->y_acceleration += iD0;
 }
 
 void make_gareki4(sprite_status *pActwk) {
@@ -1396,8 +1490,8 @@ void make_gareki4(sprite_status *pActwk) {
         pActfree->patno = i;
         pActfree->xspeed.w = para[offs++];
         pActfree->yspeed.w = para[offs++];
-        ((Sint16 *)pActfree)[26] = para[offs++];
-        ((Sint16 *)pActfree)[27] = para[offs++];
+        egg6_get_work(pActfree)->x_acceleration = para[offs++];
+        egg6_get_work(pActfree)->y_acceleration = para[offs++];
     }
 }
 
@@ -1428,7 +1522,7 @@ void make_bakuha(sprite_status *pActwk) {
     soundset(158);
     pActfree->actno = 63;
     pActfree->mstno.b.h = 1;
-    ((Uint16 *)pActfree)[25] = pActwk - actwk;
+    egg6_get_work(pActfree)->parent_index = pActwk - actwk;
     pActwk->actno = pActwk->actno;
 }
 
@@ -1460,18 +1554,18 @@ void make_meca(sprite_status *pActwk) {
 
     if (actwkchk(&pActfree) != 0)
         return;
-    ((Uint16 *)pActfree)[25] = pActwk - actwk;
+    egg6_get_work(pActfree)->parent_index = pActwk - actwk;
     pActfree->actno = 53;
-    ((Uint16 *)pActwk)[25] = pActfree - actwk;
+    egg6_get_work(pActwk)->parent_index = pActfree - actwk;
 
     if (actwkchk(&pActfree) != 0)
         return;
-    ((Uint16 *)pActfree)[25] = pActwk - actwk;
+    egg6_get_work(pActfree)->parent_index = pActwk - actwk;
     pActfree->actno = 54;
 
     if (actwkchk(&pActfree) != 0)
         return;
-    ((Uint16 *)pActfree)[25] = pActwk - actwk;
+    egg6_get_work(pActfree)->parent_index = pActwk - actwk;
     pActfree->actno = 55;
 }
 
@@ -1502,9 +1596,9 @@ Sint16 get_beam_pos(void) {
 void egg6_jisin(sprite_status *pActwk) {
     Sint16 iD0;
 
-    if (pActwk->actfree[14] != 0) {
-        --pActwk->actfree[14];
-        if (!(pActwk->actfree[14] & 1))
+    if (egg6_get_work(pActwk)->quake_timer != 0) {
+        --egg6_get_work(pActwk)->quake_timer;
+        if (!(egg6_get_work(pActwk)->quake_timer & 1))
             iD0 = -2;
         else {
             iD0 = -6;

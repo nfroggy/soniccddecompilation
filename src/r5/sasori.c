@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "sasori.h"
 #include "../action.h"
@@ -6,6 +8,38 @@
 #include "../loader2.h"
 #include "../playsub.h"
 #include "../suicide.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    union {
+        Sint16 origin_x;
+        Sint16 parent_index;
+    };
+    Sint32 x_speed;
+    Sint16 tail_index;
+    Sint16 tail_x_offset;
+    Sint16 timer;
+} sasori_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(sasori_work, origin_x) == 0,
+               "sasori_work.origin_x offset");
+_Static_assert(offsetof(sasori_work, parent_index) == 0,
+               "sasori_work.parent_index offset");
+_Static_assert(offsetof(sasori_work, x_speed) == 2,
+               "sasori_work.x_speed offset");
+_Static_assert(offsetof(sasori_work, tail_index) == 6,
+               "sasori_work.tail_index offset");
+_Static_assert(offsetof(sasori_work, tail_x_offset) == 8,
+               "sasori_work.tail_x_offset offset");
+_Static_assert(offsetof(sasori_work, timer) == 10,
+               "sasori_work.timer offset");
+_Static_assert(sizeof(sasori_work) <= sizeof(((sprite_status *)0)->actfree),
+               "sasori_work fits in actfree");
+
+static sasori_work *sasori_get_work(sprite_status *pActwk) {
+    return (sasori_work *)pActwk->actfree;
+}
 
 static void body_init(sprite_status *pActwk);
 static void init_sub(sprite_status *pActwk0, sprite_status *pActwk1);
@@ -42,6 +76,7 @@ static Uint8 pchg_tama00[4] = {1, 0, 1, 255};
 static Uint8 *pchg_tama[1] = {pchg_tama00};
 
 void sasori(sprite_status *pActwk) {
+    sasori_work *work = sasori_get_work(pActwk);
     sprite_status *pMainwk;
 
     void (*tbl[11])(sprite_status *) = {
@@ -55,9 +90,9 @@ void sasori(sprite_status *pActwk) {
         tbl[pActwk->r_no0 / 2](pActwk);
         patchg(pActwk, pchg);
         actionsub(pActwk);
-        frameout_s00(pActwk, ((Sint16 *)pActwk)[23]);
+        frameout_s00(pActwk, work->origin_x);
     } else {
-        pMainwk = &actwk[((Sint16 *)pActwk)[23]];
+        pMainwk = &actwk[work->parent_index];
         if (pMainwk->actno != 33) {
             frameout(pActwk);
             return;
@@ -67,7 +102,7 @@ void sasori(sprite_status *pActwk) {
             return;
         }
 
-        pActwk->xposi.l += ((Sint32 *)pActwk)[12];
+        pActwk->xposi.l += work->x_speed;
         patchg(pActwk, pchg_tama);
         actionsub(pActwk);
         frameout_s(pActwk);
@@ -81,14 +116,14 @@ static void body_init(sprite_status *pActwk) {
     pActwk->sprhsize = 24;
     pActwk->sprvsize = 12;
     pActwk->colino = 49;
-    ((Sint16 *)pActwk)[23] = pActwk->xposi.w.h;
+    sasori_get_work(pActwk)->origin_x = pActwk->xposi.w.h;
     pActwk->patbase = pat_sasori_e;
-    ((Sint32 *)pActwk)[12] = -65536;
-    ((Sint16 *)pActwk)[27] = 3;
+    sasori_get_work(pActwk)->x_speed = -65536;
+    sasori_get_work(pActwk)->tail_x_offset = 3;
     if (pActwk->userflag.b.h) {
         pActwk->patbase = pat_sasori_b;
-        ((Sint32 *)pActwk)[12] = -32768;
-        ((Sint16 *)pActwk)[27] = 7;
+        sasori_get_work(pActwk)->x_speed = -32768;
+        sasori_get_work(pActwk)->tail_x_offset = 7;
     }
 
     pActwk->actflg |= 4;
@@ -100,7 +135,7 @@ static void init_sub(sprite_status *pActwk0, sprite_status *pActwk1) {
     pActwk1->xposi.w.h = pActwk0->xposi.w.h;
     pActwk1->yposi.w.h = pActwk0->yposi.w.h;
     pActwk1->sprpri = pActwk0->sprpri;
-    ((Sint16 *)pActwk1)[23] = (Uint16)(pActwk0 - actwk);
+    sasori_get_work(pActwk1)->parent_index = (Uint16)(pActwk0 - actwk);
 
     pActwk1->actflg |= 4;
     pActwk1->sproffset = 9142;
@@ -119,7 +154,7 @@ static void body_fall(sprite_status *pActwk) {
             frameout(pActwk);
             return;
         }
-        ((Sint16 *)pActwk)[26] = (Uint16)(pNewActwk - actwk);
+        sasori_get_work(pActwk)->tail_index = (Uint16)(pNewActwk - actwk);
         pNewActwk->userflag.b.l = 1;
         pNewActwk->sprhs = 24;
         pNewActwk->sprhsize = 24;
@@ -138,9 +173,11 @@ static void body_move(sprite_status *pActwk) {
     Sint16 carry_flag;
     Uint8 bd0, bd1;
 
-    pActwk->xposi.l += ((Sint32 *)pActwk)[12];
+    sasori_work *work = sasori_get_work(pActwk);
+
+    pActwk->xposi.l += work->x_speed;
     d0 = pActwk->xposi.w.h;
-    d0 -= ((Sint16 *)pActwk)[23];
+    d0 -= work->origin_x;
     if (d0 < 0) {
         d0 *= -1;
     }
@@ -153,10 +190,10 @@ static void body_move(sprite_status *pActwk) {
         goto label1;
     d0 -= 14;
     pActwk->yposi.w.h += d1;
-    pTailwk = &actwk[((Sint16 *)pActwk)[26]];
+    pTailwk = &actwk[work->tail_index];
     pTailwk->xposi.w.h = pActwk->xposi.w.h;
     pTailwk->yposi.w.h = pActwk->yposi.w.h;
-    pTailwk->xposi.w.h += ((Sint16 *)pActwk)[27];
+    pTailwk->xposi.w.h += work->tail_x_offset;
     pTailwk->yposi.w.h -= 16;
     pPlayerwk = &actwk[0];
 
@@ -185,7 +222,7 @@ static void body_move(sprite_status *pActwk) {
             bd0 = 255;
         else
             bd0 = 0;
-        if (((Sint32 *)pActwk)[12] < 0)
+        if (work->x_speed < 0)
             bd1 = 255;
         else
             bd1 = 0;
@@ -195,10 +232,10 @@ static void body_move(sprite_status *pActwk) {
     }
     return;
 label1:
-    pActwk->xposi.l -= ((Sint32 *)pActwk)[12];
-    ((Sint32 *)pActwk)[12] *= -1;
-    ((Sint16 *)pActwk)[27] *= -1;
-    pTailwk = &actwk[((Sint16 *)pActwk)[26]];
+    pActwk->xposi.l -= work->x_speed;
+    work->x_speed *= -1;
+    work->tail_x_offset *= -1;
+    pTailwk = &actwk[work->tail_index];
     pActwk->actflg ^= 1;
     pTailwk->actflg ^= 1;
     pActwk->cddat ^= 1;
@@ -209,11 +246,11 @@ static void body_waita(sprite_status *pActwk) {
     sprite_status *pTailwk;
 
     pActwk->r_no0 += 2;
-    ((Sint16 *)pActwk)[28] = 30;
-    pTailwk = &actwk[((Sint16 *)pActwk)[26]];
+    sasori_get_work(pActwk)->timer = 30;
+    pTailwk = &actwk[sasori_get_work(pActwk)->tail_index];
     pTailwk->xposi.w.h = pActwk->xposi.w.h;
     pTailwk->yposi.w.h = pActwk->yposi.w.h;
-    pTailwk->xposi.w.h += ((Sint16 *)pActwk)[27];
+    pTailwk->xposi.w.h += sasori_get_work(pActwk)->tail_x_offset;
     pTailwk->yposi.w.h -= 16;
 
     body_waita1(pActwk);
@@ -223,13 +260,13 @@ static void body_waita1(sprite_status *pActwk) {
     sprite_status *pTailwk;
     Sint16 d0;
 
-    --((Sint16 *)pActwk)[28];
-    if (((Sint16 *)pActwk)[28] == 0) {
+    --sasori_get_work(pActwk)->timer;
+    if (sasori_get_work(pActwk)->timer == 0) {
         pActwk->r_no0 += 2;
-        pTailwk = &actwk[((Sint16 *)pActwk)[26]];
+        pTailwk = &actwk[sasori_get_work(pActwk)->tail_index];
         pTailwk->yposi.w.h -= 5;
         d0 = 5;
-        if (((Sint32 *)pActwk)[12] >= 0) {
+        if (sasori_get_work(pActwk)->x_speed >= 0) {
             d0 *= -1;
         }
         pTailwk->xposi.w.h += d0;
@@ -238,7 +275,7 @@ static void body_waita1(sprite_status *pActwk) {
 
 static void body_waitb(sprite_status *pActwk) {
     pActwk->r_no0 += 2;
-    ((Sint16 *)pActwk)[28] = 10;
+    sasori_get_work(pActwk)->timer = 10;
 
     body_waitb1(pActwk);
 }
@@ -248,8 +285,8 @@ static void body_waitb1(sprite_status *pActwk) {
     Sint32 d1;
     Sint16 d0;
 
-    --((Sint16 *)pActwk)[28];
-    if (((Sint16 *)pActwk)[28] == 0) {
+    --sasori_get_work(pActwk)->timer;
+    if (sasori_get_work(pActwk)->timer == 0) {
         pActwk->r_no0 += 2;
         if (pActwk->userflag.b.h == 0) {
             if (actwkchk(&pNewActwk) == 0) {
@@ -263,12 +300,12 @@ static void body_waitb1(sprite_status *pActwk) {
                 pNewActwk->yposi.w.h -= 24;
                 d0 = -4;
                 d1 = -196608;
-                if (((Sint32 *)pActwk)[12] >= 0) {
+                if (sasori_get_work(pActwk)->x_speed >= 0) {
                     d0 *= -1;
                     d1 *= -1;
                 }
                 pNewActwk->xposi.w.h += d0;
-                ((Sint32 *)pNewActwk)[12] = d1;
+                sasori_get_work(pNewActwk)->x_speed = d1;
                 if (pActwk->actflg & 128) {
                     soundset(160);
                 }
@@ -279,7 +316,7 @@ static void body_waitb1(sprite_status *pActwk) {
 
 static void body_waitc(sprite_status *pActwk) {
     pActwk->r_no0 += 2;
-    ((Sint16 *)pActwk)[28] = 30;
+    sasori_get_work(pActwk)->timer = 30;
 
     body_waitc1(pActwk);
 }
@@ -288,13 +325,13 @@ static void body_waitc1(sprite_status *pActwk) {
     sprite_status *pTailwk;
     Sint16 d0;
 
-    --((Sint16 *)pActwk)[28];
-    if (((Sint16 *)pActwk)[28] == 0) {
+    --sasori_get_work(pActwk)->timer;
+    if (sasori_get_work(pActwk)->timer == 0) {
         pActwk->r_no0 += 2;
-        pTailwk = &actwk[((Sint16 *)pActwk)[26]];
+        pTailwk = &actwk[sasori_get_work(pActwk)->tail_index];
         pTailwk->yposi.w.h += 5;
         d0 = 5;
-        if (((Sint32 *)pActwk)[12] >= 0) {
+        if (sasori_get_work(pActwk)->x_speed >= 0) {
             d0 *= -1;
         }
         pTailwk->xposi.w.h -= d0;
@@ -303,14 +340,14 @@ static void body_waitc1(sprite_status *pActwk) {
 
 static void body_waitd(sprite_status *pActwk) {
     pActwk->r_no0 += 2;
-    ((Sint16 *)pActwk)[28] = 30;
+    sasori_get_work(pActwk)->timer = 30;
 
     body_waitd1(pActwk);
 }
 
 static void body_waitd1(sprite_status *pActwk) {
-    --((Sint16 *)pActwk)[28];
-    if (((Sint16 *)pActwk)[28] == 0) {
+    --sasori_get_work(pActwk)->timer;
+    if (sasori_get_work(pActwk)->timer == 0) {
         pActwk->r_no0 = 4;
     }
 }

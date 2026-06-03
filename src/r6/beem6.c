@@ -1,8 +1,51 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "beem6.h"
 #include "../action.h"
 #include "../actset.h"
 #include "../loader2.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 unused0[4];
+    Uint8 flash_toggle;
+    Uint8 unused5;
+    Sint16 pre_flash_timer;
+    Uint8 unused8[8];
+    Sint16 cycle_timer;
+    Uint8 phase;
+    Uint8 unused19;
+    union {
+        Sint16 palette_indices_word;
+        struct {
+            Uint8 palette_index;
+            Uint8 secondary_palette_index;
+        };
+    };
+} beem6_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(beem6_work, flash_toggle) == 4,
+               "beem6_work.flash_toggle offset");
+_Static_assert(offsetof(beem6_work, pre_flash_timer) == 6,
+               "beem6_work.pre_flash_timer offset");
+_Static_assert(offsetof(beem6_work, cycle_timer) == 16,
+               "beem6_work.cycle_timer offset");
+_Static_assert(offsetof(beem6_work, phase) == 18,
+               "beem6_work.phase offset");
+_Static_assert(offsetof(beem6_work, palette_indices_word) == 20,
+               "beem6_work.palette_indices_word offset");
+_Static_assert(offsetof(beem6_work, palette_index) == 20,
+               "beem6_work.palette_index offset");
+_Static_assert(offsetof(beem6_work, secondary_palette_index) == 21,
+               "beem6_work.secondary_palette_index offset");
+_Static_assert(sizeof(beem6_work) <= sizeof(((sprite_status *)0)->actfree),
+               "beem6_work fits in actfree");
+
+static beem6_work *beem6_get_work(sprite_status *actionwk) {
+    return (beem6_work *)actionwk->actfree;
+}
 
 static sprite_pattern beem6pat0 = {1, {{-24, -24, 0, 417}}};
 static sprite_pattern nullpat = {1, {{0, 0, 0, 0}}};
@@ -47,12 +90,13 @@ void beem6_init(sprite_status *actionwk) {
 }
 
 void beem6_wait(sprite_status *actionwk) {
+    beem6_work *work = beem6_get_work(actionwk);
     Sint16 d0;
 
     if (actionwk->userflag.b.h == 0)
         return;
     beem6_posiset(actionwk);
-    if (((Sint16 *)actionwk)[31] != 0) {
+    if (work->cycle_timer != 0) {
         cntdwn(actionwk);
         return;
     }
@@ -74,16 +118,18 @@ void beem6_wait(sprite_status *actionwk) {
             d0 = 240;
     }
 
-    ((Sint16 *)actionwk)[31] = d0;
+    work->cycle_timer = d0;
 }
 
 void cntdwn(sprite_status *actionwk) {
-    if (--((Sint16 *)actionwk)[31])
+    beem6_work *work = beem6_get_work(actionwk);
+
+    if (--work->cycle_timer)
         return;
     actionwk->r_no0 += 2;
-    ((Sint16 *)actionwk)[31] = 120;
-    ((Sint16 *)actionwk)[26] = 90;
-    actionwk->actfree[4] = 0;
+    work->cycle_timer = 120;
+    work->pre_flash_timer = 90;
+    work->flash_toggle = 0;
 
     if (!(actionwk->actflg & 128)) {
         beem6_move(actionwk);
@@ -94,24 +140,26 @@ void cntdwn(sprite_status *actionwk) {
 }
 
 void beem6_move(sprite_status *actionwk) {
+    beem6_work *work = beem6_get_work(actionwk);
+
     beem6_posiset(actionwk);
-    if (((Sint16 *)actionwk)[26] != 0) {
-        maeclrset(actionwk, actionwk->actfree[18]);
-        if (--((Sint16 *)actionwk)[26])
+    if (work->pre_flash_timer != 0) {
+        maeclrset(actionwk, work->phase);
+        if (--work->pre_flash_timer)
             return;
         clrset0();
     }
 
-    st6clrchg = actionwk->actfree[18] + 1;
-    clrset1(actionwk, actionwk->actfree[18]);
-    if (--((Sint16 *)actionwk)[31])
+    st6clrchg = work->phase + 1;
+    clrset1(actionwk, work->phase);
+    if (--work->cycle_timer)
         return;
     actionwk->r_no0 -= 2;
     st6clrchg = 0;
-    if (++actionwk->actfree[18] < 3)
+    if (++work->phase < 3)
         return;
-    actionwk->actfree[18] = 0;
-    ((Sint16 *)actionwk)[33] = 0;
+    work->phase = 0;
+    work->palette_indices_word = 0;
 }
 
 void beem6_posiset(sprite_status *actionwk) {
@@ -214,6 +262,7 @@ label1:
 
 void clrset1(sprite_status *actionwk, char d0) {
 
+    beem6_work *work = beem6_get_work(actionwk);
     char clrsel[3] = {0, 2, 4};
     PALETTEENTRY *lpPe_a2;
     PALETTEENTRY dummy;
@@ -229,15 +278,15 @@ void clrset1(sprite_status *actionwk, char d0) {
             a1 = clrtblD;
     }
 
-    col = a1[actionwk->actfree[20]];
+    col = a1[work->palette_index];
     dummy.peRed = (col & 15) * 16;
     dummy.peGreen = col & 240;
     dummy.peBlue = (col & 3840) >> 4;
     dummy.peFlags = 1;
     *lpPe_a2++ = dummy;
-    col = a1[++actionwk->actfree[20]];
+    col = a1[++work->palette_index];
     if (col == -1)
-        actionwk->actfree[20] = 0;
+        work->palette_index = 0;
 
     lpPe_a2 = &lpcolorwk[32];
     a1 = clrtblB2;
@@ -248,18 +297,19 @@ void clrset1(sprite_status *actionwk, char d0) {
             a1 = clrtblD2;
     }
 
-    col = a1[actionwk->actfree[21]];
+    col = a1[work->secondary_palette_index];
     dummy.peRed = (col & 15) * 16;
     dummy.peGreen = col & 240;
     dummy.peBlue = (col & 3840) >> 4;
     dummy.peFlags = 1;
     *lpPe_a2++ = dummy;
-    col = a1[++actionwk->actfree[21]];
+    col = a1[++work->secondary_palette_index];
     if (col == -1)
-        actionwk->actfree[21] = 0;
+        work->secondary_palette_index = 0;
 }
 
 void maeclrset(sprite_status *actionwk, char d0) {
+    beem6_work *work = beem6_get_work(actionwk);
     char clrsel[3] = {0, 2, 4};
     PALETTEENTRY *lpPe_a2;
     PALETTEENTRY dummy;
@@ -270,7 +320,7 @@ void maeclrset(sprite_status *actionwk, char d0) {
 
     col = 128;
 
-    if (actionwk->actfree[4] & 2)
+    if (work->flash_toggle & 2)
         col = 0;
 
     dummy.peRed = (col & 15) * 16;
@@ -279,6 +329,6 @@ void maeclrset(sprite_status *actionwk, char d0) {
     dummy.peFlags = 1;
     *lpPe_a2++ = dummy;
 
-    ++actionwk->actfree[4];
-    actionwk->actfree[4] &= 3;
+    ++work->flash_toggle;
+    work->flash_toggle &= 3;
 }

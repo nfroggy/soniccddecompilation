@@ -1,7 +1,29 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "warp.h"
 #include "../action.h"
 #include "../io.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint32 x_delta;
+    Sint32 y_delta;
+    Uint8 timer;
+} warp_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(warp_work, x_delta) == 0,
+               "warp_work.x_delta offset");
+_Static_assert(offsetof(warp_work, y_delta) == 4,
+               "warp_work.y_delta offset");
+_Static_assert(offsetof(warp_work, timer) == 8, "warp_work.timer offset");
+_Static_assert(sizeof(warp_work) <= sizeof(((sprite_status *)0)->actfree),
+               "warp_work fits in actfree");
+
+static warp_work *warp_get_work(sprite_status *pActwk) {
+    return (warp_work *)pActwk->actfree;
+}
 
 static Uint16 clchg_cnt[2] = {65535, 0};
 static PALETTEENTRY colortbl[32] = {
@@ -196,13 +218,13 @@ void sonic1(sprite_status *pActwk) {
     pActwk->yposi.w.h -= 8;
     if (pActwk->yposi.w.h == 248) {
         ++pActwk->r_no0;
-        pActwk->actfree[8] = 240;
+        warp_get_work(pActwk)->timer = 240;
     }
 }
 
 void sonic2(sprite_status *pActwk) {
-    --pActwk->actfree[8];
-    if (pActwk->actfree[8] == 0) {
+    --warp_get_work(pActwk)->timer;
+    if (warp_get_work(pActwk)->timer == 0) {
         ++pActwk->r_no0;
     }
 }
@@ -249,14 +271,14 @@ static sprite_pattern *spr_atom[5] = {&atm0, &atm1, &atm2, &atm3, &atm4};
 void atom1(sprite_status *pActwk) {
     Sint32 lD0;
 
-    lD0 = *(Sint32 *)&pActwk->actfree[0];
+    lD0 = warp_get_work(pActwk)->x_delta;
     pActwk->xposi.l += lD0;
 
-    lD0 = *(Sint32 *)&pActwk->actfree[4];
+    lD0 = warp_get_work(pActwk)->y_delta;
     pActwk->yposi.l += lD0;
 
-    --pActwk->actfree[8];
-    if (pActwk->actfree[8]) {
+    --warp_get_work(pActwk)->timer;
+    if (warp_get_work(pActwk)->timer) {
         actionsub(pActwk);
     } else {
         frameout(pActwk);
@@ -271,11 +293,11 @@ void atom0(sprite_status *pActwk) {
 
     lD0.l = lD1.l = sRandom();
     lD0.l &= 262143;
-    *(Sint32 *)&pActwk->actfree[4] = lD0.l;
+    warp_get_work(pActwk)->y_delta = lD0.l;
     lD1.w.l &= 31;
     pActwk->xposi.w.h = actwk[0].xposi.w.h - 16 + lD1.w.l;
     pActwk->yposi.w.h = actwk[0].yposi.w.h - 24;
-    pActwk->actfree[8] = 45;
+    warp_get_work(pActwk)->timer = 45;
     atom1(pActwk);
 }
 

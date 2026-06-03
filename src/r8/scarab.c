@@ -5,8 +5,65 @@
 #include "../dircol.h"
 #include "../loader2.h"
 #include "../playsub.h"
+#include "../player_work.h"
 #include "../ridechk.h"
 #include "../suicide.h"
+#include <stddef.h>
+
+#pragma pack(push, 1)
+typedef struct {
+    union {
+        Uint8 *flag_work;
+        struct {
+            Uint16 parent_index;
+            Sint16 origin_x;
+        };
+    };
+    union {
+        struct {
+            Sint16 child_enemy_index;
+            Sint16 child_item_index;
+        };
+        Sint32 x_velocity;
+    };
+    Sint16 carried_actor_index;
+    Sint16 animation_timer;
+    Sint16 hold_timer;
+    Uint8 **pattern_change;
+    Sint16 shell_actor_index;
+} scarab_work;
+#pragma pack(pop)
+
+_Static_assert(sizeof(Uint8 *) == 4, "scarab_work pointer fields are 32-bit");
+_Static_assert(sizeof(Uint8 **) == 4, "scarab_work pointer fields are 32-bit");
+_Static_assert(offsetof(scarab_work, flag_work) == 0,
+               "scarab_work.flag_work offset");
+_Static_assert(offsetof(scarab_work, parent_index) == 0,
+               "scarab_work.parent_index offset");
+_Static_assert(offsetof(scarab_work, origin_x) == 2,
+               "scarab_work.origin_x offset");
+_Static_assert(offsetof(scarab_work, child_enemy_index) == 4,
+               "scarab_work.child_enemy_index offset");
+_Static_assert(offsetof(scarab_work, x_velocity) == 4,
+               "scarab_work.x_velocity offset");
+_Static_assert(offsetof(scarab_work, child_item_index) == 6,
+               "scarab_work.child_item_index offset");
+_Static_assert(offsetof(scarab_work, carried_actor_index) == 8,
+               "scarab_work.carried_actor_index offset");
+_Static_assert(offsetof(scarab_work, animation_timer) == 10,
+               "scarab_work.animation_timer offset");
+_Static_assert(offsetof(scarab_work, hold_timer) == 12,
+               "scarab_work.hold_timer offset");
+_Static_assert(offsetof(scarab_work, pattern_change) == 14,
+               "scarab_work.pattern_change offset");
+_Static_assert(offsetof(scarab_work, shell_actor_index) == 18,
+               "scarab_work.shell_actor_index offset");
+_Static_assert(sizeof(scarab_work) <= sizeof(((sprite_status *)0)->actfree),
+               "scarab_work fits in actfree");
+
+static inline scarab_work *scarab_work_get(sprite_status *pActwk) {
+    return (scarab_work *)pActwk->actfree;
+}
 
 static void c_init(sprite_status *pActwk);
 static void c_wait(sprite_status *pActwk);
@@ -50,9 +107,11 @@ extern sprite_pattern *itempat[];
 extern Uint8 *itemchg[];
 
 void scarab(sprite_status *pActwk) {
+    scarab_work *work = scarab_work_get(pActwk);
+
     if ((Uint8)pActwk->userflag.b.h == 2) {
 
-        if (actwk[((Sint16 *)pActwk)[23]].actno != 47) {
+        if (actwk[work->parent_index].actno != 47) {
 
             frameout(pActwk);
             return;
@@ -70,11 +129,12 @@ void scarab(sprite_status *pActwk) {
 
 static void c_init(sprite_status *pActwk) {
     Uint8 flgwk;
+    scarab_work *work = scarab_work_get(pActwk);
 
     pActwk->r_no0 += 2;
     flgwk = pActwk->cdsts;
     flgwk = (time_flag & 127) + flgwk * 3;
-    *(Uint8 **)&pActwk->actfree[0] = &flagwork[flgwk];
+    work->flag_work = &flagwork[flgwk];
 
     c_wait(pActwk);
 }
@@ -95,9 +155,10 @@ static void c_wait(sprite_status *pActwk) {
 static void c_make(sprite_status *pActwk) {
     Uint8 *pFlagWork, flg;
     sprite_status *pNewact;
+    scarab_work *work = scarab_work_get(pActwk);
 
     pActwk->r_no0 += 2;
-    pFlagWork = *(Uint8 **)&pActwk->actfree[0];
+    pFlagWork = work->flag_work;
 
     if (!(*pFlagWork & 1)) {
         if (actwkchk2(pActwk, &pNewact) != 0) {
@@ -106,7 +167,7 @@ static void c_make(sprite_status *pActwk) {
         }
 
         ini_e_i(pActwk, pNewact);
-        ((Sint16 *)pActwk)[25] = pNewact - actwk;
+        work->child_enemy_index = pNewact - actwk;
         pNewact->userflag.b.h = (Uint8)(pActwk->userflag.b.h & 1);
 
         if (pActwk->userflag.b.h & 16) {
@@ -130,7 +191,7 @@ static void c_make(sprite_status *pActwk) {
             }
 
             ini_e_i(pActwk, pNewact);
-            ((Sint16 *)pActwk)[26] = pNewact - actwk;
+            work->child_item_index = pNewact - actwk;
             pNewact->userflag.b.h = 2;
             pNewact->userflag.b.l = flg;
             pNewact->yposi.w.h -= 4;
@@ -145,12 +206,14 @@ static void c_make(sprite_status *pActwk) {
 }
 
 static void ini_e_i(sprite_status *pActwk, sprite_status *pNewact) {
-    ((Sint16 *)pNewact)[23] = pActwk - actwk;
+    scarab_work *new_work = scarab_work_get(pNewact);
+
+    new_work->parent_index = pActwk - actwk;
     pNewact->actno = 47;
     pNewact->xposi.w.h = pActwk->xposi.w.h;
     pNewact->yposi.w.h = pActwk->yposi.w.h;
 
-    ((Sint16 *)pNewact)[27] = -1;
+    new_work->carried_actor_index = -1;
 }
 
 static void c_move(sprite_status *pActwk) {
@@ -158,39 +221,41 @@ static void c_move(sprite_status *pActwk) {
     Sint16 idx;
     sprite_status *pChildAct;
     ushort_union flagwk;
+    scarab_work *work = scarab_work_get(pActwk);
 
-    pFlagWork = *(Uint8 **)&pActwk->actfree[0];
+    pFlagWork = work->flag_work;
 
     if (!(*pFlagWork & 1)) {
-        if ((idx = ((Sint16 *)pActwk)[25]) != 0) {
+        if ((idx = work->child_enemy_index) != 0) {
             pChildAct = &actwk[idx];
 
             if (pChildAct->actno != 47) {
 
                 *pFlagWork |= 1;
-                ((Sint16 *)pActwk)[25] = 0;
+                work->child_enemy_index = 0;
 
-                if ((idx = ((Sint16 *)pActwk)[26]) != 0) {
+                if ((idx = work->child_item_index) != 0) {
                     pChildAct = &actwk[idx];
                     pChildAct->xspeed.w = 0;
                 }
 
-                if ((idx = ((Sint16 *)pChildAct)[27]) >= 0) {
+                if ((idx = scarab_work_get(pChildAct)->carried_actor_index) >=
+                    0) {
                     pChildAct = &actwk[idx];
-                    pChildAct->actfree[2] &= 254;
+                    player_work_get(pChildAct)->status_flags &= 254;
                 }
             }
         }
     }
 
     if (!(*pFlagWork & 2)) {
-        if ((idx = ((Sint16 *)pActwk)[26]) != 0) {
+        if ((idx = work->child_item_index) != 0) {
             pChildAct = &actwk[idx];
 
             if (pChildAct->actno != 47) {
 
                 *pFlagWork |= 2;
-                ((Sint16 *)pActwk)[26] = 0;
+                work->child_item_index = 0;
             }
         }
     }
@@ -214,17 +279,18 @@ static void c_move(sprite_status *pActwk) {
 
     flagwk.w == 0;
 
-    if (!(((Sint16 *)pActwk)[25] | (((Sint16 *)pActwk)[26]))) {
+    if (!(work->child_enemy_index | work->child_item_index)) {
         frameout_s0(pActwk);
     }
 }
 
 static void enemy(sprite_status *pActwk) {
     sprite_status *pCtrlact;
+    scarab_work *work = scarab_work_get(pActwk);
 
     if (pActwk->userflag.b.l == 1) {
 
-        if (actwk[((Sint16 *)pActwk)[23]].actno != 47) {
+        if (actwk[work->parent_index].actno != 47) {
 
             frameout(pActwk);
             return;
@@ -237,7 +303,7 @@ static void enemy(sprite_status *pActwk) {
             pActwk->sprpri = 3;
         }
     } else {
-        pCtrlact = &actwk[((Sint16 *)pActwk)[23]];
+        pCtrlact = &actwk[work->parent_index];
 
         if (pCtrlact->actno != 47) {
             frameout(pActwk);
@@ -251,7 +317,7 @@ static void enemy(sprite_status *pActwk) {
             frameout_s(pActwk);
 
             if (!pActwk->actno) {
-                ((Sint16 *)pCtrlact)[25] = 0;
+                scarab_work_get(pCtrlact)->child_enemy_index = 0;
             }
         }
     }
@@ -259,6 +325,7 @@ static void enemy(sprite_status *pActwk) {
 
 static void e_init(sprite_status *pActwk) {
     sprite_status *pNewact;
+    scarab_work *work = scarab_work_get(pActwk);
 
     pActwk->r_no0 += 2;
     pActwk->actflg |= 4;
@@ -268,8 +335,8 @@ static void e_init(sprite_status *pActwk) {
     pActwk->sprpri = 1;
     pActwk->sproffset = 9279;
     pActwk->patbase = pat_scarab;
-    ((Sint16 *)pActwk)[24] = pActwk->xposi.w.h;
-    ((Sint16 *)pActwk)[28] = 60;
+    work->origin_x = pActwk->xposi.w.h;
+    work->animation_timer = 60;
     pActwk->yposi.w.h += emycol_d(pActwk);
 
     if (actwkchk2(pActwk, &pNewact) != 0) {
@@ -287,8 +354,8 @@ static void e_init(sprite_status *pActwk) {
     pNewact->sprvsize = pActwk->sprvsize;
     pNewact->sproffset = pActwk->sproffset;
     pNewact->patbase = pActwk->patbase;
-    ((Sint16 *)pActwk)[32] = pNewact - actwk;
-    ((Sint16 *)pNewact)[23] = pActwk - actwk;
+    work->shell_actor_index = pNewact - actwk;
+    scarab_work_get(pNewact)->parent_index = pActwk - actwk;
 
     if (pActwk->userflag.b.l) {
 
@@ -300,11 +367,11 @@ static void e_init(sprite_status *pActwk) {
 
     if (!pActwk->userflag.b.h) {
 
-        ((Uint8 ***)pActwk)[15] = pchg_n;
-        *(Sint32 *)&pActwk->actfree[4] = 24576;
+        work->pattern_change = pchg_n;
+        work->x_velocity = 24576;
     } else {
-        ((Uint8 ***)pActwk)[15] = pchg_o;
-        *(Sint32 *)&pActwk->actfree[4] = 12288;
+        work->pattern_change = pchg_o;
+        work->x_velocity = 12288;
     }
 
     e_move(pActwk);
@@ -313,14 +380,15 @@ static void e_init(sprite_status *pActwk) {
 static void e_move(sprite_status *pActwk) {
     Sint16 xSav, ySav, wk;
     sprite_status *pSubact;
+    scarab_work *work = scarab_work_get(pActwk);
 
     ySav = pActwk->yposi.w.h;
     xSav = pActwk->xposi.w.h;
 
-    if (((Sint16 *)pActwk)[28] >= 0) {
-        pActwk->xposi.l += *(Sint32 *)&pActwk->actfree[4];
+    if (work->animation_timer >= 0) {
+        pActwk->xposi.l += work->x_velocity;
 
-        if ((wk = pActwk->xposi.w.h - ((Sint16 *)pActwk)[24]) < 0) {
+        if ((wk = pActwk->xposi.w.h - work->origin_x) < 0) {
             wk *= -1;
         }
 
@@ -340,38 +408,43 @@ static void e_move(sprite_status *pActwk) {
     xSav -= pActwk->xposi.w.h;
     ySav -= pActwk->yposi.w.h;
 
-    pSubact = &actwk[((Sint16 *)pActwk)[23]];
-    if ((wk = ((Sint16 *)pSubact)[26]) != 0) {
+    pSubact = &actwk[work->parent_index];
+    if ((wk = scarab_work_get(pSubact)->child_item_index) != 0) {
         pSubact = &actwk[wk];
         pSubact->xposi.w.h -= xSav;
         pSubact->yposi.w.h -= ySav;
         pSubact->xspeed.w = -xSav << 8;
     }
 
-    if ((wk = ((Sint16 *)pActwk)[27]) >= 0) {
+    if ((wk = work->carried_actor_index) >= 0) {
         pSubact = &actwk[wk];
         pSubact->xposi.w.h -= xSav;
         pSubact->yposi.w.h -= ySav;
     }
 
     e_move_tbl[pActwk->r_no1 / 2](pActwk);
-    pSubact = &actwk[((Sint16 *)pActwk)[32]];
+    pSubact = &actwk[work->shell_actor_index];
     pSubact->xposi.w.h = pActwk->xposi.w.h;
     pSubact->yposi.w.h = pActwk->yposi.w.h;
     pSubact->patno = pActwk->patno + 3;
 }
 
 static void turn(sprite_status *pActwk) {
-    pActwk->xposi.l -= *(Sint32 *)&pActwk->actfree[4];
-    *(Sint32 *)&pActwk->actfree[4] *= -1;
+    scarab_work *work = scarab_work_get(pActwk);
+
+    pActwk->xposi.l -= work->x_velocity;
+    work->x_velocity *= -1;
 }
 
 static void e1_check(sprite_status *pActwk) {
+    scarab_work *work = scarab_work_get(pActwk);
+    scarab_work *parent_work = scarab_work_get(&actwk[work->parent_index]);
+
     if (!pActwk->colicnt)
         goto label1;
     if (actwk[0].r_no0 == 4 || actwk[0].r_no0 == 6 ||
-        ((Sint16 *)&actwk[0])[26] ||
-        ((Sint16 *)&actwk[((Sint16 *)pActwk)[23]])[26]) {
+        player_work_get(&actwk[0])->damage_invulnerability_timer ||
+        parent_work->child_item_index) {
         pActwk->colicnt = 0;
         goto label1;
     }
@@ -383,17 +456,21 @@ label1:
 }
 
 static void e1_chk_patchg(sprite_status *pActwk) {
-    if (--((Sint16 *)pActwk)[28] >= 0) {
+    scarab_work *work = scarab_work_get(pActwk);
 
-        patchg(pActwk, ((Uint8 ***)pActwk)[15]);
-    } else if (((Sint16 *)pActwk)[28] <= -30) {
-        ((Sint16 *)pActwk)[28] = 60;
+    if (--work->animation_timer >= 0) {
+
+        patchg(pActwk, work->pattern_change);
+    } else if (work->animation_timer <= -30) {
+        work->animation_timer = 60;
     }
 }
 
 static void e1_catch(sprite_status *pActwk) {
-    ((Sint16 *)pActwk)[27] = &actwk[0] - actwk;
-    actwk[0].actfree[2] |= 1;
+    scarab_work *work = scarab_work_get(pActwk);
+
+    work->carried_actor_index = &actwk[0] - actwk;
+    player_work_get(&actwk[0])->status_flags |= 1;
     actwk[0].cddat |= 4;
     actwk[0].mstno.b.h = 2;
     actwk[0].sprvsize = 14;
@@ -408,21 +485,22 @@ static void e1_catch(sprite_status *pActwk) {
     }
 
     pActwk->r_no1 += 2;
-    ((Sint16 *)pActwk)[29] = 120;
+    work->hold_timer = 120;
     pActwk->colino = 240, pActwk->colicnt = 0;
 }
 
 static void e1_keep(sprite_status *pActwk) {
     sprite_status *pPlayerwk;
+    scarab_work *work = scarab_work_get(pActwk);
 
-    if (--((Sint16 *)pActwk)[29] != 0) {
+    if (--work->hold_timer != 0) {
         pActwk->colino = 240, pActwk->colicnt = 0;
         e1_chk_patchg(pActwk);
     } else {
-        pPlayerwk = &actwk[((Sint16 *)pActwk)[27]];
+        pPlayerwk = &actwk[work->carried_actor_index];
 
-        ((Sint16 *)pActwk)[27] = -1;
-        pPlayerwk->actfree[2] &= 254;
+        work->carried_actor_index = -1;
+        player_work_get(pPlayerwk)->status_flags &= 254;
         pPlayerwk->yspeed.w = 0;
 
         if (!pActwk->userflag.b.h) {
@@ -440,7 +518,7 @@ static void e1_keep(sprite_status *pActwk) {
             pPlayerwk->cddat &= 254;
         }
 
-        ((Sint16 *)pPlayerwk)[33] = 15;
+        player_work_get(pPlayerwk)->mode_word = 15;
         pPlayerwk->mspeed.w = pPlayerwk->xspeed.w;
         pPlayerwk->direc.b.h = 0;
         pPlayerwk->cddat &= 223;
@@ -448,12 +526,14 @@ static void e1_keep(sprite_status *pActwk) {
         pActwk->r_no1 += 2;
         pActwk->colino = pActwk->colicnt = 0;
         pActwk->patno = 2;
-        ((Sint16 *)pActwk)[29] = 30;
+        work->hold_timer = 30;
     }
 }
 
 static void e1_wait(sprite_status *pActwk) {
-    if (!(--((Sint16 *)pActwk)[29])) {
+    scarab_work *work = scarab_work_get(pActwk);
+
+    if (!(--work->hold_timer)) {
 
         pActwk->r_no1 = 0;
         pActwk->mstno.b.l = -1;
@@ -510,23 +590,27 @@ static void itemmove2(sprite_status *pActwk) {
 
 static void itemmove3(sprite_status *pActwk) {
     sprite_status *pCtrlact;
+    scarab_work *work = scarab_work_get(pActwk);
 
     actionsub(pActwk);
-    pCtrlact = &actwk[((Sint16 *)pActwk)[23]];
+    pCtrlact = &actwk[work->parent_index];
     frameout_s(pActwk);
 
     if (!pActwk->actno) {
-        ((Sint16 *)pCtrlact)[26] = 0;
+        scarab_work_get(pCtrlact)->child_item_index = 0;
     }
 }
 
 static void itemget(sprite_status *pActwk) {
     sprite_status *pCtrlact, *pNewact;
     Sint16 idx;
+    scarab_work *work = scarab_work_get(pActwk);
+    scarab_work *ctrl_work;
 
-    pCtrlact = &actwk[((Sint16 *)pActwk)[23]];
+    pCtrlact = &actwk[work->parent_index];
+    ctrl_work = scarab_work_get(pCtrlact);
 
-    if ((idx = ((Sint16 *)pCtrlact)[25]) != 0) {
+    if ((idx = ctrl_work->child_enemy_index) != 0) {
         actwk[idx].colicnt = 1;
     }
 

@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "boss_4.h"
 #include "../action.h"
@@ -13,6 +15,61 @@ typedef struct {
     Sint16 E4A_X;
     Sint16 E4A_Y;
 } E4A;
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 bomb_timer;
+    Uint8 hit_invulnerability_timer;
+    Uint8 speed_boost_timer;
+    Uint8 damage_flash_timer;
+    Uint8 approach_flags;
+    Uint8 bob_angle;
+    Sint16 linked_actor_index;
+    Sint16 gate1_index;
+    Sint16 gate2_index;
+    Uint8 unused12[2];
+    Sint16 bob_y_offset;
+    Uint8 unused16[2];
+    union {
+        Sint32 move_speed;
+        struct {
+            Uint8 unused18[3];
+            Uint8 gate_signal;
+        };
+    };
+} boss4_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(boss4_work, bomb_timer) == 0,
+               "boss4_work.bomb_timer offset");
+_Static_assert(offsetof(boss4_work, hit_invulnerability_timer) == 1,
+               "boss4_work.hit_invulnerability_timer offset");
+_Static_assert(offsetof(boss4_work, speed_boost_timer) == 2,
+               "boss4_work.speed_boost_timer offset");
+_Static_assert(offsetof(boss4_work, damage_flash_timer) == 3,
+               "boss4_work.damage_flash_timer offset");
+_Static_assert(offsetof(boss4_work, approach_flags) == 4,
+               "boss4_work.approach_flags offset");
+_Static_assert(offsetof(boss4_work, bob_angle) == 5,
+               "boss4_work.bob_angle offset");
+_Static_assert(offsetof(boss4_work, linked_actor_index) == 6,
+               "boss4_work.linked_actor_index offset");
+_Static_assert(offsetof(boss4_work, gate1_index) == 8,
+               "boss4_work.gate1_index offset");
+_Static_assert(offsetof(boss4_work, gate2_index) == 10,
+               "boss4_work.gate2_index offset");
+_Static_assert(offsetof(boss4_work, bob_y_offset) == 14,
+               "boss4_work.bob_y_offset offset");
+_Static_assert(offsetof(boss4_work, move_speed) == 18,
+               "boss4_work.move_speed offset");
+_Static_assert(offsetof(boss4_work, gate_signal) == 21,
+               "boss4_work.gate_signal offset");
+_Static_assert(sizeof(boss4_work) <= sizeof(((sprite_status *)0)->actfree),
+               "boss4_work fits in actfree");
+
+static boss4_work *boss4_get_work(sprite_status *pActwk) {
+    return (boss4_work *)pActwk->actfree;
+}
 
 static Uint32 egg4air_ini(sprite_status *pActwk);
 static void make_airhead(sprite_status *pActwk);
@@ -85,9 +142,9 @@ static void (*e4ahead_act_tbl[3])(sprite_status *) = {
 
 void egg4air(sprite_status *pActwk) {
     if (e4a_act_tbl[pActwk->r_no0 / 2](pActwk) != 0) {
-        if (pActwk->actfree[3]) {
+        if (boss4_get_work(pActwk)->damage_flash_timer) {
 
-            --pActwk->actfree[3];
+            --boss4_get_work(pActwk)->damage_flash_timer;
             pActwk->mstno.b.h += 3;
             patchg(pActwk, egg4air_pchg);
             pActwk->mstno.b.h -= 3;
@@ -111,7 +168,7 @@ static Uint32 egg4air_ini(sprite_status *pActwk) {
     pActwk->sproffset = 798;
     pActwk->patbase = egg4air_pat;
 
-    ((Sint32 *)pActwk)[16] = 114688;
+    boss4_get_work(pActwk)->move_speed = 114688;
     sprite_status_set_xspeed_yspeed(pActwk, 81000);
 
     colorset2(5);
@@ -124,8 +181,8 @@ static void make_airhead(sprite_status *pActwk) {
     sprite_status *pNewact;
 
     if (actwkchk(&pNewact) == 0) {
-        ((Sint16 *)pActwk)[26] = pNewact - actwk;
-        ((Sint16 *)pNewact)[26] = pActwk - actwk;
+        boss4_get_work(pActwk)->linked_actor_index = pNewact - actwk;
+        boss4_get_work(pNewact)->linked_actor_index = pActwk - actwk;
         pNewact->actno = 75;
         pNewact->xposi.w.h = pActwk->xposi.w.h;
         pNewact->yposi.w.h = pActwk->yposi.w.h;
@@ -137,7 +194,7 @@ static Uint32 egg4air_01(sprite_status *pActwk) {
     Sint32 flg;
     Sint32 spdwk;
 
-    pActwk->yposi.w.h -= ((Sint16 *)pActwk)[30];
+    pActwk->yposi.w.h -= boss4_get_work(pActwk)->bob_y_offset;
 
     egg4air_hitchk(pActwk);
 
@@ -156,7 +213,7 @@ static Uint32 egg4air_01(sprite_status *pActwk) {
     case 0:
         pActwk->mstno.b.h = 1;
         pActwk->cddat &= 254;
-        pActwk->xposi.l += ((Sint32 *)pActwk)[16];
+        pActwk->xposi.l += boss4_get_work(pActwk)->move_speed;
 
         if (pActwk->xposi.w.h < pEscRoot->E4A_X) {
             egg4air_yure(pActwk);
@@ -169,7 +226,7 @@ static Uint32 egg4air_01(sprite_status *pActwk) {
     case 1:
         pActwk->mstno.b.h = 1;
         pActwk->cddat |= 1;
-        pActwk->xposi.l -= ((Sint32 *)pActwk)[16];
+        pActwk->xposi.l -= boss4_get_work(pActwk)->move_speed;
 
         if (pActwk->xposi.w.h > pEscRoot->E4A_X) {
             egg4air_yure(pActwk);
@@ -181,7 +238,7 @@ static Uint32 egg4air_01(sprite_status *pActwk) {
 
     case 5:
         pActwk->mstno.b.h = 0;
-        pActwk->yposi.l += ((Sint32 *)pActwk)[16];
+        pActwk->yposi.l += boss4_get_work(pActwk)->move_speed;
 
         if (pActwk->yposi.w.h < pEscRoot->E4A_Y) {
             egg4air_yurenai(pActwk);
@@ -252,7 +309,7 @@ static Uint32 egg4air_01(sprite_status *pActwk) {
 
     case 2:
         pActwk->mstno.b.h = 0;
-        pActwk->yposi.l -= ((Sint32 *)pActwk)[16];
+        pActwk->yposi.l -= boss4_get_work(pActwk)->move_speed;
 
         if (pActwk->yposi.w.h > pEscRoot->E4A_Y) {
             egg4air_yurenai(pActwk);
@@ -273,7 +330,7 @@ static Uint32 egg4air_01(sprite_status *pActwk) {
 
         flg = 0;
 
-        spdwk = ((Sint32 *)pActwk)[16];
+        spdwk = boss4_get_work(pActwk)->move_speed;
         pActwk->yposi.l -= spdwk;
         if (pActwk->yposi.w.h <= pEscRoot->E4A_Y) {
             pActwk->yposi.w.h = pEscRoot->E4A_Y;
@@ -297,7 +354,7 @@ static Uint32 egg4air_01(sprite_status *pActwk) {
     case 4:
         flg = 0;
 
-        spdwk = ((Sint32 *)pActwk)[16];
+        spdwk = boss4_get_work(pActwk)->move_speed;
         pActwk->yposi.l -= spdwk;
         if (pActwk->yposi.w.h <= pEscRoot->E4A_Y) {
             pActwk->yposi.w.h = pEscRoot->E4A_Y;
@@ -338,23 +395,23 @@ static void egg4air_01_next(sprite_status *pActwk, E4A *pEscRoot) {
 
             pActwk->r_no1 = 128;
 
-            if ((actidx = ((Sint16 *)pActwk)[26]) != 0) {
-                if ((actidx = ((Sint16 *)&actwk[actidx])[27]) != 0) {
-                    actwk[actidx].actfree[21] = 1;
+            if ((actidx = boss4_get_work(pActwk)->linked_actor_index) != 0) {
+                if ((actidx = boss4_get_work(&actwk[actidx])->gate1_index) != 0) {
+                    boss4_get_work(&actwk[actidx])->gate_signal = 1;
                 }
             }
         } else if (pEscRoot->E4A_ETC == 2) {
 
             pActwk->r_no1 = 64;
 
-            if ((actidx = ((Sint16 *)pActwk)[26]) != 0) {
-                if ((actidx = ((Sint16 *)&actwk[actidx])[28]) != 0) {
-                    actwk[actidx].actfree[21] = 1;
+            if ((actidx = boss4_get_work(pActwk)->linked_actor_index) != 0) {
+                if ((actidx = boss4_get_work(&actwk[actidx])->gate2_index) != 0) {
+                    boss4_get_work(&actwk[actidx])->gate_signal = 1;
                 }
             }
         } else {
 
-            ((Sint32 *)pActwk)[16] = 229376;
+            boss4_get_work(pActwk)->move_speed = 229376;
             pActwk->r_no0 = 4;
             pActwk->mstno.b.h = 0;
         }
@@ -364,31 +421,32 @@ static void egg4air_01_next(sprite_status *pActwk, E4A *pEscRoot) {
 static void egg4air_yure(sprite_status *pActwk) {
     Sint16 sinwk, coswk;
 
-    pActwk->actfree[5] += 2;
-    sinset(pActwk->actfree[5], &sinwk, &coswk);
+    boss4_get_work(pActwk)->bob_angle += 2;
+    sinset(boss4_get_work(pActwk)->bob_angle, &sinwk, &coswk);
     sinwk >>= 5;
-    ((Sint16 *)pActwk)[30] = sinwk;
+    boss4_get_work(pActwk)->bob_y_offset = sinwk;
     pActwk->yposi.w.h += sinwk;
 }
 
 static void egg4air_yurenai(sprite_status *pActwk) {
-    pActwk->yposi.w.h += ((Sint16 *)pActwk)[30];
+    pActwk->yposi.w.h += boss4_get_work(pActwk)->bob_y_offset;
 }
 
 static void egg4air_hitchk(sprite_status *pActwk) {
     Sint16 actidx;
 
-    if (pActwk->actfree[2] && !(--pActwk->actfree[2])) {
-        ((Sint32 *)pActwk)[16] = 114688;
+    if (boss4_get_work(pActwk)->speed_boost_timer &&
+        !(--boss4_get_work(pActwk)->speed_boost_timer)) {
+        boss4_get_work(pActwk)->move_speed = 114688;
         sprite_status_set_xspeed_yspeed(pActwk, 81000);
     }
 
     if (!pActwk->colicnt)
         return;
 
-    if (pActwk->actfree[1]) {
+    if (boss4_get_work(pActwk)->hit_invulnerability_timer) {
 
-        if (--pActwk->actfree[1] == 0) {
+        if (--boss4_get_work(pActwk)->hit_invulnerability_timer == 0) {
             pActwk->colino = 61;
         }
 
@@ -399,19 +457,19 @@ static void egg4air_hitchk(sprite_status *pActwk) {
 
         soundset(172);
 
-        if ((actidx = ((Sint16 *)pActwk)[26]) != 0) {
-            actwk[actidx].actfree[0] = 40;
-            pActwk->actfree[2] = 70;
-            ((Sint32 *)pActwk)[16] = 294912;
+        if ((actidx = boss4_get_work(pActwk)->linked_actor_index) != 0) {
+            boss4_get_work(&actwk[actidx])->bomb_timer = 40;
+            boss4_get_work(pActwk)->speed_boost_timer = 70;
+            boss4_get_work(pActwk)->move_speed = 294912;
             sprite_status_set_xspeed_yspeed(pActwk, 208000);
 
-            pActwk->actfree[3] = 16;
+            boss4_get_work(pActwk)->damage_flash_timer = 16;
             if (pActwk->colicnt == 1) {
 
                 pActwk->r_no0 = 6;
                 pActwk->colicnt = 0;
             } else
-                pActwk->actfree[1] = 30;
+                boss4_get_work(pActwk)->hit_invulnerability_timer = 30;
         }
     }
 }
@@ -419,11 +477,11 @@ static void egg4air_hitchk(sprite_status *pActwk) {
 static Uint32 egg4air_02(sprite_status *pActwk) {
     Sint16 actidx;
 
-    pActwk->yposi.l += ((Sint32 *)pActwk)[16];
-    ((Sint32 *)pActwk)[16] += 12288;
+    pActwk->yposi.l += boss4_get_work(pActwk)->move_speed;
+    boss4_get_work(pActwk)->move_speed += 12288;
 
     if (pActwk->yposi.w.h >= 1408) {
-        if ((actidx = ((Sint16 *)pActwk)[26]) != 0) {
+        if ((actidx = boss4_get_work(pActwk)->linked_actor_index) != 0) {
             actwk[actidx].r_no0 += 2;
         }
 
@@ -454,13 +512,13 @@ static Uint32 egg4air_03(sprite_status *pActwk) {
     ywk.l *= ywk.l;
     xwk.l += ywk.l;
 
-    if (pActwk->actfree[4] & 32) {
+    if (boss4_get_work(pActwk)->approach_flags & 32) {
 
         if (xwk.l >= 20736) {
             e4a_03_far(pActwk);
             return 1;
         }
-        pActwk->actfree[4] &= 223;
+        boss4_get_work(pActwk)->approach_flags &= 223;
     }
 
     if (xwk.l >= 69696) {
@@ -479,23 +537,23 @@ static Uint32 egg4air_03(sprite_status *pActwk) {
 static void egg4air_bom(sprite_status *pActwk) {
     Sint16 actidx;
 
-    if ((actidx = ((Sint16 *)pActwk)[26]) != 0) {
-        actwk[actidx].actfree[0] = 30;
+    if ((actidx = boss4_get_work(pActwk)->linked_actor_index) != 0) {
+        boss4_get_work(&actwk[actidx])->bomb_timer = 30;
     }
 
-    if (!pActwk->actfree[0]) {
-        pActwk->actfree[0] = 32;
+    if (!boss4_get_work(pActwk)->bomb_timer) {
+        boss4_get_work(pActwk)->bomb_timer = 32;
         egg4_make_bom(pActwk);
     }
 
-    --pActwk->actfree[0];
+    --boss4_get_work(pActwk)->bomb_timer;
 }
 
 static void e4a_03_far(sprite_status *pActwk) {
 
-    pActwk->actfree[4] |= 32;
+    boss4_get_work(pActwk)->approach_flags |= 32;
 
-    pActwk->yposi.w.h -= ((Sint16 *)pActwk)[30];
+    pActwk->yposi.w.h -= boss4_get_work(pActwk)->bob_y_offset;
     pActwk->mstno.b.h = 0;
     egg4air_yure(pActwk);
 }
@@ -503,10 +561,10 @@ static void e4a_03_far(sprite_status *pActwk) {
 static void e4a_03_most_near(sprite_status *pActwk) {
     if ((Sint32)pActwk->yspeed.w > 2048 || (Sint32)pActwk->xspeed.w > 2048) {
 
-        ((Sint32 *)pActwk)[16] = 0x100000;
+        boss4_get_work(pActwk)->move_speed = 0x100000;
         sprite_status_set_xspeed_yspeed(pActwk, 741000);
     } else {
-        ((Sint32 *)pActwk)[16] = 0x80000;
+        boss4_get_work(pActwk)->move_speed = 0x80000;
         sprite_status_set_xspeed_yspeed(pActwk, 370000);
     }
 
@@ -514,14 +572,14 @@ static void e4a_03_most_near(sprite_status *pActwk) {
 }
 
 static void e4a_03_near(sprite_status *pActwk) {
-    ((Sint32 *)pActwk)[16] = 196608;
+    boss4_get_work(pActwk)->move_speed = 196608;
     sprite_status_set_xspeed_yspeed(pActwk, 139000);
 
     egg4air_01(pActwk);
 }
 
 static void e4a_03_normal(sprite_status *pActwk) {
-    ((Sint32 *)pActwk)[16] = 114688;
+    boss4_get_work(pActwk)->move_speed = 114688;
     sprite_status_set_xspeed_yspeed(pActwk, 81000);
 
     egg4air_01(pActwk);
@@ -568,8 +626,8 @@ static void egg4airhead_ini(sprite_status *pActwk) {
 static void egg4airhead_01(sprite_status *pActwk) {
     Sint16 actidx;
 
-    if (pActwk->actfree[0]) {
-        if (!(--pActwk->actfree[0])) {
+    if (boss4_get_work(pActwk)->bomb_timer) {
+        if (!(--boss4_get_work(pActwk)->bomb_timer)) {
 
             pActwk->mstno.b.h = 0;
             pActwk->patno = 0;
@@ -580,7 +638,7 @@ static void egg4airhead_01(sprite_status *pActwk) {
             pActwk->mstno.b.h = 1;
     }
 
-    if ((actidx = ((Sint16 *)pActwk)[26]) != 0) {
+    if ((actidx = boss4_get_work(pActwk)->linked_actor_index) != 0) {
         pActwk->xposi.w.h = actwk[actidx].xposi.w.h;
         pActwk->yposi.w.h = actwk[actidx].yposi.w.h;
         pActwk->cddat = actwk[actidx].cddat;
@@ -596,13 +654,13 @@ static void egg4airhead_02(sprite_status *pActwk) {
     if (actwk[0].xposi.w.h >= 2112 && actwk[0].yposi.w.h >= 1360) {
         bossflag = 4;
 
-        if ((actidx = ((Sint16 *)pActwk)[27]) != 0) {
+        if ((actidx = boss4_get_work(pActwk)->gate1_index) != 0) {
             if (actwk[actidx].actno) {
                 frameout(&actwk[actidx]);
             }
         }
 
-        if ((actidx = ((Sint16 *)pActwk)[28]) != 0) {
+        if ((actidx = boss4_get_work(pActwk)->gate2_index) != 0) {
             if (actwk[actidx].actno) {
                 frameout(&actwk[actidx]);
             }
@@ -616,14 +674,14 @@ static void make_gate(sprite_status *pActwk) {
     sprite_status *pNewact;
 
     if (actwkchk(&pNewact) == 0) {
-        ((Sint16 *)pActwk)[27] = pNewact - actwk;
+        boss4_get_work(pActwk)->gate1_index = pNewact - actwk;
         pNewact->actno = 71;
         pNewact->userflag.b.h = 1;
         pNewact->xposi.w.h = 1888;
         pNewact->yposi.w.h = 704;
 
         if (actwkchk(&pNewact) == 0) {
-            ((Sint16 *)pActwk)[28] = pNewact - actwk;
+            boss4_get_work(pActwk)->gate2_index = pNewact - actwk;
             pNewact->actno = 71;
             pNewact->userflag.b.h = 1;
             pNewact->xposi.w.h = 1728;

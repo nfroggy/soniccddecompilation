@@ -6,6 +6,7 @@
 #include "dummy.h"
 #include "etc.h"
 #include "loader2.h"
+#include "player_work.h"
 #include "playsub.h"
 #include "ridechk.h"
 
@@ -28,6 +29,10 @@
 #else
 #define SPRITE_SPRING_BASE 382
 #endif
+
+static spring_work *spring_get_work(sprite_status *actionwk) {
+    return spring_work_get(actionwk);
+}
 
 static sprite_pattern spat00 = {1, {{-16, -8, 0, SPRITE_SPRING_BASE}}};
 static sprite_pattern spat01 = {1, {{-16, 0, 0, SPRITE_SPRING_BASE + 1}}};
@@ -105,6 +110,7 @@ void iwa_move(sprite_status *actionwk) {
 
 void koma(sprite_status *actionwk) {
     Uint16 d0, d1;
+    spring_work *pWork = spring_get_work(actionwk);
 
     switch (actionwk->r_no0) {
 
@@ -118,7 +124,7 @@ void koma(sprite_status *actionwk) {
         break;
         break;
     }
-    d0 = ((Uint16 *)actionwk)[29];
+    d0 = pWork->origin_x;
     d0 &= -128;
     d1 = (Uint16)(scra_h_posit.w.h - 128) & 65408;
     d0 -= d1;
@@ -128,6 +134,7 @@ void koma(sprite_status *actionwk) {
 
 void koma_init(sprite_status *actionwk) {
     sprite_status *a1;
+    spring_work *pWork = spring_get_work(actionwk);
 
     actionwk->r_no0 += 2;
     actionwk->actflg |= 4;
@@ -136,7 +143,7 @@ void koma_init(sprite_status *actionwk) {
     actionwk->sproffset = 848;
     actionwk->sprhsize = 8;
     actionwk->sprvsize = 7;
-    ((Sint16 *)actionwk)[29] = actionwk->xposi.w.h;
+    pWork->origin_x = actionwk->xposi.w.h;
     actionwk->xspeed.w = 384;
 
     patchg(actionwk, (Uint8 **)&komachg);
@@ -150,9 +157,9 @@ void koma_init(sprite_status *actionwk) {
     a1->xposi.w.h = actionwk->xposi.w.h;
     a1->yposi.w.h = actionwk->yposi.w.h;
     a1->yposi.w.h -= 16;
-    ((char *)a1)[61] = -16;
-    ((Uint16 *)a1)[28] = actionwk - actwk;
-    a1->userflag.w = actwk[((Uint16 *)a1)[28]].userflag.w;
+    spring_get_work(a1)->follow_y_offset = -16;
+    spring_get_work(a1)->parent_index = actionwk - actwk;
+    a1->userflag.w = actwk[spring_get_work(a1)->parent_index].userflag.w;
 }
 
 void koma_move(sprite_status *actionwk) {
@@ -165,7 +172,7 @@ void koma_move(sprite_status *actionwk) {
         return;
     }
     actionwk->yposi.w.h += d1;
-    ((Uint16 *)actionwk)[27] = actionwk->yposi.w.h;
+    spring_get_work(actionwk)->ground_y = actionwk->yposi.w.h;
     actionwk->r_no0 += 2;
 }
 
@@ -175,7 +182,7 @@ void koma_move2(sprite_status *actionwk) {
     if (!time_stop) {
         d1 = emycol_d(actionwk);
         actionwk->yposi.w.h += d1;
-        d0 = ((Uint16 *)actionwk)[27];
+        d0 = spring_get_work(actionwk)->ground_y;
         d0 -= actionwk->yposi.w.h;
         if (d0 >= 12)
             actionwk->xspeed.w = -actionwk->xspeed.w;
@@ -221,6 +228,7 @@ void spring(sprite_status *actionwk) {
     Uint16 d1;
     sprite_status *a1;
     Uint16 d0;
+    spring_work *pWork = spring_get_work(actionwk);
 
     if (actionwk->r_no1 == 5) {
 
@@ -234,16 +242,16 @@ void spring(sprite_status *actionwk) {
     }
     actionsub(actionwk);
 
-    d1 = ((Uint16 *)actionwk)[28];
+    d1 = pWork->parent_index;
     if (d1 != 0) {
         a1 = &actwk[d1];
         actionwk->xposi.w.h = a1->xposi.w.h;
         actionwk->yposi.w.h = a1->yposi.w.h;
-        actionwk->xposi.w.h += ((char *)actionwk)[60];
-        actionwk->yposi.w.h += ((char *)actionwk)[61];
+        actionwk->xposi.w.h += pWork->follow_x_offset;
+        actionwk->yposi.w.h += pWork->follow_y_offset;
     }
 
-    d0 = ((Uint16 *)actionwk)[29];
+    d0 = pWork->origin_x;
     d0 &= -128;
     d1 = (Uint16)(scra_h_posit.w.h - 128) & 65408;
     d0 -= d1;
@@ -265,7 +273,7 @@ void sjumpinit(sprite_status *actionwk) {
     actionwk->actflg |= 4;
     actionwk->sprhsize = 16;
     actionwk->sprvsize = 8;
-    ((Sint16 *)actionwk)[29] = actionwk->xposi.w.h;
+    spring_get_work(actionwk)->origin_x = actionwk->xposi.w.h;
     actionwk->sprpri = 4;
 
     d0 = actionwk->userflag.b.h;
@@ -292,7 +300,7 @@ void sjumpinit(sprite_status *actionwk) {
     if (d0 & 2)
         actionwk->sproffset |= 8192;
 
-    ((Sint16 *)actionwk)[26] = sjumptbl[(d0 & 2) / 2];
+    spring_get_work(actionwk)->jump_speed = sjumptbl[(d0 & 2) / 2];
 }
 
 Sint32 ride_on_chk_s(sprite_status *actionwk, sprite_status *a1) {
@@ -311,7 +319,7 @@ void sjumpmove(sprite_status *actionwk) {
 
     actionwk->r_no0 = 4;
     a1->yposi.w.h += 8;
-    a1->yspeed.w = ((Sint16 *)actionwk)[26];
+    a1->yspeed.w = spring_get_work(actionwk)->jump_speed;
     a1->cddat |= 2;
     a1->cddat &= -9;
     a1->mstno.b.h = 16;
@@ -346,7 +354,7 @@ void sdushmove(sprite_status *actionwk) {
         return;
 
     actionwk->r_no0 = 10;
-    a1->xspeed.w = ((Sint16 *)actionwk)[26];
+    a1->xspeed.w = spring_get_work(actionwk)->jump_speed;
     a1->xposi.w.h += 8;
     a1->cddat |= 1;
     if (!(actionwk->cddat & 1)) {
@@ -354,7 +362,7 @@ void sdushmove(sprite_status *actionwk) {
         a1->xspeed.w = -a1->xspeed.w;
         a1->cddat &= 254;
     }
-    ((Sint16 *)a1)[33] = 15;
+    player_work_get(a1)->mode_word = 15;
     a1->mspeed.w = a1->xspeed.w;
     if (!(a1->cddat & 4))
         a1->mstno.b.h = 0;
@@ -391,7 +399,7 @@ void sjump2move(sprite_status *actionwk) {
 
     actionwk->r_no0 = 16;
     a1->yposi.w.h -= 8;
-    a1->yspeed.w = ((Sint16 *)actionwk)[26];
+    a1->yspeed.w = spring_get_work(actionwk)->jump_speed;
     a1->yspeed.w = -a1->yspeed.w;
     a1->cddat |= 2;
     a1->cddat &= 247;
@@ -427,7 +435,7 @@ void sjump3move(sprite_status *actionwk) {
     actionwk->r_no0 = 22;
     d0 = 224;
     sinset(d0, (Sint16 *)&sin, (Sint16 *)&cos);
-    d2 = ((Sint16 *)actionwk)[26];
+    d2 = spring_get_work(actionwk)->jump_speed;
     d2 = -d2;
     sinl = sin * d2;
     cosl = cos * d2;

@@ -139,7 +139,6 @@ static void scrbinit(Sint16 xWk, Sint16 yWk) {
 void scroll(void) {
     Sint16 *pHScrollWork;
     int_union *pHScrollBuff;
-    int_union *psHscr;
     Sint32 i;
     Sint32 j;
     Uint16 wD1;
@@ -174,19 +173,16 @@ void scroll(void) {
     scrflagb.b.h = scrflagb.b.h | scrflagz.b.h | scrflagc.b.h;
     scrflagz.b.h = scrflagc.b.h = 0;
 
-    psHscr = (int_union *)hscrollwork;
     for (i = 0; i < 5; ++i) {
-        psHscr->l += scaddtbl[i];
-        ++psHscr;
+        hscrollwork_add_pair(i * 2, scaddtbl[i]);
     }
 
     lD0.w.h = -scra_h_posit.w.h;
-    psHscr = (int_union *)hscrollwork;
     pHScrollWork = &hscrollwork[10];
     for (i = 4; i >= 0; --i) {
 
-        wD1 = -(psHscr->w.h + scrz_h_posit.w.h);
-        ++psHscr;
+        wD1 = -(hscrollwork_get_pair((4 - i) * 2).w.h +
+                scrz_h_posit.w.h);
         for (j = z12c_cnttbl[i]; j >= 0; --j) {
 
             *pHScrollWork++ = wD1;

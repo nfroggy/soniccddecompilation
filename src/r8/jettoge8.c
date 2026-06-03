@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "jettoge8.h"
 #include "../action.h"
@@ -9,6 +11,31 @@
 #else
 #define SPRITE_JETTOGE8_BASE 475
 #endif
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint16 turn_timer;
+    Sint32 x_velocity;
+    Sint16 origin_x;
+    Uint8 unused8;
+    Uint8 saved_colino;
+} jettoge8_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(jettoge8_work, turn_timer) == 0,
+               "jettoge8_work.turn_timer offset");
+_Static_assert(offsetof(jettoge8_work, x_velocity) == 2,
+               "jettoge8_work.x_velocity offset");
+_Static_assert(offsetof(jettoge8_work, origin_x) == 6,
+               "jettoge8_work.origin_x offset");
+_Static_assert(offsetof(jettoge8_work, saved_colino) == 9,
+               "jettoge8_work.saved_colino offset");
+_Static_assert(sizeof(jettoge8_work) <= sizeof(((sprite_status *)0)->actfree),
+               "jettoge8_work fits in actfree");
+
+static jettoge8_work *jettoge8_get_work(sprite_status *actionwk) {
+    return (jettoge8_work *)actionwk->actfree;
+}
 
 static char p00[4] = {1, 0, 1, -1};
 static char *pchg[1] = {p00};
@@ -27,35 +54,38 @@ void jettoge(sprite_status *actionwk) {
 }
 
 void a_init(sprite_status *actionwk) {
+    jettoge8_work *work = jettoge8_get_work(actionwk);
+
     actionwk->r_no0 += 2;
     actionwk->actflg |= 4;
     actionwk->patbase = pat_jettoge;
     actionwk->sproffset = 33856;
-    ((Sint16 *)actionwk)[26] = actionwk->xposi.w.h;
-    actionwk->actfree[9] = 177;
-    ((Sint32 *)actionwk)[12] = 20480;
+    work->origin_x = actionwk->xposi.w.h;
+    work->saved_colino = 177;
+    work->x_velocity = 20480;
     actionwk->sprvsize = 76;
     actionwk->sprpri = 1;
     actionwk->sprhsize = 16;
 }
 
 void a_move(sprite_status *actionwk) {
+    jettoge8_work *work = jettoge8_get_work(actionwk);
     Sint16 t;
 
-    actionwk->xposi.l += ((Sint32 *)actionwk)[12];
+    actionwk->xposi.l += work->x_velocity;
     if (prio_flag == 0)
-        actionwk->colino = actionwk->actfree[9];
+        actionwk->colino = work->saved_colino;
     else
         actionwk->colino = 0;
-    t = ((Sint16 *)actionwk)[23]--;
+    t = work->turn_timer--;
     if (t <= 0) {
-        ((Sint16 *)actionwk)[23] = 409;
-        ((Sint32 *)actionwk)[12] = -((Sint32 *)actionwk)[12];
+        work->turn_timer = 409;
+        work->x_velocity = -work->x_velocity;
 
         actionwk->actflg ^= 1;
         actionwk->cddat ^= 1;
     }
     patchg(actionwk, (Uint8 **)pchg);
     actionsub(actionwk);
-    frameout_s00(actionwk, ((Sint16 *)actionwk)[26]);
+    frameout_s00(actionwk, work->origin_x);
 }

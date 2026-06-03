@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "kuzure8.h"
 #include "../action.h"
@@ -12,6 +14,29 @@
 #else
 #define SPRITE_KUZURE8_BASE 444
 #endif
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint16 timer;
+    union {
+        Sint16 horizontal_step;
+        Sint32 fall_speed;
+    };
+} kuzure8_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(kuzure8_work, timer) == 0,
+               "kuzure8_work.timer offset");
+_Static_assert(offsetof(kuzure8_work, horizontal_step) == 2,
+               "kuzure8_work.horizontal_step offset");
+_Static_assert(offsetof(kuzure8_work, fall_speed) == 2,
+               "kuzure8_work.fall_speed offset");
+_Static_assert(sizeof(kuzure8_work) <= sizeof(((sprite_status *)0)->actfree),
+               "kuzure8_work fits in actfree");
+
+static kuzure8_work *kuzure8_get_work(sprite_status *actionwk) {
+    return (kuzure8_work *)actionwk->actfree;
+}
 
 static sprite_pattern pat00 = {1, {{-8, -16, 0, SPRITE_KUZURE8_BASE}}};
 static sprite_pattern pat01 = {1, {{-16, -16, 0, SPRITE_KUZURE8_BASE + 1}}};
@@ -81,14 +106,16 @@ void main_ini(sprite_status *actionwk) {
 }
 
 void main_check(sprite_status *actionwk) {
+    kuzure8_work *work = kuzure8_get_work(actionwk);
+
     if (ridechk(actionwk, &actwk[0]) != 0) {
         actionwk->r_no0 += 2;
         actionwk->cdsts = 0;
-        ((Sint16 *)actionwk)[23] = 8;
+        work->timer = 8;
         if (actwk[0].xspeed.w < 0)
-            ((Sint16 *)actionwk)[24] = -8;
+            work->horizontal_step = -8;
         else
-            ((Sint16 *)actionwk)[24] = 8;
+            work->horizontal_step = 8;
         soundset(163);
     }
     actionsub(actionwk);
@@ -96,17 +123,19 @@ void main_check(sprite_status *actionwk) {
 }
 
 void main_wait(sprite_status *actionwk) {
+    kuzure8_work *work = kuzure8_get_work(actionwk);
     Sint16 t;
 
     ridechk(actionwk, &actwk[0]);
-    --((Sint16 *)actionwk)[23];
-    t = ((Sint16 *)actionwk)[23];
+    --work->timer;
+    t = work->timer;
     if (t < 0)
         actionwk->r_no0 += 2;
     actionsub(actionwk);
 }
 
 void main_break(sprite_status *actionwk) {
+    kuzure8_work *work = kuzure8_get_work(actionwk);
     Sint16 d1, d2, d3;
     char ride;
     sprite_status *a1;
@@ -115,7 +144,7 @@ void main_break(sprite_status *actionwk) {
     d1 = -1;
     d2 = 8;
     d3 = (actionwk->userflag.b.h - 1) << 3;
-    if (((Sint16 *)actionwk)[24] >= 0)
+    if (work->horizontal_step >= 0)
         d3 = -d3;
     if (actwkchk(&a1) == 0) {
         a1->actno = actionwk->actno;
@@ -128,7 +157,7 @@ void main_break(sprite_status *actionwk) {
         a1->userflag.b.l = d1;
         a1->yposi.w.h -= d2;
         a1->xposi.w.h += d3;
-        ((Sint16 *)a1)[23] = 4;
+        kuzure8_get_work(a1)->timer = 4;
         a1->patno = 8;
         if (actwkchk(&a1) == 0) {
             a1->actno = actionwk->actno;
@@ -141,7 +170,7 @@ void main_break(sprite_status *actionwk) {
             a1->userflag.b.l = d1;
             a1->yposi.w.h += d2;
             a1->xposi.w.h += d3;
-            ((Sint16 *)a1)[23] = 0;
+            kuzure8_get_work(a1)->timer = 0;
             a1->patno = 9;
         }
     }
@@ -159,8 +188,8 @@ void main_break(sprite_status *actionwk) {
     --actionwk->patno;
     actionwk->sprhs -= 8;
     actionwk->sprhsize -= 8;
-    ((Sint16 *)actionwk)[23] = 7;
-    actionwk->xposi.w.h += ((Sint16 *)actionwk)[24];
+    work->timer = 7;
+    actionwk->xposi.w.h += work->horizontal_step;
 
     ridechk(actionwk, &actwk[0]);
     actionsub(actionwk);
@@ -196,26 +225,28 @@ void parts_ini(sprite_status *actionwk) {
 }
 
 void parts_wait(sprite_status *actionwk) {
+    kuzure8_work *work = kuzure8_get_work(actionwk);
     Sint16 t;
 
-    t = ((Sint16 *)actionwk)[23]--;
+    t = work->timer--;
     if (t <= 0)
         actionwk->r_no0 += 2;
     actionsub(actionwk);
 }
 
 void parts_fall(sprite_status *actionwk) {
+    kuzure8_work *work = kuzure8_get_work(actionwk);
     Sint32 d0;
 
     if ((char)actionwk->actflg >= 0) {
         frameout(actionwk);
         return;
     }
-    d0 = ((Sint32 *)actionwk)[12] + 16384;
+    d0 = work->fall_speed + 16384;
     if (d0 > 1441792)
         d0 = 1441792;
 
-    ((Sint32 *)actionwk)[12] = d0;
+    work->fall_speed = d0;
     actionwk->yposi.l += d0;
     actionsub(actionwk);
 }

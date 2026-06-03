@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "trap_r3.h"
 #include "../action.h"
@@ -5,8 +7,92 @@
 #include "../etc.h"
 #include "../loader2.h"
 #include "../playsub.h"
+#include "../player_work.h"
 #include "../ridechk.h"
 #include "coli3.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 unused0[6];
+    Sint16 base_y;
+    Sint16 base_x;
+    union {
+        Uint16 linked_actor_index;
+        Sint16 velocity;
+        Sint16 table_offset;
+    };
+    union {
+        Sint16 origin_x;
+        Sint16 acceleration;
+        Sint16 bullet_origin_x;
+        struct {
+            Uint8 origin_x_low;
+            Uint8 drum_speed_high;
+        };
+    };
+    union {
+        Sint16 delta;
+        struct {
+            Uint8 wait_timer;
+            Uint8 phase;
+        };
+    };
+    Uint8 timer;
+    Uint8 travel;
+    Uint8 reverse_flag;
+    Uint8 unused19;
+    union {
+        Sint16 bullet_acceleration;
+        struct {
+            Uint8 bob_angle;
+            Uint8 bob_enabled;
+        };
+    };
+} trap3_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(trap3_work, base_y) == 6,
+               "trap3_work.base_y offset");
+_Static_assert(offsetof(trap3_work, base_x) == 8,
+               "trap3_work.base_x offset");
+_Static_assert(offsetof(trap3_work, linked_actor_index) == 10,
+               "trap3_work.linked_actor_index offset");
+_Static_assert(offsetof(trap3_work, velocity) == 10,
+               "trap3_work.velocity offset");
+_Static_assert(offsetof(trap3_work, table_offset) == 10,
+               "trap3_work.table_offset offset");
+_Static_assert(offsetof(trap3_work, origin_x) == 12,
+               "trap3_work.origin_x offset");
+_Static_assert(offsetof(trap3_work, acceleration) == 12,
+               "trap3_work.acceleration offset");
+_Static_assert(offsetof(trap3_work, bullet_origin_x) == 12,
+               "trap3_work.bullet_origin_x offset");
+_Static_assert(offsetof(trap3_work, drum_speed_high) == 13,
+               "trap3_work.drum_speed_high offset");
+_Static_assert(offsetof(trap3_work, delta) == 14,
+               "trap3_work.delta offset");
+_Static_assert(offsetof(trap3_work, wait_timer) == 14,
+               "trap3_work.wait_timer offset");
+_Static_assert(offsetof(trap3_work, phase) == 15,
+               "trap3_work.phase offset");
+_Static_assert(offsetof(trap3_work, timer) == 16,
+               "trap3_work.timer offset");
+_Static_assert(offsetof(trap3_work, travel) == 17,
+               "trap3_work.travel offset");
+_Static_assert(offsetof(trap3_work, reverse_flag) == 18,
+               "trap3_work.reverse_flag offset");
+_Static_assert(offsetof(trap3_work, bullet_acceleration) == 20,
+               "trap3_work.bullet_acceleration offset");
+_Static_assert(offsetof(trap3_work, bob_angle) == 20,
+               "trap3_work.bob_angle offset");
+_Static_assert(offsetof(trap3_work, bob_enabled) == 21,
+               "trap3_work.bob_enabled offset");
+_Static_assert(sizeof(trap3_work) <= sizeof(((sprite_status *)0)->actfree),
+               "trap3_work fits in actfree");
+
+static trap3_work *trap3_get_work(sprite_status *pActwk) {
+    return (trap3_work *)pActwk->actfree;
+}
 
 static sprite_pattern har00 = {1, {{-16, -16, 0, 288}}};
 static sprite_pattern har01 = {1, {{-16, -16, 0, 289}}};
@@ -21,15 +107,17 @@ void harir3(sprite_status *hariwk) {
     harir3_acttbl[hariwk->r_no0 / 2](hariwk);
     actionsub(hariwk);
 
-    if ((ride_no = ((Uint16 *)hariwk)[28]) != 0) {
+    if ((ride_no = trap3_get_work(hariwk)->linked_actor_index) != 0) {
         hariwk->xposi.w.h =
-            (Sint16)hariwk->actfree[14] + actwk[ride_no].xposi.w.h;
+            (Sint16)trap3_get_work(hariwk)->wait_timer +
+            actwk[ride_no].xposi.w.h;
 
         hariwk->yposi.w.h =
-            (Sint16)hariwk->actfree[15] + actwk[ride_no].yposi.w.h;
+            (Sint16)trap3_get_work(hariwk)->phase +
+            actwk[ride_no].yposi.w.h;
     }
 
-    cal_x = (((Uint16 *)hariwk)[29] & 65408) -
+    cal_x = (trap3_get_work(hariwk)->origin_x & 65408) -
             ((Uint16)(scra_h_posit.w.h - 128) & 65408);
 
     if (cal_x > 640)
@@ -46,8 +134,8 @@ void harir3_init(sprite_status *hariwk) {
     hariwk->sprpri = 3;
     hariwk->patbase = harir3pat;
 
-    ((Sint16 *)hariwk)[29] = hariwk->xposi.w.h;
-    ((Sint16 *)hariwk)[27] = hariwk->yposi.w.h;
+    trap3_get_work(hariwk)->origin_x = hariwk->xposi.w.h;
+    trap3_get_work(hariwk)->base_x = hariwk->yposi.w.h;
 
     cal_index = hariwk->patno = (Uint8)hariwk->userflag.b.h & 3;
     cal_index *= 3;
@@ -78,7 +166,7 @@ void harir3_move(sprite_status *hariwk) {
     if (actwk[0].r_no0 >= 4)
         return;
 
-    if (((Uint16 *)&actwk[0])[26] != 0)
+    if (player_work_get(&actwk[0])->damage_invulnerability_timer != 0)
         return;
 
     actwk[0].yposi.l -= actwk[0].yspeed.w << 8;
@@ -95,46 +183,50 @@ void harir3_kind(sprite_status *hariwk) {
 
 void harir3_ymv1(sprite_status *hariwk) {
     harir3_sub(hariwk);
-    hariwk->yposi.w.h = ((Sint16 *)hariwk)[27] + (Sint16)hariwk->actfree[17];
+    hariwk->yposi.w.h =
+        trap3_get_work(hariwk)->base_x + (Sint16)trap3_get_work(hariwk)->travel;
 }
 
 void harir3_ymv2(sprite_status *hariwk) {
     harir3_sub(hariwk);
-    hariwk->yposi.w.h = ((Sint16 *)hariwk)[27] - (Sint16)hariwk->actfree[17];
+    hariwk->yposi.w.h =
+        trap3_get_work(hariwk)->base_x - (Sint16)trap3_get_work(hariwk)->travel;
 }
 
 void harir3_xmv1(sprite_status *hariwk) {
     harir3_sub(hariwk);
-    hariwk->xposi.w.h = ((Sint16 *)hariwk)[29] - (Sint16)hariwk->actfree[17];
+    hariwk->xposi.w.h =
+        trap3_get_work(hariwk)->origin_x - (Sint16)trap3_get_work(hariwk)->travel;
 }
 
 void harir3_xmv2(sprite_status *hariwk) {
     harir3_sub(hariwk);
-    hariwk->xposi.w.h = ((Sint16 *)hariwk)[29] + (Sint16)hariwk->actfree[17];
+    hariwk->xposi.w.h =
+        trap3_get_work(hariwk)->origin_x + (Sint16)trap3_get_work(hariwk)->travel;
 }
 
 void harir3_sub(sprite_status *hariwk) {
-    if (hariwk->actfree[16] != 0) {
-        if (--hariwk->actfree[16] != 0)
+    if (trap3_get_work(hariwk)->timer != 0) {
+        if (--trap3_get_work(hariwk)->timer != 0)
             return;
         if (hariwk->actflg & 128)
             soundset(183);
     }
 
-    if (hariwk->actfree[18] != 0) {
-        if ((char)(hariwk->actfree[17] -= 8) >= 0)
+    if (trap3_get_work(hariwk)->reverse_flag != 0) {
+        if ((char)(trap3_get_work(hariwk)->travel -= 8) >= 0)
             return;
 
-        hariwk->actfree[17] = hariwk->actfree[18] = 0;
-        hariwk->actfree[16] = 60;
+        trap3_get_work(hariwk)->travel = trap3_get_work(hariwk)->reverse_flag = 0;
+        trap3_get_work(hariwk)->timer = 60;
         return;
     }
 
-    if ((hariwk->actfree[17] += 8) < 32)
+    if ((trap3_get_work(hariwk)->travel += 8) < 32)
         return;
-    hariwk->actfree[17] = 32;
-    hariwk->actfree[18] = 1;
-    hariwk->actfree[16] = 60;
+    trap3_get_work(hariwk)->travel = 32;
+    trap3_get_work(hariwk)->reverse_flag = 1;
+    trap3_get_work(hariwk)->timer = 60;
 }
 
 static sprite_pattern frd00 = {1, {{-16, -16, 0, 292}}};
@@ -145,7 +237,7 @@ void frdr3(sprite_status *floorwk) {
     Uint16 cal_x;
     frdr3_acttbl[floorwk->r_no0 / 2](floorwk);
     actionsub(floorwk);
-    cal_x = (((Uint16 *)floorwk)[27] & 65408) -
+    cal_x = (trap3_get_work(floorwk)->base_x & 65408) -
             ((Uint16)(scra_h_posit.w.h - 128) & 65408);
 
     if (cal_x > 640)
@@ -161,8 +253,8 @@ void frdr3_init(sprite_status *floorwk) {
     floorwk->sprpri = 3;
     floorwk->patbase = frdr3pat;
     floorwk->sprhsize = floorwk->sprvsize = 16;
-    ((Sint16 *)floorwk)[27] = floorwk->xposi.w.h;
-    ((Sint16 *)floorwk)[26] = floorwk->yposi.w.h;
+    trap3_get_work(floorwk)->base_x = floorwk->xposi.w.h;
+    trap3_get_work(floorwk)->base_y = floorwk->yposi.w.h;
 
     if (floorwk->userflag.b.h < 2) {
         frdr3_move(floorwk);
@@ -175,8 +267,8 @@ void frdr3_init(sprite_status *floorwk) {
     new_actwk->actno = 10;
     new_actwk->xposi.w.h = floorwk->xposi.w.h;
     new_actwk->yposi.w.h = floorwk->yposi.w.h;
-    new_actwk->actfree[15] = 234;
-    ((Uint16 *)new_actwk)[28] = floorwk - actwk;
+    trap3_get_work(new_actwk)->phase = 234;
+    trap3_get_work(new_actwk)->linked_actor_index = floorwk - actwk;
     new_actwk->userflag.b.h = (floorwk->userflag.b.h & 1) << 1;
     frdr3_move(floorwk);
 }
@@ -194,22 +286,25 @@ void frdr3_move(sprite_status *floorwk) {
     do {
         if (floorwk->userflag.b.h == 1)
             return;
-        if (floorwk->actfree[16] == 0) {
-            floorwk->actfree[16] = frdr3_mvtbl0[floorwk->actfree[17] * 2];
-            ((Sint16 *)floorwk)[30] =
-                frdr3_mvtbl0[floorwk->actfree[17] * 2 + 1];
+        if (trap3_get_work(floorwk)->timer == 0) {
+            trap3_get_work(floorwk)->timer =
+                frdr3_mvtbl0[trap3_get_work(floorwk)->travel * 2];
+            trap3_get_work(floorwk)->delta =
+                frdr3_mvtbl0[trap3_get_work(floorwk)->travel * 2 + 1];
 
-            ((Sint16 *)floorwk)[29] = frdr3_mvtbl1[floorwk->actfree[17]];
+            trap3_get_work(floorwk)->origin_x =
+                frdr3_mvtbl1[trap3_get_work(floorwk)->travel];
             return;
         }
 
-        ((Sint16 *)floorwk)[29] += ((Sint16 *)floorwk)[30];
-        floorwk->xspeed.w = ((Sint16 *)floorwk)[29];
+        trap3_get_work(floorwk)->origin_x += trap3_get_work(floorwk)->delta;
+        floorwk->xspeed.w = trap3_get_work(floorwk)->origin_x;
         floorwk->xposi.l += floorwk->xspeed.w << 8;
 
-        if (--floorwk->actfree[16] != 0)
+        if (--trap3_get_work(floorwk)->timer != 0)
             return;
-        floorwk->actfree[17] = floorwk->actfree[17] + 1 & 3;
+        trap3_get_work(floorwk)->travel =
+            trap3_get_work(floorwk)->travel + 1 & 3;
     } while (1);
 }
 
@@ -223,7 +318,7 @@ void trapdr3(sprite_status *floorwk) {
 
     trapdr3_acttbl[floorwk->r_no0 / 2](floorwk);
     actionsub(floorwk);
-    cal_x = (((Uint16 *)floorwk)[29] & 65408) -
+    cal_x = (trap3_get_work(floorwk)->origin_x & 65408) -
             ((Uint16)(scra_h_posit.w.h - 128) & 65408);
 
     if (cal_x > 640)
@@ -241,8 +336,8 @@ void trapdr3_init(sprite_status *floorwk) {
 
     floorwk->sprhsize = 16;
     floorwk->sprvsize = 14;
-    ((Sint16 *)floorwk)[29] = floorwk->xposi.w.h;
-    ((Sint16 *)floorwk)[27] = floorwk->yposi.w.h;
+    trap3_get_work(floorwk)->origin_x = floorwk->xposi.w.h;
+    trap3_get_work(floorwk)->base_x = floorwk->yposi.w.h;
     floorwk->r_no0 += 2;
 
     if ((floorwk->userflag.b.h & 3) == 0) {
@@ -261,12 +356,12 @@ void trapdr3_init(sprite_status *floorwk) {
         new_actwk->actno = 10;
     new_actwk->xposi.w.h = floorwk->xposi.w.h;
     new_actwk->yposi.w.h = floorwk->yposi.w.h;
-    ((Uint16 *)new_actwk)[28] = floorwk - actwk;
+    trap3_get_work(new_actwk)->linked_actor_index = floorwk - actwk;
     if (new_actwk->actno == 32) {
-        new_actwk->actfree[14] = 32;
+        trap3_get_work(new_actwk)->wait_timer = 32;
         new_actwk->userflag.b.h = 2;
     } else {
-        new_actwk->actfree[14] = 24;
+        trap3_get_work(new_actwk)->wait_timer = 24;
         new_actwk->userflag.b.h = (floorwk->userflag.b.h & 1) << 1 | 4;
     }
     trapdr3_move(floorwk);
@@ -282,12 +377,14 @@ void trapdr3_kind(sprite_status *floorwk) {
 
         trapdr3_updown(floorwk);
         floorwk->yposi.w.h =
-            ((Sint16 *)floorwk)[27] + (Sint16)floorwk->actfree[17];
+            trap3_get_work(floorwk)->base_x +
+            (Sint16)trap3_get_work(floorwk)->travel;
 
     } else {
         trapdr3_updown(floorwk);
         floorwk->yposi.w.h =
-            ((Sint16 *)floorwk)[27] - (Sint16)floorwk->actfree[17];
+            trap3_get_work(floorwk)->base_x -
+            (Sint16)trap3_get_work(floorwk)->travel;
     }
 }
 
@@ -300,13 +397,13 @@ void trapdr3_updown(sprite_status *floorwk) {
         if (cal_x < 80)
             return;
 
-        if ((char)(floorwk->actfree[17] -= 8) < 0)
-            floorwk->actfree[17] = 0;
+        if ((char)(trap3_get_work(floorwk)->travel -= 8) < 0)
+            trap3_get_work(floorwk)->travel = 0;
         return;
     }
 
-    if ((floorwk->actfree[17] += 8) >= 32)
-        floorwk->actfree[17] = 32;
+    if ((trap3_get_work(floorwk)->travel += 8) >= 32)
+        trap3_get_work(floorwk)->travel = 32;
 }
 
 static sprite_pattern fo00 = {1, {{-32, -16, 0, 295}}};
@@ -327,8 +424,8 @@ void for3_init(sprite_status *floorwk) {
     floorwk->sprhsize = 32;
     floorwk->sprvsize = 16;
 
-    ((Sint16 *)floorwk)[27] = floorwk->xposi.w.h;
-    ((Sint16 *)floorwk)[26] = floorwk->yposi.w.h;
+    trap3_get_work(floorwk)->base_x = floorwk->xposi.w.h;
+    trap3_get_work(floorwk)->base_y = floorwk->yposi.w.h;
     floorwk->r_no0 += 2;
     for3_move(floorwk);
 }
@@ -340,7 +437,7 @@ void for3_move(sprite_status *floorwk) {
     Uint16 cal_x;
     for3_kndtbl[floorwk->userflag.b.h](floorwk);
     dai3sub(floorwk);
-    cal_x = (((Uint16 *)floorwk)[27] & 65408) -
+    cal_x = (trap3_get_work(floorwk)->base_x & 65408) -
             ((Uint16)(scra_h_posit.w.h - 128) & 65408);
 
     if (cal_x > 640)
@@ -353,25 +450,25 @@ void dai3sub(sprite_status *floorwk) {
     Sint16 tmp_sin, tmp_cos;
     int_union cal_sin;
 
-    if (floorwk->actfree[21] == 0)
+    if (trap3_get_work(floorwk)->bob_enabled == 0)
         return;
 
     if (!(floorwk->cddat & 8)) {
-        if (floorwk->actfree[20] == 0)
+        if (trap3_get_work(floorwk)->bob_angle == 0)
             return;
-        floorwk->actfree[20] -= 8;
+        trap3_get_work(floorwk)->bob_angle -= 8;
     } else {
-        if (floorwk->actfree[20] == 64)
+        if (trap3_get_work(floorwk)->bob_angle == 64)
             return;
-        floorwk->actfree[20] += 8;
+        trap3_get_work(floorwk)->bob_angle += 8;
     }
-    sinset(floorwk->actfree[20], &tmp_sin, &tmp_cos);
+    sinset(trap3_get_work(floorwk)->bob_angle, &tmp_sin, &tmp_cos);
     cal_sin.l = tmp_sin << 10;
-    floorwk->yposi.w.h = ((Sint16 *)floorwk)[26] + cal_sin.w.h;
+    floorwk->yposi.w.h = trap3_get_work(floorwk)->base_y + cal_sin.w.h;
 }
 
 void for3_fix(sprite_status *floorwk) {
-    floorwk->actfree[21] = 1;
+    trap3_get_work(floorwk)->bob_enabled = 1;
     for3_ridechk(floorwk);
 }
 
@@ -388,38 +485,44 @@ void for3_rmv(sprite_status *floorwk) {
     Sint16 for3_lmvtbl1[8] = {-768, -768, 0, 768, 768, 0, -768, -768};
 
     do {
-        if (floorwk->actfree[14] == 0) {
+        if (trap3_get_work(floorwk)->wait_timer == 0) {
 
-            floorwk->actfree[21] = 1;
+            trap3_get_work(floorwk)->bob_enabled = 1;
             if (floorwk->userflag.b.h == 1) {
-                floorwk->actfree[14] = for3_rmvtbl0[floorwk->actfree[15] * 2];
-                ((Sint16 *)floorwk)[29] =
-                    for3_rmvtbl0[floorwk->actfree[15] * 2 + 1];
+                trap3_get_work(floorwk)->wait_timer =
+                    for3_rmvtbl0[trap3_get_work(floorwk)->phase * 2];
+                trap3_get_work(floorwk)->acceleration =
+                    for3_rmvtbl0[trap3_get_work(floorwk)->phase * 2 + 1];
 
-                ((Sint16 *)floorwk)[28] = for3_rmvtbl1[floorwk->actfree[15]];
+                trap3_get_work(floorwk)->velocity =
+                    for3_rmvtbl1[trap3_get_work(floorwk)->phase];
 
                 for3_ridechk(floorwk);
             } else {
-                floorwk->actfree[14] = for3_lmvtbl0[floorwk->actfree[15] * 2];
-                ((Sint16 *)floorwk)[29] =
-                    for3_lmvtbl0[floorwk->actfree[15] * 2 + 1];
+                trap3_get_work(floorwk)->wait_timer =
+                    for3_lmvtbl0[trap3_get_work(floorwk)->phase * 2];
+                trap3_get_work(floorwk)->acceleration =
+                    for3_lmvtbl0[trap3_get_work(floorwk)->phase * 2 + 1];
 
-                ((Sint16 *)floorwk)[28] = for3_lmvtbl1[floorwk->actfree[15]];
+                trap3_get_work(floorwk)->velocity =
+                    for3_lmvtbl1[trap3_get_work(floorwk)->phase];
 
                 for3_ridechk(floorwk);
             }
             return;
         }
-        floorwk->xposi.l += (floorwk->xspeed.w = ((Sint16 *)floorwk)[28]) << 8;
+        floorwk->xposi.l +=
+            (floorwk->xspeed.w = trap3_get_work(floorwk)->velocity) << 8;
 
-        ((Sint16 *)floorwk)[28] += ((Sint16 *)floorwk)[29];
+        trap3_get_work(floorwk)->velocity +=
+            trap3_get_work(floorwk)->acceleration;
 
-        if (--floorwk->actfree[14] != 0) {
+        if (--trap3_get_work(floorwk)->wait_timer != 0) {
             for3_ridechk(floorwk);
             break;
         }
-        if (++floorwk->actfree[15] == 8)
-            floorwk->actfree[15] = 2;
+        if (++trap3_get_work(floorwk)->phase == 8)
+            trap3_get_work(floorwk)->phase = 2;
     } while (1);
 }
 
@@ -438,32 +541,37 @@ void for3_dmv(sprite_status *floorwk) {
     do {
         for3_ridechk(floorwk);
 
-        if (floorwk->actfree[14] == 0) {
-            floorwk->actfree[21] = 0;
+        if (trap3_get_work(floorwk)->wait_timer == 0) {
+            trap3_get_work(floorwk)->bob_enabled = 0;
             if (floorwk->userflag.b.h == 3) {
-                floorwk->actfree[14] = for3_umvtbl0[floorwk->actfree[15] * 2];
-                ((Sint16 *)floorwk)[29] =
-                    for3_umvtbl0[floorwk->actfree[15] * 2 + 1];
+                trap3_get_work(floorwk)->wait_timer =
+                    for3_umvtbl0[trap3_get_work(floorwk)->phase * 2];
+                trap3_get_work(floorwk)->acceleration =
+                    for3_umvtbl0[trap3_get_work(floorwk)->phase * 2 + 1];
 
-                ((Sint16 *)floorwk)[28] = for3_umvtbl1[floorwk->actfree[15]];
+                trap3_get_work(floorwk)->velocity =
+                    for3_umvtbl1[trap3_get_work(floorwk)->phase];
 
             } else {
-                floorwk->actfree[14] = for3_dmvtbl0[floorwk->actfree[15] * 2];
-                ((Sint16 *)floorwk)[29] =
-                    for3_dmvtbl0[floorwk->actfree[15] * 2 + 1];
+                trap3_get_work(floorwk)->wait_timer =
+                    for3_dmvtbl0[trap3_get_work(floorwk)->phase * 2];
+                trap3_get_work(floorwk)->acceleration =
+                    for3_dmvtbl0[trap3_get_work(floorwk)->phase * 2 + 1];
 
-                ((Sint16 *)floorwk)[28] = for3_dmvtbl1[floorwk->actfree[15]];
+                trap3_get_work(floorwk)->velocity =
+                    for3_dmvtbl1[trap3_get_work(floorwk)->phase];
             }
 
             return;
         }
-        floorwk->yposi.l += ((Sint16 *)floorwk)[28] << 8;
-        ((Sint16 *)floorwk)[28] += ((Sint16 *)floorwk)[29];
-        floorwk->yspeed.w = ((Uint16 *)floorwk)[28] & 65280;
-        if (--floorwk->actfree[14] != 0)
+        floorwk->yposi.l += trap3_get_work(floorwk)->velocity << 8;
+        trap3_get_work(floorwk)->velocity +=
+            trap3_get_work(floorwk)->acceleration;
+        floorwk->yspeed.w = trap3_get_work(floorwk)->velocity & 65280;
+        if (--trap3_get_work(floorwk)->wait_timer != 0)
             break;
-        if (++floorwk->actfree[15] == 8)
-            floorwk->actfree[15] = 2;
+        if (++trap3_get_work(floorwk)->phase == 8)
+            trap3_get_work(floorwk)->phase = 2;
     } while (1);
 }
 
@@ -472,21 +580,21 @@ void for3_rup(sprite_status *floorwk) {
 
     for3_ridechk(floorwk);
 
-    tbl[floorwk->actfree[16] / 2](floorwk);
+    tbl[trap3_get_work(floorwk)->timer / 2](floorwk);
 }
 
 void for3_rup1(sprite_status *floorwk) {
-    if (floorwk->actfree[14] == 0) {
+    if (trap3_get_work(floorwk)->wait_timer == 0) {
 
-        floorwk->actfree[21] = 1;
+        trap3_get_work(floorwk)->bob_enabled = 1;
         if (ridechk(floorwk, &actwk[0]) != 0)
-            floorwk->actfree[14] = 30;
+            trap3_get_work(floorwk)->wait_timer = 30;
         return;
     }
-    if (--floorwk->actfree[14] != 0)
+    if (--trap3_get_work(floorwk)->wait_timer != 0)
         return;
-    floorwk->actfree[21] = 0;
-    floorwk->actfree[16] += 2;
+    trap3_get_work(floorwk)->bob_enabled = 0;
+    trap3_get_work(floorwk)->timer += 2;
 }
 
 void for3_rup2(sprite_status *floorwk) {
@@ -501,44 +609,51 @@ void for3_rup2(sprite_status *floorwk) {
     Sint16 for3_28btbl1[3] = {0, -1024, -1024};
 
     do {
-        if (floorwk->actfree[14] == 0) {
+        if (trap3_get_work(floorwk)->wait_timer == 0) {
 
             if (floorwk->userflag.b.h == 5) {
-                floorwk->actfree[14] = for3_8btbl0[floorwk->actfree[15] * 2];
-                ((Sint16 *)floorwk)[29] =
-                    for3_8btbl0[floorwk->actfree[15] * 2 + 1];
+                trap3_get_work(floorwk)->wait_timer =
+                    for3_8btbl0[trap3_get_work(floorwk)->phase * 2];
+                trap3_get_work(floorwk)->acceleration =
+                    for3_8btbl0[trap3_get_work(floorwk)->phase * 2 + 1];
 
-                ((Sint16 *)floorwk)[28] = for3_8btbl1[floorwk->actfree[15]];
+                trap3_get_work(floorwk)->velocity =
+                    for3_8btbl1[trap3_get_work(floorwk)->phase];
 
             } else if (floorwk->userflag.b.h == 6) {
-                floorwk->actfree[14] = for3_16btbl0[floorwk->actfree[15] * 2];
-                ((Sint16 *)floorwk)[29] =
-                    for3_16btbl0[floorwk->actfree[15] * 2 + 1];
+                trap3_get_work(floorwk)->wait_timer =
+                    for3_16btbl0[trap3_get_work(floorwk)->phase * 2];
+                trap3_get_work(floorwk)->acceleration =
+                    for3_16btbl0[trap3_get_work(floorwk)->phase * 2 + 1];
 
-                ((Sint16 *)floorwk)[28] = for3_16btbl1[floorwk->actfree[15]];
+                trap3_get_work(floorwk)->velocity =
+                    for3_16btbl1[trap3_get_work(floorwk)->phase];
 
             } else {
-                floorwk->actfree[14] = for3_28btbl0[floorwk->actfree[15] * 2];
-                ((Sint16 *)floorwk)[29] =
-                    for3_28btbl0[floorwk->actfree[15] * 2 + 1];
+                trap3_get_work(floorwk)->wait_timer =
+                    for3_28btbl0[trap3_get_work(floorwk)->phase * 2];
+                trap3_get_work(floorwk)->acceleration =
+                    for3_28btbl0[trap3_get_work(floorwk)->phase * 2 + 1];
 
-                ((Sint16 *)floorwk)[28] = for3_28btbl1[floorwk->actfree[15]];
+                trap3_get_work(floorwk)->velocity =
+                    for3_28btbl1[trap3_get_work(floorwk)->phase];
             }
 
             return;
         }
-        ((Sint16 *)floorwk)[28] += ((Sint16 *)floorwk)[29];
-        floorwk->yspeed.w = ((Uint16 *)floorwk)[28] & 65280;
+        trap3_get_work(floorwk)->velocity +=
+            trap3_get_work(floorwk)->acceleration;
+        floorwk->yspeed.w = trap3_get_work(floorwk)->velocity & 65280;
         floorwk->yposi.l += floorwk->yspeed.w << 8;
 
-        if (--floorwk->actfree[14] != 0)
+        if (--trap3_get_work(floorwk)->wait_timer != 0)
             return;
-    } while (++floorwk->actfree[15] != 3);
+    } while (++trap3_get_work(floorwk)->phase != 3);
 
     floorwk->yspeed.w = 0;
-    floorwk->actfree[21] = 1;
-    ((Sint16 *)floorwk)[26] = floorwk->yposi.w.h;
-    floorwk->actfree[16] += 2;
+    trap3_get_work(floorwk)->bob_enabled = 1;
+    trap3_get_work(floorwk)->base_y = floorwk->yposi.w.h;
+    trap3_get_work(floorwk)->timer += 2;
 }
 
 void for3_rup3(sprite_status *floorwk) { floorwk->actno = floorwk->actno; }
@@ -552,7 +667,7 @@ void getdair3(sprite_status *floorwk) {
     tbl[floorwk->r_no0 / 2](floorwk);
     actionsub(floorwk);
 
-    cal_x = (((Uint16 *)floorwk)[29] & 65408) -
+    cal_x = (trap3_get_work(floorwk)->origin_x & 65408) -
             ((Uint16)scra_h_posit.w.h - 128 & 65408);
 
     if (cal_x > 640)
@@ -569,10 +684,11 @@ void getdair3_init(sprite_status *floorwk) {
     floorwk->sprhsize = 28;
     floorwk->sprvsize = 8;
 
-    ((Sint16 *)floorwk)[29] = floorwk->xposi.w.h;
-    ((Sint16 *)floorwk)[27] = floorwk->yposi.w.h;
+    trap3_get_work(floorwk)->origin_x = floorwk->xposi.w.h;
+    trap3_get_work(floorwk)->base_x = floorwk->yposi.w.h;
 
-    floorwk->actfree[16] = getdair3_cnttbl[floorwk->userflag.b.h & 15];
+    trap3_get_work(floorwk)->timer =
+        getdair3_cnttbl[floorwk->userflag.b.h & 15];
 
     floorwk->r_no0 += 2;
     getdair3_move(floorwk);
@@ -583,12 +699,14 @@ void getdair3_move(sprite_status *floorwk) {
 
         getdair3_move_sub(floorwk);
         floorwk->xposi.w.h =
-            ((Sint16 *)floorwk)[29] + (Sint16)floorwk->actfree[17];
+            trap3_get_work(floorwk)->origin_x +
+            (Sint16)trap3_get_work(floorwk)->travel;
 
     } else {
         getdair3_move_sub(floorwk);
         floorwk->xposi.w.h =
-            ((Sint16 *)floorwk)[29] - (Sint16)floorwk->actfree[17];
+            trap3_get_work(floorwk)->origin_x -
+            (Sint16)trap3_get_work(floorwk)->travel;
     }
 
     ridechk(floorwk, &actwk[0]);
@@ -597,23 +715,23 @@ void getdair3_move(sprite_status *floorwk) {
 void getdair3_move_sub(sprite_status *floorwk) {
     if (actwk[0].yposi.w.h < floorwk->yposi.w.h) {
 
-        if ((char)(floorwk->actfree[17] -= 16) >= 0)
+        if ((char)(trap3_get_work(floorwk)->travel -= 16) >= 0)
             return;
-        floorwk->actfree[17] = 0;
+        trap3_get_work(floorwk)->travel = 0;
 
         if (floorwk->userflag.b.h & 15)
             return;
-        if (floorwk->actfree[18] != 0)
+        if (trap3_get_work(floorwk)->reverse_flag != 0)
             return;
-        floorwk->actfree[16] = 60;
-        floorwk->actfree[18] = 255;
+        trap3_get_work(floorwk)->timer = 60;
+        trap3_get_work(floorwk)->reverse_flag = 255;
         return;
     }
 
-    if ((floorwk->actfree[17] += 16) < 64)
+    if ((trap3_get_work(floorwk)->travel += 16) < 64)
         return;
-    floorwk->actfree[17] = 64;
-    floorwk->actfree[16] = 8;
+    trap3_get_work(floorwk)->travel = 64;
+    trap3_get_work(floorwk)->timer = 8;
 }
 
 static Uint8 pchg1[4] = {2, 1, 2, 255};
@@ -646,7 +764,7 @@ void gandair3(sprite_status *floorwk) {
     tbl[floorwk->r_no0 / 2](floorwk);
     actionsub(floorwk);
 
-    cal_x = (((Uint16 *)floorwk)[29] & 65408) -
+    cal_x = (trap3_get_work(floorwk)->origin_x & 65408) -
             ((Uint16)(scra_h_posit.w.h - 128) & 65408);
 
     if (cal_x > 640)
@@ -660,8 +778,8 @@ void gandair3_daii(sprite_status *floorwk) {
 
     floorwk->sprpri = 2;
     floorwk->patbase = gandair3pat;
-    ((Sint16 *)floorwk)[29] = floorwk->xposi.w.h;
-    ((Sint16 *)floorwk)[27] = floorwk->yposi.w.h;
+    trap3_get_work(floorwk)->origin_x = floorwk->xposi.w.h;
+    trap3_get_work(floorwk)->base_x = floorwk->yposi.w.h;
     floorwk->sprhsize = 16;
 
     if (actwkchk(&new_actwk) != 0)
@@ -686,7 +804,7 @@ void gandair3_core(sprite_status *corewk) {
 
     tbl[corewk->r_no0 / 2](corewk);
     actionsub(corewk);
-    cal_x = (((Uint16 *)corewk)[29] & 65408) -
+    cal_x = (trap3_get_work(corewk)->origin_x & 65408) -
             ((Uint16)(scra_h_posit.w.h - 128) & 65408);
 
     if (cal_x > 640)
@@ -704,8 +822,8 @@ void gandair3_init(sprite_status *corewk) {
     corewk->patbase = gandair3pat;
     corewk->sprhsize = 16;
     corewk->sprvsize = 20;
-    ((Sint16 *)corewk)[29] = corewk->xposi.w.h;
-    ((Sint16 *)corewk)[27] = corewk->yposi.w.h;
+    trap3_get_work(corewk)->origin_x = corewk->xposi.w.h;
+    trap3_get_work(corewk)->base_x = corewk->yposi.w.h;
     corewk->patno = 1;
     corewk->r_no0 += 2;
 }
@@ -713,7 +831,7 @@ void gandair3_init(sprite_status *corewk) {
 void gandair3_wait(sprite_status *corewk) {
     Sint16 cal_x;
 
-    if (corewk->actfree[16] == 0) {
+    if (trap3_get_work(corewk)->timer == 0) {
 
         if ((cal_x = corewk->xposi.w.h - actwk[0].xposi.w.h) < 0)
             cal_x = -cal_x;
@@ -722,10 +840,10 @@ void gandair3_wait(sprite_status *corewk) {
             return;
         }
 
-        corewk->actfree[16] = 60;
+        trap3_get_work(corewk)->timer = 60;
     }
 
-    if (--corewk->actfree[16] != 0) {
+    if (--trap3_get_work(corewk)->timer != 0) {
 
         if (time_flag != 0)
             if (time_flag == 1 || generate_flag == 0)
@@ -734,24 +852,25 @@ void gandair3_wait(sprite_status *corewk) {
         return;
     }
 
-    corewk->actfree[16] = corewk->actfree[17] = 0;
+    trap3_get_work(corewk)->timer = trap3_get_work(corewk)->travel = 0;
     corewk->patno = 1;
     corewk->r_no0 += 2;
 }
 
 void gandair3_fire(sprite_status *corewk) {
-    if ((corewk->actfree[17] += 8) >= 32)
-        corewk->actfree[17] = 32;
-    corewk->yposi.w.h = ((Sint16 *)corewk)[27] - (Sint16)corewk->actfree[17];
+    if ((trap3_get_work(corewk)->travel += 8) >= 32)
+        trap3_get_work(corewk)->travel = 32;
+    corewk->yposi.w.h =
+        trap3_get_work(corewk)->base_x - (Sint16)trap3_get_work(corewk)->travel;
 
-    if (corewk->actfree[17] != 32) {
+    if (trap3_get_work(corewk)->travel != 32) {
         gandair3_ridechk(corewk);
         return;
     }
 
     gandair3_tamaset(corewk);
     if (ride_on_chk(corewk, &actwk[0]) == 0) {
-        corewk->actfree[16] = 8;
+        trap3_get_work(corewk)->timer = 8;
         corewk->r_no0 += 2;
         return;
     }
@@ -764,28 +883,29 @@ void gandair3_fire(sprite_status *corewk) {
 }
 
 void gandair3_end(sprite_status *corewk) {
-    if (corewk->actfree[16] != 0) {
-        --corewk->actfree[16];
+    if (trap3_get_work(corewk)->timer != 0) {
+        --trap3_get_work(corewk)->timer;
         gandair3_ridechk(corewk);
         return;
     }
-    if ((char)(corewk->actfree[17] -= 4) < 0)
-        corewk->actfree[16] = 0;
-    corewk->yposi.w.h = ((Sint16 *)corewk)[27] - (Sint16)corewk->actfree[17];
+    if ((char)(trap3_get_work(corewk)->travel -= 4) < 0)
+        trap3_get_work(corewk)->timer = 0;
+    corewk->yposi.w.h =
+        trap3_get_work(corewk)->base_x - (Sint16)trap3_get_work(corewk)->travel;
 
-    if (corewk->actfree[17] == 0) {
-        corewk->actfree[16] = 60;
+    if (trap3_get_work(corewk)->travel == 0) {
+        trap3_get_work(corewk)->timer = 60;
         corewk->r_no0 += 2;
     }
     gandair3_ridechk(corewk);
 }
 
 void gandair3_wait2(sprite_status *corewk) {
-    if (corewk->actfree[16] == 0) {
+    if (trap3_get_work(corewk)->timer == 0) {
         corewk->r_no0 = 2;
         return;
     }
-    --corewk->actfree[16];
+    --trap3_get_work(corewk)->timer;
     gandair3_ridechk(corewk);
 }
 
@@ -810,7 +930,7 @@ void gandair3_tamaset(sprite_status *corewk) {
         new_actwk->userflag.b.h = 2;
         new_actwk->yposi.w.h = corewk->yposi.w.h + 8;
         new_actwk->xposi.w.h = corewk->xposi.w.h + 24;
-        new_actwk->actfree[16] = 1;
+        trap3_get_work(new_actwk)->timer = 1;
     }
 }
 
@@ -828,14 +948,14 @@ void gandair3_tami(sprite_status *bulletwk) {
     bulletwk->sprpri = 4;
     bulletwk->colino = 152;
     bulletwk->patbase = gandair3pat;
-    ((Sint16 *)bulletwk)[29] = bulletwk->xposi.w.h;
-    if (bulletwk->actfree[16] != 0) {
+    trap3_get_work(bulletwk)->bullet_origin_x = bulletwk->xposi.w.h;
+    if (trap3_get_work(bulletwk)->timer != 0) {
         bulletwk->xspeed.w = 256;
-        ((Sint16 *)bulletwk)[33] = 16;
+        trap3_get_work(bulletwk)->bullet_acceleration = 16;
         bulletwk->mstno.b.h = 2;
     } else {
         bulletwk->xspeed.w = -256;
-        ((Sint16 *)bulletwk)[33] = -16;
+        trap3_get_work(bulletwk)->bullet_acceleration = -16;
         bulletwk->mstno.b.h = 1;
     }
     bulletwk->r_no0 += 2;
@@ -846,23 +966,23 @@ void gandair3_tami(sprite_status *bulletwk) {
 void gandair3_tamm(sprite_status *bulletwk) {
     Sint16 cal_x;
 
-    bulletwk->xspeed.w += ((Sint16 *)bulletwk)[33];
+    bulletwk->xspeed.w += trap3_get_work(bulletwk)->bullet_acceleration;
     bulletwk->xposi.l += bulletwk->xspeed.w << 8;
     patchg(bulletwk, gandair3_pchg);
 
-    cal_x = bulletwk->xposi.w.h - ((Sint16 *)bulletwk)[29];
+    cal_x = bulletwk->xposi.w.h - trap3_get_work(bulletwk)->bullet_origin_x;
     if (cal_x < 0)
         cal_x = -cal_x;
     if (cal_x < 64)
         return;
 
     bulletwk->colino = 0;
-    if (bulletwk->actfree[17] == 0) {
+    if (trap3_get_work(bulletwk)->travel == 0) {
         bulletwk->mstno.b.h += 2;
-        bulletwk->actfree[17] = 30;
+        trap3_get_work(bulletwk)->travel = 30;
     }
 
-    if (--bulletwk->actfree[17] != 0)
+    if (--trap3_get_work(bulletwk)->travel != 0)
         return;
 
     frameout(bulletwk);
@@ -891,7 +1011,7 @@ void drumr3(sprite_status *drumwk) {
     tbl[drumwk->r_no0 / 2](drumwk);
     actionsub(drumwk);
 
-    cal_x = (((Uint16 *)drumwk)[27] & 65408) -
+    cal_x = (trap3_get_work(drumwk)->base_x & 65408) -
             ((Uint16)(scra_h_posit.w.h - 128) & 65408);
 
     if (cal_x > 640)
@@ -917,10 +1037,10 @@ void drumr3_init(sprite_status *drumwk) {
     drumwk->sprpri = 3;
     drumwk->patbase = drumr3pat;
     drumwk->sprhsize = 24;
-    ((Sint16 *)drumwk)[27] = drumwk->xposi.w.h;
-    ((Sint16 *)drumwk)[26] = drumwk->yposi.w.h;
+    trap3_get_work(drumwk)->base_x = drumwk->xposi.w.h;
+    trap3_get_work(drumwk)->base_y = drumwk->yposi.w.h;
     drumwk->r_no0 += 2;
-    drumwk->actfree[17] = drumwk->userflag.b.h;
+    trap3_get_work(drumwk)->travel = drumwk->userflag.b.h;
     if (drumwk->userflag.b.h >= 2)
         drumwk->r_no0 += 2;
     if (drumwk->userflag.b.h >= 6)
@@ -929,7 +1049,7 @@ void drumr3_init(sprite_status *drumwk) {
 
 void drumr3_move1(sprite_status *drumwk) {
     do {
-        if (drumwk->actfree[16] == 0) {
+        if (trap3_get_work(drumwk)->timer == 0) {
             ride_on_clr(drumwk, &actwk[0]);
             drumr3_cntset(drumwk);
             return;
@@ -940,17 +1060,17 @@ void drumr3_move1(sprite_status *drumwk) {
             return;
 
         drumr3_addspd(drumwk);
-        if (--drumwk->actfree[16] != 0)
+        if (--trap3_get_work(drumwk)->timer != 0)
             return;
 
-    } while (++drumwk->actfree[17] < 2);
+    } while (++trap3_get_work(drumwk)->travel < 2);
     drumwk->r_no0 += 2;
 }
 
 void drumr3_move2(sprite_status *drumwk) {
     do {
         drumr3_ridechk(drumwk);
-        if (drumwk->actfree[16] == 0) {
+        if (trap3_get_work(drumwk)->timer == 0) {
             drumr3_cntset(drumwk);
             return;
         }
@@ -961,16 +1081,16 @@ void drumr3_move2(sprite_status *drumwk) {
             return;
 
         drumr3_addspd(drumwk);
-        if (--drumwk->actfree[16] != 0)
+        if (--trap3_get_work(drumwk)->timer != 0)
             return;
 
-    } while (++drumwk->actfree[17] < 6);
+    } while (++trap3_get_work(drumwk)->travel < 6);
     drumwk->r_no0 += 2;
 }
 
 void drumr3_move3(sprite_status *drumwk) {
     do {
-        if (drumwk->actfree[16] == 0) {
+        if (trap3_get_work(drumwk)->timer == 0) {
             ride_on_clr(drumwk, &actwk[0]);
             drumr3_cntset(drumwk);
             return;
@@ -981,15 +1101,15 @@ void drumr3_move3(sprite_status *drumwk) {
             return;
 
         drumr3_addspd(drumwk);
-        if (--drumwk->actfree[16] != 0)
+        if (--trap3_get_work(drumwk)->timer != 0)
             return;
-    } while (++drumwk->actfree[17] < 18);
-    drumwk->actfree[16] = drumwk->actfree[17] = 0;
+    } while (++trap3_get_work(drumwk)->travel < 18);
+    trap3_get_work(drumwk)->timer = trap3_get_work(drumwk)->travel = 0;
     drumwk->r_no0 = 2;
 }
 
 void drumr3_addspd(sprite_status *drumwk) {
-    drumwk->yspeed.w = ((Sint16 *)drumwk)[29];
+    drumwk->yspeed.w = trap3_get_work(drumwk)->origin_x;
     drumwk->yposi.l += drumwk->yspeed.w << 8;
 }
 
@@ -1001,11 +1121,13 @@ void drumr3_cntset(sprite_status *drumwk) {
         4,   9, 251, 4,   10, 250, 8,   10, 248, 8,   10, 248, 8, 10,
         248, 8, 10,  250, 8,  10,  251, 8,  10,  255, 4,  11};
 
-    drumwk->actfree[13] = drumr3_mvtbl[drumwk->actfree[17] * 3];
+    trap3_get_work(drumwk)->drum_speed_high =
+        drumr3_mvtbl[trap3_get_work(drumwk)->travel * 3];
 
-    drumwk->sprvsize = drumr3_mvtbl[drumwk->actfree[17] * 3 + 1];
-    drumwk->patno = drumr3_mvtbl[drumwk->actfree[17] * 3 + 2];
-    drumwk->actfree[16] = 4;
+    drumwk->sprvsize =
+        drumr3_mvtbl[trap3_get_work(drumwk)->travel * 3 + 1];
+    drumwk->patno = drumr3_mvtbl[trap3_get_work(drumwk)->travel * 3 + 2];
+    trap3_get_work(drumwk)->timer = 4;
     drumr3_priset(drumwk);
 }
 

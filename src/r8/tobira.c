@@ -1,9 +1,42 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "tobira.h"
 #include "../action.h"
 #include "../actset.h"
 #include "../playsub.h"
 #include "../ridechk.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint16 parent_index;
+    Uint16 slave_index;
+    Sint16 base_y;
+    Sint16 closed_y;
+    Sint16 open_y;
+    Uint8 unused10[11];
+    Uint8 trigger_open;
+} tobira8_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(tobira8_work, parent_index) == 0,
+               "tobira8_work.parent_index offset");
+_Static_assert(offsetof(tobira8_work, slave_index) == 2,
+               "tobira8_work.slave_index offset");
+_Static_assert(offsetof(tobira8_work, base_y) == 4,
+               "tobira8_work.base_y offset");
+_Static_assert(offsetof(tobira8_work, closed_y) == 6,
+               "tobira8_work.closed_y offset");
+_Static_assert(offsetof(tobira8_work, open_y) == 8,
+               "tobira8_work.open_y offset");
+_Static_assert(offsetof(tobira8_work, trigger_open) == 21,
+               "tobira8_work.trigger_open offset");
+_Static_assert(sizeof(tobira8_work) <= sizeof(((sprite_status *)0)->actfree),
+               "tobira8_work fits in actfree");
+
+static tobira8_work *tobira8_get_work(sprite_status *actionwk) {
+    return (tobira8_work *)actionwk->actfree;
+}
 
 #if defined(R82)
 #define SPRITE_TOBIRA_BASE 432
@@ -25,10 +58,11 @@ sprite_pattern *pat_tobira1[2] = {&pat01, &pat02};
 sprite_pattern *pat_tobira2[2] = {&pat03, &pat04};
 
 void tobira(sprite_status *actionwk) {
+    tobira8_work *work = tobira8_get_work(actionwk);
     Sint16 a;
-    a = ((Sint16 *)actionwk)[23];
+    a = work->parent_index;
     if (a != 0) {
-        slave(actionwk, ((Sint16 *)actionwk)[23]);
+        slave(actionwk, work->parent_index);
         return;
     }
     master(actionwk);
@@ -55,11 +89,12 @@ void master(sprite_status *actionwk) {
 }
 
 void m_init(sprite_status *actionwk) {
+    tobira8_work *work = tobira8_get_work(actionwk);
     Sint16 d0, d1;
     sprite_status *a1;
 
     actionwk->r_no0 += 2;
-    ((Sint16 *)actionwk)[25] = actionwk->yposi.w.h - 16;
+    work->base_y = actionwk->yposi.w.h - 16;
 
     if (actionwk->userflag.b.h == 0)
         actionwk->patbase = pat_tobira0;
@@ -74,18 +109,18 @@ void m_init(sprite_status *actionwk) {
     a1->actno = actionwk->actno;
     a1->xposi.w.h = actionwk->xposi.w.h;
     a1->patbase = actionwk->patbase;
-    ((Uint16 *)a1)[23] = actionwk - actwk;
-    ((Uint16 *)actionwk)[24] = a1 - actwk;
+    tobira8_get_work(a1)->parent_index = actionwk - actwk;
+    work->slave_index = a1 - actwk;
     d0 = d1 = 0;
     ini_com(actionwk, a1, &d0, &d1);
     a1->yposi.w.h -= d0;
-    ((Sint16 *)a1)[26] -= d0;
-    ((Sint16 *)a1)[27] -= d1;
+    tobira8_get_work(a1)->closed_y -= d0;
+    tobira8_get_work(a1)->open_y -= d1;
     a1 = actionwk;
     ini_com(actionwk, a1, &d0, &d1);
     a1->yposi.w.h += d0;
-    ((Sint16 *)a1)[26] += d0;
-    ((Sint16 *)a1)[27] += d1;
+    work->closed_y += d0;
+    work->open_y += d1;
 }
 
 void ini_com(sprite_status *actionwk, sprite_status *a1, Sint16 *d0,
@@ -95,19 +130,20 @@ void ini_com(sprite_status *actionwk, sprite_status *a1, Sint16 *d0,
     a1->sproffset = 1150;
     a1->sprhsize = 8;
     a1->sprvsize = 16;
-    a1->yposi.w.h = ((Sint16 *)actionwk)[25];
-    ((Sint16 *)a1)[26] = ((Sint16 *)actionwk)[25];
-    ((Sint16 *)a1)[27] = ((Sint16 *)actionwk)[25];
+    a1->yposi.w.h = tobira8_get_work(actionwk)->base_y;
+    tobira8_get_work(a1)->closed_y = tobira8_get_work(actionwk)->base_y;
+    tobira8_get_work(a1)->open_y = tobira8_get_work(actionwk)->base_y;
     *d0 = 16;
     *d1 = 49;
 }
 
 void m_closed(sprite_status *actionwk) {
+    tobira8_work *work = tobira8_get_work(actionwk);
     Sint16 d0, d4, d5;
 
     ms_hitchk(actionwk);
-    if (actionwk->actfree[21] != 0) {
-        actionwk->actfree[21] = 0;
+    if (work->trigger_open != 0) {
+        work->trigger_open = 0;
     } else {
         d0 = actionwk->userflag.b.h;
         if (d0 == 0)
@@ -128,10 +164,11 @@ label1:
 }
 
 void ms_end(sprite_status *actionwk) {
+    tobira8_work *work = tobira8_get_work(actionwk);
     Sint16 ano;
 
     patchg(actionwk, (Uint8 **)pchg);
-    ano = ((Uint16 *)actionwk)[24];
+    ano = work->slave_index;
     actwk[ano].patno = actionwk->patno;
 
     actionsub(&actwk[ano]);
@@ -140,17 +177,18 @@ void ms_end(sprite_status *actionwk) {
 }
 
 void m_open(sprite_status *actionwk) {
+    tobira8_work *work = tobira8_get_work(actionwk);
     Sint16 ano;
 
     ms_hitchk(actionwk);
 
-    ano = ((Uint16 *)actionwk)[24];
+    ano = work->slave_index;
     actionwk->yposi.w.h += 2;
     actwk[ano].yposi.w.h -= 2;
-    if (((Sint16 *)actionwk)[27] <= actionwk->yposi.w.h) {
+    if (work->open_y <= actionwk->yposi.w.h) {
         actionwk->r_no0 += 2;
-        actionwk->yposi.w.h = ((Sint16 *)actionwk)[27];
-        actwk[ano].yposi.w.h = ((Sint16 *)&actwk[ano])[27];
+        actionwk->yposi.w.h = work->open_y;
+        actwk[ano].yposi.w.h = tobira8_get_work(&actwk[ano])->open_y;
     }
 
     ms_end(actionwk);
@@ -177,26 +215,28 @@ void m_opend(sprite_status *actionwk) {
 }
 
 void m_close(sprite_status *actionwk) {
+    tobira8_work *work = tobira8_get_work(actionwk);
     Sint16 ano;
 
     ms_hitchk(actionwk);
 
-    ano = ((Uint16 *)actionwk)[24];
+    ano = work->slave_index;
     actionwk->yposi.w.h -= 2;
     actwk[ano].yposi.w.h += 2;
 
-    if (((Sint16 *)actionwk)[26] >= actionwk->yposi.w.h) {
+    if (work->closed_y >= actionwk->yposi.w.h) {
         actionwk->r_no0 = 2;
-        actionwk->yposi.w.h = ((Sint16 *)actionwk)[26];
-        actwk[ano].yposi.w.h = ((Sint16 *)&actwk[ano])[26];
+        actionwk->yposi.w.h = work->closed_y;
+        actwk[ano].yposi.w.h = tobira8_get_work(&actwk[ano])->closed_y;
     }
     ms_end(actionwk);
 }
 
 Sint16 ms_hitchk(sprite_status *actionwk) {
+    tobira8_work *work = tobira8_get_work(actionwk);
     Sint16 ano;
 
-    ano = ((Uint16 *)actionwk)[24];
+    ano = work->slave_index;
     hitchk(&actwk[ano], &actwk[0]);
     hitchk(actionwk, &actwk[0]);
 }
@@ -207,7 +247,7 @@ Sint16 m_area(sprite_status *actionwk, Sint16 d4, Sint16 d5) {
     d0 = actwk[0].xposi.w.h - actionwk->xposi.w.h - d4;
     if ((Uint16)d5 <= (Uint16)d0)
         return 0;
-    d0 = actwk[0].yposi.w.h - ((Sint16 *)actionwk)[25] + 48;
+    d0 = actwk[0].yposi.w.h - tobira8_get_work(actionwk)->base_y + 48;
 
     if ((Uint16)d0 >= 96)
         return 0;

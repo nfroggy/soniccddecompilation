@@ -38,7 +38,7 @@ int_union *lphscrollbuff = 0;
 ushort_union swdata2 = {0};
 static Uint8 hscrflg = 0;
 static Uint16 hscrcnt4 = 0;
-static Sint16 clchgcnt[4] = {0};
+static Uint16 clchgcnt[4] = {0};
 void (*sCloseFile)(Sint32) = 0;
 Sint32 (*sGetFileSize)(Sint32) = 0;
 Sint32 (*sReadFile)(Sint32, void *, Sint32) = 0;
@@ -1390,7 +1390,7 @@ void colchg0(void) {
     d5 = 8;
     d6 = 0;
     d7 = 1000;
-    d0 = (Sint16)cntplus((Uint16 *)&clchgcnt[0], d5, d6, d7);
+    d0 = (Sint16)cntplus(&clchgcnt[0], d5, d6, d7);
     d0 &= 65520;
     lpPeDest = &lpcolorwk[32];
     for (i = 0; i < 16; ++i) {
@@ -1444,7 +1444,7 @@ void colchg2(void) {
     d5 = 2;
     d6 = 0;
     d7 = 46;
-    d0 = (Sint16)cntplus((Uint16 *)&clchgcnt[0], d5, d6, d7);
+    d0 = (Sint16)cntplus(&clchgcnt[0], d5, d6, d7);
     d0 &= 65528;
     d0 >>= 1;
     lpPeDest = &lpcolorwk[26];
@@ -1456,13 +1456,13 @@ void colchg2(void) {
     d5 = 1;
     d6 = 0;
     d7 = 4;
-    d0 = (Sint16)cntplus((Uint16 *)&clchgcnt[1], d5, d6, d7);
+    d0 = (Sint16)cntplus(&clchgcnt[1], d5, d6, d7);
     if (d0 >> 1 != 0)
         return;
     d5 = 2;
     d6 = 0;
     d7 = 10;
-    d0 = (Sint16)cntplus((Uint16 *)&clchgcnt[2], d5, d6, d7);
+    d0 = (Sint16)cntplus(&clchgcnt[2], d5, d6, d7);
     d0 >>= 1;
     lpPeDest = &lpcolorwk[33];
     *lpPeDest = cltbl1[d0];
@@ -1495,7 +1495,7 @@ void colchg3(void) {
     d5 = 1;
     d6 = 0;
     d7 = 2;
-    d0 = (Sint16)cntplus((Uint16 *)&clchgcnt[1], (Uint16)d5, (Uint16)d6,
+    d0 = (Sint16)cntplus(&clchgcnt[1], (Uint16)d5, (Uint16)d6,
                          (Uint16)d7);
     if (d0)
         return;
@@ -1543,7 +1543,7 @@ void colchg4(void) {
     d5 = 2;
     d6 = 0;
     d7 = 12;
-    d0 = (Sint16)cntplus((Uint16 *)&clchgcnt[0], d5, d6, d7);
+    d0 = (Sint16)cntplus(&clchgcnt[0], d5, d6, d7);
     d0 >>= 1;
     lpPeDest = &lpcolorwk[26];
     *lpPeDest = tbl0[d0];
@@ -1551,7 +1551,7 @@ void colchg4(void) {
     d5 = 2;
     d6 = 0;
     d7 = 50;
-    d0 = (Sint16)cntplus((Uint16 *)&clchgcnt[1], d5, d6, d7);
+    d0 = (Sint16)cntplus(&clchgcnt[1], d5, d6, d7);
     d0 >>= 1;
     lpPeDest = &lpcolorwk[45];
     *lpPeDest = tbl1[d0];
@@ -1559,7 +1559,7 @@ void colchg4(void) {
     d5 = 1;
     d6 = 0;
     d7 = 51;
-    d0 = (Sint16)cntplus((Uint16 *)&clchgcnt[2], d5, d6, d7);
+    d0 = (Sint16)cntplus(&clchgcnt[2], d5, d6, d7);
     d0 >>= 1;
     lpPeDest = &lpcolorwk[46];
     *lpPeDest = tbl2[d0];
@@ -1567,7 +1567,7 @@ void colchg4(void) {
     d5 = 1;
     d6 = 0;
     d7 = 55;
-    d0 = (Sint16)(cntplus((Uint16 *)&clchgcnt[3], d5, d6, d7) & 65534);
+    d0 = (Sint16)(cntplus(&clchgcnt[3], d5, d6, d7) & 65534);
     d0 >>= 1;
     lpPeDest = &lpcolorwk[47];
     *lpPeDest = tbl3[d0];
@@ -1595,7 +1595,7 @@ void colchg5(void) {
     d5 = 2;
     d6 = 0;
     d7 = 24;
-    d0 = (Sint16)(cntplus((Uint16 *)&clchgcnt[0], d5, d6, d7) & 65534);
+    d0 = (Sint16)(cntplus(&clchgcnt[0], d5, d6, d7) & 65534);
 
     d0 >>= 1;
     lpPeDest = &lpcolorwk[33];
@@ -1606,7 +1606,7 @@ void colchg5(void) {
     d5 = 2;
     d6 = 0;
     d7 = 22;
-    d0 = (Sint16)(cntplus((Uint16 *)&clchgcnt[1], d5, d6, d7) & 65532);
+    d0 = (Sint16)(cntplus(&clchgcnt[1], d5, d6, d7) & 65532);
     d0 >>= 1;
     lpPeDest = &lpcolorwk[29];
     *lpPeDest++ = tbl1[d0++];
@@ -1624,7 +1624,7 @@ void colchg6(void) {
     d5 = 1;
     d6 = 0;
     d7 = 23;
-    d0 = (Sint16)(cntplus((Uint16 *)&clchgcnt[0], d5, d6, d7) & 65534);
+    d0 = (Sint16)(cntplus(&clchgcnt[0], d5, d6, d7) & 65534);
     d0 >>= 1;
     lpPeDest = &lpcolorwk[31];
     *lpPeDest = tbl[d0];
@@ -1651,3 +1651,4 @@ dlink_export ExportedFunctions = {&game_init,
                                   0,
                                   0,
                                   &Special_block_chg};
+

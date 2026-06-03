@@ -2,10 +2,12 @@
 #include "ridechk.h"
 #include "dircol.h"
 #include "loader2.h"
+#include "player_work.h"
 
 extern Sint16 playdieset(sprite_status *pActwk);
 
 Sint16 ride_on_clr(sprite_status *pActwk, sprite_status *pPlayerwk) {
+    player_work *player = player_work_get(pPlayerwk);
     Uint16 wActwkNo;
     Uint8 byPlwk;
 
@@ -14,42 +16,43 @@ Sint16 ride_on_clr(sprite_status *pActwk, sprite_status *pPlayerwk) {
     if (!(pPlayerwk->cddat & 8))
         return -1;
 
-    wActwkNo = pPlayerwk->actfree[19];
+    wActwkNo = player->ride_actor_index;
 
     if ((Uint16)(pActwk - actwk) != wActwkNo)
         return -1;
 
-    if (pPlayerwk->actfree[0] != 0)
+    if (player->spin_dash_counter != 0)
         soundset(171);
 
-    pPlayerwk->actfree[14] = 0;
+    player->jump_lock = 0;
     pPlayerwk->cddat |= 2;
     pPlayerwk->cddat &= 247;
     pActwk->cddat &= 247;
-    byPlwk = pPlayerwk->actfree[2];
+    byPlwk = player->status_flags;
     if (!(byPlwk & 64))
         if (pPlayerwk->mstno.b.h != 23)
             byPlwk &= 254;
 
-    pPlayerwk->actfree[2] = byPlwk;
-    pPlayerwk->actfree[19] = 0;
+    player->status_flags = byPlwk;
+    player->ride_actor_index = 0;
     if (pPlayerwk->mstno.b.h == 43)
         pPlayerwk->cddat &= 253;
     return 0;
 }
 
 Sint16 ride_on_set(sprite_status *pActwk, sprite_status *pPlayerwk) {
+    player_work *player = player_work_get(pPlayerwk);
     Uint8 byCCR;
     Uint16 wActwkNo;
     sprite_status *pRideAct;
 
     if (pPlayerwk->r_no0 == 4) {
         pPlayerwk->r_no0 -= 2;
-        ((Sint16 *)pPlayerwk)[26] = 120;
+        player->damage_invulnerability_timer = 120;
     }
 
     pActwk->r_no1 = 0;
-    pPlayerwk->actfree[18] = 0;
+    player->jump_started = 0;
 
     if (!(pActwk->cddat & 8))
         byCCR = 0;
@@ -90,14 +93,14 @@ Sint16 ride_on_set(sprite_status *pActwk, sprite_status *pPlayerwk) {
         byCCR = 1;
     pPlayerwk->cddat |= 8;
     if (byCCR == 1) {
-        wActwkNo = pPlayerwk->actfree[19];
+        wActwkNo = player->ride_actor_index;
         if ((Uint16)(pActwk - actwk) == wActwkNo)
             return -1;
         pRideAct = &actwk[wActwkNo];
         pRideAct->cddat &= 247;
     }
 
-    pPlayerwk->actfree[19] = pActwk - actwk;
+    player->ride_actor_index = pActwk - actwk;
     pPlayerwk->direc.w = 0;
     pPlayerwk->yspeed.w = 0;
 
@@ -123,12 +126,13 @@ Sint16 ride_on_chk(sprite_status *pActwk, sprite_status *pPlayerwk) {
 }
 
 Sint16 hitchk(sprite_status *pActwk, sprite_status *pPlayerwk) {
+    player_work *player = player_work_get(pPlayerwk);
     Sint16 iD0, iD1, iD2;
     Uint8 byPlflg;
 
     if (pPlayerwk->mstno.b.h == 23)
         return hit_e(pActwk, pPlayerwk);
-    byPlflg = pPlayerwk->actfree[2];
+    byPlflg = player->status_flags;
     if (byPlflg & 64)
         return hit_e(pActwk, pPlayerwk);
     if (pPlayerwk->r_no0 >= 6)

@@ -1,9 +1,38 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "trap_r6.h"
 #include "../action.h"
 #include "../actset.h"
 #include "../loader2.h"
 #include "../ridechk.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 unused0[16];
+    union {
+        Sint16 animation_counter;
+        struct {
+            Uint8 animation_counter_low;
+            Uint8 unused17;
+        };
+    };
+    Uint8 closing;
+} optbr6_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(optbr6_work, animation_counter) == 16,
+               "optbr6_work.animation_counter offset");
+_Static_assert(offsetof(optbr6_work, animation_counter_low) == 16,
+               "optbr6_work.animation_counter_low offset");
+_Static_assert(offsetof(optbr6_work, closing) == 18,
+               "optbr6_work.closing offset");
+_Static_assert(sizeof(optbr6_work) <= sizeof(((sprite_status *)0)->actfree),
+               "optbr6_work fits in actfree");
+
+static optbr6_work *optbr6_get_work(sprite_status *pActwk) {
+    return (optbr6_work *)pActwk->actfree;
+}
 
 void (*optbr6_tbl[5])(sprite_status *) = {
     &optbr6_init, &optbr6_chk1, &optbr6_mov1, &optbr6_chk2, &optbr6_mov2};
@@ -43,6 +72,7 @@ void optbr6_init(sprite_status *pActwk) {
 }
 
 void optbr6_chk1(sprite_status *pActwk) {
+    optbr6_work *work = optbr6_get_work(pActwk);
     Sint16 iD0, iD1;
 
     iD0 = pActwk->yposi.w.h - actwk[0].yposi.w.h;
@@ -68,7 +98,7 @@ void optbr6_chk1(sprite_status *pActwk) {
     if (iD0 >= 64)
         goto label1;
 
-    ((Sint16 *)pActwk)[31] = 0;
+    work->animation_counter = 0;
     pActwk->r_no0 += 2;
     if (pActwk->actflg & 128)
         soundset(164);
@@ -77,7 +107,7 @@ label1:
 }
 
 void optbr6_mov1(sprite_status *pActwk) {
-    pActwk->actfree[18] = 0;
+    optbr6_get_work(pActwk)->closing = 0;
     tobira_cnt(pActwk);
     if (pActwk->patno == 3)
         pActwk->r_no0 += 2;
@@ -85,6 +115,7 @@ void optbr6_mov1(sprite_status *pActwk) {
 }
 
 void optbr6_chk2(sprite_status *pActwk) {
+    optbr6_work *work = optbr6_get_work(pActwk);
     Sint16 iD0, iD1;
 
     iD0 = pActwk->yposi.w.h - actwk[0].yposi.w.h;
@@ -110,7 +141,7 @@ void optbr6_chk2(sprite_status *pActwk) {
     if (iD0 < 64)
         goto label1;
 
-    ((Sint16 *)pActwk)[31] = 0;
+    work->animation_counter = 0;
     pActwk->r_no0 += 2;
     soundset(164);
 label1:
@@ -118,7 +149,7 @@ label1:
 }
 
 void optbr6_mov2(sprite_status *pActwk) {
-    pActwk->actfree[18] = 1;
+    optbr6_get_work(pActwk)->closing = 1;
     tobira_cnt(pActwk);
     if (pActwk->patno == 0)
         pActwk->r_no0 = 2;
@@ -127,11 +158,13 @@ void optbr6_mov2(sprite_status *pActwk) {
 }
 
 void tobira_cnt(sprite_status *pActwk) {
-    pActwk->actfree[16] += 64;
-    if (((char *)pActwk)[62] >= 0)
+    optbr6_work *work = optbr6_get_work(pActwk);
+
+    work->animation_counter_low += 64;
+    if ((char)work->animation_counter_low >= 0)
         return;
 
-    if (pActwk->actfree[18] == 0)
+    if (work->closing == 0)
         ++pActwk->patno;
     else {
         if (pActwk->patno > 0)

@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "ga3.h"
 #include "../action.h"
@@ -16,6 +18,31 @@
 static void m_init(sprite_status *actionwk);
 static void m_wait(sprite_status *actionwk);
 static void s_init(sprite_status *actionwk);
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint16 timer;
+    Sint32 x_speed;
+    Sint32 y_speed;
+    Uint8 unused10[11];
+    Uint8 spawn_ring;
+} ga3_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(ga3_work, timer) == 0,
+               "ga3_work.timer offset");
+_Static_assert(offsetof(ga3_work, x_speed) == 2,
+               "ga3_work.x_speed offset");
+_Static_assert(offsetof(ga3_work, y_speed) == 6,
+               "ga3_work.y_speed offset");
+_Static_assert(offsetof(ga3_work, spawn_ring) == 21,
+               "ga3_work.spawn_ring offset");
+_Static_assert(sizeof(ga3_work) <= sizeof(((sprite_status *)0)->actfree),
+               "ga3_work fits in actfree");
+
+static ga3_work *ga3_get_work(sprite_status *actionwk) {
+    return (ga3_work *)actionwk->actfree;
+}
 
 static sprite_pattern spat_b3 = {1, {{-16, -10, 0, SPRITE_GA3_BASE}}};
 static sprite_pattern spat_b4 = {1, {{-16, -8, 0, SPRITE_GA3_BASE + 1}}};
@@ -72,6 +99,8 @@ void eb_ga0(sprite_status *actionwk) {
 }
 
 static void m_init(sprite_status *actionwk) {
+    ga3_work *work = ga3_get_work(actionwk);
+
     actionwk->r_no0 += 2;
     actionwk->actflg |= 4;
     actionwk->patno = 0;
@@ -79,31 +108,35 @@ static void m_init(sprite_status *actionwk) {
     actionwk->sprhsize = 16;
     actionwk->sprvsize = 8;
     actionwk->sproffset = 42017;
-    ((Sint16 *)actionwk)[23] = 61;
+    work->timer = 61;
     if (actionwk->userflag.b.h & 128)
         actionwk->patbase = pat_b_ga;
     else {
 
         actionwk->patbase = pat_e_ga;
-        actionwk->actfree[21] = 255;
+        work->spawn_ring = 255;
     }
 }
 
 static void m_wait(sprite_status *actionwk) {
-    if (--((Sint16 *)actionwk)[23] == 0) {
+    ga3_work *work = ga3_get_work(actionwk);
+
+    if (--work->timer == 0) {
 
         actionwk->r_no0 += 2;
-        ((Sint16 *)actionwk)[23] = 61;
+        work->timer = 61;
     }
 }
 
 void m_appear0(sprite_status *actionwk) {
-    if (--((Sint16 *)actionwk)[23] == 0) {
+    ga3_work *work = ga3_get_work(actionwk);
+
+    if (--work->timer == 0) {
 
         actionwk->colino = 37;
         actionwk->r_no0 += 2;
         ++actionwk->mstno.b.h;
-        ((Sint16 *)actionwk)[23] = 51;
+        work->timer = 51;
     }
     m_disp(actionwk);
 }
@@ -114,21 +147,23 @@ void m_disp(sprite_status *actionwk) {
 }
 
 void m_appear1(sprite_status *actionwk) {
-    if (--((Sint16 *)actionwk)[23] == 0) {
+    ga3_work *work = ga3_get_work(actionwk);
+
+    if (--work->timer == 0) {
 
         actionwk->colino = 38;
         actionwk->r_no0 += 2;
         ++actionwk->mstno.b.h;
-        ((Sint32 *)actionwk)[13] = 32768;
-        ((Sint16 *)actionwk)[23] = 32;
-        ((Sint32 *)actionwk)[12] = -32768;
+        work->y_speed = 32768;
+        work->timer = 32;
+        work->x_speed = -32768;
         if (actionwk->userflag.b.h < 0) {
-            ((Sint16 *)actionwk)[23] = 48;
-            ((Sint32 *)actionwk)[12] = -16384;
+            work->timer = 48;
+            work->x_speed = -16384;
         }
         if (actionwk->xposi.w.h - actwk[0].xposi.w.h < 0) {
 
-            ((Sint32 *)actionwk)[12] = -((Sint32 *)actionwk)[12];
+            work->x_speed = -work->x_speed;
 
             actionwk->actflg |= 1;
             actionwk->cddat |= 1;
@@ -138,20 +173,21 @@ void m_appear1(sprite_status *actionwk) {
 }
 
 void m_move(sprite_status *actionwk) {
+    ga3_work *work = ga3_get_work(actionwk);
     sprite_status *a1;
 
-    actionwk->xposi.l += ((Sint32 *)actionwk)[12];
-    actionwk->yposi.l += ((Sint32 *)actionwk)[13];
-    if (--((Sint16 *)actionwk)[23] == 0) {
+    actionwk->xposi.l += work->x_speed;
+    actionwk->yposi.l += work->y_speed;
+    if (--work->timer == 0) {
 
-        ((Sint16 *)actionwk)[23] = 65;
+        work->timer = 65;
         if (actionwk->userflag.b.h < 0) {
 
-            ((Sint16 *)actionwk)[23] = 97;
+            work->timer = 97;
         }
-        ((Sint32 *)actionwk)[13] = -((Sint32 *)actionwk)[13];
+        work->y_speed = -work->y_speed;
 
-        if (actionwk->actfree[21] != 0) {
+        if (work->spawn_ring != 0) {
 
             if (actwkchk(&a1) == 0) {
                 a1->actno = actionwk->actno;
@@ -180,6 +216,8 @@ void eb_ga1(sprite_status *actionwk) {
 }
 
 static void s_init(sprite_status *actionwk) {
+    ga3_work *work = ga3_get_work(actionwk);
+
     actionwk->r_no0 += 2;
     actionwk->actflg |= 4;
     actionwk->sprpri = 1;
@@ -190,11 +228,13 @@ static void s_init(sprite_status *actionwk) {
     actionwk->sproffset = 42926;
     actionwk->patbase = ringpat;
     actionwk->sprhsize = 6;
-    ((Sint16 *)actionwk)[23] = 180;
+    work->timer = 180;
 }
 
 void s_fall(sprite_status *actionwk) {
-    if (--((Sint16 *)actionwk)[23] == 0) {
+    ga3_work *work = ga3_get_work(actionwk);
+
+    if (--work->timer == 0) {
 
         s_die(actionwk);
         return;

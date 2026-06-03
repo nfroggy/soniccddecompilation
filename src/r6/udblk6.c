@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "udblk6.h"
 #include "../action.h"
@@ -14,6 +16,46 @@
 
 static sprite_pattern udblk6pat0 = {1, {{-48, -80, 0, SPRITE_UDBLK6_BASE}}};
 sprite_pattern *udblk6pat[1] = {&udblk6pat0};
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 unused0[6];
+    Sint16 speed_reset;
+    Sint16 origin_y;
+    Uint8 unused10[6];
+    union {
+        Sint16 reset_word;
+        struct {
+            Uint8 phase_timer;
+            Uint8 phase_index;
+        };
+    };
+    Uint8 direction;
+    Uint8 unused19;
+    Sint16 acceleration;
+} udblk6_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(udblk6_work, speed_reset) == 6,
+               "udblk6_work.speed_reset offset");
+_Static_assert(offsetof(udblk6_work, origin_y) == 8,
+               "udblk6_work.origin_y offset");
+_Static_assert(offsetof(udblk6_work, reset_word) == 16,
+               "udblk6_work.reset_word offset");
+_Static_assert(offsetof(udblk6_work, phase_timer) == 16,
+               "udblk6_work.phase_timer offset");
+_Static_assert(offsetof(udblk6_work, phase_index) == 17,
+               "udblk6_work.phase_index offset");
+_Static_assert(offsetof(udblk6_work, direction) == 18,
+               "udblk6_work.direction offset");
+_Static_assert(offsetof(udblk6_work, acceleration) == 20,
+               "udblk6_work.acceleration offset");
+_Static_assert(sizeof(udblk6_work) <= sizeof(((sprite_status *)0)->actfree),
+               "udblk6_work fits in actfree");
+
+static udblk6_work *udblk6_get_work(sprite_status *actionwk) {
+    return (udblk6_work *)actionwk->actfree;
+}
 
 void udblk6(sprite_status *actionwk) {
     switch (actionwk->r_no0) {
@@ -41,6 +83,8 @@ void udblk6_ridechk(sprite_status *actionwk) {
 }
 
 void udblk6_init(sprite_status *actionwk) {
+    udblk6_work *work = udblk6_get_work(actionwk);
+
     actionwk->r_no0 += 2;
     actionwk->actflg |= 4;
     actionwk->sprpri = 3;
@@ -48,7 +92,7 @@ void udblk6_init(sprite_status *actionwk) {
     actionwk->patbase = udblk6pat;
     actionwk->sprvsize = 80;
     actionwk->sprhsize = 48;
-    ((Sint16 *)actionwk)[27] = actionwk->yposi.w.h;
+    work->origin_y = actionwk->yposi.w.h;
 }
 
 void udblk6_chk1(sprite_status *actionwk) {
@@ -63,8 +107,8 @@ void udblk6_chk1(sprite_status *actionwk) {
         d0 = actionwk->xposi.w.h - actwk[0].xposi.w.h;
         if (d0 >= 0) {
             if (d0 < 136) {
-                actionwk->actfree[18] = 0;
-                ((Sint16 *)actionwk)[31] = 0;
+                udblk6_get_work(actionwk)->direction = 0;
+                udblk6_get_work(actionwk)->reset_word = 0;
                 actionwk->r_no0 += 2;
             }
         }
@@ -74,9 +118,11 @@ void udblk6_chk1(sprite_status *actionwk) {
 }
 
 void udblk6_mov1(sprite_status *actionwk) {
-    actionwk->actfree[18] = 0;
+    udblk6_work *work = udblk6_get_work(actionwk);
+
+    work->direction = 0;
     movecnt(actionwk);
-    if (actionwk->actfree[17] == 2)
+    if (work->phase_index == 2)
         actionwk->r_no0 += 2;
 
     udblk6_ridechk(actionwk);
@@ -94,7 +140,7 @@ void udblk6_chk2(sprite_status *actionwk) {
         d0 = actwk[0].xposi.w.h - actionwk->xposi.w.h;
         if (d0 >= 0) {
             if (d0 >= 136) {
-                ((Sint16 *)actionwk)[31] = 0;
+                udblk6_get_work(actionwk)->reset_word = 0;
                 actionwk->r_no0 += 2;
             }
         }
@@ -104,15 +150,18 @@ void udblk6_chk2(sprite_status *actionwk) {
 }
 
 void udblk6_mov2(sprite_status *actionwk) {
-    actionwk->actfree[18] = 1;
+    udblk6_work *work = udblk6_get_work(actionwk);
+
+    work->direction = 1;
     movecnt(actionwk);
-    if (actionwk->actfree[17] == 2)
+    if (work->phase_index == 2)
         actionwk->r_no0 = 2;
 
     udblk6_ridechk(actionwk);
 }
 
 void movecnt(sprite_status *actionwk) {
+    udblk6_work *work = udblk6_get_work(actionwk);
 
     Sint16 mvtbl1[6] = {64, 8, 0, 64, -8, 512};
 
@@ -121,20 +170,20 @@ void movecnt(sprite_status *actionwk) {
     Sint16 d0;
 
     a2 = mvtbl1;
-    if (actionwk->actfree[18] != 0)
+    if (work->direction != 0)
         a2 = mvtbl2;
 
-    if (actionwk->actfree[16] == 0) {
-        d0 = actionwk->actfree[17] * 3;
-        actionwk->actfree[16] = (char)a2[d0];
-        ((Sint16 *)actionwk)[33] = a2[d0 + 1];
-        ((Sint16 *)actionwk)[26] = a2[d0 + 2];
+    if (work->phase_timer == 0) {
+        d0 = work->phase_index * 3;
+        work->phase_timer = (char)a2[d0];
+        work->acceleration = a2[d0 + 1];
+        work->speed_reset = a2[d0 + 2];
     } else {
 
         actionwk->yposi.l += actionwk->yspeed.w << 8;
-        actionwk->yspeed.w += ((Sint16 *)actionwk)[33];
+        actionwk->yspeed.w += work->acceleration;
 
-        if (--actionwk->actfree[16] == 0)
-            ++actionwk->actfree[17];
+        if (--work->phase_timer == 0)
+            ++work->phase_index;
     }
 }

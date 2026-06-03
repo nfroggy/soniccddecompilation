@@ -6,8 +6,8 @@ void scr_set(void);
 void playposiset(void);
 void scrbinit(Sint16 xWk, Sint16 yWk);
 void scroll(void);
-void zonescrsetsub0(int_union **ppA1, Uint16 **ppA2, Uint16 *pA3, Uint8 *pA4,
-                    Uint16 wD1, Uint16 *pwD2, Uint16 *pwD4);
+void zonescrsetsub0(int_union **ppA1, Sint16 **ppA2, Uint16 *pA3, Uint8 *pA4,
+                    Uint16 wD1, Sint16 *pwD2, Uint16 *pwD4);
 void scroll_h(void);
 void scrh_move(void);
 void right_check(Uint16 wD0);

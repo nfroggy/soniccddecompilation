@@ -46,7 +46,7 @@ static Uint32 CreateCharSprt(Sint32 colom, Sint32 y, char code) {
     else
         indx = code - 55;
 
-    sprCreate((Sint32 *)&hSprMenu[y][colom]);
+    sprCreate(&hSprMenu[y][colom]);
 
     s_ctx->spr_level[hSprMenu[y][colom]] = 60 - infoSprtBmp[indx].order;
     point.x = colom * 8 + 56;
@@ -83,7 +83,7 @@ static Uint32 CreateCharSprt2(Sint32 colom, Sint32 y, char code) {
     else
         indx = code - 19;
 
-    sprCreate((Sint32 *)&hSprMenu[y][colom]);
+    sprCreate(&hSprMenu[y][colom]);
 
     s_ctx->spr_level[hSprMenu[y][colom]] = 60 - infoSprtBmp[indx].order;
     point.x = colom * 8 + 56;

@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "coli1.h"
 #include "../fcol.h"
@@ -6,6 +8,33 @@
 #include "../score.h"
 
 extern Sint16 actwkchk(sprite_status **ppActwk);
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 damage_flag;
+    Uint8 unused1[5];
+    Sint16 damage_timer;
+    Uint8 unused8[6];
+    Sint16 death_y;
+    Uint8 unused16[4];
+    Sint16 score_index;
+} coli1_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(coli1_work, damage_flag) == 0,
+               "coli1_work.damage_flag offset");
+_Static_assert(offsetof(coli1_work, damage_timer) == 6,
+               "coli1_work.damage_timer offset");
+_Static_assert(offsetof(coli1_work, death_y) == 14,
+               "coli1_work.death_y offset");
+_Static_assert(offsetof(coli1_work, score_index) == 20,
+               "coli1_work.score_index offset");
+_Static_assert(sizeof(coli1_work) <= sizeof(((sprite_status *)0)->actfree),
+               "coli1_work fits in actfree");
+
+static coli1_work *coli1_get_work(sprite_status *pActwk) {
+    return (coli1_work *)pActwk->actfree;
+}
 
 Uint16 escoretbl[4] = {10, 20, 50, 100};
 Uint8 colitbl[64][2] = {
@@ -143,7 +172,7 @@ Sint16 pcolitem(sprite_status *pActwk, sprite_status *pColliAct) {
 
     if ((pColliAct->colino & 63) != 6) {
 
-        if (((Uint16 *)pActwk)[26] < 90)
+        if ((Uint16)coli1_get_work(pActwk)->damage_timer < 90)
             pColliAct->r_no0 += 2;
     } else {
 
@@ -193,11 +222,11 @@ Sint16 pcolnomal(sprite_status *pActwk, sprite_status *pColliAct) {
         if ((Uint16)iScoreCntwk >= 6)
             iScoreCntwk = 6;
 
-        ((Sint16 *)pColliAct)[33] = iScoreCntwk;
+        coli1_get_work(pColliAct)->score_index = iScoreCntwk;
         iScoreData = escoretbl[iScoreCntwk / 2];
         if (emyscorecnt >= 32) {
             iScoreData = 1000;
-            ((Sint16 *)pColliAct)[33] = 10;
+            coli1_get_work(pColliAct)->score_index = 10;
         }
 
         scoreup(iScoreData);
@@ -230,7 +259,7 @@ Sint16 pcolplay(sprite_status *pActwk, sprite_status *pColliAct) {
 }
 
 Sint16 pcole(sprite_status *pActwk, sprite_status *pColliAct) {
-    if (((Uint16 *)pActwk)[26] != 0)
+    if ((Uint16)coli1_get_work(pActwk)->damage_timer != 0)
         return -1;
 
     return playdamageset(pActwk, pColliAct);
@@ -238,7 +267,7 @@ Sint16 pcole(sprite_status *pActwk, sprite_status *pColliAct) {
 
 void playdamagechk(sprite_status *pActwk, sprite_status *pColliAct) {
 
-    pActwk->actfree[0] = 0;
+    coli1_get_work(pActwk)->damage_flag = 0;
     if ((plpower_b & 1) == 0)
         conbine_flag = 0;
     plpower_b &= 254;
@@ -260,7 +289,7 @@ void playdamagechk(sprite_status *pActwk, sprite_status *pColliAct) {
 
     pActwk->mspeed.w = 0;
     pActwk->mstno.b.h = 26;
-    ((Sint16 *)pActwk)[26] = 120;
+    coli1_get_work(pActwk)->damage_timer = 120;
 }
 
 Sint16 playdamageset(sprite_status *pActwk, sprite_status *pColliAct) {
@@ -300,7 +329,7 @@ Sint16 playdieset(sprite_status *pActwk) {
     pActwk->yspeed.w = -1792;
     pActwk->xspeed.w = 0;
     pActwk->mspeed.w = 0;
-    ((Sint16 *)pActwk)[30] = pActwk->yposi.w.h;
+    coli1_get_work(pActwk)->death_y = pActwk->yposi.w.h;
     pActwk->mstno.b.h = 24;
     pActwk->sproffset |= 32768;
     pActwk->sprpri = 0;

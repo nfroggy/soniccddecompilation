@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "playsub4.h"
 #include "../action.h"
@@ -8,6 +10,132 @@
 #include "../io.h"
 #include "../loader2.h"
 #include "../player.h"
+#include "../player_work.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint16 origin_x;
+    Sint16 origin_y;
+    Uint8 activated;
+    Sint8 unused5;
+    sprite_status *parent;
+    Uint8 angle;
+} marker_work;
+
+typedef struct {
+    Sint8 unused0[6];
+    Uint8 history_offset;
+} muteki_work;
+
+typedef struct {
+    Uint8 unused0[21];
+    Uint8 score_index;
+} playsub4_score_work;
+
+typedef struct {
+    Uint8 unused0[2];
+    Uint16 drowning_timer;
+    Uint8 unused4[2];
+    Sint16 origin_x;
+    Uint8 warning_timer;
+    Uint8 warning_interval;
+    Uint8 spawn_counter;
+    Uint8 unused11;
+    union {
+        Sint16 spawn_state;
+        struct {
+            Uint8 spawn_flags;
+            Uint8 unused13;
+        };
+    };
+    Sint16 bubble_timer;
+    Sint16 jump_timer;
+} plawa_work;
+
+typedef struct {
+    Uint8 frame_counter;
+} wave_work;
+
+typedef struct {
+    Sint16 hold_timer;
+} bou_work;
+#pragma pack(pop)
+
+_Static_assert(sizeof(sprite_status *) == 4,
+               "marker_work stores a 32-bit actor pointer");
+_Static_assert(offsetof(marker_work, origin_x) == 0,
+               "marker_work.origin_x offset");
+_Static_assert(offsetof(marker_work, origin_y) == 2,
+               "marker_work.origin_y offset");
+_Static_assert(offsetof(marker_work, activated) == 4,
+               "marker_work.activated offset");
+_Static_assert(offsetof(marker_work, parent) == 6,
+               "marker_work.parent offset");
+_Static_assert(offsetof(marker_work, angle) == 10,
+               "marker_work.angle offset");
+_Static_assert(sizeof(marker_work) <= sizeof(((sprite_status *)0)->actfree),
+               "marker_work fits in actfree");
+_Static_assert(offsetof(muteki_work, history_offset) == 6,
+               "muteki_work.history_offset offset");
+_Static_assert(sizeof(muteki_work) <= sizeof(((sprite_status *)0)->actfree),
+               "muteki_work fits in actfree");
+_Static_assert(offsetof(playsub4_score_work, score_index) == 21,
+               "playsub4_score_work.score_index offset");
+_Static_assert(sizeof(playsub4_score_work) <=
+                   sizeof(((sprite_status *)0)->actfree),
+               "playsub4_score_work fits in actfree");
+_Static_assert(offsetof(plawa_work, drowning_timer) == 2,
+               "plawa_work.drowning_timer offset");
+_Static_assert(offsetof(plawa_work, origin_x) == 6,
+               "plawa_work.origin_x offset");
+_Static_assert(offsetof(plawa_work, warning_timer) == 8,
+               "plawa_work.warning_timer offset");
+_Static_assert(offsetof(plawa_work, warning_interval) == 9,
+               "plawa_work.warning_interval offset");
+_Static_assert(offsetof(plawa_work, spawn_counter) == 10,
+               "plawa_work.spawn_counter offset");
+_Static_assert(offsetof(plawa_work, spawn_state) == 12,
+               "plawa_work.spawn_state offset");
+_Static_assert(offsetof(plawa_work, spawn_flags) == 12,
+               "plawa_work.spawn_flags offset");
+_Static_assert(offsetof(plawa_work, bubble_timer) == 14,
+               "plawa_work.bubble_timer offset");
+_Static_assert(offsetof(plawa_work, jump_timer) == 16,
+               "plawa_work.jump_timer offset");
+_Static_assert(sizeof(plawa_work) <= sizeof(((sprite_status *)0)->actfree),
+               "plawa_work fits in actfree");
+_Static_assert(offsetof(wave_work, frame_counter) == 0,
+               "wave_work.frame_counter offset");
+_Static_assert(sizeof(wave_work) <= sizeof(((sprite_status *)0)->actfree),
+               "wave_work fits in actfree");
+_Static_assert(offsetof(bou_work, hold_timer) == 0,
+               "bou_work.hold_timer offset");
+_Static_assert(sizeof(bou_work) <= sizeof(((sprite_status *)0)->actfree),
+               "bou_work fits in actfree");
+
+static marker_work *marker_get_work(sprite_status *markerwk) {
+    return (marker_work *)markerwk->actfree;
+}
+
+static muteki_work *muteki_get_work(sprite_status *bariawk) {
+    return (muteki_work *)bariawk->actfree;
+}
+
+static playsub4_score_work *playsub4_score_get_work(sprite_status *tensuuwk) {
+    return (playsub4_score_work *)tensuuwk->actfree;
+}
+
+static plawa_work *plawa_get_work(sprite_status *pActwk) {
+    return (plawa_work *)pActwk->actfree;
+}
+
+static wave_work *wave_get_work(sprite_status *pActwk) {
+    return (wave_work *)pActwk->actfree;
+}
+
+static bou_work *bou_get_work(sprite_status *pActwk) {
+    return (bou_work *)pActwk->actfree;
+}
 
 extern sprite_pattern *markerpat[];
 extern Uint8 *markerchg[];
@@ -195,8 +323,9 @@ void marker(sprite_status *markerwk) {
 }
 
 void marker_init(sprite_status *markerwk) {
-    sprite_status *new_actwk, **parent;
+    sprite_status *new_actwk;
     Uint16 marker_yposi_m_buf;
+    marker_work *pWork = marker_get_work(markerwk);
 
     markerwk->r_no0 += 2;
     markerwk->patbase = markerpat;
@@ -207,7 +336,7 @@ void marker_init(sprite_status *markerwk) {
     markerwk->sprpri = 4;
 
     if (markerno >= (Uint8)markerwk->userflag.b.h)
-        markerwk->actfree[4] = 1;
+        pWork->activated = 1;
     else
         markerwk->colino = 227;
     if (actwkchk(&new_actwk) != 0) {
@@ -216,7 +345,7 @@ void marker_init(sprite_status *markerwk) {
     }
     new_actwk->actno = 19;
     new_actwk->r_no0 += 4;
-    if (markerwk->actfree[4] != 0)
+    if (pWork->activated != 0)
         new_actwk->r_no0 += 2;
     new_actwk->patbase = markerpat;
     new_actwk->sproffset = 1739;
@@ -225,24 +354,24 @@ void marker_init(sprite_status *markerwk) {
     new_actwk->sprvsize = 8;
     new_actwk->sprpri = 3;
     new_actwk->patno = 1;
-    parent = &((sprite_status **)new_actwk)[13];
-    *parent = markerwk;
+    marker_get_work(new_actwk)->parent = markerwk;
     new_actwk->xposi.w.h = markerwk->xposi.w.h;
     new_actwk->yposi.w.h = markerwk->yposi.w.h - 32;
-    ((Sint16 *)new_actwk)[23] = markerwk->xposi.w.h;
+    marker_get_work(new_actwk)->origin_x = markerwk->xposi.w.h;
     marker_yposi_m_buf = markerwk->yposi.w.h - 24;
-    ((Sint16 *)new_actwk)[24] = marker_yposi_m_buf;
+    marker_get_work(new_actwk)->origin_y = marker_yposi_m_buf;
 }
 
 void marker_move0(sprite_status *markerwk) {
+    marker_work *pWork = marker_get_work(markerwk);
 
-    if (markerwk->actfree[4] != 0)
+    if (pWork->activated != 0)
         return;
 
     if (markerwk->colicnt == 0)
         return;
     markerwk->colino = 0;
-    markerwk->actfree[4] = 1;
+    pWork->activated = 1;
     markerno = markerwk->userflag.b.h;
     plflag = 1;
     playsave0(markerwk);
@@ -252,29 +381,29 @@ void marker_move0(sprite_status *markerwk) {
 void marker_move1(sprite_status *markerwk) {
     Sint32 sin_data, cos_data;
     Sint16 sin_tmp, cos_tmp;
-    sprite_status **parent, *new_actwk;
+    sprite_status *new_actwk;
+    marker_work *pWork = marker_get_work(markerwk);
 
-    if (markerwk->actfree[4] == 0) {
-        parent = &((sprite_status **)markerwk)[13];
-        new_actwk = *parent;
-        if (new_actwk->actfree[4] == 0)
+    if (pWork->activated == 0) {
+        new_actwk = pWork->parent;
+        if (marker_get_work(new_actwk)->activated == 0)
             return;
-        markerwk->actfree[4] = 1;
+        pWork->activated = 1;
     }
 
-    markerwk->actfree[10] += 8;
-    sinset(markerwk->actfree[10], &sin_tmp, &cos_tmp);
+    pWork->angle += 8;
+    sinset(pWork->angle, &sin_tmp, &cos_tmp);
     sin_data = sin_tmp;
     cos_data = cos_tmp;
     sin_data <<= 3;
     sin_data /= 256;
-    markerwk->xposi.w.h = ((Sint16 *)markerwk)[23];
+    markerwk->xposi.w.h = pWork->origin_x;
     markerwk->xposi.w.h += sin_data;
     cos_data = -cos_data << 3;
     cos_data /= 256;
-    markerwk->yposi.w.h = ((Sint16 *)markerwk)[24];
+    markerwk->yposi.w.h = pWork->origin_y;
     markerwk->yposi.w.h += cos_data;
-    if (markerwk->actfree[10] == 0)
+    if (pWork->angle == 0)
         markerwk->r_no0 += 2;
 }
 
@@ -283,7 +412,7 @@ void marker_move2(sprite_status *markerwk) { patchg(markerwk, markerchg); }
 void tensuu_set(sprite_status *tensuuwk) {
     if (tensuuwk->r_no1 != 0)
         return;
-    tensuu0(tensuuwk, tensuuwk->actfree[21] >> 1);
+    tensuu0(tensuuwk, playsub4_score_get_work(tensuuwk)->score_index >> 1);
 }
 
 void tensuu0(sprite_status *tensuuwk, Uint8 uf_data) {
@@ -558,11 +687,11 @@ void muteki_sub(sprite_status *bariawk) {
         cal_no -= 4;
     cal_no = cal_no * 24 + 4;
     ppw_offset.b.l = ppw_offset.b.l - cal_no;
-    cal_no = bariawk->actfree[6];
+    cal_no = muteki_get_work(bariawk)->history_offset;
     ppw_offset.b.l = ppw_offset.b.l - cal_no;
     if ((cal_no += 4) >= 24)
         cal_no = 0;
-    bariawk->actfree[6] = cal_no;
+    muteki_get_work(bariawk)->history_offset = cal_no;
 
     bariawk->xposi.w.h = playposiwk[ppw_offset.w / 2];
     bariawk->yposi.w.h = playposiwk[ppw_offset.w / 2 + 1];
@@ -607,22 +736,24 @@ void plairset(void) {
     }
 
     pl_air = 30;
-    actwk[7].actfree[8] = 0;
+    plawa_get_work(&actwk[7])->warning_timer = 0;
 }
 
 void plawamaster(sprite_status *pActwk) {
-    if (!((Uint16 *)pActwk)[24]) {
+    plawa_work *pWork = plawa_get_work(pActwk);
+
+    if (!pWork->drowning_timer) {
         if (actwk[0].r_no0 >= 6)
             return;
         if (!(actwk[0].cddat & 64))
             return;
-        if (--((Sint16 *)pActwk)[30] >= 0) {
+        if (--pWork->bubble_timer >= 0) {
             plawamaster_jump(pActwk);
             return;
         }
-        ((Sint16 *)pActwk)[30] = 59;
-        ((Sint16 *)pActwk)[29] = 1;
-        pActwk->actfree[10] = random() & 1;
+        pWork->bubble_timer = 59;
+        pWork->spawn_state = 1;
+        pWork->spawn_counter = random() & 1;
 
         if (pl_air != 25) {
             if (pl_air != 20) {
@@ -632,9 +763,9 @@ void plawamaster(sprite_status *pActwk) {
                         if (!(gametimer.b.l & 32))
                             soundset(223);
 
-                        if (--pActwk->actfree[8] & 128) {
-                            pActwk->actfree[8] = pActwk->actfree[9];
-                            pActwk->actfree[12] |= 128;
+                        if (--pWork->warning_timer & 128) {
+                            pWork->warning_timer = pWork->warning_interval;
+                            pWork->spawn_flags |= 128;
                         }
                     }
                 }
@@ -647,11 +778,11 @@ void plawamaster(sprite_status *pActwk) {
         }
 
         plairset();
-        actwk[0].actfree[2] = 129;
+        player_work_get(&actwk[0])->status_flags = 129;
         soundset(182);
-        pActwk->actfree[10] = 10;
-        ((Sint16 *)pActwk)[29] = 1;
-        ((Sint16 *)pActwk)[24] = 120;
+        pWork->spawn_counter = 10;
+        pWork->spawn_state = 1;
+        pWork->drowning_timer = 120;
 
         jumpcolsub();
         actwk[0].mstno.b.h = 23;
@@ -666,7 +797,7 @@ void plawamaster(sprite_status *pActwk) {
         return;
     }
 
-    if (!(--((Sint16 *)pActwk)[24])) {
+    if (!(--pWork->drowning_timer)) {
         actwk[0].r_no0 = 6;
         return;
     }
@@ -679,9 +810,11 @@ void plawamaster(sprite_status *pActwk) {
 void plawamaster_jump0(sprite_status *pActwk) { plawamaster_jump2(pActwk); }
 
 void plawamaster_jump(sprite_status *pActwk) {
-    if (!((Sint16 *)pActwk)[29])
+    plawa_work *pWork = plawa_get_work(pActwk);
+
+    if (!pWork->spawn_state)
         return;
-    if (--((Sint16 *)pActwk)[31] >= 0)
+    if (--pWork->jump_timer >= 0)
         return;
     plawamaster_jump2(pActwk);
 }
@@ -689,8 +822,9 @@ void plawamaster_jump(sprite_status *pActwk) {
 void plawamaster_jump2(sprite_status *pActwk) {
     sprite_status *pNewactwk;
     Sint16 wD0;
+    plawa_work *pWork = plawa_get_work(pActwk);
 
-    ((Sint16 *)pActwk)[31] = (Uint16)random() & 15;
+    pWork->jump_timer = (Uint16)random() & 15;
     if (actwkchk(&pNewactwk) == 0) {
         pNewactwk->actno = 33;
         pNewactwk->xposi.w.h = actwk[0].xposi.w.h;
@@ -704,8 +838,8 @@ void plawamaster_jump2(sprite_status *pActwk) {
         pNewactwk->yposi.w.h = actwk[0].yposi.w.h;
         pNewactwk->userflag.b.h = 6;
 
-        if (((Uint16 *)pActwk)[24]) {
-            ((Uint16 *)pActwk)[31] &= 7;
+        if (pWork->drowning_timer) {
+            pWork->jump_timer &= 7;
             pActwk + 1;
             pNewactwk->yposi.w.h = actwk[0].yposi.w.h - 12;
             pNewactwk->direc.b.h = random() & 255;
@@ -713,29 +847,29 @@ void plawamaster_jump2(sprite_status *pActwk) {
                 pNewactwk->userflag.b.h = 14;
         } else {
 
-            if (pActwk->actfree[12] & 128) {
+            if (pWork->spawn_flags & 128) {
                 pNewactwk->sproffset = 8192;
                 if (!(random() & 3)) {
-                    if (pActwk->actfree[12] & 64)
+                    if (pWork->spawn_flags & 64)
                         goto label1;
-                    pActwk->actfree[12] |= 64;
+                    pWork->spawn_flags |= 64;
                     pNewactwk->userflag.b.h = (Uint16)pl_air >> 1 & 255;
-                    ((Sint16 *)pNewactwk)[30] = 28;
+                    plawa_get_work(pNewactwk)->bubble_timer = 28;
                 }
 
-                if (!pActwk->actfree[10]) {
-                    if (pActwk->actfree[12] & 64)
+                if (!pWork->spawn_counter) {
+                    if (pWork->spawn_flags & 64)
                         goto label1;
-                    pActwk->actfree[12] |= 64;
+                    pWork->spawn_flags |= 64;
                     pNewactwk->userflag.b.h = pl_air >> 1 & 255;
-                    ((Sint16 *)pNewactwk)[30] = 28;
+                    plawa_get_work(pNewactwk)->bubble_timer = 28;
                 }
             }
         }
 
     label1:
-        if (--pActwk->actfree[10] & 128)
-            ((Sint16 *)pActwk)[29] = 0;
+        if (--pWork->spawn_counter & 128)
+            pWork->spawn_state = 0;
     }
 }
 
@@ -758,12 +892,12 @@ void plawainit(sprite_status *pActwk) {
         pActwk->r_no0 += 8;
         pActwk->patbase = awapat;
         pActwk->sproffset |= 1162;
-        pActwk->actfree[9] = pActwk->userflag.b.h & 127;
+        plawa_get_work(pActwk)->warning_interval = pActwk->userflag.b.h & 127;
         plawamaster(pActwk);
     } else {
 
         pActwk->mstno.b.h = pActwk->userflag.b.h;
-        ((Sint16 *)pActwk)[26] = pActwk->xposi.w.h;
+        plawa_get_work(pActwk)->origin_x = pActwk->xposi.w.h;
         pActwk->yspeed.w = -136;
         plawamove(pActwk);
     }
@@ -787,10 +921,10 @@ void plawamove2(sprite_status *pActwk) {
     }
 
     if (watercoliflag)
-        ((Sint16 *)pActwk)[26] += 4;
+        plawa_get_work(pActwk)->origin_x += 4;
 
     pActwk->xposi.w.h = (Sint16)(char)awasintbl[pActwk->direc.b.h++ + 1 & 127] +
-                        ((Sint16 *)pActwk)[26];
+                        plawa_get_work(pActwk)->origin_x;
 
     plawasub(pActwk);
     speedset2(pActwk);
@@ -814,7 +948,7 @@ void plawamove5(sprite_status *pActwk) {
         frameout(pActwk);
         return;
     }
-    if (!(--((Sint16 *)pActwk)[30])) {
+    if (!(--plawa_get_work(pActwk)->bubble_timer)) {
         pActwk->r_no0 = 14;
         pActwk->mstno.b.h += 7;
         if (pActwk->mstno.b.h > 15)
@@ -832,10 +966,12 @@ void plawamove5(sprite_status *pActwk) {
 }
 
 void plawasub(sprite_status *pActwk) {
-    if (((Sint16 *)pActwk)[30]) {
-        if (!(--((Sint16 *)pActwk)[30])) {
+    plawa_work *pWork = plawa_get_work(pActwk);
+
+    if (pWork->bubble_timer) {
+        if (!(--pWork->bubble_timer)) {
             if (pActwk->mstno.b.h < 7) {
-                ((Sint16 *)pActwk)[30] = 15;
+                pWork->bubble_timer = 15;
                 pActwk->yspeed.w = 0;
                 pActwk->actflg = 129;
                 pActwk->xposi.w.h = pActwk->xposi.w.h - scra_h_posit.w.h + 128;
@@ -863,12 +999,13 @@ void wave_init(sprite_status *pActwk) {
 
 void wave_move(sprite_status *pActwk) {
     Sint16 wave_tbl[2] = {-96, 96};
+    wave_work *pWork = wave_get_work(pActwk);
 
-    if (++pActwk->actfree[0] >= 4) {
-        pActwk->actfree[0] = 0;
+    if (++pWork->frame_counter >= 4) {
+        pWork->frame_counter = 0;
     }
     pActwk->xposi.w.h =
-        scra_h_posit.w.h + 160 + wave_tbl[pActwk->actfree[0] / 2];
+        scra_h_posit.w.h + 160 + wave_tbl[pWork->frame_counter / 2];
     pActwk->yposi.w.h = waterposi + 2;
     patchg(pActwk, wavechg);
 }
@@ -892,9 +1029,10 @@ void bou_init(sprite_status *pActwk) {
 
 void bou_move0(sprite_status *pActwk) {
     Sint16 wD0, wD1;
+    bou_work *pWork = bou_get_work(pActwk);
 
     if (bou_coli(pActwk) != 0) {
-        actwk[0].actfree[2] |= 1;
+        player_work_get(&actwk[0])->status_flags |= 1;
 
         actwk[0].xposi.w.h = pActwk->xposi.w.h;
 
@@ -911,17 +1049,18 @@ void bou_move0(sprite_status *pActwk) {
         pActwk->actflg |= wD1;
         actwk[0].xposi.w.h += wD0;
         actwk[0].mstno.b.h = 17;
-        ((Sint16 *)pActwk)[23] = 180;
+        pWork->hold_timer = 180;
         if (pActwk->userflag.b.h)
-            ((Sint16 *)pActwk)[23] = 60;
+            pWork->hold_timer = 60;
 
         pActwk->r_no0 += 2;
     }
 }
 
 void bou_move1(sprite_status *pActwk) {
+    bou_work *pWork = bou_get_work(pActwk);
 
-    if (--((Sint16 *)pActwk)[23]) {
+    if (--pWork->hold_timer) {
 
         if (!(swdata1.b.l & 112)) {
             if (swdata1.b.h & 1) {
@@ -938,7 +1077,7 @@ void bou_move1(sprite_status *pActwk) {
         }
     }
 
-    actwk[0].actfree[2] &= 254;
+    player_work_get(&actwk[0])->status_flags &= 254;
     pActwk->patno = 1;
     pActwk->r_no0 += 2;
 }

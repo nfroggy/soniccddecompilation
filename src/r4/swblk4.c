@@ -1,9 +1,46 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "swblk4.h"
 #include "../action.h"
 #include "../actset.h"
 #include "../dircol.h"
 #include "../ridechk.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 unused0[6];
+    Sint16 switch_index;
+    Sint16 origin_y;
+    Sint16 linked_block_index;
+    Sint16 origin_x;
+    Uint8 follow_dx;
+    Uint8 follow_dy;
+    Uint8 unused16[2];
+    Uint8 is_secondary;
+} swblk4_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(swblk4_work, switch_index) == 6,
+               "swblk4_work.switch_index offset");
+_Static_assert(offsetof(swblk4_work, origin_y) == 8,
+               "swblk4_work.origin_y offset");
+_Static_assert(offsetof(swblk4_work, linked_block_index) == 10,
+               "swblk4_work.linked_block_index offset");
+_Static_assert(offsetof(swblk4_work, origin_x) == 12,
+               "swblk4_work.origin_x offset");
+_Static_assert(offsetof(swblk4_work, follow_dx) == 14,
+               "swblk4_work.follow_dx offset");
+_Static_assert(offsetof(swblk4_work, follow_dy) == 15,
+               "swblk4_work.follow_dy offset");
+_Static_assert(offsetof(swblk4_work, is_secondary) == 18,
+               "swblk4_work.is_secondary offset");
+_Static_assert(sizeof(swblk4_work) <= sizeof(((sprite_status *)0)->actfree),
+               "swblk4_work fits in actfree");
+
+static swblk4_work *swblk4_get_work(sprite_status *pActwk) {
+    return (swblk4_work *)pActwk->actfree;
+}
 
 #if defined(R41A) || defined(R42A)
 #define SPRITE_SWBLK4_BASE 438
@@ -34,32 +71,35 @@ static void (*swblkr4_jmp_tbl[2])(sprite_status *) = {&swblkr4_init,
                                                       &swblkr4_move};
 
 void switchr4(sprite_status *pActwk) {
+    swblk4_work *work = swblk4_get_work(pActwk);
     sprite_status *pRideact;
     Sint16 actidx;
 
     switchr4_jmp_tbl[pActwk->r_no0 / 2](pActwk);
     ride_on_chk(pActwk, &actwk[0]);
-    if ((actidx = ((Sint16 *)pActwk)[28]) != 0) {
+    if ((actidx = work->linked_block_index) != 0) {
         pRideact = &actwk[actidx];
         pActwk->xposi.w.h =
-            (Sint16)(char)pActwk->actfree[14] + pRideact->xposi.w.h;
+            (Sint16)(char)work->follow_dx + pRideact->xposi.w.h;
         pActwk->yposi.w.h =
-            (Sint16)(char)pActwk->actfree[15] + pRideact->yposi.w.h;
+            (Sint16)(char)work->follow_dy + pRideact->yposi.w.h;
     }
 
     actionsub(pActwk);
-    frameout_s00(pActwk, ((Sint16 *)pActwk)[29]);
+    frameout_s00(pActwk, work->origin_x);
 }
 
 static void switchr4_init(sprite_status *pActwk) {
+    swblk4_work *work = swblk4_get_work(pActwk);
+
     pActwk->r_no0 += 2;
     pActwk->actflg |= 4;
     pActwk->sproffset = 1290;
     pActwk->sprpri = 3;
     pActwk->patbase = switchr4pat;
 
-    if (!((Sint16 *)pActwk)[29]) {
-        ((Sint16 *)pActwk)[29] = pActwk->xposi.w.h;
+    if (!work->origin_x) {
+        work->origin_x = pActwk->xposi.w.h;
     }
 
     pActwk->sprhsize = 14;
@@ -104,14 +144,15 @@ static Uint32 switchr4_colichk(sprite_status *pActwk,
 }
 
 void swblkr4(sprite_status *pActwk) {
+    swblk4_work *work = swblk4_get_work(pActwk);
     Sint16 actidx, xwk, hwk;
     sprite_status *pRideact;
 
     swblkr4_jmp_tbl[pActwk->r_no0 / 2](pActwk);
     ride_on_chk(pActwk, &actwk[0]);
 
-    if (pActwk->actfree[18]) {
-        if ((actidx = ((Sint16 *)pActwk)[28]) != 0) {
+    if (work->is_secondary) {
+        if ((actidx = work->linked_block_index) != 0) {
             pRideact = &actwk[actidx];
             if (pRideact->actno != 48) {
 
@@ -126,7 +167,7 @@ void swblkr4(sprite_status *pActwk) {
 
     actionsub(pActwk);
 
-    xwk = ((Sint16 *)pActwk)[29] & -128;
+    xwk = work->origin_x & -128;
     hwk = scra_h_posit.w.h - 128 & -128;
     if ((Uint16)(xwk - hwk) > 640) {
         frameout(pActwk);
@@ -134,6 +175,7 @@ void swblkr4(sprite_status *pActwk) {
 }
 
 static void swblkr4_init(sprite_status *pActwk) {
+    swblk4_work *work = swblk4_get_work(pActwk);
     sprite_status *pNewact;
 
     pActwk->r_no0 += 2;
@@ -142,9 +184,9 @@ static void swblkr4_init(sprite_status *pActwk) {
     pActwk->sprpri = 3;
     pActwk->patbase = swblkr4pat;
 
-    if (!pActwk->actfree[18]) {
-        ((Sint16 *)pActwk)[29] = pActwk->xposi.w.h;
-        ((Sint16 *)pActwk)[27] = pActwk->yposi.w.h;
+    if (!work->is_secondary) {
+        work->origin_x = pActwk->xposi.w.h;
+        work->origin_y = pActwk->yposi.w.h;
         pActwk->xposi.w.h += 16;
         pActwk->sprhsize = 16;
         pActwk->sprvsize = 64;
@@ -156,17 +198,17 @@ static void swblkr4_init(sprite_status *pActwk) {
         }
 
         pNewact->actno = pActwk->actno;
-        ((Sint16 *)pNewact)[29] = ((Sint16 *)pActwk)[29];
+        swblk4_get_work(pNewact)->origin_x = work->origin_x;
 
-        ((Sint16 *)pNewact)[27] = ((Sint16 *)pActwk)[27];
+        swblk4_get_work(pNewact)->origin_y = work->origin_y;
 
         pNewact->sprhsize = 16;
         pNewact->sprvsize = 32;
-        pNewact->actfree[18] = 1;
+        swblk4_get_work(pNewact)->is_secondary = 1;
         pNewact->yposi.w.h = pActwk->yposi.w.h + 32;
         pNewact->xposi.w.h = pActwk->xposi.w.h - 32;
-        ((Sint16 *)pNewact)[28] = pActwk - actwk;
-        ((Sint16 *)pActwk)[28] = pNewact - actwk;
+        swblk4_get_work(pNewact)->linked_block_index = pActwk - actwk;
+        work->linked_block_index = pNewact - actwk;
         pNewact->patno = 2;
 
         if (actwkchk2(pActwk, &pNewact) != 0) {
@@ -175,22 +217,23 @@ static void swblkr4_init(sprite_status *pActwk) {
         }
 
         pNewact->actno = 49;
-        ((Sint16 *)pNewact)[28] = pActwk - actwk;
-        ((Sint16 *)pActwk)[26] = pNewact - actwk;
-        pNewact->actfree[15] = 188;
-        ((Sint16 *)pNewact)[29] = ((Sint16 *)pActwk)[29];
+        swblk4_get_work(pNewact)->linked_block_index = pActwk - actwk;
+        work->switch_index = pNewact - actwk;
+        swblk4_get_work(pNewact)->follow_dy = 188;
+        swblk4_get_work(pNewact)->origin_x = work->origin_x;
 
-        ((Sint16 *)pNewact)[27] = ((Sint16 *)pActwk)[27];
+        swblk4_get_work(pNewact)->origin_y = work->origin_y;
     }
 
     swblkr4_move(pActwk);
 }
 
 static void swblkr4_move(sprite_status *pActwk) {
+    swblk4_work *work = swblk4_get_work(pActwk);
     Sint32 ysv;
     sprite_status *pRideact;
 
-    if (pActwk->actfree[18])
+    if (work->is_secondary)
         return;
 
     ysv = pActwk->yposi.l;
@@ -207,13 +250,13 @@ static void swblkr4_move(sprite_status *pActwk) {
 
     pActwk->yposi.l = ysv;
     pActwk->yposi.l += pActwk->yspeed.w << 8;
-    pRideact = &actwk[((Sint16 *)pActwk)[28]];
+    pRideact = &actwk[work->linked_block_index];
 
     if (pRideact->actno == 48) {
         pRideact->yspeed.w = pActwk->yspeed.w;
     }
 
-    pRideact = &actwk[((Sint16 *)pActwk)[26]];
+    pRideact = &actwk[work->switch_index];
 
     if (pRideact->actno != 49)
         return;

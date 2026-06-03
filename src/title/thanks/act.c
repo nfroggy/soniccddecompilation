@@ -74,7 +74,7 @@ void priset(void) {
     for (i = 0; i <= 63; ++i) {
         pActwk = &actwk[i];
         if (pActwk->ACT_NO) {
-            a2 = &priptr[pActwk->free[0]];
+            a2 = &priptr[thanks_get_work(pActwk)->state_value];
             a3 = *a2;
             *a3++ = pActwk;
             *a3 = 0;

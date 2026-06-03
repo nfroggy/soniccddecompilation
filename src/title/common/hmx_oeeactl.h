@@ -28,5 +28,5 @@ void OEAllSprDelete(void);
 Sint32 OEGridDeleteAll(void);
 Sint32 OECreateEA(void);
 void OEDeleteEA(void);
-void sprCreate(Sint32 *handle);
+void sprCreate(Uint32 *handle);
 void sprDelete(Sint32 handle);

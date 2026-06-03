@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "kabasira.h"
 #include "../action.h"
@@ -6,6 +8,65 @@
 #include "../loader2.h"
 #include "../playsub.h"
 #include "../suicide.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    union {
+        Sint32 x_base;
+        Sint32 x_speed;
+        struct {
+            Sint16 x_base_frac;
+            Sint16 origin_x;
+        };
+    };
+    union {
+        Sint32 y_base;
+        Sint32 y_speed;
+        struct {
+            Sint16 y_base_frac;
+            Sint16 origin_y;
+        };
+    };
+    Sint16 x_angle;
+    Sint16 y_angle;
+    Sint16 x_angle_step;
+    Sint16 y_angle_step;
+    Sint16 shot_timer;
+    Sint8 unused18[2];
+    Sint16 parent_index;
+} kabasira_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(kabasira_work, x_base) == 0,
+               "kabasira_work.x_base offset");
+_Static_assert(offsetof(kabasira_work, x_speed) == 0,
+               "kabasira_work.x_speed offset");
+_Static_assert(offsetof(kabasira_work, origin_x) == 2,
+               "kabasira_work.origin_x offset");
+_Static_assert(offsetof(kabasira_work, y_base) == 4,
+               "kabasira_work.y_base offset");
+_Static_assert(offsetof(kabasira_work, y_speed) == 4,
+               "kabasira_work.y_speed offset");
+_Static_assert(offsetof(kabasira_work, origin_y) == 6,
+               "kabasira_work.origin_y offset");
+_Static_assert(offsetof(kabasira_work, x_angle) == 8,
+               "kabasira_work.x_angle offset");
+_Static_assert(offsetof(kabasira_work, y_angle) == 10,
+               "kabasira_work.y_angle offset");
+_Static_assert(offsetof(kabasira_work, x_angle_step) == 12,
+               "kabasira_work.x_angle_step offset");
+_Static_assert(offsetof(kabasira_work, y_angle_step) == 14,
+               "kabasira_work.y_angle_step offset");
+_Static_assert(offsetof(kabasira_work, shot_timer) == 16,
+               "kabasira_work.shot_timer offset");
+_Static_assert(offsetof(kabasira_work, parent_index) == 20,
+               "kabasira_work.parent_index offset");
+_Static_assert(sizeof(kabasira_work) <= sizeof(((sprite_status *)0)->actfree),
+               "kabasira_work fits in actfree");
+
+static kabasira_work *kabasira_get_work(sprite_status *pActwk) {
+    return (kabasira_work *)pActwk->actfree;
+}
 
 static void act_init(sprite_status *pActwk);
 static void act_init_sub(sprite_status *pActwk);
@@ -84,7 +145,7 @@ void kabasira(sprite_status *pActwk) {
     if (pActwk->userflag.b.l < 0) {
         if (pActwk->userflag.b.l == -1) {
 
-            pMainact = &actwk[((Sint16 *)pActwk)[33]];
+            pMainact = &actwk[kabasira_get_work(pActwk)->parent_index];
             if (pMainact->actno == 34)
                 goto label1;
 
@@ -92,8 +153,8 @@ void kabasira(sprite_status *pActwk) {
             return;
         }
 
-        pActwk->xposi.l += *(Sint32 *)&pActwk->actfree[0];
-        pActwk->yposi.l += *(Sint32 *)&pActwk->actfree[4];
+        pActwk->xposi.l += kabasira_get_work(pActwk)->x_speed;
+        pActwk->yposi.l += kabasira_get_work(pActwk)->y_speed;
 
         if (pActwk->colicnt) {
             xsv = pActwk->xposi.w.h;
@@ -137,22 +198,23 @@ static void act_init(sprite_status *pActwk) {
     Uint8 mstnowk;
     Sint32 i;
     sprite_status *pNewact;
+    kabasira_work *pWork = kabasira_get_work(pActwk);
 
     pActwk->colino = 49;
-    ((Sint16 *)pActwk)[24] = pActwk->xposi.w.h;
-    ((Sint16 *)pActwk)[26] = pActwk->yposi.w.h;
-    ((Sint16 *)pActwk)[23] = -32768;
-    ((Sint16 *)pActwk)[25] = -32768;
+    pWork->x_base =
+        (Sint32)(((Uint32)(Uint16)pActwk->xposi.w.h << 16) | (Uint16)-32768);
+    pWork->y_base =
+        (Sint32)(((Uint32)(Uint16)pActwk->yposi.w.h << 16) | (Uint16)-32768);
 
     if (!pActwk->userflag.b.h) {
-        ((Sint16 *)pActwk)[29] = 512;
-        ((Sint16 *)pActwk)[30] = 256;
+        pWork->x_angle_step = 512;
+        pWork->y_angle_step = 256;
         pActwk->mstno.b.h = 4;
         anglewk1 = 4096;
         anglewk2 = 2048;
     } else {
-        ((Sint16 *)pActwk)[29] = 256;
-        ((Sint16 *)pActwk)[30] = 128;
+        pWork->x_angle_step = 256;
+        pWork->y_angle_step = 128;
         pActwk->mstno.b.h = 0;
         anglewk1 = 8192;
         anglewk2 = 4096;
@@ -172,24 +234,24 @@ static void act_init(sprite_status *pActwk) {
             return;
         }
 
-        ((Sint16 *)pNewact)[33] = pActwk - actwk;
+        kabasira_get_work(pNewact)->parent_index = pActwk - actwk;
         ++mstnowk;
         pNewact->mstno.b.h = (Uint8)(mstnowk + pActwk->mstno.b.h);
         xangle -= anglewk1;
         yangle -= anglewk2;
-        ((Sint16 *)pNewact)[27] = xangle;
-        ((Sint16 *)pNewact)[28] = yangle;
+        kabasira_get_work(pNewact)->x_angle = xangle;
+        kabasira_get_work(pNewact)->y_angle = yangle;
         pNewact->userflag.b.l = -1;
         pNewact->actno = pActwk->actno;
         pNewact->xposi.w.h = pActwk->xposi.w.h;
         pNewact->yposi.w.h = pActwk->yposi.w.h;
-        *(Sint32 *)&pNewact->actfree[0] = *(Sint32 *)&pActwk->actfree[0];
+        kabasira_get_work(pNewact)->x_base = pWork->x_base;
 
-        *(Sint32 *)&pNewact->actfree[4] = *(Sint32 *)&pActwk->actfree[4];
+        kabasira_get_work(pNewact)->y_base = pWork->y_base;
 
-        ((Sint16 *)pNewact)[29] = ((Sint16 *)pActwk)[29];
+        kabasira_get_work(pNewact)->x_angle_step = pWork->x_angle_step;
 
-        ((Sint16 *)pNewact)[30] = ((Sint16 *)pActwk)[30];
+        kabasira_get_work(pNewact)->y_angle_step = pWork->y_angle_step;
 
         act_init_sub(pNewact);
     }
@@ -210,16 +272,17 @@ static void act_move(sprite_status *pActwk) {
     sprite_status *pTamaact;
     Sint16 xlen, ylen, anglewk;
     int_union sinwk, coswk;
+    kabasira_work *pWork = kabasira_get_work(pActwk);
 
     sinwk.l = coswk.l = 0;
 
     if (!pActwk->userflag.b.h && pActwk->userflag.b.l >= 0) {
-        if (((Sint16 *)pActwk)[31]) {
-            --((Sint16 *)pActwk)[31];
+        if (pWork->shot_timer) {
+            --pWork->shot_timer;
         } else {
             if (kabasira_area(pActwk, &actwk[0], &xlen, &ylen) != 0) {
 
-                ((Sint16 *)pActwk)[31] = 240;
+                pWork->shot_timer = 240;
                 if (actwkchk(&pTamaact) == 0) {
                     pTamaact->mstno.b.h = 8;
                     pTamaact->userflag.b.l = -2;
@@ -235,8 +298,8 @@ static void act_move(sprite_status *pActwk) {
                         (Uint32)coswk.l >> 16 & 65535 | coswk.l << 16 & -65536;
                     sinwk.l >>= 7;
                     coswk.l >>= 7;
-                    *(Sint32 *)&pTamaact->actfree[4] = sinwk.l;
-                    *(Sint32 *)&pTamaact->actfree[0] = coswk.l;
+                    kabasira_get_work(pTamaact)->y_speed = sinwk.l;
+                    kabasira_get_work(pTamaact)->x_speed = coswk.l;
 
                     if (coswk.l < 0) {
                         pTamaact->actflg ^= 1;
@@ -251,25 +314,25 @@ static void act_move(sprite_status *pActwk) {
         }
     }
 
-    anglewk = ((Sint16 *)pActwk)[27] + ((Sint16 *)pActwk)[29];
+    anglewk = pWork->x_angle + pWork->x_angle_step;
 
-    ((Sint16 *)pActwk)[27] = anglewk;
+    pWork->x_angle = anglewk;
     anglewk = (Uint16)anglewk >> 8;
     sinwk.l = coswk.l = 0;
     sinset(anglewk, &sinwk.w.l, &coswk.w.l);
     sinwk.l = (Uint32)sinwk.l >> 16 & 65535 | sinwk.l << 16 & -65536;
     sinwk.l >>= 4;
-    pActwk->xposi.l = sinwk.l + *(Sint32 *)&pActwk->actfree[0];
+    pActwk->xposi.l = sinwk.l + pWork->x_base;
 
-    anglewk = ((Sint16 *)pActwk)[28] + ((Sint16 *)pActwk)[30];
+    anglewk = pWork->y_angle + pWork->y_angle_step;
 
-    ((Sint16 *)pActwk)[28] = anglewk;
+    pWork->y_angle = anglewk;
     anglewk = (Uint16)anglewk >> 8;
     sinwk.l = coswk.l = 0;
     sinset(anglewk, &sinwk.w.l, &coswk.w.l);
     coswk.l = (Uint32)coswk.l >> 16 & 65535 | coswk.l << 16 & -65536;
     coswk.l >>= 2;
-    pActwk->yposi.l = coswk.l + *(Sint32 *)&pActwk->actfree[4];
+    pActwk->yposi.l = coswk.l + pWork->y_base;
 }
 
 static Uint32 kabasira_area(sprite_status *pActwk, sprite_status *pPlayerwk,

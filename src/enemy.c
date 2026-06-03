@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "equ.h"
 #include "enemy.h"
 #include "action.h"
@@ -8,6 +10,166 @@
 #include "loader2.h"
 #include "playsub.h"
 #include "suicide.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint32 x_velocity;
+    Sint16 frameout_x;
+} ari_work;
+
+typedef struct {
+    Sint16 origin_x;
+    union {
+        Sint32 sine_base_y;
+        struct {
+            Sint16 sine_low_word;
+            Sint16 origin_y;
+        };
+    };
+    Sint32 x_velocity;
+    union {
+        Sint16 angle;
+        struct {
+            Uint8 angle_low;
+            Uint8 angle_high;
+        };
+    };
+    Sint16 angle_step;
+    Sint16 sine_shift;
+} chou_work;
+
+typedef struct {
+    Sint16 origin_x;
+    Sint32 x_velocity;
+    Uint8 **change_table;
+    Sint16 stop_timer;
+} ka_work;
+
+typedef struct {
+    Sint16 origin_x;
+    Sint32 x_velocity;
+    Uint8 **change_table;
+    Sint16 wait_timer;
+} kamemusi_work;
+
+typedef struct {
+    Sint32 x_velocity;
+    Sint32 y_velocity;
+    Sint32 x_acceleration;
+    Sint32 y_acceleration;
+    Uint8 unused16[5];
+    Uint8 direction;
+} tama_work;
+
+typedef struct {
+    Sint16 origin_x;
+    Sint16 origin_y;
+    Uint8 unused4[2];
+    Sint32 initial_y_velocity;
+    Sint32 current_y_velocity;
+    Sint32 gravity;
+    Uint8 **change_table;
+} tagame_work;
+#pragma pack(pop)
+
+_Static_assert(sizeof(Uint8 **) == 4,
+               "enemy work animation table pointers are 32-bit");
+_Static_assert(offsetof(ari_work, x_velocity) == 0,
+               "ari_work.x_velocity offset");
+_Static_assert(offsetof(ari_work, frameout_x) == 4,
+               "ari_work.frameout_x offset");
+_Static_assert(sizeof(ari_work) <= sizeof(((sprite_status *)0)->actfree),
+               "ari_work fits in actfree");
+_Static_assert(offsetof(chou_work, origin_x) == 0,
+               "chou_work.origin_x offset");
+_Static_assert(offsetof(chou_work, sine_low_word) == 2,
+               "chou_work.sine_low_word offset");
+_Static_assert(offsetof(chou_work, sine_base_y) == 2,
+               "chou_work.sine_base_y offset");
+_Static_assert(offsetof(chou_work, origin_y) == 4,
+               "chou_work.origin_y offset");
+_Static_assert(offsetof(chou_work, x_velocity) == 6,
+               "chou_work.x_velocity offset");
+_Static_assert(offsetof(chou_work, angle) == 10,
+               "chou_work.angle offset");
+_Static_assert(offsetof(chou_work, angle_high) == 11,
+               "chou_work.angle_high offset");
+_Static_assert(offsetof(chou_work, angle_step) == 12,
+               "chou_work.angle_step offset");
+_Static_assert(offsetof(chou_work, sine_shift) == 14,
+               "chou_work.sine_shift offset");
+_Static_assert(sizeof(chou_work) <= sizeof(((sprite_status *)0)->actfree),
+               "chou_work fits in actfree");
+_Static_assert(offsetof(ka_work, origin_x) == 0,
+               "ka_work.origin_x offset");
+_Static_assert(offsetof(ka_work, x_velocity) == 2,
+               "ka_work.x_velocity offset");
+_Static_assert(offsetof(ka_work, change_table) == 6,
+               "ka_work.change_table offset");
+_Static_assert(offsetof(ka_work, stop_timer) == 10,
+               "ka_work.stop_timer offset");
+_Static_assert(sizeof(ka_work) <= sizeof(((sprite_status *)0)->actfree),
+               "ka_work fits in actfree");
+_Static_assert(offsetof(kamemusi_work, origin_x) == 0,
+               "kamemusi_work.origin_x offset");
+_Static_assert(offsetof(kamemusi_work, x_velocity) == 2,
+               "kamemusi_work.x_velocity offset");
+_Static_assert(offsetof(kamemusi_work, change_table) == 6,
+               "kamemusi_work.change_table offset");
+_Static_assert(offsetof(kamemusi_work, wait_timer) == 10,
+               "kamemusi_work.wait_timer offset");
+_Static_assert(sizeof(kamemusi_work) <= sizeof(((sprite_status *)0)->actfree),
+               "kamemusi_work fits in actfree");
+_Static_assert(offsetof(tama_work, x_velocity) == 0,
+               "tama_work.x_velocity offset");
+_Static_assert(offsetof(tama_work, y_velocity) == 4,
+               "tama_work.y_velocity offset");
+_Static_assert(offsetof(tama_work, x_acceleration) == 8,
+               "tama_work.x_acceleration offset");
+_Static_assert(offsetof(tama_work, y_acceleration) == 12,
+               "tama_work.y_acceleration offset");
+_Static_assert(offsetof(tama_work, direction) == 21,
+               "tama_work.direction offset");
+_Static_assert(sizeof(tama_work) <= sizeof(((sprite_status *)0)->actfree),
+               "tama_work fits in actfree");
+_Static_assert(offsetof(tagame_work, origin_x) == 0,
+               "tagame_work.origin_x offset");
+_Static_assert(offsetof(tagame_work, origin_y) == 2,
+               "tagame_work.origin_y offset");
+_Static_assert(offsetof(tagame_work, initial_y_velocity) == 6,
+               "tagame_work.initial_y_velocity offset");
+_Static_assert(offsetof(tagame_work, current_y_velocity) == 10,
+               "tagame_work.current_y_velocity offset");
+_Static_assert(offsetof(tagame_work, gravity) == 14,
+               "tagame_work.gravity offset");
+_Static_assert(offsetof(tagame_work, change_table) == 18,
+               "tagame_work.change_table offset");
+_Static_assert(sizeof(tagame_work) <= sizeof(((sprite_status *)0)->actfree),
+               "tagame_work fits in actfree");
+
+static ari_work *ari_get_work(sprite_status *pActwk) {
+    return (ari_work *)pActwk->actfree;
+}
+
+static chou_work *chou_get_work(sprite_status *pActwk) {
+    return (chou_work *)pActwk->actfree;
+}
+
+static ka_work *ka_get_work(sprite_status *pActwk) {
+    return (ka_work *)pActwk->actfree;
+}
+
+static kamemusi_work *kamemusi_get_work(sprite_status *pActwk) {
+    return (kamemusi_work *)pActwk->actfree;
+}
+
+static tama_work *tama_get_work(sprite_status *pActwk) {
+    return (tama_work *)pActwk->actfree;
+}
+
+static tagame_work *tagame_get_work(sprite_status *pActwk) {
+    return (tagame_work *)pActwk->actfree;
+}
 
 static Uint8 ari_pchg00[4] = {3, 0, 1, 255};
 static Uint8 ari_pchg01[4] = {7, 2, 3, 255};
@@ -109,7 +271,7 @@ void ene_ari(sprite_status *pActwk) {
         return;
     tbl[pActwk->r_no0 / 2](pActwk);
     actionsub(pActwk);
-    frameout_s00(pActwk, ((Sint16 *)pActwk)[25]);
+    frameout_s00(pActwk, ari_get_work(pActwk)->frameout_x);
 }
 
 void ari_init(sprite_status *pActwk) {
@@ -122,13 +284,13 @@ void ari_init(sprite_status *pActwk) {
     pActwk->sprhsize = 24;
     pActwk->sprvsize = 19;
     pActwk->colino = 41;
-    ((Sint16 *)pActwk)[25] = pActwk->xposi.w.h;
+    ari_get_work(pActwk)->frameout_x = pActwk->xposi.w.h;
 
     if (pActwk->userflag.b.h == 0) {
-        *(Sint32 *)&pActwk->actfree[0] = -65536;
+        ari_get_work(pActwk)->x_velocity = -65536;
         pActwk->mstno.b.h = 0;
     } else {
-        *(Sint32 *)&pActwk->actfree[0] = -32768;
+        ari_get_work(pActwk)->x_velocity = -32768;
         pActwk->mstno.b.h = 1;
     }
 
@@ -156,10 +318,10 @@ void ari_move(sprite_status *pActwk) {
     Sint32 spd_x;
 
     do {
-        spd_x = *(Sint32 *)&pActwk->actfree[0];
+        spd_x = ari_get_work(pActwk)->x_velocity;
         pActwk->xposi.l = pActwk->xposi.l + spd_x;
         xpos = pActwk->xposi.w.h;
-        xpos_m = ((Sint16 *)pActwk)[25];
+        xpos_m = ari_get_work(pActwk)->frameout_x;
         xpos = xpos - xpos_m;
         if (xpos < 0)
             xpos = -xpos;
@@ -173,8 +335,8 @@ void ari_move(sprite_status *pActwk) {
                 }
             }
         }
-        spd_x = *(Sint32 *)&pActwk->actfree[0];
-        *(Sint32 *)&pActwk->actfree[0] = -spd_x;
+        spd_x = ari_get_work(pActwk)->x_velocity;
+        ari_get_work(pActwk)->x_velocity = -spd_x;
         pActwk->actflg = pActwk->actflg ^ 1;
         pActwk->cddat = pActwk->cddat ^ 1;
     } while (1);
@@ -197,19 +359,19 @@ void chou_init(sprite_status *pActwk) {
     pActwk->sprhs = 16;
     pActwk->sprhsize = 16;
     pActwk->sprvsize = 16;
-    ((Sint16 *)pActwk)[23] = pActwk->xposi.w.h;
-    ((Sint16 *)pActwk)[25] = pActwk->yposi.w.h;
-    ((Sint16 *)pActwk)[24] = -32768;
+    chou_get_work(pActwk)->origin_x = pActwk->xposi.w.h;
+    chou_get_work(pActwk)->origin_y = pActwk->yposi.w.h;
+    chou_get_work(pActwk)->sine_low_word = -32768;
     if (pActwk->userflag.b.h == 0) {
-        ((Sint32 *)pActwk)[13] = -32768;
-        ((Sint16 *)pActwk)[29] = -512;
-        ((Sint16 *)pActwk)[30] = 3;
+        chou_get_work(pActwk)->x_velocity = -32768;
+        chou_get_work(pActwk)->angle_step = -512;
+        chou_get_work(pActwk)->sine_shift = 3;
         pActwk->mstno.b.h = 0;
         pActwk->patbase = e_chou_pat;
     } else {
-        ((Sint32 *)pActwk)[13] = -16384;
-        ((Sint16 *)pActwk)[29] = -256;
-        ((Sint16 *)pActwk)[30] = 4;
+        chou_get_work(pActwk)->x_velocity = -16384;
+        chou_get_work(pActwk)->angle_step = -256;
+        chou_get_work(pActwk)->sine_shift = 4;
         pActwk->mstno.b.h = 1;
         pActwk->patbase = b_chou_pat;
     }
@@ -220,32 +382,33 @@ void chou_move(sprite_status *pActwk) {
     Sint16 shift;
     Sint16 sSin, sCos;
     int_union lSin;
+    chou_work *pWork = chou_get_work(pActwk);
 
-    pActwk->xposi.l += ((Sint32 *)pActwk)[13];
+    pActwk->xposi.l += pWork->x_velocity;
     xpos = pActwk->xposi.w.h;
-    xpos -= ((Sint16 *)pActwk)[23];
+    xpos -= pWork->origin_x;
     if (xpos < 0)
         xpos *= -1;
     if (xpos >= 128) {
-        ((Sint32 *)pActwk)[13] *= -1;
-        pActwk->xposi.l += ((Sint32 *)pActwk)[13];
+        pWork->x_velocity *= -1;
+        pActwk->xposi.l += pWork->x_velocity;
         pActwk->actflg = pActwk->actflg ^ 1;
         pActwk->cddat = pActwk->cddat ^ 1;
-        ((Sint16 *)pActwk)[28] = 0;
+        pWork->angle = 0;
     }
-    ((Sint16 *)pActwk)[28] += ((Sint16 *)pActwk)[29];
-    sinset(pActwk->actfree[11], &sSin, &sCos);
+    pWork->angle += pWork->angle_step;
+    sinset(pWork->angle_high, &sSin, &sCos);
     lSin.w.h = sSin;
     lSin.w.l = 0;
-    shift = ((Sint16 *)pActwk)[30];
+    shift = pWork->sine_shift;
     while (shift--)
         lSin.l /= 2;
-    lSin.l += ((Sint32 *)pActwk)[12];
+    lSin.l += pWork->sine_base_y;
     pActwk->yposi.l = lSin.l;
 
     patchg(pActwk, chou_pchg);
     actionsub(pActwk);
-    frameout_s00(pActwk, ((Sint16 *)pActwk)[23]);
+    frameout_s00(pActwk, pWork->origin_x);
 }
 
 void ene_ka(sprite_status *pActwk) {
@@ -256,7 +419,7 @@ void ene_ka(sprite_status *pActwk) {
         return;
     tbl[pActwk->r_no0 / 2](pActwk);
     actionsub(pActwk);
-    frameout_s00(pActwk, ((Sint16 *)pActwk)[23]);
+    frameout_s00(pActwk, ka_get_work(pActwk)->origin_x);
 }
 
 void ka_init(sprite_status *pActwk) {
@@ -267,16 +430,16 @@ void ka_init(sprite_status *pActwk) {
     pActwk->sprhsize = 16;
     pActwk->sprvsize = 16;
     pActwk->colino = 43;
-    ((Sint16 *)pActwk)[23] = pActwk->xposi.w.h;
+    ka_get_work(pActwk)->origin_x = pActwk->xposi.w.h;
 
     if (pActwk->userflag.b.h == 0) {
         pActwk->patbase = e_ka_pat;
-        ((Uint8 ***)pActwk)[13] = pchg_e;
-        ((Sint32 *)pActwk)[12] = -65536;
+        ka_get_work(pActwk)->change_table = pchg_e;
+        ka_get_work(pActwk)->x_velocity = -65536;
     } else {
         pActwk->patbase = b_ka_pat;
-        ((Uint8 ***)pActwk)[13] = pchg_b;
-        ((Sint32 *)pActwk)[12] = -32768;
+        ka_get_work(pActwk)->change_table = pchg_b;
+        ka_get_work(pActwk)->x_velocity = -32768;
     }
     ka_move(pActwk);
 }
@@ -302,21 +465,21 @@ void ka_move(sprite_status *pActwk) {
         }
     }
     do {
-        pActwk->xposi.l += ((Sint32 *)pActwk)[12];
+        pActwk->xposi.l += ka_get_work(pActwk)->x_velocity;
         d0 = pActwk->xposi.w.h;
-        d0 -= ((Sint16 *)pActwk)[23];
+        d0 -= ka_get_work(pActwk)->origin_x;
         if (d0 < 0)
             d0 *= -1;
         if (d0 < 128)
             break;
-        ((Sint32 *)pActwk)[12] *= -1;
+        ka_get_work(pActwk)->x_velocity *= -1;
         pActwk->actflg = pActwk->actflg ^ 1;
         pActwk->cddat = pActwk->cddat ^ 1;
     } while (1);
-    patchg(pActwk, ((Uint8 ***)pActwk)[13]);
+    patchg(pActwk, ka_get_work(pActwk)->change_table);
 }
 
-void ka_turn(sprite_status *pActwk) { patchg(pActwk, ((Uint8 ***)pActwk)[13]); }
+void ka_turn(sprite_status *pActwk) { patchg(pActwk, ka_get_work(pActwk)->change_table); }
 
 void ka_down(sprite_status *pActwk) {
     Sint16 c;
@@ -352,7 +515,7 @@ void ene_kamemusi(sprite_status *pActwk) {
         return;
     tbl[pActwk->r_no0 / 2](pActwk);
     actionsub(pActwk);
-    frameout_s00(pActwk, ((Sint16 *)pActwk)[23]);
+    frameout_s00(pActwk, kamemusi_get_work(pActwk)->origin_x);
 }
 
 void kamemusi_init(sprite_status *pActwk) {
@@ -363,16 +526,16 @@ void kamemusi_init(sprite_status *pActwk) {
     pActwk->sprhs = 16;
     pActwk->sprhsize = 16;
     pActwk->sprvsize = 15;
-    ((Sint16 *)pActwk)[23] = pActwk->xposi.w.h;
+    kamemusi_get_work(pActwk)->origin_x = pActwk->xposi.w.h;
 
     if (pActwk->userflag.b.h == 0) {
         pActwk->patbase = e_kamem_pat;
-        ((Uint8 ***)pActwk)[13] = e_kamem_pchg;
-        ((Sint32 *)pActwk)[12] = -40960;
+        kamemusi_get_work(pActwk)->change_table = e_kamem_pchg;
+        kamemusi_get_work(pActwk)->x_velocity = -40960;
     } else {
         pActwk->patbase = b_kamem_pat;
-        ((Uint8 ***)pActwk)[13] = b_kamem_pchg;
-        ((Sint32 *)pActwk)[12] = -20480;
+        kamemusi_get_work(pActwk)->change_table = b_kamem_pchg;
+        kamemusi_get_work(pActwk)->x_velocity = -20480;
     }
     kamemusi_fall(pActwk);
 }
@@ -392,8 +555,8 @@ void kamemusi_move(sprite_status *pActwk) {
     do {
         if (editmode.w == 0) {
             if (pActwk->userflag.b.h == 0) {
-                if (((Sint16 *)pActwk)[28]) {
-                    --((Sint16 *)pActwk)[28];
+                if (kamemusi_get_work(pActwk)->wait_timer) {
+                    --kamemusi_get_work(pActwk)->wait_timer;
                 } else {
                     if (area(pActwk)) {
                         pActwk->r_no0 += 2;
@@ -402,20 +565,20 @@ void kamemusi_move(sprite_status *pActwk) {
                 }
             }
         }
-        pActwk->xposi.l += ((Sint32 *)pActwk)[12];
+        pActwk->xposi.l += kamemusi_get_work(pActwk)->x_velocity;
         d0 = pActwk->xposi.w.h;
-        d0 -= ((Sint16 *)pActwk)[23];
+        d0 -= kamemusi_get_work(pActwk)->origin_x;
         if (d0 < 0)
             d0 *= -1;
         if (d0 < 128) {
             d1 = emycol_d(pActwk);
             if (d1 >= -7 && d1 < 8) {
                 pActwk->yposi.w.h += d1;
-                patchg(pActwk, ((Uint8 ***)pActwk)[13]);
+                patchg(pActwk, kamemusi_get_work(pActwk)->change_table);
                 break;
             }
         }
-        ((Sint32 *)pActwk)[12] *= -1;
+        kamemusi_get_work(pActwk)->x_velocity *= -1;
         pActwk->actflg ^= 1;
         pActwk->cddat ^= 1;
     } while (1);
@@ -454,7 +617,7 @@ void kamemusi_stop(sprite_status *pActwk) {
 }
 
 void kamemusi_stop1(sprite_status *pActwk) {
-    patchg(pActwk, ((Uint8 ***)pActwk)[13]);
+    patchg(pActwk, kamemusi_get_work(pActwk)->change_table);
 }
 
 void kamemusi_tama(sprite_status *pActwk) {
@@ -463,7 +626,7 @@ void kamemusi_tama(sprite_status *pActwk) {
 
     pActwk->r_no0 = 4;
     pActwk->mstno.b.h = 0;
-    ((Sint16 *)pActwk)[28] = 120;
+    kamemusi_get_work(pActwk)->wait_timer = 120;
 
     if (pActwk->userflag.b.h == 0) {
         if (actwkchk(&pTama1wk) == 0) {
@@ -471,10 +634,10 @@ void kamemusi_tama(sprite_status *pActwk) {
                 soundset(160);
             }
             kamemusi_tama_init(pActwk, pTama1wk);
-            pTama1wk->actfree[21] = 0;
+            tama_get_work(pTama1wk)->direction = 0;
             if (actwkchk(&pTama2wk) == 0) {
                 kamemusi_tama_init(pActwk, pTama2wk);
-                pTama2wk->actfree[21] = 255;
+                tama_get_work(pTama2wk)->direction = 255;
             }
         }
     }
@@ -507,15 +670,15 @@ void tama_init(sprite_status *pActwk) {
     pActwk->sprhsize = 8;
     pActwk->sprvsize = 8;
     pActwk->patbase = tama_pat;
-    *(Sint32 *)&pActwk->actfree[8] = 0;
-    *(Sint32 *)&pActwk->actfree[12] = 8192;
+    tama_get_work(pActwk)->x_acceleration = 0;
+    tama_get_work(pActwk)->y_acceleration = 8192;
 
-    if (pActwk->actfree[21] == 0) {
-        *(Sint32 *)&pActwk->actfree[0] = 0x20000;
-        *(Sint32 *)&pActwk->actfree[4] = -0x40000;
+    if (tama_get_work(pActwk)->direction == 0) {
+        tama_get_work(pActwk)->x_velocity = 0x20000;
+        tama_get_work(pActwk)->y_velocity = -0x40000;
     } else {
-        *(Sint32 *)&pActwk->actfree[0] = -0x20000;
-        *(Sint32 *)&pActwk->actfree[4] = -0x40000;
+        tama_get_work(pActwk)->x_velocity = -0x20000;
+        tama_get_work(pActwk)->y_velocity = -0x40000;
     }
 }
 
@@ -532,10 +695,10 @@ void tama_move(sprite_status *pActwk) {
         return;
     }
 
-    pActwk->xposi.l += *(Sint32 *)&pActwk->actfree[0];
-    pActwk->yposi.l += *(Sint32 *)&pActwk->actfree[4];
-    *(Sint32 *)&pActwk->actfree[0] += *(Sint32 *)&pActwk->actfree[8];
-    *(Sint32 *)&pActwk->actfree[4] += *(Sint32 *)&pActwk->actfree[12];
+    pActwk->xposi.l += tama_get_work(pActwk)->x_velocity;
+    pActwk->yposi.l += tama_get_work(pActwk)->y_velocity;
+    tama_get_work(pActwk)->x_velocity += tama_get_work(pActwk)->x_acceleration;
+    tama_get_work(pActwk)->y_velocity += tama_get_work(pActwk)->y_acceleration;
 
     patchg(pActwk, tama_pchg);
 }
@@ -548,7 +711,7 @@ void ene_tagame_a(sprite_status *pActwk) {
         return;
     tbl[pActwk->r_no0 / 2](pActwk);
     actionsub(pActwk);
-    frameout_s00(pActwk, ((Sint16 *)pActwk)[23]);
+    frameout_s00(pActwk, tagame_get_work(pActwk)->origin_x);
 }
 
 void tagame_init(sprite_status *pActwk) {
@@ -559,19 +722,19 @@ void tagame_init(sprite_status *pActwk) {
     pActwk->sprhs = 16;
     pActwk->sprhsize = 16;
     pActwk->sprvsize = 22;
-    ((Sint16 *)pActwk)[23] = pActwk->xposi.w.h;
-    ((Sint16 *)pActwk)[24] = pActwk->yposi.w.h;
+    tagame_get_work(pActwk)->origin_x = pActwk->xposi.w.h;
+    tagame_get_work(pActwk)->origin_y = pActwk->yposi.w.h;
 
     if (pActwk->userflag.b.h == 0) {
         pActwk->patbase = e_tagame_pat;
-        ((Uint8 ***)pActwk)[16] = e_tagame_pchg;
-        ((Sint32 *)pActwk)[13] = -245760;
-        ((Sint32 *)pActwk)[15] = 4096;
+        tagame_get_work(pActwk)->change_table = e_tagame_pchg;
+        tagame_get_work(pActwk)->initial_y_velocity = -245760;
+        tagame_get_work(pActwk)->gravity = 4096;
     } else {
         pActwk->patbase = b_tagame_pat;
-        ((Uint8 ***)pActwk)[16] = b_tagame_pchg;
-        ((Sint32 *)pActwk)[13] = -196608;
-        ((Sint32 *)pActwk)[15] = 4096;
+        tagame_get_work(pActwk)->change_table = b_tagame_pchg;
+        tagame_get_work(pActwk)->initial_y_velocity = -196608;
+        tagame_get_work(pActwk)->gravity = 4096;
     }
     tagame_wait(pActwk);
 }
@@ -580,19 +743,20 @@ void tagame_wait(sprite_status *pActwk) {
     pActwk->r_no0 += 2;
     pActwk->mstno.w = 255;
     pActwk->colino = 0;
-    pActwk->yposi.w.h = ((Sint16 *)pActwk)[24];
+    pActwk->yposi.w.h = tagame_get_work(pActwk)->origin_y;
 }
 
 void tagame_wait1(sprite_status *pActwk) {
-    patchg(pActwk, ((Uint8 ***)pActwk)[16]);
+    patchg(pActwk, tagame_get_work(pActwk)->change_table);
 }
 
 void tagame_jump(sprite_status *pActwk) {
     pActwk->r_no0 += 2;
     pActwk->mstno.w = 511;
     pActwk->colino = 46;
-    pActwk->yposi.w.h = ((Sint16 *)pActwk)[24];
-    ((Sint32 *)pActwk)[14] = ((Sint32 *)pActwk)[13];
+    pActwk->yposi.w.h = tagame_get_work(pActwk)->origin_y;
+    tagame_get_work(pActwk)->current_y_velocity =
+        tagame_get_work(pActwk)->initial_y_velocity;
     if ((char)pActwk->actflg < 0) {
         soundset(162);
     }
@@ -600,16 +764,17 @@ void tagame_jump(sprite_status *pActwk) {
 }
 
 void tagame_jump1(sprite_status *pActwk) {
-    pActwk->yposi.l += ((Sint32 *)pActwk)[14];
-    ((Sint32 *)pActwk)[14] += ((Sint32 *)pActwk)[15];
+    pActwk->yposi.l += tagame_get_work(pActwk)->current_y_velocity;
+    tagame_get_work(pActwk)->current_y_velocity +=
+        tagame_get_work(pActwk)->gravity;
 
-    if (pActwk->yposi.w.h > ((Sint16 *)pActwk)[24]) {
+    if (pActwk->yposi.w.h > tagame_get_work(pActwk)->origin_y) {
         pActwk->r_no0 = 2;
         if ((char)pActwk->actflg < 0) {
             soundset(162);
         }
     }
-    patchg(pActwk, ((Uint8 ***)pActwk)[16]);
+    patchg(pActwk, tagame_get_work(pActwk)->change_table);
 }
 
 void ene_tama(sprite_status *pActwk) {}

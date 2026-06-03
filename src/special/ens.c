@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../types.h"
 #include "common.h"
 #include "sps_equ.h"
@@ -7,6 +9,76 @@
 #include "etc_s.h"
 #include "game.h"
 #include "kaiten.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    union {
+        Uint16 timer;
+        struct {
+            Uint8 timer_low;
+            Uint8 subtype;
+        };
+    };
+    union {
+        Uint16 short_timer;
+        struct {
+            Uint8 pattern;
+            Uint8 direction;
+        };
+    };
+    Uint16 linked_actor_index;
+    Uint16 angle_z;
+    Sint16 *movement_table_start;
+    Sint16 *movement_table_cursor;
+    Uint16 movement_count;
+    union {
+        Uint16 player_timer;
+        struct {
+            Uint8 ufo_type;
+            Uint8 ufo_direction;
+        };
+    };
+    Uint8 flash_timer;
+} special_enemy_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(special_enemy_work, timer) == 0,
+               "special_enemy_work.timer offset");
+_Static_assert(offsetof(special_enemy_work, timer_low) == 0,
+               "special_enemy_work.timer_low offset");
+_Static_assert(offsetof(special_enemy_work, subtype) == 1,
+               "special_enemy_work.subtype offset");
+_Static_assert(offsetof(special_enemy_work, short_timer) == 2,
+               "special_enemy_work.short_timer offset");
+_Static_assert(offsetof(special_enemy_work, pattern) == 2,
+               "special_enemy_work.pattern offset");
+_Static_assert(offsetof(special_enemy_work, direction) == 3,
+               "special_enemy_work.direction offset");
+_Static_assert(offsetof(special_enemy_work, linked_actor_index) == 4,
+               "special_enemy_work.linked_actor_index offset");
+_Static_assert(offsetof(special_enemy_work, angle_z) == 6,
+               "special_enemy_work.angle_z offset");
+_Static_assert(offsetof(special_enemy_work, movement_table_start) == 8,
+               "special_enemy_work.movement_table_start offset");
+_Static_assert(offsetof(special_enemy_work, movement_table_cursor) == 12,
+               "special_enemy_work.movement_table_cursor offset");
+_Static_assert(offsetof(special_enemy_work, movement_count) == 16,
+               "special_enemy_work.movement_count offset");
+_Static_assert(offsetof(special_enemy_work, player_timer) == 18,
+               "special_enemy_work.player_timer offset");
+_Static_assert(offsetof(special_enemy_work, ufo_type) == 18,
+               "special_enemy_work.ufo_type offset");
+_Static_assert(offsetof(special_enemy_work, ufo_direction) == 19,
+               "special_enemy_work.ufo_direction offset");
+_Static_assert(offsetof(special_enemy_work, flash_timer) == 20,
+               "special_enemy_work.flash_timer offset");
+_Static_assert(sizeof(special_enemy_work) <=
+                   sizeof(((sprite_status_sp *)0)->actfree),
+               "special_enemy_work fits in actfree");
+
+static special_enemy_work *special_enemy_get_work(sprite_status_sp *actionwk) {
+    return (special_enemy_work *)actionwk->actfree;
+}
 
 static sprite_pattern seexp00 = {1, {{-10, -8, 0, 127}}};
 static sprite_pattern seexp01 = {1, {{-20, -16, 0, 128}}};
@@ -267,12 +339,12 @@ void b_ring00(sprite_status_sp *actionwk) {
 
     actionwk->sprcolor = 59279;
     actionwk->pattbl = mpitem;
-    actionwk->actfree[2] = 4;
-    patinit(actionwk, actionwk->actfree[2]);
+    special_enemy_get_work(actionwk)->pattern = 4;
+    patinit(actionwk, special_enemy_get_work(actionwk)->pattern);
     actionwk->sx_posi.w.h = actwk[0].sx_posi.w.h;
     actionwk->sy_posi.w.h = actwk[0].sy_posi.w.h;
     ++actionwk->exeno;
-    actionwk->actfree[0] = 45;
+    special_enemy_get_work(actionwk)->timer_low = 45;
     d0 = d1 = random();
     d1 &= 258048;
     if (pmflag & 1)
@@ -285,7 +357,7 @@ void b_ring00(sprite_status_sp *actionwk) {
 }
 
 void b_ring01(sprite_status_sp *actionwk) {
-    if (--actionwk->actfree[0] == 0)
+    if (--special_enemy_get_work(actionwk)->timer_low == 0)
         actionwk->actflg |= 1;
 
     actionwk->sx_posi.l += actionwk->sx_speed.l;
@@ -313,16 +385,17 @@ void item_ring(sprite_status_sp *actionwk) {
 void i_ring00(sprite_status_sp *actionwk) {
     actionwk->sprcolor = 34703;
     actionwk->pattbl = mpitem;
-    actionwk->actfree[2] = actionwk->actfree[1];
-    patinit(actionwk, actionwk->actfree[2]);
+    special_enemy_get_work(actionwk)->pattern =
+        special_enemy_get_work(actionwk)->subtype;
+    patinit(actionwk, special_enemy_get_work(actionwk)->pattern);
     ++actionwk->exeno;
-    actionwk->actfree[0] = 16;
+    special_enemy_get_work(actionwk)->timer_low = 16;
     actionwk->sy_speed.w.h = -16;
     key_set(149);
 }
 
 void i_ring01(sprite_status_sp *actionwk) {
-    if (--actionwk->actfree[0] == 0)
+    if (--special_enemy_get_work(actionwk)->timer_low == 0)
         actionwk->actflg |= 1;
 
     actionwk->sy_posi.l += actionwk->sy_speed.l;
@@ -342,8 +415,8 @@ void timeufo(sprite_status_sp *actionwk) {
     }
     actionwk->z_posi.w.h = actwk[0].z_posi.w.h;
     actionwk->z_posi.w.h -= 320;
-    if (actionwk->actfree[20]) {
-        --actionwk->actfree[20];
+    if (special_enemy_get_work(actionwk)->flash_timer) {
+        --special_enemy_get_work(actionwk)->flash_timer;
         actionwk->actflg |= 4;
     }
 }
@@ -356,7 +429,7 @@ void tufo00(sprite_status_sp *actionwk) {
     actionwk->z_posi.w.h = actwk[0].z_posi.w.h;
     actionwk->z_posi.w.h -= 320;
     ++actionwk->exeno;
-    actionwk->actfree[20] = 2;
+    special_enemy_get_work(actionwk)->flash_timer = 2;
     key_set(188);
 }
 
@@ -365,10 +438,9 @@ void tufo01(sprite_status_sp *actionwk) {
     sprite_status_sp *a1;
     Uint8 d0;
 
-    mcnt = (Uint16 *)(actionwk->actfree + 16);
-
     actionwk->x_posi.l += actionwk->x_speed.l;
     actionwk->y_posi.l += actionwk->y_speed.l;
+    mcnt = &special_enemy_get_work(actionwk)->movement_count;
     if (--*mcnt == 0) {
         mvtblset(actionwk);
     }
@@ -381,16 +453,16 @@ void tufo01(sprite_status_sp *actionwk) {
     if (time_stop)
         return;
     actionwk->exeno = 2;
-    a1 = &actwk[((Uint16 *)actionwk)[38]];
+    a1 = &actwk[special_enemy_get_work(actionwk)->linked_actor_index];
     a1->actflg |= 1;
-    ((Sint16 *)actionwk)[36] = 60;
+    special_enemy_get_work(actionwk)->timer = 60;
     d0 = random() & 1;
-    actionwk->actfree[3] = d0;
+    special_enemy_get_work(actionwk)->direction = d0;
     patinit(actionwk, 0);
     spe_time.l += 30;
     a1 = &actwk[16];
     a1->actno = 4;
-    a1->actfree[1] = 3;
+    special_enemy_get_work(a1)->subtype = 3;
     a1->sx_posi.w.h = actionwk->sx_posi.w.h;
     a1->sy_posi.w.h = actionwk->sy_posi.w.h;
 }
@@ -399,18 +471,17 @@ void tufo02(sprite_status_sp *actionwk) {
     Uint16 *tim, d0;
     sprite_status_sp *a1;
 
-    tim = (Uint16 *)(actionwk->actfree);
-
     actionwk->sx_posi.w.h -= 4;
-    if (actionwk->actfree[3] == 0)
+    if (special_enemy_get_work(actionwk)->direction == 0)
         actionwk->sx_posi.w.h += 8;
 
     ++actionwk->sy_posi.w.h;
     actionwk->actflg &= 251;
+    tim = &special_enemy_get_work(actionwk)->timer;
     if (--*tim == 0)
         actionwk->actflg |= 1;
 
-    if (actionwk->actfree[0] & 1) {
+    if (special_enemy_get_work(actionwk)->timer_low & 1) {
         if (exp_set(&a1) != 0)
             return;
         a1->actno = 12;
@@ -440,8 +511,8 @@ void ufo0(sprite_status_sp *actionwk) {
     }
     actionwk->z_posi.w.h = actwk[0].z_posi.w.h;
     actionwk->z_posi.w.h -= 320;
-    if (actionwk->actfree[20]) {
-        --actionwk->actfree[20];
+    if (special_enemy_get_work(actionwk)->flash_timer) {
+        --special_enemy_get_work(actionwk)->flash_timer;
         actionwk->actflg |= 4;
     }
 }
@@ -452,15 +523,15 @@ void ufo00(sprite_status_sp *actionwk) {
     mvtblset(actionwk);
 
     actionwk->pattbl = mpufox;
-    if (actionwk->actfree[18] != 0)
+    if (special_enemy_get_work(actionwk)->ufo_type != 0)
         actionwk->pattbl = mpufoy;
 
     actionwk->z_posi.w.h = actwk[0].z_posi.w.h;
     actionwk->z_posi.w.h -= 320;
-    actionwk->actfree[2] = 0;
-    patinit(actionwk, actionwk->actfree[2]);
+    special_enemy_get_work(actionwk)->pattern = 0;
+    patinit(actionwk, special_enemy_get_work(actionwk)->pattern);
 
-    actionwk->actfree[20] = 2;
+    special_enemy_get_work(actionwk)->flash_timer = 2;
     ++actionwk->exeno;
 }
 
@@ -468,9 +539,9 @@ void ufo01(sprite_status_sp *actionwk) {
     Uint16 *mcnt;
     sprite_status_sp *a1;
 
-    mcnt = (Uint16 *)(actionwk->actfree + 16);
     actionwk->x_posi.l += actionwk->x_speed.l;
     actionwk->y_posi.l += actionwk->y_speed.l;
+    mcnt = &special_enemy_get_work(actionwk)->movement_count;
     if (--*mcnt == 0) {
         mvtblset(actionwk);
     }
@@ -485,19 +556,20 @@ void ufo01(sprite_status_sp *actionwk) {
 
     ufo_dec();
     actionwk->exeno = 2;
-    a1 = &actwk[((Uint16 *)actionwk)[38]];
+    a1 = &actwk[special_enemy_get_work(actionwk)->linked_actor_index];
     a1->actflg |= 1;
-    ((Sint16 *)actionwk)[36] = 60;
-    actionwk->actfree[3] = random() & 1;
+    special_enemy_get_work(actionwk)->timer = 60;
+    special_enemy_get_work(actionwk)->direction = random() & 1;
     patinit(actionwk, 0);
 
     a1 = &actwk[16];
     a1->actno = 4;
     a1->sx_posi.w.h = actionwk->sx_posi.w.h;
     a1->sy_posi.w.h = actionwk->sy_posi.w.h;
-    a1->actfree[1] = actionwk->actfree[18];
+    special_enemy_get_work(a1)->subtype =
+        special_enemy_get_work(actionwk)->ufo_type;
 
-    switch (actionwk->actfree[18]) {
+    switch (special_enemy_get_work(actionwk)->ufo_type) {
     case 0:
     case 2:
     case 3:
@@ -505,7 +577,7 @@ void ufo01(sprite_status_sp *actionwk) {
         ring_add(rufo_getnm >> 1);
         break;
     case 1:
-        ((Sint16 *)&actwk[0])[45] = 200;
+        special_enemy_get_work(&actwk[0])->player_timer = 200;
         rufo_getnm = 20;
     }
 }
@@ -514,18 +586,17 @@ void ufo02(sprite_status_sp *actionwk) {
     Uint16 *tim, d0;
     sprite_status_sp *a1;
 
-    tim = (Uint16 *)(actionwk->actfree);
-
     actionwk->sx_posi.w.h -= 4;
-    if (actionwk->actfree[3] == 0)
+    if (special_enemy_get_work(actionwk)->direction == 0)
         actionwk->sx_posi.w.h += 8;
 
     ++actionwk->sy_posi.w.h;
     actionwk->actflg &= 251;
+    tim = &special_enemy_get_work(actionwk)->timer;
     if (--*tim == 0)
         actionwk->actflg |= 1;
 
-    if (actionwk->actfree[1] & 1)
+    if (special_enemy_get_work(actionwk)->subtype & 1)
         return;
 
     if (exp_set(&a1) != 0)
@@ -546,13 +617,14 @@ void mvtblset(sprite_status_sp *actionwk) {
     Sint32 d2l, d3l;
 
     do {
-        a1 = ((Sint16 **)actionwk)[21];
+        a1 = special_enemy_get_work(actionwk)->movement_table_cursor;
 
-        mcnt = ((Sint16 *)actionwk)[44] = *a1++;
+        mcnt = special_enemy_get_work(actionwk)->movement_count = *a1++;
         if (mcnt >= 0)
             break;
 
-        ((Sint16 **)actionwk)[21] = ((Sint16 **)actionwk)[20];
+        special_enemy_get_work(actionwk)->movement_table_cursor =
+            special_enemy_get_work(actionwk)->movement_table_start;
 
     } while (1);
 
@@ -574,7 +646,7 @@ void mvtblset(sprite_status_sp *actionwk) {
     d3l <<= 12;
     actionwk->x_speed.l = d2l;
     actionwk->y_speed.l = d3l;
-    ((Sint16 **)actionwk)[21] = a1;
+    special_enemy_get_work(actionwk)->movement_table_cursor = a1;
 }
 
 void ufo_frout_chk(sprite_status_sp *actionwk) {
@@ -645,10 +717,10 @@ void ptset_ufo(sprite_status_sp *actionwk) {
     if (d0l > 80)
         d0l = 80;
 
-    if (actionwk->actfree[2] == ufo_pat_tbl[d0l])
+    if (special_enemy_get_work(actionwk)->pattern == ufo_pat_tbl[d0l])
         return;
-    actionwk->actfree[2] = ufo_pat_tbl[d0l];
-    patinit1(actionwk, actionwk->actfree[2]);
+    special_enemy_get_work(actionwk)->pattern = ufo_pat_tbl[d0l];
+    patinit1(actionwk, special_enemy_get_work(actionwk)->pattern);
 }
 
 mvtbl *mvtbl_tbl[8] = {&mvtbl0, &mvtbl1, &mvtbl2, &mvtbl3,
@@ -688,14 +760,14 @@ void u_init(Sint16 cnt, sprite_status_sp *a2) {
     dummy = a2 - actwk;
     a4 = &actwk[dummy + 8];
     a2->actno = 2;
-    a2->actfree[18] = (char)a1tbl[0];
-    a2->actfree[19] = (char)a1tbl[1];
+    special_enemy_get_work(a2)->ufo_type = (char)a1tbl[0];
+    special_enemy_get_work(a2)->ufo_direction = (char)a1tbl[1];
     a1tbl += 2;
-    ((Sint16 **)a2)[20] = a1tbl;
-    ((Sint16 **)a2)[21] = a1tbl;
-    ((Uint16 *)a2)[38] = dummy + 8;
+    special_enemy_get_work(a2)->movement_table_start = a1tbl;
+    special_enemy_get_work(a2)->movement_table_cursor = a1tbl;
+    special_enemy_get_work(a2)->linked_actor_index = dummy + 8;
     a4->actno = 5;
-    ((Uint16 *)a4)[38] = a2 - actwk;
+    special_enemy_get_work(a4)->linked_actor_index = a2 - actwk;
 }
 
 void tufo_initial(void) {
@@ -713,14 +785,14 @@ void tufo_initial(void) {
 
     a2->actno = 3;
 
-    a2->actfree[18] = tufo_tbl[0];
-    a2->actfree[19] = tufo_tbl[1];
+    special_enemy_get_work(a2)->ufo_type = (Uint8)tufo_tbl[0];
+    special_enemy_get_work(a2)->ufo_direction = (Uint8)tufo_tbl[1];
     a3 += 2;
-    ((Sint16 **)a2)[20] = a3;
-    ((Sint16 **)a2)[21] = a3;
-    ((Uint16 *)a2)[38] = (Uint16)dummy + 8;
+    special_enemy_get_work(a2)->movement_table_start = a3;
+    special_enemy_get_work(a2)->movement_table_cursor = a3;
+    special_enemy_get_work(a2)->linked_actor_index = (Uint16)dummy + 8;
     a4->actno = 5;
-    ((Uint16 *)a4)[38] = a2 - actwk;
+    special_enemy_get_work(a4)->linked_actor_index = a2 - actwk;
 }
 
 void plkage(sprite_status_sp *actionwk) {
@@ -737,8 +809,8 @@ void plkage(sprite_status_sp *actionwk) {
 void plkage00(sprite_status_sp *actionwk) {
     actionwk->sprcolor = 59100;
     actionwk->pattbl = mpkage;
-    actionwk->actfree[2] = 5;
-    patinit(actionwk, actionwk->actfree[2]);
+    special_enemy_get_work(actionwk)->pattern = 5;
+    patinit(actionwk, special_enemy_get_work(actionwk)->pattern);
     ++actionwk->exeno;
 }
 
@@ -767,15 +839,15 @@ void kage(sprite_status_sp *actionwk) {
 void kage00(sprite_status_sp *actionwk) {
     actionwk->sprcolor = 59100;
     actionwk->pattbl = mpkage;
-    actionwk->actfree[2] = 0;
-    patinit(actionwk, actionwk->actfree[2]);
+    special_enemy_get_work(actionwk)->pattern = 0;
+    patinit(actionwk, special_enemy_get_work(actionwk)->pattern);
     ++actionwk->exeno;
 }
 
 void kage01(sprite_status_sp *actionwk) {
     sprite_status_sp *a1;
 
-    a1 = &actwk[((Uint16 *)actionwk)[38]];
+    a1 = &actwk[special_enemy_get_work(actionwk)->linked_actor_index];
     actionwk->x_posi.w.h = a1->x_posi.w.h;
     actionwk->y_posi.w.h = a1->y_posi.w.h;
     a1->actflg |= 4;
@@ -809,9 +881,9 @@ void press00(sprite_status_sp *actionwk) {
 }
 
 void press01(sprite_status_sp *actionwk) {
-    ++actionwk->actfree[0];
+    ++special_enemy_get_work(actionwk)->timer_low;
     actionwk->actflg |= 4;
-    if (actionwk->actfree[0] & 16)
+    if (special_enemy_get_work(actionwk)->timer_low & 16)
         return;
     actionwk->actflg &= 251;
 }
@@ -848,12 +920,12 @@ void tlogo01(sprite_status_sp *actionwk) {
     if (actionwk->sx_posi.w.h >= 333)
         return;
     actionwk->sx_posi.w.h = 332;
-    ((Sint16 *)actionwk)[36] = 80;
+    special_enemy_get_work(actionwk)->timer = 80;
     ++actionwk->exeno;
 }
 
 void tlogo02(sprite_status_sp *actionwk) {
-    if (--((Uint16 *)actionwk)[36])
+    if (--special_enemy_get_work(actionwk)->timer)
         return;
     ++actionwk->exeno;
 }
@@ -899,15 +971,15 @@ void tobi01(sprite_status_sp *actionwk) {
     if (actionwk->sy_posi.w.h < 240)
         return;
     actionwk->sy_posi.w.h = 240;
-    ((Sint16 *)actionwk)[36] = 80;
+    special_enemy_get_work(actionwk)->timer = 80;
     ++actionwk->exeno;
 }
 
 void tobi02(sprite_status_sp *actionwk) {
-    if (--((Uint16 *)actionwk)[36] == 0)
+    if (--special_enemy_get_work(actionwk)->timer == 0)
         ++actionwk->exeno;
 
-    if (((Uint16 *)actionwk)[36] != 50)
+    if (special_enemy_get_work(actionwk)->timer != 50)
         return;
     actwk[0].exeno = 21;
 }
@@ -916,14 +988,14 @@ void tobi03(sprite_status_sp *actionwk) {
     actionwk->sy_posi.w.h -= 32;
     if (actionwk->sy_posi.w.h > 0)
         return;
-    ((Sint16 *)actionwk)[36] = 3;
+    special_enemy_get_work(actionwk)->timer = 3;
     actionwk->actflg |= 4;
     ++actionwk->exeno;
     actwk[0].exeno = 1;
 }
 
 void tobi04(sprite_status_sp *actionwk) {
-    if (--((Uint16 *)actionwk)[36])
+    if (--special_enemy_get_work(actionwk)->timer)
         return;
     actionwk->actflg |= 1;
     game_start = 0;
@@ -961,13 +1033,13 @@ void eexp00(sprite_status_sp *actionwk) {
     actionwk->sprcolor = 34734;
     actionwk->pattbl = mpeexp;
     patinit(actionwk, 0);
-    ((Sint16 *)actionwk)[36] = 12;
+    special_enemy_get_work(actionwk)->timer = 12;
     ++actionwk->exeno;
     key_set(163);
 }
 
 void eexp01(sprite_status_sp *actionwk) {
-    if (--((Uint16 *)actionwk)[36])
+    if (--special_enemy_get_work(actionwk)->timer)
         return;
     actionwk->actflg |= 1;
 }

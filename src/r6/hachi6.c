@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "hachi6.h"
 #include "../action.h"
@@ -5,6 +7,37 @@
 #include "../loader2.h"
 #include "../playsub.h"
 #include "../suicide.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint16 timer;
+    Sint32 x_speed;
+    union {
+        Sint32 y_speed;
+        struct {
+            Sint16 shot_x_offset;
+            Sint16 shot_cooldown;
+        };
+    };
+} hachi6_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(hachi6_work, timer) == 0,
+               "hachi6_work.timer offset");
+_Static_assert(offsetof(hachi6_work, x_speed) == 2,
+               "hachi6_work.x_speed offset");
+_Static_assert(offsetof(hachi6_work, y_speed) == 6,
+               "hachi6_work.y_speed offset");
+_Static_assert(offsetof(hachi6_work, shot_x_offset) == 6,
+               "hachi6_work.shot_x_offset offset");
+_Static_assert(offsetof(hachi6_work, shot_cooldown) == 8,
+               "hachi6_work.shot_cooldown offset");
+_Static_assert(sizeof(hachi6_work) <= sizeof(((sprite_status *)0)->actfree),
+               "hachi6_work fits in actfree");
+
+static hachi6_work *hachi6_get_work(sprite_status *actionwk) {
+    return (hachi6_work *)actionwk->actfree;
+}
 
 #if defined(R61B) || defined(R62B)
 #define SPRITE_HACHI6_BASE 441
@@ -61,14 +94,14 @@ static void act_init(sprite_status *actionwk) {
     actionwk->sprvsize = 12;
     actionwk->sproffset = 42071;
     actionwk->colino = 49;
-    ((Sint16 *)actionwk)[26] = -8;
+    hachi6_get_work(actionwk)->shot_x_offset = -8;
 
     if (actionwk->userflag.b.h == 0) {
         actionwk->patbase = pat_hachi6_e;
-        ((Sint32 *)actionwk)[12] = -65536;
+        hachi6_get_work(actionwk)->x_speed = -65536;
     } else {
         actionwk->patbase = pat_hachi6_b;
-        ((Sint32 *)actionwk)[12] = -32768;
+        hachi6_get_work(actionwk)->x_speed = -32768;
     }
 
     act_move(actionwk);
@@ -77,16 +110,18 @@ static void act_init(sprite_status *actionwk) {
 static void act_move(sprite_status *actionwk) {
     actionwk->r_no0 += 2;
     if (actionwk->userflag.b.h == 0)
-        ((Sint16 *)actionwk)[23] = 512;
+        hachi6_get_work(actionwk)->timer = 512;
     else
-        ((Sint16 *)actionwk)[23] = 1024;
+        hachi6_get_work(actionwk)->timer = 1024;
 }
 
 void act_move1(sprite_status *actionwk) {
-    actionwk->xposi.l += ((Sint32 *)actionwk)[12];
+    hachi6_work *work = hachi6_get_work(actionwk);
+
+    actionwk->xposi.l += work->x_speed;
     if (actionwk->userflag.b.h == 0) {
-        if (((Sint16 *)actionwk)[27] != 0) {
-            --((Sint16 *)actionwk)[27];
+        if (work->shot_cooldown != 0) {
+            --work->shot_cooldown;
         } else {
 
             if (act_check(actionwk, &actwk[0])) {
@@ -96,7 +131,7 @@ void act_move1(sprite_status *actionwk) {
         }
     }
 
-    if (--((Sint16 *)actionwk)[23] == 0)
+    if (--work->timer == 0)
         actionwk->r_no0 = 6;
 }
 
@@ -124,8 +159,10 @@ static Sint16 act_check(sprite_status *actionwk, sprite_status *pw) {
         d2 = 0;
     d2 ^= d1;
     if (d2 != 0) {
-        ((Sint32 *)actionwk)[12] = -((Sint32 *)actionwk)[12];
-        ((Sint16 *)actionwk)[26] = -((Sint16 *)actionwk)[26];
+        hachi6_get_work(actionwk)->x_speed =
+            -hachi6_get_work(actionwk)->x_speed;
+        hachi6_get_work(actionwk)->shot_x_offset =
+            -hachi6_get_work(actionwk)->shot_x_offset;
         actionwk->actflg ^= 1;
         actionwk->cddat ^= 1;
     }
@@ -134,54 +171,55 @@ static Sint16 act_check(sprite_status *actionwk, sprite_status *pw) {
 
 void act_rev(sprite_status *actionwk) {
     actionwk->r_no0 += 2;
-    ((Sint16 *)actionwk)[23] = 30;
+    hachi6_get_work(actionwk)->timer = 30;
 }
 
 void act_rev1(sprite_status *actionwk) {
-    if (--((Sint16 *)actionwk)[23] >= 0)
+    if (--hachi6_get_work(actionwk)->timer >= 0)
         return;
     actionwk->r_no0 += 2;
-    ((Sint16 *)actionwk)[23] = 30;
-    ((Sint32 *)actionwk)[12] = -((Sint32 *)actionwk)[12];
-    ((Sint16 *)actionwk)[26] = -((Sint16 *)actionwk)[26];
+    hachi6_get_work(actionwk)->timer = 30;
+    hachi6_get_work(actionwk)->x_speed = -hachi6_get_work(actionwk)->x_speed;
+    hachi6_get_work(actionwk)->shot_x_offset =
+        -hachi6_get_work(actionwk)->shot_x_offset;
     actionwk->actflg ^= 1;
     actionwk->cddat ^= 1;
 }
 
 void act_rev2(sprite_status *actionwk) {
-    if (--((Sint16 *)actionwk)[23] >= 0)
+    if (--hachi6_get_work(actionwk)->timer >= 0)
         return;
     actionwk->r_no0 = 2;
 }
 
 void act_shot(sprite_status *actionwk) {
     actionwk->r_no0 += 2;
-    ((Sint16 *)actionwk)[23] = 30;
+    hachi6_get_work(actionwk)->timer = 30;
     act_shot1(actionwk);
 }
 
 void act_shot1(sprite_status *actionwk) {
-    if (--((Sint16 *)actionwk)[23] >= 0)
+    if (--hachi6_get_work(actionwk)->timer >= 0)
         return;
     actionwk->r_no0 += 2;
-    ((Sint16 *)actionwk)[23] = 30;
+    hachi6_get_work(actionwk)->timer = 30;
     actionwk->mstno.b.h = 1;
     actionwk->colino = 50;
 
     actionwk->sprvsize = 16;
     actionwk->sprhs = 16;
     actionwk->sprhsize = 16;
-    actionwk->xposi.w.h += ((Sint16 *)actionwk)[26];
+    actionwk->xposi.w.h += hachi6_get_work(actionwk)->shot_x_offset;
     actionwk->yposi.w.h += 4;
 }
 
 void act_shot2(sprite_status *actionwk) {
     sprite_status *a1;
 
-    if (--((Sint16 *)actionwk)[23] >= 0)
+    if (--hachi6_get_work(actionwk)->timer >= 0)
         return;
     actionwk->r_no0 += 2;
-    ((Sint16 *)actionwk)[23] = 30;
+    hachi6_get_work(actionwk)->timer = 30;
     if (actwkchk(&a1) != 0)
         return;
     a1->actno = actionwk->actno;
@@ -196,25 +234,25 @@ void act_shot2(sprite_status *actionwk) {
     a1->sprhsize = 16;
     a1->colino = 179;
     a1->yposi.w.h = actionwk->yposi.w.h + 23;
-    ((Sint32 *)a1)[13] = 0x20000;
+    hachi6_get_work(a1)->y_speed = 0x20000;
 
     a1->xposi.w.h = actionwk->xposi.w.h;
     if (actionwk->actflg & 1) {
         a1->xposi.w.h += 7;
-        ((Sint32 *)a1)[12] = 0x20000;
+        hachi6_get_work(a1)->x_speed = 0x20000;
     } else {
         a1->xposi.w.h -= 7;
-        ((Sint32 *)a1)[12] = -0x20000;
+        hachi6_get_work(a1)->x_speed = -0x20000;
     }
     if ((char)actionwk->actflg < 0)
         soundset(160);
 }
 
 void act_shot3(sprite_status *actionwk) {
-    if (--((Sint16 *)actionwk)[23] >= 0)
+    if (--hachi6_get_work(actionwk)->timer >= 0)
         return;
     actionwk->r_no0 = 2;
-    ((Sint16 *)actionwk)[27] = 60;
+    hachi6_get_work(actionwk)->shot_cooldown = 60;
     actionwk->mstno.b.h = 0;
     actionwk->colino = 49;
 
@@ -245,21 +283,23 @@ void tama(sprite_status *actionwk) {
 
 void tam_move(sprite_status *actionwk) {
     actionwk->r_no0 += 2;
-    ((Sint16 *)actionwk)[23] = 3;
+    hachi6_get_work(actionwk)->timer = 3;
 }
 
 void tam_move1(sprite_status *actionwk) {
-    if (--((Sint16 *)actionwk)[23] > 0)
+    if (--hachi6_get_work(actionwk)->timer > 0)
         return;
     actionwk->r_no0 += 2;
     actionwk->patno = 1;
-    ((Sint16 *)actionwk)[23] = 10;
+    hachi6_get_work(actionwk)->timer = 10;
 }
 
 void tam_move2(sprite_status *actionwk) {
-    actionwk->xposi.l += ((Sint32 *)actionwk)[12];
-    actionwk->yposi.l += ((Sint32 *)actionwk)[13];
-    if (--((Sint16 *)actionwk)[23] > 0)
+    hachi6_work *work = hachi6_get_work(actionwk);
+
+    actionwk->xposi.l += work->x_speed;
+    actionwk->yposi.l += work->y_speed;
+    if (--work->timer > 0)
         return;
     actionwk->r_no0 += 2;
 }
@@ -269,7 +309,7 @@ void tam_move3(sprite_status *actionwk) {
         frameout(actionwk);
         return;
     }
-    actionwk->xposi.l += ((Sint32 *)actionwk)[12];
-    actionwk->yposi.l += ((Sint32 *)actionwk)[13];
+    actionwk->xposi.l += hachi6_get_work(actionwk)->x_speed;
+    actionwk->yposi.l += hachi6_get_work(actionwk)->y_speed;
     patchg(actionwk, (Uint8 **)pchg_tama);
 }

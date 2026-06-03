@@ -1,9 +1,71 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "konbea.h"
 #include "../action.h"
 #include "../actset.h"
 #include "../ridechk.h"
 #include "../playsub.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    union {
+        struct {
+            Sint16 parent_index;
+            Sint16 timer;
+            Sint16 origin_x;
+            Sint16 origin_y;
+            Sint8 unused8[12];
+            Uint8 riding_flag;
+        } straight;
+        struct {
+            Sint16 parent_index;
+            Sint16 origin_x;
+            Sint16 origin_y;
+            Sint8 unused6[2];
+            union {
+                Sint32 rotation_accumulator;
+                struct {
+                    Uint16 rotation_fraction;
+                    Sint16 angle_index;
+                };
+            };
+            Sint16 roll_timer;
+            Sint8 unused14[6];
+            Uint8 riding_flag;
+        } moving;
+    };
+} konbea_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(konbea_work, straight.parent_index) == 0,
+               "konbea_work.straight.parent_index offset");
+_Static_assert(offsetof(konbea_work, straight.timer) == 2,
+               "konbea_work.straight.timer offset");
+_Static_assert(offsetof(konbea_work, moving.origin_x) == 2,
+               "konbea_work.moving.origin_x offset");
+_Static_assert(offsetof(konbea_work, straight.origin_x) == 4,
+               "konbea_work.straight.origin_x offset");
+_Static_assert(offsetof(konbea_work, moving.origin_y) == 4,
+               "konbea_work.moving.origin_y offset");
+_Static_assert(offsetof(konbea_work, straight.origin_y) == 6,
+               "konbea_work.straight.origin_y offset");
+_Static_assert(offsetof(konbea_work, moving.rotation_accumulator) == 8,
+               "konbea_work.moving.rotation_accumulator offset");
+_Static_assert(offsetof(konbea_work, moving.angle_index) == 10,
+               "konbea_work.moving.angle_index offset");
+_Static_assert(offsetof(konbea_work, moving.roll_timer) == 12,
+               "konbea_work.moving.roll_timer offset");
+_Static_assert(offsetof(konbea_work, straight.riding_flag) == 20,
+               "konbea_work.straight.riding_flag offset");
+_Static_assert(offsetof(konbea_work, moving.riding_flag) == 20,
+               "konbea_work.moving.riding_flag offset");
+_Static_assert(sizeof(konbea_work) <= sizeof(((sprite_status *)0)->actfree),
+               "konbea_work fits in actfree");
+
+static konbea_work *konbea_get_work(sprite_status *pActwk) {
+    return (konbea_work *)pActwk->actfree;
+}
 
 static void a_init(sprite_status *pActwk);
 static void a_init_sub(sprite_status *pActwk, sprite_status *pNewact);
@@ -103,24 +165,27 @@ static void (*b_act_tbl[4])(sprite_status *) = {&b_init, &b_stop, &b_stop1,
 
 void konbea(sprite_status *pActwk) {
     sprite_status *pMainwk;
+    konbea_work *pWork = konbea_get_work(pActwk);
 
     if (!pActwk->userflag.b.h) {
 
         if (pActwk->userflag.b.l) {
-            pMainwk = &actwk[((Sint16 *)pActwk)[23]];
+            pMainwk = &actwk[pWork->straight.parent_index];
 
             if (pMainwk->actno != 42) {
                 frameout(pActwk);
                 return;
             }
 
-            if (((Sint16 *)pActwk)[25] != ((Sint16 *)pMainwk)[25]) {
+            if (pWork->straight.origin_x !=
+                konbea_get_work(pMainwk)->straight.origin_x) {
 
                 frameout(pActwk);
                 return;
             }
 
-            if (((Sint16 *)pActwk)[26] != ((Sint16 *)pMainwk)[26]) {
+            if (pWork->straight.origin_y !=
+                konbea_get_work(pMainwk)->straight.origin_y) {
 
                 frameout(pActwk);
                 return;
@@ -131,7 +196,7 @@ void konbea(sprite_status *pActwk) {
         actionsub(pActwk);
 
         if (!(pActwk->userflag.b.l & 128)) {
-            frameout_s00(pActwk, ((Sint16 *)pActwk)[25]);
+            frameout_s00(pActwk, pWork->straight.origin_x);
         }
 
     } else {
@@ -145,7 +210,7 @@ static void a_init(sprite_status *pActwk) {
 
     pTbl = a_tbl0[pActwk->userflag.b.l];
 
-    ((Sint16 *)pActwk)[24] = *pTbl++;
+    konbea_get_work(pActwk)->straight.timer = *pTbl++;
     pNewact = pActwk;
     a_init_sub(pActwk, pNewact);
 
@@ -157,10 +222,10 @@ static void a_init(sprite_status *pActwk) {
         }
 
         pNewact->actno = pActwk->actno;
-        ((Sint16 *)pNewact)[23] = pActwk - actwk;
+        konbea_get_work(pNewact)->straight.parent_index = pActwk - actwk;
         pNewact->userflag.b.h = pActwk->userflag.b.h;
         pNewact->userflag.b.l = -1;
-        ((Sint16 *)pNewact)[24] = *pTbl++;
+        konbea_get_work(pNewact)->straight.timer = *pTbl++;
         pNewact->xposi.w.h = pActwk->xposi.w.h + *pTbl++;
         pNewact->yposi.w.h = pActwk->yposi.w.h + *pTbl++;
         a_init_sub(pActwk, pNewact);
@@ -175,30 +240,32 @@ static void a_init_sub(sprite_status *pActwk, sprite_status *pNewact) {
     pNewact->sprvsize = 5;
     pNewact->sproffset = 844;
     pNewact->patbase = pat_konbea;
-    ((Sint16 *)pNewact)[25] = pActwk->xposi.w.h;
-    ((Sint16 *)pNewact)[26] = pActwk->yposi.w.h;
+    konbea_get_work(pNewact)->straight.origin_x = pActwk->xposi.w.h;
+    konbea_get_work(pNewact)->straight.origin_y = pActwk->yposi.w.h;
 }
 
 static void a_stop(sprite_status *pActwk) {
     pActwk->sprvsize = 5;
-    ((Sint16 *)pActwk)[24] = 120;
+    konbea_get_work(pActwk)->straight.timer = 120;
     pActwk->r_no0 += 2;
     a_stop1(pActwk);
 }
 
 static void a_stop1(sprite_status *pActwk) {
+    konbea_work *pWork = konbea_get_work(pActwk);
+
     if (ridechk(pActwk, &actwk[0])) {
-        pActwk->actfree[20] = 255;
+        pWork->straight.riding_flag = 255;
     } else {
-        pActwk->actfree[20] = 0;
+        pWork->straight.riding_flag = 0;
     }
 
-    if (!(--((Sint16 *)pActwk)[24])) {
+    if (!(--pWork->straight.timer)) {
         pActwk->sprvsize = 16;
         pActwk->mstno.w = 255;
         pActwk->r_no0 += 2;
 
-        if (pActwk->actfree[20]) {
+        if (pWork->straight.riding_flag) {
             ride_on_clr(pActwk, &actwk[0]);
         }
     }
@@ -214,22 +281,25 @@ static void a_move(sprite_status *pActwk) {
 
 static void move_version(sprite_status *pActwk) {
     sprite_status *pMainwk;
+    konbea_work *pWork = konbea_get_work(pActwk);
 
     if (pActwk->userflag.b.l) {
-        pMainwk = &actwk[((Sint16 *)pActwk)[23]];
+        pMainwk = &actwk[pWork->moving.parent_index];
 
         if (pMainwk->actno != 42) {
             frameout(pActwk);
             return;
         }
 
-        if (((Sint16 *)pActwk)[24] != ((Sint16 *)pMainwk)[24]) {
+        if (pWork->moving.origin_x !=
+            konbea_get_work(pMainwk)->moving.origin_x) {
 
             frameout(pActwk);
             return;
         }
 
-        if (((Sint16 *)pActwk)[25] != ((Sint16 *)pMainwk)[25]) {
+        if (pWork->moving.origin_y !=
+            konbea_get_work(pMainwk)->moving.origin_y) {
 
             frameout(pActwk);
             return;
@@ -240,7 +310,7 @@ static void move_version(sprite_status *pActwk) {
     actionsub(pActwk);
 
     if (!(pActwk->userflag.b.l & 128)) {
-        frameout_s00(pActwk, ((Sint16 *)pActwk)[24]);
+        frameout_s00(pActwk, pWork->moving.origin_x);
     }
 }
 
@@ -261,12 +331,12 @@ static void b_init(sprite_status *pActwk) {
         }
 
         pNewact->actno = pActwk->actno;
-        ((Sint16 *)pNewact)[23] = pActwk - actwk;
+        konbea_get_work(pNewact)->moving.parent_index = pActwk - actwk;
         pNewact->userflag.b.h = pActwk->userflag.b.h;
         pNewact->userflag.b.l = -1;
         pNewact->xposi.w.h = pActwk->xposi.w.h;
         pNewact->yposi.w.h = pActwk->yposi.w.h;
-        ((Sint16 *)pNewact)[28] = wk2;
+        konbea_get_work(pNewact)->moving.angle_index = wk2;
         wk2 += wk1;
         b_init_sub(pActwk, pNewact);
     }
@@ -280,8 +350,8 @@ static void b_init_sub(sprite_status *pActwk, sprite_status *pNewact) {
     pNewact->sprvsize = 5;
     pNewact->sproffset = 844;
     pNewact->patbase = pat_konbea;
-    ((Sint16 *)pNewact)[24] = pActwk->xposi.w.h;
-    ((Sint16 *)pNewact)[25] = pActwk->yposi.w.h;
+    konbea_get_work(pNewact)->moving.origin_x = pActwk->xposi.w.h;
+    konbea_get_work(pNewact)->moving.origin_y = pActwk->yposi.w.h;
 }
 
 static void b_stop(sprite_status *pActwk) {
@@ -291,20 +361,22 @@ static void b_stop(sprite_status *pActwk) {
 }
 
 static void b_stop1(sprite_status *pActwk) {
+    konbea_work *pWork = konbea_get_work(pActwk);
+
     b_move(pActwk);
 
     if (ridechk(pActwk, &actwk[0])) {
-        pActwk->actfree[20] = 255;
+        pWork->moving.riding_flag = 255;
     } else {
-        pActwk->actfree[20] = 0;
+        pWork->moving.riding_flag = 0;
     }
 
-    if (((Sint16 *)pActwk)[28] == 344) {
+    if (pWork->moving.angle_index == 344) {
         pActwk->r_no0 += 2;
         pActwk->sprvsize = 16;
-        ((Sint16 *)pActwk)[29] = 216;
+        pWork->moving.roll_timer = 216;
 
-        if (pActwk->actfree[20]) {
+        if (pWork->moving.riding_flag) {
             ride_on_clr(pActwk, &actwk[0]);
         }
     }
@@ -312,10 +384,11 @@ static void b_stop1(sprite_status *pActwk) {
 
 static void b_roll(sprite_status *pActwk) {
     short_union patnowk;
+    konbea_work *pWork = konbea_get_work(pActwk);
 
     b_move(pActwk);
 
-    if (--((Sint16 *)pActwk)[29] < 0) {
+    if (--pWork->moving.roll_timer < 0) {
         pActwk->patno = 0;
         pActwk->r_no0 = 2;
     } else {
@@ -334,18 +407,19 @@ static void b_roll(sprite_status *pActwk) {
 static void b_move(sprite_status *pActwk) {
     Sint16 xsav, idx, xwk, ywk;
     char *pKonbeaTbl;
+    konbea_work *pWork = konbea_get_work(pActwk);
 
     xsav = pActwk->xposi.w.h;
-    idx = ((Sint16 *)pActwk)[28];
+    idx = pWork->moving.angle_index;
     pKonbeaTbl = &konbea8tbl[idx * 2];
 
-    xwk = ((Sint16 *)pActwk)[24] + (Sint16)*pKonbeaTbl++;
-    ywk = ((Sint16 *)pActwk)[25] + (Sint16)*pKonbeaTbl++;
+    xwk = pWork->moving.origin_x + (Sint16)*pKonbeaTbl++;
+    ywk = pWork->moving.origin_y + (Sint16)*pKonbeaTbl++;
     pActwk->xposi.w.h = xwk;
     pActwk->yposi.w.h = ywk;
     pActwk->xspeed.w = xwk - xsav << 8;
 
-    if ((*(Sint32 *)&pActwk->actfree[8] += 65536) >= 29229056) {
-        *(Sint32 *)&pActwk->actfree[8] = 0;
+    if ((pWork->moving.rotation_accumulator += 65536) >= 29229056) {
+        pWork->moving.rotation_accumulator = 0;
     }
 }

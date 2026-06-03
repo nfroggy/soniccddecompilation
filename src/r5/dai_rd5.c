@@ -4,7 +4,63 @@
 #include "../actset.h"
 #include "../dircol.h"
 #include "../etc.h"
+#include "../player_work.h"
 #include "../ridechk.h"
+#include "../spring.h"
+#include <stddef.h>
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 unused0[2];
+    union {
+        Sint16 motion_position;
+        struct {
+            Uint8 motion_low;
+            Uint8 motion_high;
+        };
+    };
+    Sint16 motion_speed;
+    Sint16 motion_delta;
+    Sint16 origin_y;
+    Uint8 unused10[2];
+    Sint16 origin_x;
+    Uint8 unused14[3];
+    Uint8 wait_timer;
+    Uint8 moving_backward;
+    Uint8 state;
+    Uint8 bob_angle;
+    Uint8 flags;
+} dai_rd5_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(dai_rd5_work, motion_position) == 2,
+               "dai_rd5_work.motion_position offset");
+_Static_assert(offsetof(dai_rd5_work, motion_high) == 3,
+               "dai_rd5_work.motion_high offset");
+_Static_assert(offsetof(dai_rd5_work, motion_speed) == 4,
+               "dai_rd5_work.motion_speed offset");
+_Static_assert(offsetof(dai_rd5_work, motion_delta) == 6,
+               "dai_rd5_work.motion_delta offset");
+_Static_assert(offsetof(dai_rd5_work, origin_y) == 8,
+               "dai_rd5_work.origin_y offset");
+_Static_assert(offsetof(dai_rd5_work, origin_x) == 12,
+               "dai_rd5_work.origin_x offset");
+_Static_assert(offsetof(dai_rd5_work, wait_timer) == 17,
+               "dai_rd5_work.wait_timer offset");
+_Static_assert(offsetof(dai_rd5_work, moving_backward) == 18,
+               "dai_rd5_work.moving_backward offset");
+_Static_assert(offsetof(dai_rd5_work, state) == 19,
+               "dai_rd5_work.state offset");
+_Static_assert(offsetof(dai_rd5_work, bob_angle) == 20,
+               "dai_rd5_work.bob_angle offset");
+_Static_assert(offsetof(dai_rd5_work, flags) == 21,
+               "dai_rd5_work.flags offset");
+_Static_assert(sizeof(dai_rd5_work) <= sizeof(((sprite_status *)0)->actfree),
+               "dai_rd5_work fits in actfree");
+
+static inline dai_rd5_work *dai_rd5_work_get(sprite_status *pActwk) {
+    return (dai_rd5_work *)pActwk->actfree;
+}
 
 #if defined(R53C) || defined(R53D)
 #define SPRITE_DAIRD5_BASE 413
@@ -44,10 +100,11 @@ sprite_pattern *dair5pat[6] = {&pat00, &pat01, &pat02, &pat03, &pat04, &pat05};
 
 void dair5(sprite_status *pActwk) {
     void (*tbl[2])(sprite_status *) = {&dair5_init, &dair5_move};
+    dai_rd5_work *work = dai_rd5_work_get(pActwk);
 
     tbl[pActwk->r_no0 / 2](pActwk);
     actionsub(pActwk);
-    frameout_s00(pActwk, ((Sint16 *)pActwk)[29]);
+    frameout_s00(pActwk, work->origin_x);
 }
 
 static void dair5_init(sprite_status *pActwk) {
@@ -67,6 +124,7 @@ static void dair5_init(sprite_status *pActwk) {
 
     Uint8 bane_flag[25] = {0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                            0, 2, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0};
+    dai_rd5_work *work = dai_rd5_work_get(pActwk);
 
     pActwk->r_no0 += 2;
     pActwk->actflg |= 4;
@@ -79,8 +137,8 @@ static void dair5_init(sprite_status *pActwk) {
     pActwk->sproffset = d0;
 
     pActwk->patbase = dair5pat;
-    ((Sint16 *)pActwk)[29] = pActwk->xposi.w.h;
-    ((Sint16 *)pActwk)[27] = pActwk->yposi.w.h;
+    work->origin_x = pActwk->xposi.w.h;
+    work->origin_y = pActwk->yposi.w.h;
     pActwk->sprvsize = 16;
     bd0 = 0;
     bd1 = 0;
@@ -94,7 +152,7 @@ static void dair5_init(sprite_status *pActwk) {
     pActwk->sprhsize = *a2++;
 
     a2 = &belt_flag[bd0];
-    pActwk->actfree[21] = *a2;
+    work->flags = *a2;
 
     a2 = &bane_flag[bd0];
     bd1 = *a2;
@@ -136,16 +194,19 @@ static void dair5_move(sprite_status *pActwk) {
     ridechk(pActwk, &actwk[0]);
 }
 
-static void type01(sprite_status *pActwk) { pActwk->actfree[21] |= 128; }
+static void type01(sprite_status *pActwk) {
+    dai_rd5_work_get(pActwk)->flags |= 128;
+}
 
 static void type02(sprite_status *pActwk) {
     Sint16 d0;
+    dai_rd5_work *work = dai_rd5_work_get(pActwk);
 
-    pActwk->actfree[21] |= 128;
-    ((Sint16 *)pActwk)[26] = 4;
+    work->flags |= 128;
+    work->motion_delta = 4;
     dodai_sub(pActwk, 48);
 
-    d0 = ((Sint16 *)pActwk)[25];
+    d0 = work->motion_speed;
     if (pActwk->userflag.b.h & 128) {
         d0 *= -1;
     }
@@ -156,10 +217,11 @@ static void type02(sprite_status *pActwk) {
 static void type03(sprite_status *pActwk) {
     Sint32 ld0;
     Sint16 d0;
+    dai_rd5_work *work = dai_rd5_work_get(pActwk);
 
-    ((Sint16 *)pActwk)[26] = 4;
+    work->motion_delta = 4;
     dodai_sub(pActwk, 48);
-    d0 = ((Sint16 *)pActwk)[25];
+    d0 = work->motion_speed;
     if (pActwk->userflag.b.h & 128) {
         d0 *= -1;
     }
@@ -170,12 +232,13 @@ static void type03(sprite_status *pActwk) {
 
 static void type04(sprite_status *pActwk) {
     Sint16 d0;
+    dai_rd5_work *work = dai_rd5_work_get(pActwk);
 
-    pActwk->actfree[21] |= 128;
-    ((Sint16 *)pActwk)[26] = 4;
+    work->flags |= 128;
+    work->motion_delta = 4;
     dodai_sub(pActwk, 32);
 
-    d0 = ((Sint16 *)pActwk)[25];
+    d0 = work->motion_speed;
     if (pActwk->userflag.b.h & 128) {
         d0 *= -1;
     }
@@ -186,19 +249,20 @@ static void type04(sprite_status *pActwk) {
 static void type05(sprite_status *pActwk) {
     Sint32 ld0;
     Sint16 d0;
+    dai_rd5_work *work = dai_rd5_work_get(pActwk);
 
-    if (pActwk->actfree[19] == 0) {
-        pActwk->actfree[21] |= 128;
+    if (work->state == 0) {
+        work->flags |= 128;
         if (pActwk->cddat & 8) {
-            pActwk->actfree[17] = 30;
-            pActwk->actfree[19] = 1;
+            work->wait_timer = 30;
+            work->state = 1;
         }
     } else {
-        if (pActwk->actfree[17]) {
-            --pActwk->actfree[17];
-            if (pActwk->actfree[17])
+        if (work->wait_timer) {
+            --work->wait_timer;
+            if (work->wait_timer)
                 return;
-            pActwk->actfree[21] &= 127;
+            work->flags &= 127;
         }
         pActwk->sprvsize = 16;
         if (pActwk->yspeed.w >= 512) {
@@ -225,15 +289,18 @@ static void type05(sprite_status *pActwk) {
 
 static void type06(sprite_status *pActwk) {
     void (*tbl[3])(sprite_status *) = {&type06_00, &type06_01, &type06_02};
+    dai_rd5_work *work = dai_rd5_work_get(pActwk);
 
-    tbl[pActwk->actfree[19] / 2](pActwk);
+    tbl[work->state / 2](pActwk);
 }
 
 static void type06_00(sprite_status *pActwk) {
-    pActwk->actfree[21] |= 128;
+    dai_rd5_work *work = dai_rd5_work_get(pActwk);
+
+    work->flags |= 128;
     if (pActwk->cddat & 8) {
-        pActwk->actfree[19] += 2;
-        pActwk->actfree[17] = 30;
+        work->state += 2;
+        work->wait_timer = 30;
         type06_01(pActwk);
     }
 }
@@ -241,12 +308,13 @@ static void type06_00(sprite_status *pActwk) {
 static void type06_01(sprite_status *pActwk) {
     Sint32 stk;
     Sint16 d0, d1;
+    dai_rd5_work *work = dai_rd5_work_get(pActwk);
 
-    if (pActwk->actfree[17]) {
-        --pActwk->actfree[17];
-        if (pActwk->actfree[17])
+    if (work->wait_timer) {
+        --work->wait_timer;
+        if (work->wait_timer)
             return;
-        pActwk->actfree[21] &= 127;
+        work->flags &= 127;
         pActwk->sprvsize = 14;
     }
     d0 = pActwk->yspeed.w;
@@ -263,9 +331,9 @@ static void type06_01(sprite_status *pActwk) {
     if (d1 < 0) {
         pActwk->sprvsize = 16;
         pActwk->yspeed.w = 0;
-        ((Sint16 *)pActwk)[27] = pActwk->yposi.w.h;
-        pActwk->actfree[21] |= 128;
-        pActwk->actfree[19] += 2;
+        work->origin_y = pActwk->yposi.w.h;
+        work->flags |= 128;
+        work->state += 2;
     }
 }
 
@@ -273,23 +341,24 @@ static void type06_02(sprite_status *pActwk) {}
 
 static void dodai_sub(sprite_status *pActwk, Uint8 d4) {
     Sint16 d0, d2;
+    dai_rd5_work *work = dai_rd5_work_get(pActwk);
 
-    d2 = ((Sint16 *)pActwk)[26];
-    if (pActwk->actfree[18] == 0) {
-        d0 = ((Sint16 *)pActwk)[25];
+    d2 = work->motion_delta;
+    if (work->moving_backward == 0) {
+        d0 = work->motion_speed;
         d0 += d2;
-        ((Sint16 *)pActwk)[25] = d0;
-        ((Sint16 *)pActwk)[24] += d0;
-        if (d4 <= pActwk->actfree[3]) {
-            pActwk->actfree[18] = 255;
+        work->motion_speed = d0;
+        work->motion_position += d0;
+        if (d4 <= work->motion_high) {
+            work->moving_backward = 255;
         }
     } else {
-        d0 = ((Sint16 *)pActwk)[25];
+        d0 = work->motion_speed;
         d0 -= d2;
-        ((Sint16 *)pActwk)[25] = d0;
-        ((Sint16 *)pActwk)[24] += d0;
-        if (d4 > pActwk->actfree[3]) {
-            pActwk->actfree[18] = 0;
+        work->motion_speed = d0;
+        work->motion_position += d0;
+        if (d4 > work->motion_high) {
+            work->moving_backward = 0;
         }
     }
 }
@@ -297,24 +366,25 @@ static void dodai_sub(sprite_status *pActwk, Uint8 d4) {
 static void dai5sub(sprite_status *pActwk) {
     int_union ld0;
     Sint16 d0, d1;
+    dai_rd5_work *work = dai_rd5_work_get(pActwk);
 
-    if (pActwk->actfree[21] & 128) {
+    if (work->flags & 128) {
         if (!(pActwk->cddat & 8)) {
-            if (pActwk->actfree[20] == 0)
+            if (work->bob_angle == 0)
                 return;
 
-            ((char *)pActwk)[66] -= 8;
+            work->bob_angle -= 8;
         } else {
-            if (pActwk->actfree[20] == 64)
+            if (work->bob_angle == 64)
                 return;
 
-            ((char *)pActwk)[66] += 8;
+            work->bob_angle += 8;
         }
-        sinset(pActwk->actfree[20], &d0, &d1);
+        sinset(work->bob_angle, &d0, &d1);
         d1 = 1024;
         ld0.l = d0 * d1;
         d0 = ld0.w.h;
-        d0 += ((Sint16 *)pActwk)[27];
+        d0 += work->origin_y;
         pActwk->yposi.w.h = d0;
     }
 }
@@ -323,12 +393,14 @@ static void banesetsub(sprite_status *pActwk, char d2) {
     sprite_status *pNewActwk;
 
     if (actwkchk2(pActwk, &pNewActwk) == 0) {
+        spring_work *spring = spring_work_get(pNewActwk);
+
         pNewActwk->actno = 10;
         pNewActwk->yposi.w.h = pActwk->yposi.w.h;
         pNewActwk->xposi.w.h = pActwk->xposi.w.h;
-        ((char *)pNewActwk)[60] = d2;
-        ((char *)pNewActwk)[61] = -24;
-        ((Sint16 *)pNewActwk)[28] = (Uint16)(pActwk - actwk);
+        spring->follow_x_offset = d2;
+        spring->follow_y_offset = -24;
+        spring->parent_index = (Uint16)(pActwk - actwk);
         pNewActwk->userflag.b.h = 2;
     }
 }
@@ -338,8 +410,9 @@ static void belttask(sprite_status *pActwk) {
     Sint32 ld0;
     Sint16 d0;
     Uint8 bd1;
+    dai_rd5_work *work = dai_rd5_work_get(pActwk);
 
-    if (!(pActwk->actfree[21] & 1))
+    if (!(work->flags & 1))
         return;
     if (!(pActwk->cddat & 8))
         return;
@@ -351,7 +424,7 @@ static void belttask(sprite_status *pActwk) {
 
     if (!(pPlayerwk->cddat & 8))
         return;
-    d0 = (Uint16)pPlayerwk->actfree[19];
+    d0 = player_work_get(pPlayerwk)->ride_actor_index;
 
     if (d0 != (Sint16)(Uint16)(pActwk - actwk))
         return;

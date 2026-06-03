@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "equ.h"
 #include "playsub.h"
 #include "action.h"
@@ -7,6 +9,85 @@
 #include "etc.h"
 #include "loader2.h"
 #include "ridechk.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint16 origin_x;
+    Sint16 origin_y;
+    Uint8 activated;
+    Sint8 unused5;
+    sprite_status *parent;
+    Uint8 angle;
+} marker_work;
+
+typedef struct {
+    Sint8 unused0[6];
+    union {
+        struct {
+            Uint8 screen_x_high_byte;
+            Uint8 screen_x_low_byte;
+        };
+        Uint16 screen_x_swapped;
+    };
+} test_act_work;
+
+typedef struct {
+    Sint8 unused0[20];
+    Uint16 score_index;
+} playsub_score_work;
+
+typedef struct {
+    Sint8 unused0[6];
+    Uint8 history_offset;
+} muteki_work;
+#pragma pack(pop)
+
+_Static_assert(sizeof(sprite_status *) == 4,
+               "marker_work stores a 32-bit actor pointer");
+_Static_assert(offsetof(marker_work, origin_x) == 0,
+               "marker_work.origin_x offset");
+_Static_assert(offsetof(marker_work, origin_y) == 2,
+               "marker_work.origin_y offset");
+_Static_assert(offsetof(marker_work, activated) == 4,
+               "marker_work.activated offset");
+_Static_assert(offsetof(marker_work, parent) == 6,
+               "marker_work.parent offset");
+_Static_assert(offsetof(marker_work, angle) == 10,
+               "marker_work.angle offset");
+_Static_assert(sizeof(marker_work) <= sizeof(((sprite_status *)0)->actfree),
+               "marker_work fits in actfree");
+_Static_assert(offsetof(test_act_work, screen_x_high_byte) == 6,
+               "test_act_work.screen_x_high_byte offset");
+_Static_assert(offsetof(test_act_work, screen_x_low_byte) == 7,
+               "test_act_work.screen_x_low_byte offset");
+_Static_assert(offsetof(test_act_work, screen_x_swapped) == 6,
+               "test_act_work.screen_x_swapped offset");
+_Static_assert(sizeof(test_act_work) <= sizeof(((sprite_status *)0)->actfree),
+               "test_act_work fits in actfree");
+_Static_assert(offsetof(playsub_score_work, score_index) == 20,
+               "playsub_score_work.score_index offset");
+_Static_assert(sizeof(playsub_score_work) <= sizeof(((sprite_status *)0)->actfree),
+               "playsub_score_work fits in actfree");
+_Static_assert(offsetof(muteki_work, history_offset) == 6,
+               "muteki_work.history_offset offset");
+_Static_assert(sizeof(muteki_work) <= sizeof(((sprite_status *)0)->actfree),
+               "muteki_work fits in actfree");
+
+static marker_work *marker_get_work(sprite_status *markerwk) {
+    return (marker_work *)markerwk->actfree;
+}
+
+static test_act_work *test_act_get_work(sprite_status *testwk) {
+    return (test_act_work *)testwk->actfree;
+}
+
+static playsub_score_work *playsub_score_get_work(sprite_status *tensuuwk) {
+    return (playsub_score_work *)tensuuwk->actfree;
+}
+
+static muteki_work *muteki_get_work(sprite_status *bariawk) {
+    return (muteki_work *)bariawk->actfree;
+}
 
 extern sprite_pattern *markerpat[];
 extern Uint8 *markerchg[];
@@ -137,8 +218,9 @@ void marker(sprite_status *markerwk) {
 }
 
 void marker_init(sprite_status *markerwk) {
-    sprite_status *new_actwk, **parent;
+    sprite_status *new_actwk;
     Uint16 marker_yposi_m_buf;
+    marker_work *pWork = marker_get_work(markerwk);
 
     markerwk->r_no0 += 2;
     markerwk->patbase = markerpat;
@@ -149,7 +231,7 @@ void marker_init(sprite_status *markerwk) {
     markerwk->sprpri = 4;
 
     if (markerno >= (Uint8)markerwk->userflag.b.h)
-        markerwk->actfree[4] = 1;
+        pWork->activated = 1;
     else
         markerwk->colino = 227;
     if (actwkchk(&new_actwk) != 0) {
@@ -158,7 +240,7 @@ void marker_init(sprite_status *markerwk) {
     }
     new_actwk->actno = 19;
     new_actwk->r_no0 += 4;
-    if (markerwk->actfree[4] != 0)
+    if (pWork->activated != 0)
         new_actwk->r_no0 += 2;
     new_actwk->patbase = markerpat;
     new_actwk->sproffset = 1739;
@@ -167,24 +249,24 @@ void marker_init(sprite_status *markerwk) {
     new_actwk->sprvsize = 8;
     new_actwk->sprpri = 3;
     new_actwk->patno = 1;
-    parent = (sprite_status **)&new_actwk->actfree[6];
-    *parent = markerwk;
+    marker_get_work(new_actwk)->parent = markerwk;
     new_actwk->xposi.w.h = markerwk->xposi.w.h;
     new_actwk->yposi.w.h = markerwk->yposi.w.h - 32;
-    ((Sint16 *)new_actwk)[23] = markerwk->xposi.w.h;
+    marker_get_work(new_actwk)->origin_x = markerwk->xposi.w.h;
     marker_yposi_m_buf = markerwk->yposi.w.h - 24;
-    ((Sint16 *)new_actwk)[24] = marker_yposi_m_buf;
+    marker_get_work(new_actwk)->origin_y = marker_yposi_m_buf;
 }
 
 void marker_move0(sprite_status *markerwk) {
+    marker_work *pWork = marker_get_work(markerwk);
 
-    if (markerwk->actfree[4] != 0)
+    if (pWork->activated != 0)
         return;
 
     if (markerwk->colicnt == 0)
         return;
     markerwk->colino = 0;
-    markerwk->actfree[4] = 1;
+    pWork->activated = 1;
     markerno = markerwk->userflag.b.h;
     plflag = 1;
     playsave0(&actwk[0]);
@@ -194,29 +276,29 @@ void marker_move0(sprite_status *markerwk) {
 void marker_move1(sprite_status *markerwk) {
     Sint32 sin_data, cos_data;
     Sint16 sin_tmp, cos_tmp;
-    sprite_status **parent, *new_actwk;
+    sprite_status *new_actwk;
+    marker_work *pWork = marker_get_work(markerwk);
 
-    if (markerwk->actfree[4] == 0) {
-        parent = (sprite_status **)&markerwk->actfree[6];
-        new_actwk = *parent;
-        if (new_actwk->actfree[4] == 0)
+    if (pWork->activated == 0) {
+        new_actwk = pWork->parent;
+        if (marker_get_work(new_actwk)->activated == 0)
             return;
-        markerwk->actfree[4] = 1;
+        pWork->activated = 1;
     }
 
-    markerwk->actfree[10] += 8;
-    sinset(markerwk->actfree[10], &sin_tmp, &cos_tmp);
+    pWork->angle += 8;
+    sinset(pWork->angle, &sin_tmp, &cos_tmp);
     sin_data = sin_tmp;
     cos_data = cos_tmp;
     sin_data *= 8;
     sin_data /= 256;
-    markerwk->xposi.w.h = ((Sint16 *)markerwk)[23];
+    markerwk->xposi.w.h = pWork->origin_x;
     markerwk->xposi.w.h += sin_data;
     cos_data = -cos_data * 8;
     cos_data /= 256;
-    markerwk->yposi.w.h = ((Sint16 *)markerwk)[24];
+    markerwk->yposi.w.h = pWork->origin_y;
     markerwk->yposi.w.h += cos_data;
-    if (markerwk->actfree[10] == 0)
+    if (pWork->angle == 0)
         markerwk->r_no0 += 2;
 }
 
@@ -245,8 +327,8 @@ void test_init(sprite_status *testwk) {
     testwk->sprpri = 1;
     testwk->patbase = bariapat;
     testwk->sproffset = 1345;
-    testwk->actfree[6] = testwk->xposi.b.b1;
-    testwk->actfree[7] = testwk->xposi.b.b2;
+    test_act_get_work(testwk)->screen_x_high_byte = testwk->xposi.b.b1;
+    test_act_get_work(testwk)->screen_x_low_byte = testwk->xposi.b.b2;
     testwk->colino = 6;
     test_move(testwk);
 }
@@ -254,7 +336,7 @@ void test_init(sprite_status *testwk) {
 void test_move(sprite_status *testwk) {
     Uint16 cal0, cal1;
 
-    cal0 = ((Uint16 *)testwk)[26] & 65408;
+    cal0 = test_act_get_work(testwk)->screen_x_swapped & 65408;
     cal1 = (Uint16)(scra_h_posit.w.h - 128) & 65408;
     if ((cal0 - cal1) > 640) {
         frameout(testwk);
@@ -270,7 +352,7 @@ void tensuu_set(sprite_status *tensuuwk) {
 
     if (tensuuwk->r_no1 != 0)
         return;
-    score_tmp = ((Uint16 *)tensuuwk)[33];
+    score_tmp = playsub_score_get_work(tensuuwk)->score_index;
     tensuu0(tensuuwk, score_tmp / 2);
 }
 
@@ -683,17 +765,15 @@ void muteki_sub(sprite_status *bariawk) {
     if (cal_no >= 4)
         cal_no -= 4;
     cal_no = cal_no * 24 + 4;
-    ((ushort_union *)&ppw_offset)->b.l =
-        ((ushort_union *)&ppw_offset)->b.l - cal_no;
-    cal_no = bariawk->actfree[6];
-    ((ushort_union *)&ppw_offset)->b.l =
-        ((ushort_union *)&ppw_offset)->b.l - cal_no;
+    ppw_offset.b.l = (Uint8)(ppw_offset.b.l - cal_no);
+    cal_no = muteki_get_work(bariawk)->history_offset;
+    ppw_offset.b.l = (Uint8)(ppw_offset.b.l - cal_no);
     if ((cal_no += 4) >= 24)
         cal_no = 0;
-    bariawk->actfree[6] = cal_no;
+    muteki_get_work(bariawk)->history_offset = cal_no;
 
-    bariawk->xposi.w.h = playposiwk[((ushort_union *)&ppw_offset)->w / 2];
-    bariawk->yposi.w.h = playposiwk[((ushort_union *)&ppw_offset)->w / 2 + 1];
+    bariawk->xposi.w.h = playposiwk[(Uint16)ppw_offset.w / 2];
+    bariawk->yposi.w.h = playposiwk[(Uint16)ppw_offset.w / 2 + 1];
 
     bariawk->cddat = actwk[0].cddat;
     patchg(bariawk, bariachg);

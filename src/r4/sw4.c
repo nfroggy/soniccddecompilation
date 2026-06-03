@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "sw4.h"
 #include "../action.h"
@@ -19,6 +21,52 @@
 #define SPRITE_SW4_BASE 472
 #endif
 
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 unused0[10];
+    Sint16 parent_index;
+    Uint8 unused12[2];
+    Sint8 linked_x_offset;
+    Sint8 linked_y_offset;
+    Uint8 unused16[2];
+    Sint16 switch_index;
+    Uint8 previous_state;
+    Uint8 current_state;
+} sw4_work;
+
+typedef struct {
+    Uint8 unused0[12];
+    Sint16 origin_x;
+} sw4_parent_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(sw4_work, parent_index) == 10,
+               "sw4_work.parent_index offset");
+_Static_assert(offsetof(sw4_work, linked_x_offset) == 14,
+               "sw4_work.linked_x_offset offset");
+_Static_assert(offsetof(sw4_work, linked_y_offset) == 15,
+               "sw4_work.linked_y_offset offset");
+_Static_assert(offsetof(sw4_work, switch_index) == 18,
+               "sw4_work.switch_index offset");
+_Static_assert(offsetof(sw4_work, previous_state) == 20,
+               "sw4_work.previous_state offset");
+_Static_assert(offsetof(sw4_work, current_state) == 21,
+               "sw4_work.current_state offset");
+_Static_assert(sizeof(sw4_work) <= sizeof(((sprite_status *)0)->actfree),
+               "sw4_work fits in actfree");
+_Static_assert(offsetof(sw4_parent_work, origin_x) == 12,
+               "sw4_parent_work.origin_x offset");
+_Static_assert(sizeof(sw4_parent_work) <= sizeof(((sprite_status *)0)->actfree),
+               "sw4_parent_work fits in actfree");
+
+static sw4_work *sw4_get_work(sprite_status *pActwk) {
+    return (sw4_work *)pActwk->actfree;
+}
+
+static sw4_parent_work *sw4_get_parent_work(sprite_status *pActwk) {
+    return (sw4_parent_work *)pActwk->actfree;
+}
+
 static void act_init(sprite_status *pActwk);
 static void act_move(sprite_status *pActwk);
 static Sint16 hosei(sprite_status *pActwk, sprite_status *pActwk2);
@@ -35,6 +83,8 @@ void sw4(sprite_status *pActwk) {
 }
 
 static void act_init(sprite_status *pActwk) {
+    sw4_work *work = sw4_get_work(pActwk);
+
     pActwk->r_no0 += 2;
     pActwk->actflg |= 4;
     pActwk->sprpri = 3;
@@ -43,36 +93,37 @@ static void act_init(sprite_status *pActwk) {
     pActwk->patbase = pat_sw;
     pActwk->sprvsize = 10;
 
-    ((Sint16 *)pActwk)[32] = (Uint16)pActwk->userflag.b.h;
+    work->switch_index = (Uint16)pActwk->userflag.b.h;
 
-    pActwk->actfree[20] = 0;
-    pActwk->actfree[21] = 0;
+    work->previous_state = 0;
+    work->current_state = 0;
 
     act_move(pActwk);
 }
 
 static void act_move(sprite_status *pActwk) {
+    sw4_work *work = sw4_get_work(pActwk);
     sprite_status *pActwk_a1;
     sprite_status *pPlayerwk;
     Uint8 *a4;
     Sint16 d0, d1, d3, d4;
     Sint16 z;
 
-    d0 = ((Sint16 *)pActwk)[28];
+    d0 = work->parent_index;
     if (d0) {
         pActwk_a1 = &actwk[d0];
         d1 = pActwk->xposi.w.h;
-        d0 = ((char *)pActwk)[60];
+        d0 = work->linked_x_offset;
         d0 += pActwk_a1->xposi.w.h;
         pActwk->xposi.w.h = d0;
         d0 -= d1;
         d0 <<= 8;
         pActwk->xspeed.w = d0;
-        d0 = ((char *)pActwk)[61];
+        d0 = work->linked_y_offset;
         d0 += pActwk_a1->yposi.w.h;
         pActwk->yposi.w.h = d0;
     }
-    pActwk->actfree[20] = pActwk->actfree[21];
+    work->previous_state = work->current_state;
     d3 = pActwk->xposi.w.h;
     d4 = pActwk->yposi.w.h;
     pPlayerwk = &actwk[0];
@@ -81,11 +132,11 @@ static void act_move(sprite_status *pActwk) {
     } else {
         z = 1;
     }
-    a4 = &switchflag[((Sint16 *)pActwk)[32]];
+    a4 = &switchflag[work->switch_index];
     if (z == 0)
-        pActwk->actfree[21] = 255;
+        work->current_state = 255;
     else
-        pActwk->actfree[21] = 0;
+        work->current_state = 0;
     if (z) {
         *a4 &= 127;
     } else {
@@ -94,14 +145,14 @@ static void act_move(sprite_status *pActwk) {
         *a4 |= 64;
     }
 
-    if (pActwk->actfree[20] == 0 && pActwk->actfree[21] == 255) {
+    if (work->previous_state == 0 && work->current_state == 255) {
         if (pActwk->actflg & 128) {
             soundset(191);
         }
         *a4 ^= 32;
         pPlayerwk->yposi.w.h += 8;
-        if (((Sint16 *)pActwk)[28]) {
-            ((char *)pActwk)[61] += 4;
+        if (work->parent_index) {
+            work->linked_y_offset += 4;
         } else {
             pActwk->yposi.w.h += 4;
         }
@@ -109,10 +160,10 @@ static void act_move(sprite_status *pActwk) {
         pActwk->sprvsize -= 4;
     }
 
-    if (pActwk->actfree[20] == 255 && pActwk->actfree[21] == 0) {
+    if (work->previous_state == 255 && work->current_state == 0) {
         pPlayerwk->yposi.w.h -= 8;
-        if (((Sint16 *)pActwk)[28]) {
-            ((char *)pActwk)[61] -= 4;
+        if (work->parent_index) {
+            work->linked_y_offset -= 4;
         } else {
             pActwk->yposi.w.h -= 4;
         }
@@ -120,13 +171,13 @@ static void act_move(sprite_status *pActwk) {
         pActwk->sprvsize += 4;
     }
     actionsub(pActwk);
-    d0 = ((Sint16 *)pActwk)[28];
+    d0 = work->parent_index;
     if (d0 == 0) {
         frameout_s(pActwk);
         return;
     }
     pActwk_a1 = &actwk[d0];
-    d0 = ((Sint16 *)pActwk_a1)[29];
+    d0 = sw4_get_parent_work(pActwk_a1)->origin_x;
     d0 &= -128;
     d1 = scra_h_posit.w.h;
     d1 -= 128;

@@ -1,9 +1,12 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "bobin.h"
 #include "../action.h"
 #include "../actset.h"
 #include "../etc.h"
 #include "../loader2.h"
+#include "../player_work.h"
 #include "../playsub.h"
 #include "../ridechk.h"
 #include "../score.h"
@@ -46,6 +49,28 @@ char frip_posi_r[64] = {18, 19, 20, 20, 20, 20, 20, 20, 20, 19, 19, 19, 19,
                         15, 14, 14, 14, 14, 14, 14, 13, 13, 13, 13, 13, 13,
                         12, 12, 12, 12, 11, 11, 10, 10, 9,  8,  6,  4};
 
+#pragma pack(push, 1)
+typedef struct {
+    Sint32 speed;
+    Sint16 timer;
+    Sint16 interval;
+    Sint16 origin_x;
+    Sint16 hit_count;
+} bobin_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(bobin_work, speed) == 0, "bobin_work.speed offset");
+_Static_assert(offsetof(bobin_work, timer) == 4, "bobin_work.timer offset");
+_Static_assert(offsetof(bobin_work, interval) == 6, "bobin_work.interval offset");
+_Static_assert(offsetof(bobin_work, origin_x) == 8, "bobin_work.origin_x offset");
+_Static_assert(offsetof(bobin_work, hit_count) == 10, "bobin_work.hit_count offset");
+_Static_assert(sizeof(bobin_work) <= sizeof(((sprite_status *)0)->actfree),
+               "bobin_work fits in actfree");
+
+static bobin_work *bobin_get_work(sprite_status *actionwk) {
+    return (bobin_work *)actionwk->actfree;
+}
+
 void bobin(sprite_status *actionwk) {
     switch (actionwk->r_no0) {
 
@@ -60,6 +85,7 @@ void bobin(sprite_status *actionwk) {
 void bobininit(sprite_status *actionwk) {
     Sint16 d0;
     char d6;
+    bobin_work *work = bobin_get_work(actionwk);
 
     actionwk->r_no0 += 2;
     actionwk->patbase = bobinpat;
@@ -77,24 +103,23 @@ void bobininit(sprite_status *actionwk) {
     actionwk->sprpri = 1;
     actionwk->colino = 215;
 
-    ((Sint16 *)actionwk)[27] = actionwk->xposi.w.h;
-    ((Sint16 *)actionwk)[28] = 5;
+    work->origin_x = actionwk->xposi.w.h;
+    work->hit_count = 5;
     d0 = 0;
     d6 = actionwk->userflag.b.h;
     if (d6 & 2)
         d0 += 64;
     if (d6 & 1)
         d0 += 32;
-    ((Sint16 *)actionwk)[26] = d0;
+    work->interval = d0;
     d0 >>= 1;
-    ((Sint16 *)actionwk)[25] = d0;
+    work->timer = d0;
     if (d0 > 0) {
 
-        *(Sint32 *)&actionwk->actfree[0] = 65536;
+        work->speed = 65536;
         if (!(d6 & 64)) {
 
-            *(Sint32 *)&actionwk->actfree[0] =
-                -*(Sint32 *)&actionwk->actfree[0];
+            work->speed = -work->speed;
         }
     }
 }
@@ -104,25 +129,25 @@ void bobinmove(sprite_status *actionwk) {
     sprite_status *a1;
     Uint8 d;
     Sint16 d0, d1, d2;
+    bobin_work *work = bobin_get_work(actionwk);
 
-    if (*(Sint32 *)&actionwk->actfree[0] != 0) {
+    if (work->speed != 0) {
         a = &actionwk->xposi.l;
         if (actionwk->userflag.w >= 0) {
             a = &actionwk->yposi.l;
         }
-        *a += *(Sint32 *)&actionwk->actfree[0];
-        if (!--((Sint16 *)actionwk)[25]) {
-            ((Sint16 *)actionwk)[25] = ((Sint16 *)actionwk)[26];
+        *a += work->speed;
+        if (!--work->timer) {
+            work->timer = work->interval;
 
-            *(Sint32 *)&actionwk->actfree[0] =
-                -*(Sint32 *)&actionwk->actfree[0];
+            work->speed = -work->speed;
         }
     }
 
     if (actionwk->colicnt != 0) {
-        if (((Sint16 *)actionwk)[28]) {
+        if (work->hit_count) {
 
-            --((Sint16 *)actionwk)[28];
+            --work->hit_count;
             scoreup(10);
             tensuu0(actionwk, 0);
         }
@@ -145,7 +170,7 @@ void bobinmove(sprite_status *actionwk) {
         a1->cddat |= 2;
         a1->cddat &= 239;
         a1->cddat &= 223;
-        a1->actfree[18] = 0;
+        player_work_get(a1)->jump_started = 0;
         actionwk->mstno.b.h = 1;
 
         if (actionwk->cdsts)
@@ -154,7 +179,7 @@ void bobinmove(sprite_status *actionwk) {
     }
     patchg(actionwk, (Uint8 **)bobinchg);
     actionsub(actionwk);
-    frameout_s00(actionwk, ((Sint16 *)actionwk)[27]);
+    frameout_s00(actionwk, work->origin_x);
 }
 
 void frip(sprite_status *actionwk) {

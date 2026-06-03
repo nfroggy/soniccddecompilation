@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "tekkyu.h"
 #include "../action.h"
@@ -18,6 +20,51 @@ static void act_move(sprite_status *pActwk);
 static void tekkyu_opt(sprite_status *pActwk);
 static void opt_act_init(sprite_status *pActwk);
 static void opt_act_move(sprite_status *pActwk);
+
+#pragma pack(push, 1)
+typedef struct {
+    union {
+        struct {
+            union {
+                Sint16 angle;
+                struct {
+                    Uint8 angle_low;
+                    Uint8 angle_high;
+                };
+            };
+            Sint16 angular_speed;
+            Uint16 child_index[6];
+        };
+        struct {
+            Sint32 target_x;
+            Sint32 target_y;
+        };
+    };
+    Uint8 unused16[4];
+    Sint16 parent_index;
+} tekkyu_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(tekkyu_work, angle) == 0,
+               "tekkyu_work.angle offset");
+_Static_assert(offsetof(tekkyu_work, angle_high) == 1,
+               "tekkyu_work.angle_high offset");
+_Static_assert(offsetof(tekkyu_work, angular_speed) == 2,
+               "tekkyu_work.angular_speed offset");
+_Static_assert(offsetof(tekkyu_work, child_index) == 4,
+               "tekkyu_work.child_index offset");
+_Static_assert(offsetof(tekkyu_work, target_x) == 0,
+               "tekkyu_work.target_x offset");
+_Static_assert(offsetof(tekkyu_work, target_y) == 4,
+               "tekkyu_work.target_y offset");
+_Static_assert(offsetof(tekkyu_work, parent_index) == 20,
+               "tekkyu_work.parent_index offset");
+_Static_assert(sizeof(tekkyu_work) <= sizeof(((sprite_status *)0)->actfree),
+               "tekkyu_work fits in actfree");
+
+static tekkyu_work *tekkyu_get_work(sprite_status *pActwk) {
+    return (tekkyu_work *)pActwk->actfree;
+}
 
 static sprite_pattern tekkyu_pat00 = {1, {{-8, -8, 0, SPRITE_TEKKYU_BASE}}};
 sprite_pattern *pat_tekkyu[1] = {&tekkyu_pat00};
@@ -45,8 +92,8 @@ static void tekkyu_main(sprite_status *pActwk) {
 }
 
 static void act_init(sprite_status *pActwk) {
+    tekkyu_work *work = tekkyu_get_work(pActwk);
     sprite_status *pNewact;
-    Sint16 *pActidx;
     Sint32 i;
 
     pActwk->r_no0 += 2;
@@ -58,24 +105,23 @@ static void act_init(sprite_status *pActwk) {
     pActwk->sproffset = 872;
 
     if (pActwk->userflag.b.h == 0) {
-        ((Sint16 *)pActwk)[24] = 256;
+        work->angular_speed = 256;
     } else {
-        ((Sint16 *)pActwk)[24] = -256;
+        work->angular_speed = -256;
     }
 
-    pActidx = &((Sint16 *)pActwk)[25];
     for (i = 0; i < 6; ++i) {
         if (actwkchk(&pNewact) != 0) {
             frameout(pActwk);
             return;
         }
 
-        *pActidx++ = pNewact - actwk;
+        work->child_index[i] = pNewact - actwk;
         pNewact->actno = pActwk->actno;
         pNewact->userflag.b.h = -1;
         pNewact->sprhsize = 8;
         pNewact->sprvsize = 8;
-        ((Sint16 *)pNewact)[33] = pActwk - actwk;
+        tekkyu_get_work(pNewact)->parent_index = pActwk - actwk;
     }
 
     pNewact->userflag.b.h = -2;
@@ -83,13 +129,14 @@ static void act_init(sprite_status *pActwk) {
 }
 
 static void act_move(sprite_status *pActwk) {
+    tekkyu_work *work = tekkyu_get_work(pActwk);
     int_union ldSin, ldCos;
     Sint32 sinsv1, sinsv2, cossv1, cossv2;
     sprite_status *pSubact;
 
-    ((Sint16 *)pActwk)[23] += ((Sint16 *)pActwk)[24];
+    work->angle += work->angular_speed;
 
-    sinset(pActwk->actfree[1], &ldSin.w.h, &ldCos.w.h);
+    sinset(work->angle_high, &ldSin.w.h, &ldCos.w.h);
     ldSin.w.l = ldCos.w.l = 0;
 
     ldSin.l >>= 2;
@@ -105,34 +152,34 @@ static void act_move(sprite_status *pActwk) {
     ldSin.l >>= 1;
     ldCos.l >>= 1;
 
-    pSubact = &actwk[((Sint16 *)pActwk)[25]];
-    *(Sint32 *)&pSubact->actfree[4] = pActwk->yposi.l + ldSin.l;
-    *(Sint32 *)&pSubact->actfree[0] = pActwk->xposi.l + ldCos.l;
+    pSubact = &actwk[work->child_index[0]];
+    tekkyu_get_work(pSubact)->target_y = pActwk->yposi.l + ldSin.l;
+    tekkyu_get_work(pSubact)->target_x = pActwk->xposi.l + ldCos.l;
 
-    pSubact = &actwk[((Sint16 *)pActwk)[26]];
-    *(Sint32 *)&pSubact->actfree[4] = pActwk->yposi.l + sinsv2;
-    *(Sint32 *)&pSubact->actfree[0] = pActwk->xposi.l + cossv2;
+    pSubact = &actwk[work->child_index[1]];
+    tekkyu_get_work(pSubact)->target_y = pActwk->yposi.l + sinsv2;
+    tekkyu_get_work(pSubact)->target_x = pActwk->xposi.l + cossv2;
 
-    pSubact = &actwk[((Sint16 *)pActwk)[27]];
-    *(Sint32 *)&pSubact->actfree[4] = pActwk->yposi.l + ldSin.l + sinsv2;
-    *(Sint32 *)&pSubact->actfree[0] = pActwk->xposi.l + ldCos.l + cossv2;
+    pSubact = &actwk[work->child_index[2]];
+    tekkyu_get_work(pSubact)->target_y = pActwk->yposi.l + ldSin.l + sinsv2;
+    tekkyu_get_work(pSubact)->target_x = pActwk->xposi.l + ldCos.l + cossv2;
 
-    pSubact = &actwk[((Sint16 *)pActwk)[28]];
-    *(Sint32 *)&pSubact->actfree[4] = pActwk->yposi.l + sinsv1;
-    *(Sint32 *)&pSubact->actfree[0] = pActwk->xposi.l + cossv1;
+    pSubact = &actwk[work->child_index[3]];
+    tekkyu_get_work(pSubact)->target_y = pActwk->yposi.l + sinsv1;
+    tekkyu_get_work(pSubact)->target_x = pActwk->xposi.l + cossv1;
 
-    pSubact = &actwk[((Sint16 *)pActwk)[29]];
-    *(Sint32 *)&pSubact->actfree[4] = pActwk->yposi.l + ldSin.l + sinsv1;
-    *(Sint32 *)&pSubact->actfree[0] = pActwk->xposi.l + ldCos.l + cossv1;
+    pSubact = &actwk[work->child_index[4]];
+    tekkyu_get_work(pSubact)->target_y = pActwk->yposi.l + ldSin.l + sinsv1;
+    tekkyu_get_work(pSubact)->target_x = pActwk->xposi.l + ldCos.l + cossv1;
 
-    pSubact = &actwk[((Sint16 *)pActwk)[30]];
-    *(Sint32 *)&pSubact->actfree[4] = pActwk->yposi.l + sinsv2 + sinsv1;
-    *(Sint32 *)&pSubact->actfree[0] = pActwk->xposi.l + cossv2 + cossv1;
+    pSubact = &actwk[work->child_index[5]];
+    tekkyu_get_work(pSubact)->target_y = pActwk->yposi.l + sinsv2 + sinsv1;
+    tekkyu_get_work(pSubact)->target_x = pActwk->xposi.l + cossv2 + cossv1;
 }
 
 static void tekkyu_opt(sprite_status *pActwk) {
     opt_act_tbl[pActwk->r_no0 / 2](pActwk);
-    if (actwk[((Sint16 *)pActwk)[33]].actno != 54) {
+    if (actwk[tekkyu_get_work(pActwk)->parent_index].actno != 54) {
 
         frameout(pActwk);
     } else {
@@ -159,6 +206,8 @@ static void opt_act_init(sprite_status *pActwk) {
 }
 
 static void opt_act_move(sprite_status *pActwk) {
-    pActwk->xposi.w.h = ((Sint16 *)pActwk)[24];
-    pActwk->yposi.w.h = ((Sint16 *)pActwk)[26];
+    tekkyu_work *work = tekkyu_get_work(pActwk);
+
+    pActwk->xposi.w.h = (Sint16)(work->target_x >> 16);
+    pActwk->yposi.w.h = (Sint16)(work->target_y >> 16);
 }

@@ -4,6 +4,68 @@
 #include "../actset.h"
 #include "../playsub.h"
 #include "../suicide.h"
+#include <stddef.h>
+
+#pragma pack(push, 1)
+typedef struct {
+    union {
+        Uint8 *flag_work;
+        struct {
+            Uint16 parent_index;
+            Sint16 origin_x;
+        };
+        struct {
+            Uint16 partner2_index;
+            Uint16 partner1_index;
+        };
+    };
+    union {
+        Sint16 *position_table;
+        Sint32 speed;
+    };
+    union {
+        Uint8 **pattern_change;
+        struct {
+            Sint16 child2_index;
+            Sint16 child1_index;
+        };
+    };
+    Uint8 parent_cdsts;
+} hotaru7_work;
+#pragma pack(pop)
+
+_Static_assert(sizeof(Uint8 *) == 4, "hotaru7_work pointer fields are 32-bit");
+_Static_assert(sizeof(Sint16 *) == 4, "hotaru7_work pointer fields are 32-bit");
+_Static_assert(sizeof(Uint8 **) == 4,
+               "hotaru7_work pointer fields are 32-bit");
+_Static_assert(offsetof(hotaru7_work, flag_work) == 0,
+               "hotaru7_work.flag_work offset");
+_Static_assert(offsetof(hotaru7_work, parent_index) == 0,
+               "hotaru7_work.parent_index offset");
+_Static_assert(offsetof(hotaru7_work, origin_x) == 2,
+               "hotaru7_work.origin_x offset");
+_Static_assert(offsetof(hotaru7_work, partner2_index) == 0,
+               "hotaru7_work.partner2_index offset");
+_Static_assert(offsetof(hotaru7_work, partner1_index) == 2,
+               "hotaru7_work.partner1_index offset");
+_Static_assert(offsetof(hotaru7_work, position_table) == 4,
+               "hotaru7_work.position_table offset");
+_Static_assert(offsetof(hotaru7_work, speed) == 4,
+               "hotaru7_work.speed offset");
+_Static_assert(offsetof(hotaru7_work, pattern_change) == 8,
+               "hotaru7_work.pattern_change offset");
+_Static_assert(offsetof(hotaru7_work, child2_index) == 8,
+               "hotaru7_work.child2_index offset");
+_Static_assert(offsetof(hotaru7_work, child1_index) == 10,
+               "hotaru7_work.child1_index offset");
+_Static_assert(offsetof(hotaru7_work, parent_cdsts) == 12,
+               "hotaru7_work.parent_cdsts offset");
+_Static_assert(sizeof(hotaru7_work) <= sizeof(((sprite_status *)0)->actfree),
+               "hotaru7_work fits in actfree");
+
+static inline hotaru7_work *hotaru7_work_get(sprite_status *pActwk) {
+    return (hotaru7_work *)pActwk->actfree;
+}
 
 static void a_init(sprite_status *pActwk);
 static void a_wait(sprite_status *pActwk);
@@ -68,14 +130,16 @@ static void (*b_act_tbl[11])(sprite_status *) = {
 static void (*c_act_tbl[3])(sprite_status *) = {&c_init, &c_move, &frameout};
 
 void hotaru7(sprite_status *pActwk) {
+    hotaru7_work *work = hotaru7_work_get(pActwk);
+
     switch (pActwk->userflag.b.l) {
         sprite_status *pMainact;
         sprite_status *pBact1;
         sprite_status *pBact2;
 
     case -1:
-        pMainact = &actwk[((Sint16 *)pActwk)[23]];
-        if (pMainact->actno != 35 || pMainact->cdsts != pActwk->actfree[12])
+        pMainact = &actwk[work->parent_index];
+        if (pMainact->actno != 35 || pMainact->cdsts != work->parent_cdsts)
 
             frameout(pActwk);
         else {
@@ -87,8 +151,8 @@ void hotaru7(sprite_status *pActwk) {
         break;
 
     case -2:
-        pBact1 = &actwk[((Sint16 *)pActwk)[24]];
-        pBact2 = &actwk[((Sint16 *)pActwk)[23]];
+        pBact1 = &actwk[work->partner1_index];
+        pBact2 = &actwk[work->partner2_index];
 
         if (pBact1->actno != 35 || pBact2->actno != 35 || pBact1->r_no0 != 16 ||
             pBact2->r_no0 != 16)
@@ -109,15 +173,16 @@ void a_init(sprite_status *pActwk) {
     Uint16 flagwk;
     Uint8 *pFlagwork;
     Sint32 idx;
+    hotaru7_work *work = hotaru7_work_get(pActwk);
 
     pActwk->r_no0 += 2;
     flagwk = pActwk->cdsts;
     idx = time_flag + flagwk * 3;
     pFlagwork = &flagwork[idx];
-    *(Uint8 **)&pActwk->actfree[0] = &flagwork[idx];
+    work->flag_work = &flagwork[idx];
 
     idx = pActwk->userflag.b.h & 12;
-    *(Sint16 **)&pActwk->actfree[4] = &tbl_hotaru7[idx / 2];
+    work->position_table = &tbl_hotaru7[idx / 2];
 
     if (pActwk->userflag.b.h & 1) {
         pActwk->userflag.b.h = 1;
@@ -147,9 +212,10 @@ void a_make(sprite_status *pActwk) {
     Uint8 *pFlagWork;
     sprite_status *pNewact;
     Sint16 *pTbl;
+    hotaru7_work *work = hotaru7_work_get(pActwk);
 
     pActwk->r_no0 += 2;
-    pFlagWork = *(Uint8 **)&pActwk->actfree[0];
+    pFlagWork = work->flag_work;
 
     if (!(*pFlagWork & 1)) {
         if (actwkchk2(pActwk, &pNewact) != 0) {
@@ -157,10 +223,10 @@ void a_make(sprite_status *pActwk) {
             return;
         }
 
-        ((Sint16 *)pActwk)[28] = pNewact - actwk;
+        work->child1_index = pNewact - actwk;
 
         ini_b(pActwk, pNewact);
-        pTbl = *(Sint16 **)&pActwk->actfree[4];
+        pTbl = work->position_table;
         pNewact->xposi.w.h += *pTbl++;
         pNewact->yposi.w.h += *pTbl;
     }
@@ -171,53 +237,56 @@ void a_make(sprite_status *pActwk) {
             return;
         }
 
-        ((Sint16 *)pActwk)[27] = pNewact - actwk;
+        work->child2_index = pNewact - actwk;
 
         ini_b(pActwk, pNewact);
-        pTbl = *(Sint16 **)&pActwk->actfree[4];
+        pTbl = work->position_table;
         pNewact->xposi.w.h -= *pTbl++;
         pNewact->yposi.w.h -= *pTbl;
     }
 }
 
 void ini_b(sprite_status *pActwk, sprite_status *pNewact) {
-    ((Sint16 *)pNewact)[23] = pActwk - actwk;
+    hotaru7_work *new_work = hotaru7_work_get(pNewact);
+
+    new_work->parent_index = pActwk - actwk;
     pNewact->actno = pActwk->actno;
     pNewact->userflag.b.h = pActwk->userflag.b.h;
     pNewact->userflag.b.l = -1;
     pNewact->xposi.w.h = pActwk->xposi.w.h;
     pNewact->yposi.w.h = pActwk->yposi.w.h;
     pNewact->sproffset = pActwk->sproffset;
-    pNewact->actfree[12] = pActwk->cdsts;
+    new_work->parent_cdsts = pActwk->cdsts;
 }
 
 void a_move(sprite_status *pActwk) {
     Uint8 *pFlagWork;
     sprite_status *pChildact;
     Sint16 idx;
+    hotaru7_work *work = hotaru7_work_get(pActwk);
 
-    pFlagWork = *(Uint8 **)&pActwk->actfree[0];
+    pFlagWork = work->flag_work;
 
     if (!(*pFlagWork & 1)) {
-        idx = ((Sint16 *)pActwk)[28];
+        idx = work->child1_index;
         if (idx) {
             pChildact = &actwk[idx];
             if (pChildact->actno != pActwk->actno) {
 
                 *pFlagWork |= 1;
-                ((Sint16 *)pActwk)[28] = 0;
+                work->child1_index = 0;
             }
         }
     }
 
     if (!(*pFlagWork & 2)) {
-        idx = ((Sint16 *)pActwk)[27];
+        idx = work->child2_index;
         if (idx) {
             pChildact = &actwk[idx];
             if (pChildact->actno != pActwk->actno) {
 
                 *pFlagWork |= 2;
-                ((Sint16 *)pActwk)[27] = 0;
+                work->child2_index = 0;
             }
         }
     }
@@ -225,33 +294,35 @@ void a_move(sprite_status *pActwk) {
     if (*pFlagWork == 131)
         frameout(pActwk);
     else {
-        if (*(Sint32 *)&pActwk->actfree[8] == 0)
+        if ((work->child2_index | work->child1_index) == 0)
             frameout_s0(pActwk);
     }
 }
 
 void b_init(sprite_status *pActwk) {
+    hotaru7_work *work = hotaru7_work_get(pActwk);
+
     pActwk->r_no0 += 2;
     pActwk->actflg |= 4;
     pActwk->sprpri = 1;
     pActwk->sprhs = pActwk->sprhsize = 20;
     pActwk->sprvsize = 12;
     pActwk->colino = 50;
-    ((Sint16 *)pActwk)[24] = pActwk->xposi.w.h;
+    work->origin_x = pActwk->xposi.w.h;
 
     if (!pActwk->userflag.b.h) {
 
         pActwk->patbase = pat_hotaru7_e;
-        *(Uint8 ***)&pActwk->actfree[8] = pchg_hotaru7_e;
-        *(Sint32 *)&pActwk->actfree[4] = -65536;
+        work->pattern_change = pchg_hotaru7_e;
+        work->speed = -65536;
     } else {
         pActwk->patbase = pat_hotaru7_b;
-        *(Uint8 ***)&pActwk->actfree[8] = pchg_hotaru7_b;
-        *(Sint32 *)&pActwk->actfree[4] = -32768;
+        work->pattern_change = pchg_hotaru7_b;
+        work->speed = -32768;
     }
 
     if (actwk[0].xposi.w.h >= pActwk->xposi.w.h) {
-        *(Sint32 *)&pActwk->actfree[4] *= -1;
+        work->speed *= -1;
         pActwk->actflg ^= 1;
         pActwk->cddat ^= 1;
     }
@@ -260,32 +331,33 @@ void b_init(sprite_status *pActwk) {
 void b_fly(sprite_status *pActwk) {
     Sint16 xPos, idx;
     sprite_status *pMainwk, *pSubwk;
+    hotaru7_work *work = hotaru7_work_get(pActwk);
 
-    pActwk->xposi.l += *(Sint32 *)&pActwk->actfree[4];
+    pActwk->xposi.l += work->speed;
 
-    xPos = pActwk->xposi.w.h - ((Sint16 *)pActwk)[24];
+    xPos = pActwk->xposi.w.h - work->origin_x;
     if (xPos < 0) {
         xPos *= -1;
     }
 
     if ((Sint32)xPos >= 80) {
-        pActwk->xposi.l -= *(Sint32 *)&pActwk->actfree[4];
-        *(Sint32 *)&pActwk->actfree[4] *= -1;
+        pActwk->xposi.l -= work->speed;
+        work->speed *= -1;
         pActwk->actflg ^= 1;
         pActwk->cddat ^= 1;
     }
 
     if (area(pActwk, &actwk[0], 65480, 112, 65456, 160) != 0) {
 
-        pMainwk = &actwk[((Sint16 *)pActwk)[23]];
+        pMainwk = &actwk[work->parent_index];
 
-        idx = ((Sint16 *)pMainwk)[28];
+        idx = hotaru7_work_get(pMainwk)->child1_index;
         if (idx) {
             pSubwk = &actwk[idx];
             pSubwk->r_no0 = 4;
         }
 
-        idx = ((Sint16 *)pMainwk)[27];
+        idx = hotaru7_work_get(pMainwk)->child2_index;
         if (idx) {
             pSubwk = &actwk[idx];
             pSubwk->r_no0 = 4;
@@ -300,14 +372,17 @@ void b_near(sprite_status *pActwk) {
     Sint16 idx, xwk, ywk;
     Uint32 flag1, flag2;
     Sint32 speedwk;
+    hotaru7_work *work = hotaru7_work_get(pActwk);
+    hotaru7_work *main_work;
 
-    idx = ((Sint16 *)pActwk)[23];
+    idx = work->parent_index;
     pMainwk = &actwk[idx];
+    main_work = hotaru7_work_get(pMainwk);
 
-    if ((idx = ((Sint16 *)pMainwk)[28]) != 0) {
+    if ((idx = main_work->child1_index) != 0) {
         pSubwk1 = &actwk[idx];
 
-        if ((idx = ((Sint16 *)pMainwk)[27]) != 0) {
+        if ((idx = main_work->child2_index) != 0) {
             pSubwk2 = &actwk[idx];
             flag1 = 0;
 
@@ -321,7 +396,7 @@ void b_near(sprite_status *pActwk) {
                 pSubwk1->cddat |= 1;
                 pSubwk2->cddat |= 1;
 
-                if ((speedwk = *(Sint32 *)&pActwk->actfree[4]) < 0) {
+                if ((speedwk = work->speed) < 0) {
                     speedwk = -speedwk;
                 }
 
@@ -334,7 +409,7 @@ void b_near(sprite_status *pActwk) {
                 pSubwk1->cddat &= 254;
                 pSubwk2->cddat &= 254;
 
-                if ((speedwk = *(Sint32 *)&pActwk->actfree[4]) < 0) {
+                if ((speedwk = work->speed) < 0) {
                     speedwk = -speedwk;
                 }
 
@@ -351,7 +426,7 @@ void b_near(sprite_status *pActwk) {
 
             if (ywk < 104) {
 
-                if ((speedwk = *(Sint32 *)&pActwk->actfree[4]) < 0) {
+                if ((speedwk = work->speed) < 0) {
                     speedwk = -speedwk;
                 }
 
@@ -359,7 +434,7 @@ void b_near(sprite_status *pActwk) {
                 pSubwk2->yposi.l += speedwk;
             } else if (ywk > 120) {
 
-                if ((speedwk = *(Sint32 *)&pActwk->actfree[4]) < 0) {
+                if ((speedwk = work->speed) < 0) {
                     speedwk = -speedwk;
                 }
 
@@ -401,7 +476,7 @@ void b_fix(sprite_status *pActwk) {
 }
 
 void b_fix1(sprite_status *pActwk) {
-    patchg(pActwk, *(Uint8 ***)&pActwk->actfree[8]);
+    patchg(pActwk, hotaru7_work_get(pActwk)->pattern_change);
     actionsub(pActwk);
 }
 
@@ -423,7 +498,7 @@ void b_start(sprite_status *pActwk) {
 }
 
 void b_com(sprite_status *pActwk) {
-    patchg(pActwk, *(Uint8 ***)&pActwk->actfree[8]);
+    patchg(pActwk, hotaru7_work_get(pActwk)->pattern_change);
     b_com1(pActwk);
 }
 
@@ -431,7 +506,7 @@ void b_com1(sprite_status *pActwk) {
     sprite_status *pMainwk;
 
     actionsub(pActwk);
-    pMainwk = &actwk[((Sint16 *)pActwk)[23]];
+    pMainwk = &actwk[hotaru7_work_get(pActwk)->parent_index];
     frameout_s(pActwk);
 
     if (!pActwk->actno) {
@@ -442,19 +517,20 @@ void b_com1(sprite_status *pActwk) {
 void b_kill_v(sprite_status *pActwk) {
     sprite_status *pMainwk;
 
-    pMainwk = &actwk[((Sint16 *)pActwk)[23]];
+    pMainwk = &actwk[hotaru7_work_get(pActwk)->parent_index];
     frameout(pActwk);
     b_die_v(pActwk, pMainwk);
 }
 
 void b_die_v(sprite_status *pActwk, sprite_status *pMainwk) {
     Sint16 idx;
+    hotaru7_work *main_work = hotaru7_work_get(pMainwk);
 
-    idx = ((Sint16 *)pMainwk)[28];
+    idx = main_work->child1_index;
     if (idx == (Sint16)(pActwk - actwk)) {
-        ((Sint16 *)pMainwk)[28] = 0;
+        main_work->child1_index = 0;
     } else {
-        ((Sint16 *)pMainwk)[27] = 0;
+        main_work->child2_index = 0;
     }
 }
 
@@ -490,10 +566,12 @@ void b_make_c(sprite_status *pActwk) {
     Sint16 idx1, idx2, xPos, xWk, yPos, yWk;
     sprite_status *pMainwk, *pSubwk1, *pSubwk2, *pNewact;
     Sint32 i;
+    hotaru7_work *main_work;
 
-    pMainwk = &actwk[((Sint16 *)pActwk)[23]];
-    idx1 = ((Sint16 *)pMainwk)[28];
-    idx2 = ((Sint16 *)pMainwk)[27];
+    pMainwk = &actwk[hotaru7_work_get(pActwk)->parent_index];
+    main_work = hotaru7_work_get(pMainwk);
+    idx1 = main_work->child1_index;
+    idx2 = main_work->child2_index;
     if (!idx1 || !idx2) {
 
         return;
@@ -519,9 +597,9 @@ void b_make_c(sprite_status *pActwk) {
             if (actwkchk(&pNewact) != 0)
                 return;
 
-            ((Sint16 *)pNewact)[24] = pSubwk1 - actwk;
+            hotaru7_work_get(pNewact)->partner1_index = pSubwk1 - actwk;
 
-            ((Sint16 *)pNewact)[23] = pSubwk2 - actwk;
+            hotaru7_work_get(pNewact)->partner2_index = pSubwk2 - actwk;
 
             pNewact->actno = pSubwk1->actno;
             pNewact->userflag.b.h = pSubwk1->userflag.b.h;

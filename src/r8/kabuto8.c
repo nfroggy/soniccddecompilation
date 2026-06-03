@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "kabuto8.h"
 #include "../action.h"
@@ -14,6 +16,44 @@ static void a_move(sprite_status *kabutowk);
 static void kabuto1(sprite_status *tunowk);
 static void b_init(sprite_status *tunowk);
 static void b_move(sprite_status *tunowk);
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint16 timer;
+    union {
+        Sint32 x_speed;
+        struct {
+            Sint16 offset_x;
+            Sint16 offset_y;
+        };
+    };
+    Sint16 base_x;
+    Sint16 sound_timer;
+    Uint8 unused10[10];
+    Uint16 parent_index;
+} kabuto8_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(kabuto8_work, timer) == 0,
+               "kabuto8_work.timer offset");
+_Static_assert(offsetof(kabuto8_work, x_speed) == 2,
+               "kabuto8_work.x_speed offset");
+_Static_assert(offsetof(kabuto8_work, offset_x) == 2,
+               "kabuto8_work.offset_x offset");
+_Static_assert(offsetof(kabuto8_work, offset_y) == 4,
+               "kabuto8_work.offset_y offset");
+_Static_assert(offsetof(kabuto8_work, base_x) == 6,
+               "kabuto8_work.base_x offset");
+_Static_assert(offsetof(kabuto8_work, sound_timer) == 8,
+               "kabuto8_work.sound_timer offset");
+_Static_assert(offsetof(kabuto8_work, parent_index) == 20,
+               "kabuto8_work.parent_index offset");
+_Static_assert(sizeof(kabuto8_work) <= sizeof(((sprite_status *)0)->actfree),
+               "kabuto8_work fits in actfree");
+
+static kabuto8_work *kabuto8_get_work(sprite_status *kabutowk) {
+    return (kabuto8_work *)kabutowk->actfree;
+}
 
 void kabuto(sprite_status *kabutowk) {
     if (kabutowk->userflag.b.l >= 0)
@@ -39,13 +79,14 @@ static void kabuto0(sprite_status *kabutowk) {
         return;
     tbl[kabutowk->r_no0 / 2](kabutowk);
     actionsub(kabutowk);
-    frameout_s00(kabutowk, ((Sint16 *)kabutowk)[26]);
+    frameout_s00(kabutowk, kabuto8_get_work(kabutowk)->base_x);
 }
 
 static void a_init(sprite_status *kabutowk) {
+    kabuto8_work *work = kabuto8_get_work(kabutowk);
     sprite_status *new_actwk;
 
-    ((Sint16 *)kabutowk)[26] = kabutowk->xposi.w.h;
+    work->base_x = kabutowk->xposi.w.h;
 
     kabutowk->actflg |= 4;
     kabutowk->sprpri = 4;
@@ -54,7 +95,7 @@ static void a_init(sprite_status *kabutowk) {
     kabutowk->sprhsize = 24;
     kabutowk->sprvsize = 14;
     kabutowk->colino = 42;
-    ((Sint32 *)kabutowk)[12] = -20480;
+    work->x_speed = -20480;
     kabutowk->r_no0 += 2;
     if (actwkchk2(kabutowk, &new_actwk) != 0) {
         frameout(kabutowk);
@@ -65,7 +106,7 @@ static void a_init(sprite_status *kabutowk) {
     new_actwk->userflag.b.l = -1;
     new_actwk->xposi.w.h = kabutowk->xposi.w.h;
     new_actwk->yposi.w.h = kabutowk->yposi.w.h;
-    ((Uint16 *)new_actwk)[33] = kabutowk - actwk;
+    kabuto8_get_work(new_actwk)->parent_index = kabutowk - actwk;
     if (kabutowk->userflag.b.l != 0) {
         kabutowk->actflg |= 1;
         kabutowk->cddat |= 1;
@@ -86,17 +127,19 @@ static void a_fall(sprite_status *kabutowk) {
 }
 
 static void a_move(sprite_status *kabutowk) {
-    if ((char)kabutowk->actflg < 0 && !(++((Sint16 *)kabutowk)[27] & 31)) {
+    kabuto8_work *work = kabuto8_get_work(kabutowk);
+
+    if ((char)kabutowk->actflg < 0 && !(++work->sound_timer & 31)) {
 
         soundset(177);
     }
-    kabutowk->xposi.l += ((Sint32 *)kabutowk)[12];
+    kabutowk->xposi.l += work->x_speed;
 
     kabutowk->yposi.w.h += emycol_d(kabutowk);
 
-    if (--((Sint16 *)kabutowk)[23] < 0) {
-        ((Sint16 *)kabutowk)[23] = 409;
-        ((Sint32 *)kabutowk)[12] = -((Sint32 *)kabutowk)[12];
+    if (--work->timer < 0) {
+        work->timer = 409;
+        work->x_speed = -work->x_speed;
     }
 }
 
@@ -134,9 +177,10 @@ static void b_init(sprite_status *tunowk) {
 }
 
 static void b_move(sprite_status *tunowk) {
+    kabuto8_work *work = kabuto8_get_work(tunowk);
     sprite_status *bodywk;
 
-    bodywk = &actwk[((Uint16 *)tunowk)[33]];
+    bodywk = &actwk[work->parent_index];
     if (bodywk->actno != 36) {
         frameout(tunowk);
         return;
@@ -144,23 +188,23 @@ static void b_move(sprite_status *tunowk) {
     if (tunowk->userflag.b.h)
         goto label1;
 
-    if (--((Sint16 *)tunowk)[23] < 0) {
-        ((Sint16 *)tunowk)[23] = 60;
+    if (--work->timer < 0) {
+        work->timer = 60;
         tunowk->mstno.b.h ^= 1;
     label1:
-        ((Sint16 *)tunowk)[24] = -25;
-        ((Sint16 *)tunowk)[25] = 0;
+        work->offset_x = -25;
+        work->offset_y = 0;
         if (tunowk->mstno.b.h) {
-            ((Sint16 *)tunowk)[24] = -19;
-            ((Sint16 *)tunowk)[25] = -15;
+            work->offset_x = -19;
+            work->offset_y = -15;
         }
         if (tunowk->actflg & 1) {
-            ((Sint16 *)tunowk)[24] = -((Sint16 *)tunowk)[24];
+            work->offset_x = -work->offset_x;
         }
     }
 
-    tunowk->xposi.w.h = bodywk->xposi.w.h + ((Sint16 *)tunowk)[24];
-    tunowk->yposi.w.h = bodywk->yposi.w.h + ((Sint16 *)tunowk)[25];
+    tunowk->xposi.w.h = bodywk->xposi.w.h + work->offset_x;
+    tunowk->yposi.w.h = bodywk->yposi.w.h + work->offset_y;
 
     patchg(tunowk, pchg);
 }

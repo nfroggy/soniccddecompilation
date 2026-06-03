@@ -45,7 +45,7 @@ static Sint32 next_handle;
 
 #include "src/title/besttime/bestsprt.c"
 
-void sprCreate(Sint32 *handle) {
+void sprCreate(Uint32 *handle) {
     *handle = next_handle;
     created_handles[create_call_count] = next_handle;
     ++create_call_count;
