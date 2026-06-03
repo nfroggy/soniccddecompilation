@@ -1,8 +1,11 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "pocket.h"
 #include "../action.h"
 #include "../actset.h"
 #include "../loader2.h"
+#include "../player_work.h"
 #include "../playsub.h"
 #include "../score.h"
 
@@ -31,6 +34,32 @@ void (*pocket_move_tbl[11])(sprite_status *) = {
     &a_init,  &a_move0, &a_move00, &a_move1, &a_move2, &a_move3,
     &a_move4, &a_move5, &a_move6,  &a_move7, &a_move8};
 
+#pragma pack(push, 1)
+typedef struct {
+    Sint16 timer;
+    Uint16 child_index;
+    Uint16 parent_index;
+    Uint16 bonus_remaining;
+    Uint8 unused8[12];
+    Uint8 active;
+} pocket_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(pocket_work, timer) == 0, "pocket_work.timer offset");
+_Static_assert(offsetof(pocket_work, child_index) == 2,
+               "pocket_work.child_index offset");
+_Static_assert(offsetof(pocket_work, parent_index) == 4,
+               "pocket_work.parent_index offset");
+_Static_assert(offsetof(pocket_work, bonus_remaining) == 6,
+               "pocket_work.bonus_remaining offset");
+_Static_assert(offsetof(pocket_work, active) == 20, "pocket_work.active offset");
+_Static_assert(sizeof(pocket_work) <= sizeof(((sprite_status *)0)->actfree),
+               "pocket_work fits in actfree");
+
+static pocket_work *pocket_get_work(sprite_status *actionwk) {
+    return (pocket_work *)actionwk->actfree;
+}
+
 void pocket(sprite_status *actionwk) {
     if (actionwk->userflag.b.h < 0)
         pocket0(actionwk);
@@ -56,7 +85,7 @@ void a_init(sprite_status *actionwk) {
     actionwk->sproffset = 943;
     actionwk->patbase = pat;
 
-    ((Sint16 *)actionwk)[26] = 7;
+    pocket_get_work(actionwk)->bonus_remaining = 7;
     a_move0(actionwk);
 }
 
@@ -67,7 +96,7 @@ void a_move0(sprite_status *actionwk) {
         return;
     a6 = &actwk[0];
     a_check(actionwk, a6);
-    if (actionwk->actfree[20] != 0)
+    if (pocket_get_work(actionwk)->active != 0)
         to_a_move1(actionwk);
 }
 
@@ -87,8 +116,8 @@ void a_check(sprite_status *actionwk, sprite_status *a6) {
     if (d0 < 0 || d0 >= 48)
         return;
 
-    actionwk->actfree[20] = 255;
-    a6->actfree[2] |= 1;
+    pocket_get_work(actionwk)->active = 255;
+    player_work_get(a6)->status_flags |= 1;
     a6->cddat |= 4;
     a6->sprvsize = 14;
     a6->sprhs = 7;
@@ -101,7 +130,7 @@ void a_check(sprite_status *actionwk, sprite_status *a6) {
 
 void to_a_move1(sprite_status *actionwk) {
     actionwk->r_no0 += 2;
-    ((Sint16 *)actionwk)[23] = 8;
+    pocket_get_work(actionwk)->timer = 8;
     actionwk->patno = 1;
     soundset(215);
     a_move00(actionwk);
@@ -110,104 +139,104 @@ void to_a_move1(sprite_status *actionwk) {
 void a_move00(sprite_status *actionwk) {
     sprite_status *a1;
 
-    if (--((Sint16 *)actionwk)[23] >= 0)
+    if (--pocket_get_work(actionwk)->timer >= 0)
         return;
     actionwk->r_no0 += 2;
     actionwk->patno = 2;
-    ((Sint16 *)actionwk)[23] = 6;
+    pocket_get_work(actionwk)->timer = 6;
     if (actwkchk(&a1) != 0) {
         frameout(actionwk);
         return;
     }
-    ((Uint16 *)actionwk)[24] = a1 - actwk;
-    ((Uint16 *)a1)[25] = actionwk - actwk;
+    pocket_get_work(actionwk)->child_index = a1 - actwk;
+    pocket_get_work(a1)->parent_index = actionwk - actwk;
     a1->actno = actionwk->actno;
 
     a1->xposi.w.h = actionwk->xposi.w.h;
     a1->yposi.w.h = actionwk->yposi.w.h;
-    actwk[0].actfree[2] |= 64;
+    player_work_get(&actwk[0])->status_flags |= 64;
 }
 
 void a_move1(sprite_status *actionwk) {
-    if (--((Sint16 *)actionwk)[23] >= 0)
+    if (--pocket_get_work(actionwk)->timer >= 0)
         return;
     actionwk->r_no0 += 2;
-    ((Sint16 *)actionwk)[23] = 2;
+    pocket_get_work(actionwk)->timer = 2;
     actionwk->patno = 3;
 }
 
 void a_move2(sprite_status *actionwk) {
-    if (--((Sint16 *)actionwk)[23] >= 0)
+    if (--pocket_get_work(actionwk)->timer >= 0)
         return;
     actionwk->r_no0 += 2;
-    ((Sint16 *)actionwk)[23] = 30;
+    pocket_get_work(actionwk)->timer = 30;
     actionwk->patno = 0;
 }
 
 void a_move3(sprite_status *actionwk) {
-    if (--((Sint16 *)actionwk)[23] >= 0)
+    if (--pocket_get_work(actionwk)->timer >= 0)
         return;
     actionwk->r_no0 += 2;
-    ((Sint16 *)actionwk)[23] = 30;
-    if (((Uint16 *)actionwk)[26] == 0)
+    pocket_get_work(actionwk)->timer = 30;
+    if (pocket_get_work(actionwk)->bonus_remaining == 0)
         return;
-    --((Uint16 *)actionwk)[26];
+    --pocket_get_work(actionwk)->bonus_remaining;
     scoreup(10);
     tensuu0(actionwk, 0);
 }
 
 void a_move4(sprite_status *actionwk) {
-    if (--((Sint16 *)actionwk)[23] >= 0)
+    if (--pocket_get_work(actionwk)->timer >= 0)
         return;
     actionwk->r_no0 += 2;
-    ((Sint16 *)actionwk)[23] = 30;
-    if (((Uint16 *)actionwk)[26] == 0)
+    pocket_get_work(actionwk)->timer = 30;
+    if (pocket_get_work(actionwk)->bonus_remaining == 0)
         return;
-    --((Uint16 *)actionwk)[26];
+    --pocket_get_work(actionwk)->bonus_remaining;
     scoreup(10);
     tensuu0(actionwk, 0);
 }
 
 void a_move5(sprite_status *actionwk) {
-    if (--((Sint16 *)actionwk)[23] >= 0)
+    if (--pocket_get_work(actionwk)->timer >= 0)
         return;
     actionwk->r_no0 += 2;
-    ((Sint16 *)actionwk)[23] = 4;
+    pocket_get_work(actionwk)->timer = 4;
     actionwk->patno = 3;
 }
 
 void a_move6(sprite_status *actionwk) {
-    if (--((Sint16 *)actionwk)[23] >= 0)
+    if (--pocket_get_work(actionwk)->timer >= 0)
         return;
     actionwk->r_no0 += 2;
-    ((Sint16 *)actionwk)[23] = 6;
+    pocket_get_work(actionwk)->timer = 6;
     actionwk->patno = 2;
 }
 
 void a_move7(sprite_status *actionwk) {
     sprite_status *a1;
 
-    if (--((Sint16 *)actionwk)[23] >= 0)
+    if (--pocket_get_work(actionwk)->timer >= 0)
         return;
     soundset(159);
     actionwk->r_no0 += 2;
     actionwk->patno = 0;
 
-    ((Sint16 *)actionwk)[23] = 120;
-    a1 = &actwk[((Uint16 *)actionwk)[24]];
+    pocket_get_work(actionwk)->timer = 120;
+    a1 = &actwk[pocket_get_work(actionwk)->child_index];
     a1->r_no0 = 4;
-    if (actionwk->actfree[20] == 0)
+    if (pocket_get_work(actionwk)->active == 0)
         return;
-    actionwk->actfree[20] = 0;
-    actwk[0].actfree[2] &= 254;
-    actwk[0].actfree[2] &= 191;
+    pocket_get_work(actionwk)->active = 0;
+    player_work_get(&actwk[0])->status_flags &= 254;
+    player_work_get(&actwk[0])->status_flags &= 191;
 }
 
 void a_move8(sprite_status *actionwk) {
-    if (--((Sint16 *)actionwk)[23] >= 0)
+    if (--pocket_get_work(actionwk)->timer >= 0)
         return;
     actionwk->r_no0 = 2;
-    actionwk->actfree[20] = 0;
+    pocket_get_work(actionwk)->active = 0;
 }
 
 void pocket1(sprite_status *actionwk) {
@@ -238,7 +267,7 @@ void b_init(sprite_status *actionwk) {
 void b_move(sprite_status *actionwk) {
     sprite_status *a1;
 
-    a1 = &actwk[((Uint16 *)actionwk)[25]];
+    a1 = &actwk[pocket_get_work(actionwk)->parent_index];
     if (a1->actno != 47) {
         frameout(actionwk);
         return;

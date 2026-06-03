@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "kuzure.h"
 #include "../action.h"
@@ -11,6 +13,31 @@ extern Uint8 *tbla[];
 extern sprite_pattern *patbase_kuzure_a[];
 extern sprite_pattern *patc[];
 extern sprite_pattern *patd[];
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint16 wait_timer;
+    Sint32 y_velocity;
+    Uint8 reserved6[14];
+    Uint8 top_piece;
+    Uint8 source_actno;
+} kuzure_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(kuzure_work, wait_timer) == 0,
+               "kuzure_work.wait_timer must map to offset 0");
+_Static_assert(offsetof(kuzure_work, y_velocity) == 2,
+               "kuzure_work.y_velocity must map to offset 2");
+_Static_assert(offsetof(kuzure_work, top_piece) == 20,
+               "kuzure_work.top_piece must map to offset 20");
+_Static_assert(offsetof(kuzure_work, source_actno) == 21,
+               "kuzure_work.source_actno must map to offset 21");
+_Static_assert(sizeof(kuzure_work) <= sizeof(((sprite_status *)0)->actfree),
+               "kuzure_work must fit in sprite_status.actfree");
+
+static kuzure_work *kuzure_work_get(sprite_status *pActwk) {
+    return (kuzure_work *)pActwk->actfree;
+}
 
 void kuzureru_tikei(sprite_status *pActwk) {
     void (*act_tbl[4])(sprite_status *) = {&acta_init, &acta_check, &actb_wait,
@@ -81,16 +108,17 @@ void acta_check(sprite_status *pActwk) {
 }
 
 void actb_wait(sprite_status *pActwk) {
+    kuzure_work *work = kuzure_work_get(pActwk);
     sprite_status *pPlayerwk;
 
-    --((Sint16 *)pActwk)[23];
-    if (((Sint16 *)pActwk)[23] == 0) {
+    --work->wait_timer;
+    if (work->wait_timer == 0) {
         pActwk->r_no0 += 2;
     }
-    if (pActwk->actfree[20]) {
+    if (work->top_piece) {
         pPlayerwk = &actwk[0];
         if (ridechk(pActwk, pPlayerwk)) {
-            if (((Sint16 *)pActwk)[23] == 0) {
+            if (work->wait_timer == 0) {
                 ride_on_clr(pActwk, pPlayerwk);
             }
         }
@@ -98,11 +126,12 @@ void actb_wait(sprite_status *pActwk) {
 }
 
 void actb_down(sprite_status *pActwk) {
+    kuzure_work *work = kuzure_work_get(pActwk);
     sprite_status *pPlayerwk;
     Sint16 yposi;
 
-    pActwk->yposi.l += ((Sint32 *)pActwk)[12];
-    ((Sint32 *)pActwk)[12] += 16384;
+    pActwk->yposi.l += work->y_velocity;
+    work->y_velocity += 16384;
 
     yposi = pActwk->yposi.w.h;
     pPlayerwk = &actwk[0];
@@ -112,7 +141,9 @@ void actb_down(sprite_status *pActwk) {
 }
 
 void actb_init_a(sprite_status *pActwk) {
+    kuzure_work *work = kuzure_work_get(pActwk);
     sprite_status *pActwk_w;
+    kuzure_work *piece_work;
     sprite_status *pPlayerwk;
     Uint8 **pTbltbl;
     Uint8 *pTbla;
@@ -155,7 +186,7 @@ void actb_init_a(sprite_status *pActwk) {
     posi_y *= 8;
     posi_y += pActwk->yposi.w.h;
     time_y = 9;
-    pActwk->actfree[21] = pActwk->actno;
+    work->source_actno = pActwk->actno;
     do {
         count_x.w = count0x;
         posi_x = posi_x_start;
@@ -175,22 +206,23 @@ void actb_init_a(sprite_status *pActwk) {
                 pActwk_w->sprpri = 3;
                 pActwk_w->sproffset = 17598;
                 pActwk_w->patbase = patc;
-                ((Sint32 *)pActwk_w)[12] = 0x20000;
-                pActwk_w->actno = pActwk->actfree[21];
+                piece_work = kuzure_work_get(pActwk_w);
+                piece_work->y_velocity = 0x20000;
+                pActwk_w->actno = work->source_actno;
                 pActwk_w->r_no0 = pActwk->r_no0;
                 if (reverse_flag) {
                     pActwk_w->actflg |= 1;
                     pActwk_w->cddat |= 1;
                 }
                 if (count_y.w == 0) {
-                    pActwk_w->actfree[20] = 255;
+                    piece_work->top_piece = 255;
                     pActwk_w->sprhs = 8;
                     pActwk_w->sprhsize = 8;
                     pActwk_w->sprvsize = 9;
                 }
                 pActwk_w->yposi.w.h = posi_y;
                 pActwk_w->xposi.w.h = posi_x;
-                ((Sint16 *)pActwk_w)[23] = time_x;
+                piece_work->wait_timer = time_x;
             }
             posi_x += posi_x_step;
             time_x += 12;
@@ -204,7 +236,9 @@ void actb_init_a(sprite_status *pActwk) {
 }
 
 void actb_init_b(sprite_status *pActwk) {
+    kuzure_work *work = kuzure_work_get(pActwk);
     sprite_status *pActwk_w;
+    kuzure_work *piece_work;
     sprite_status *pPlayerwk;
     Uint8 **pTbltbl;
     Uint8 *pTblb;
@@ -254,7 +288,7 @@ void actb_init_b(sprite_status *pActwk) {
     d4 += pActwk->xposi.w.h;
 
     time_w = 9;
-    pActwk->actfree[21] = pActwk->actno;
+    work->source_actno = pActwk->actno;
     do {
         if (actwkchk(&pActwk_w) != 0) {
             pPlayerwk = &actwk[0];
@@ -267,11 +301,12 @@ void actb_init_b(sprite_status *pActwk) {
         pActwk_w->sproffset = 17598;
         pActwk_w->actflg |= 4;
         pActwk_w->patbase = patd;
-        ((Sint32 *)pActwk_w)[12] = 0x20000;
-        pActwk_w->actno = pActwk->actfree[21];
+        piece_work = kuzure_work_get(pActwk_w);
+        piece_work->y_velocity = 0x20000;
+        pActwk_w->actno = work->source_actno;
         pActwk_w->r_no0 = pActwk->r_no0;
         pActwk_w->yposi.w.h = pActwk->yposi.w.h;
-        pActwk_w->actfree[20] = 255;
+        piece_work->top_piece = 255;
         pActwk_w->sprhs = 8;
         pActwk_w->sprhsize = 8;
         pActwk_w->sprvsize = sprvsize;
@@ -280,7 +315,7 @@ void actb_init_b(sprite_status *pActwk) {
         pTblb += d6;
         pActwk_w->xposi.w.h = d4;
         d4 += d3;
-        ((Sint16 *)pActwk_w)[23] = time_w;
+        piece_work->wait_timer = time_w;
         time_w += 12;
     } while (--d5.w >= 0);
 

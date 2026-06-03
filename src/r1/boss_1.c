@@ -722,19 +722,19 @@ void spd_normal(sprite_status *pActwk) {
     actwk[subact1].actfree[21] = 2;
     subact1 = ((Sint16 *)&actwk[subact1])[26];
     ((Sint32 *)&actwk[subact1])[16] = 32768;
-    ((Sint32 *)&actwk[subact1])[4] = 16384;
+    sprite_status_set_xspeed_yspeed(&actwk[subact1], 16384);
     subact1 = ((Sint16 *)&actwk[subact1])[26];
     ((Sint32 *)&actwk[subact1])[16] = 16384;
-    ((Sint32 *)&actwk[subact1])[4] = 32768;
+    sprite_status_set_xspeed_yspeed(&actwk[subact1], 32768);
 
     subact1 = ((Sint16 *)pActwk)[27];
     actwk[subact1].actfree[21] = 2;
     subact1 = ((Sint16 *)&actwk[subact1])[26];
     ((Sint32 *)&actwk[subact1])[16] = 32768;
-    ((Sint32 *)&actwk[subact1])[4] = 16384;
+    sprite_status_set_xspeed_yspeed(&actwk[subact1], 16384);
     subact1 = ((Sint16 *)&actwk[subact1])[26];
     ((Sint32 *)&actwk[subact1])[16] = 16384;
-    ((Sint32 *)&actwk[subact1])[4] = 32768;
+    sprite_status_set_xspeed_yspeed(&actwk[subact1], 32768);
 
     subact1 = ((Sint16 *)pActwk)[25];
     subact2 = ((Sint16 *)&actwk[subact1])[27];
@@ -1050,19 +1050,19 @@ void spd_up(sprite_status *pActwk) {
     actwk[subact1].actfree[21] = 8;
     subact1 = ((Sint16 *)&actwk[subact1])[26];
     ((Sint32 *)&actwk[subact1])[16] = 65536;
-    ((Sint32 *)&actwk[subact1])[4] = 32768;
+    sprite_status_set_xspeed_yspeed(&actwk[subact1], 32768);
     subact1 = ((Sint16 *)&actwk[subact1])[26];
     ((Sint32 *)&actwk[subact1])[16] = 49152;
-    ((Sint32 *)&actwk[subact1])[4] = 98304;
+    sprite_status_set_xspeed_yspeed(&actwk[subact1], 98304);
 
     subact1 = ((Sint16 *)pActwk)[27];
     actwk[subact1].actfree[21] = 8;
     subact1 = ((Sint16 *)&actwk[subact1])[26];
     ((Sint32 *)&actwk[subact1])[16] = 65536;
-    ((Sint32 *)&actwk[subact1])[4] = 32768;
+    sprite_status_set_xspeed_yspeed(&actwk[subact1], 32768);
     subact1 = ((Sint16 *)&actwk[subact1])[26];
     ((Sint32 *)&actwk[subact1])[16] = 49152;
-    ((Sint32 *)&actwk[subact1])[4] = 98304;
+    sprite_status_set_xspeed_yspeed(&actwk[subact1], 98304);
 
     subact1 = ((Sint16 *)pActwk)[25];
     subact2 = ((Sint16 *)&actwk[subact1])[27];
@@ -1353,15 +1353,15 @@ Sint32 egg1arm1_02(sprite_status *pActwk) {
     if (!(pActwk->actfree[2] & 2)) {
 
         ((Sint32 *)pActwk)[16] = -65536;
-        ((Sint32 *)pActwk)[4] = -0x20000;
+        sprite_status_set_xspeed_yspeed(pActwk, -0x20000);
     } else {
 
         ((Sint32 *)pActwk)[16] -= 1536;
-        ((Sint32 *)pActwk)[4] += 6144;
+        sprite_status_add_xspeed_yspeed(pActwk, 6144);
     }
     pActwk->actfree[2] |= 2;
     pActwk->xposi.l += ((Sint32 *)pActwk)[16];
-    pActwk->yposi.l += ((Sint32 *)pActwk)[4];
+    pActwk->yposi.l += sprite_status_get_xspeed_yspeed(pActwk);
 
     if (pActwk->yposi.w.h >= 576) {
         ret = 0;
@@ -1438,16 +1438,16 @@ Sint32 egg1arm2_05(sprite_status *pActwk) {
         pActwk->actfree[2] |= 2;
 
         ((Sint32 *)pActwk)[16] = 65536;
-        ((Sint32 *)pActwk)[4] = -0x20000;
+        sprite_status_set_xspeed_yspeed(pActwk, -0x20000);
         subact = ((Sint16 *)pActwk)[26];
         actwk[subact].r_no0 = 4;
     } else {
 
         ((Sint32 *)pActwk)[16] += 1536;
-        ((Sint32 *)pActwk)[4] += 7936;
+        sprite_status_add_xspeed_yspeed(pActwk, 7936);
     }
     pActwk->xposi.l += ((Sint32 *)pActwk)[16];
-    pActwk->yposi.l += ((Sint32 *)pActwk)[4];
+    pActwk->yposi.l += sprite_status_get_xspeed_yspeed(pActwk);
 
     if (pActwk->yposi.l >= 576) {
         ret = 0;
@@ -1567,16 +1567,16 @@ Sint32 egg1arm3_02(sprite_status *pActwk) {
         pActwk->actfree[1] = 1;
         pActwk->actfree[0] = 0;
         ((Sint32 *)pActwk)[16] = 0;
-        ((Sint32 *)pActwk)[4] = 65536;
+        sprite_status_set_xspeed_yspeed(pActwk, 65536);
         subact = ((Sint16 *)pActwk)[26];
         actwk[subact].r_no0 = 4;
     } else {
 
         ((Sint32 *)pActwk)[16] -= 1568;
-        ((Sint32 *)pActwk)[4] += 4640;
+        sprite_status_add_xspeed_yspeed(pActwk, 4640);
     }
     pActwk->xposi.l += ((Sint32 *)pActwk)[16];
-    pActwk->yposi.l += ((Sint32 *)pActwk)[4];
+    pActwk->yposi.l += sprite_status_get_xspeed_yspeed(pActwk);
 
     if (pActwk->yposi.w.h >= 576) {
         ret = 0;
@@ -1642,14 +1642,14 @@ Sint32 egg1arm4_02(sprite_status *pActwk) {
         pActwk->colicnt = 0;
 
         ((Sint32 *)pActwk)[16] = 0;
-        ((Sint32 *)pActwk)[4] = -98304;
+        sprite_status_set_xspeed_yspeed(pActwk, -98304);
     } else {
 
         ((Sint32 *)pActwk)[16] -= 1280;
-        ((Sint32 *)pActwk)[4] += 6144;
+        sprite_status_add_xspeed_yspeed(pActwk, 6144);
     }
     pActwk->xposi.l += ((Sint32 *)pActwk)[16];
-    pActwk->yposi.l += ((Sint32 *)pActwk)[4];
+    pActwk->yposi.l += sprite_status_get_xspeed_yspeed(pActwk);
 
     if (pActwk->yposi.w.h >= 576) {
         ret = 0;
@@ -1986,24 +1986,24 @@ Sint32 egg1leg1_12(sprite_status *pActwk) {
         pActwk->actfree[2] |= 2;
         if (pActwk->actfree[2] & 16) {
             ((Sint32 *)pActwk)[16] = 0;
-            ((Sint32 *)pActwk)[4] = -163840;
+            sprite_status_set_xspeed_yspeed(pActwk, -163840);
         } else {
             ((Sint32 *)pActwk)[16] = 0;
-            ((Sint32 *)pActwk)[4] = -163840;
+            sprite_status_set_xspeed_yspeed(pActwk, -163840);
         }
     } else {
 
         if (pActwk->actfree[2] & 16) {
             ((Sint32 *)pActwk)[16] = ((Sint32 *)pActwk)[16] - 1536;
-            ((Sint32 *)pActwk)[4] = ((Sint32 *)pActwk)[4] + 6240;
+            sprite_status_add_xspeed_yspeed(pActwk, 6240);
         } else {
             ((Sint32 *)pActwk)[16] = ((Sint32 *)pActwk)[16] + 1536;
-            ((Sint32 *)pActwk)[4] = ((Sint32 *)pActwk)[4] + 6240;
+            sprite_status_add_xspeed_yspeed(pActwk, 6240);
         }
     }
 
     pActwk->xposi.l += ((Sint32 *)pActwk)[16];
-    pActwk->yposi.l += ((Sint32 *)pActwk)[4];
+    pActwk->yposi.l += sprite_status_get_xspeed_yspeed(pActwk);
 
     if (pActwk->yposi.w.h >= 576) {
         ret = 0;
@@ -2032,7 +2032,7 @@ Sint32 egg1leg2_ini(sprite_status *pActwk) {
     pActwk->sproffset = 9049;
     pActwk->patbase = egg1leg2_pat;
     ((Sint32 *)pActwk)[16] = 32768;
-    ((Sint32 *)pActwk)[4] = 16384;
+    sprite_status_set_xspeed_yspeed(pActwk, 16384);
     return 1;
 }
 
@@ -2098,8 +2098,9 @@ Sint32 egg1leg2_05(sprite_status *pActwk) {
     } else
         xs = 0;
     if (((Sint16 *)pActwk)[31] > -4) {
-        ((Sint32 *)pActwk)[15] = ((Sint32 *)pActwk)[15] - ((Sint32 *)pActwk)[4];
-        ys = ((Sint32 *)pActwk)[4];
+        ((Sint32 *)pActwk)[15] =
+            ((Sint32 *)pActwk)[15] - sprite_status_get_xspeed_yspeed(pActwk);
+        ys = sprite_status_get_xspeed_yspeed(pActwk);
     } else
         ys = 0;
     if (pActwk->actfree[2] & 16)
@@ -2119,8 +2120,9 @@ Sint32 egg1leg2_06(sprite_status *pActwk) {
     } else
         xs = 0;
     if (((Sint16 *)pActwk)[31] < 4) {
-        ((Sint32 *)pActwk)[15] = ((Sint32 *)pActwk)[15] + ((Sint32 *)pActwk)[4];
-        ys = ((Sint32 *)pActwk)[4];
+        ((Sint32 *)pActwk)[15] =
+            ((Sint32 *)pActwk)[15] + sprite_status_get_xspeed_yspeed(pActwk);
+        ys = sprite_status_get_xspeed_yspeed(pActwk);
     } else
         ys = 0;
     if (pActwk->actfree[2] & 16) {
@@ -2163,23 +2165,23 @@ Sint32 egg1leg2_07(sprite_status *pActwk) {
         pActwk->actfree[2] |= 2;
         if (!(pActwk->actfree[2] & 16)) {
             ((Sint32 *)pActwk)[16] = 0;
-            ((Sint32 *)pActwk)[4] = -0x20000;
+            sprite_status_set_xspeed_yspeed(pActwk, -0x20000);
         } else {
             ((Sint32 *)pActwk)[16] = 0;
-            ((Sint32 *)pActwk)[4] = -0x20000;
+            sprite_status_set_xspeed_yspeed(pActwk, -0x20000);
         }
     } else {
 
         if (!(pActwk->actfree[2] & 16)) {
             ((Sint32 *)pActwk)[16] -= 1536;
-            ((Sint32 *)pActwk)[4] += 6752;
+            sprite_status_add_xspeed_yspeed(pActwk, 6752);
         } else {
             ((Sint32 *)pActwk)[16] += 1536;
-            ((Sint32 *)pActwk)[4] += 6752;
+            sprite_status_add_xspeed_yspeed(pActwk, 6752);
         }
     }
     pActwk->xposi.l += ((Sint32 *)pActwk)[16];
-    pActwk->yposi.l += ((Sint32 *)pActwk)[4];
+    pActwk->yposi.l += sprite_status_get_xspeed_yspeed(pActwk);
     if (pActwk->yposi.w.h >= 576) {
         ret = 0;
         frameout(pActwk);
@@ -2215,7 +2217,7 @@ Sint32 egg1leg3_ini(sprite_status *pActwk) {
     pActwk->patbase = egg1leg3_pat;
 
     ((Sint32 *)pActwk)[16] = 16384;
-    ((Sint32 *)pActwk)[4] = 32768;
+    sprite_status_set_xspeed_yspeed(pActwk, 32768);
 
     pActwk->r_no0 = 4;
     pActwk->actfree[2] |= 1;
@@ -2241,7 +2243,8 @@ void leg3_on_the_ground(sprite_status *pActwk) {
 
 Sint32 egg1leg3_01(sprite_status *pActwk) {
     ((Sint32 *)pActwk)[14] = ((Sint32 *)pActwk)[14] - ((Sint32 *)pActwk)[16];
-    ((Sint32 *)pActwk)[15] = ((Sint32 *)pActwk)[15] + ((Sint32 *)pActwk)[4];
+    ((Sint32 *)pActwk)[15] =
+        ((Sint32 *)pActwk)[15] + sprite_status_get_xspeed_yspeed(pActwk);
 
     if (pActwk->actfree[2] & 16) {
         if (pActwk->actfree[2] & 128) {
@@ -2280,7 +2283,8 @@ Sint32 egg1leg3_01(sprite_status *pActwk) {
 
 Sint32 egg1leg3_03(sprite_status *pActwk) {
     ((Sint32 *)pActwk)[14] = ((Sint32 *)pActwk)[14] + ((Sint32 *)pActwk)[16];
-    ((Sint32 *)pActwk)[15] = ((Sint32 *)pActwk)[15] - ((Sint32 *)pActwk)[4];
+    ((Sint32 *)pActwk)[15] =
+        ((Sint32 *)pActwk)[15] - sprite_status_get_xspeed_yspeed(pActwk);
     if (((Sint32 *)pActwk)[15] <= 0) {
 
         ((Sint16 *)pActwk)[29] = 0;
@@ -2337,7 +2341,7 @@ void leg3_set(sprite_status *pActwk) {
     } else if (pActwk->actfree[2] & 32) {
 
         xs = ((Sint32 *)pActwk)[16];
-        ys = ((Sint32 *)pActwk)[4];
+        ys = sprite_status_get_xspeed_yspeed(pActwk);
 
         if (pActwk->r_no0 != 6) {
             xs = -xs;
@@ -2367,24 +2371,24 @@ Sint32 egg1leg3_06(sprite_status *pActwk) {
 
         if (pActwk->actfree[2] & 16) {
             ((Sint32 *)pActwk)[16] = 0;
-            ((Sint32 *)pActwk)[4] = -143360;
+            sprite_status_set_xspeed_yspeed(pActwk, -143360);
         } else {
             ((Sint32 *)pActwk)[16] = 0;
-            ((Sint32 *)pActwk)[4] = -143360;
+            sprite_status_set_xspeed_yspeed(pActwk, -143360);
         }
     } else {
 
         if (!(pActwk->actfree[2] & 16)) {
             ((Sint32 *)pActwk)[16] = ((Sint32 *)pActwk)[16] - 1632;
-            ((Sint32 *)pActwk)[4] = ((Sint32 *)pActwk)[4] + 5728;
+            sprite_status_add_xspeed_yspeed(pActwk, 5728);
         } else {
             ((Sint32 *)pActwk)[16] = ((Sint32 *)pActwk)[16] + 1632;
-            ((Sint32 *)pActwk)[4] = ((Sint32 *)pActwk)[4] + 5728;
+            sprite_status_add_xspeed_yspeed(pActwk, 5728);
         }
     }
 
     pActwk->xposi.l += ((Sint32 *)pActwk)[16];
-    pActwk->yposi.l += ((Sint32 *)pActwk)[4];
+    pActwk->yposi.l += sprite_status_get_xspeed_yspeed(pActwk);
     if (pActwk->yposi.w.h >= 576) {
         ret = 0;
         frameout(pActwk);

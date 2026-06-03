@@ -4,12 +4,32 @@
 #include "../actset.h"
 #include "../ridechk.h"
 #include "playsub4.h"
+#include <stddef.h>
 
 static void funsui4_init(sprite_status *pActwk);
 static void funsui4_move(sprite_status *pActwk);
 static void sibuki_set(sprite_status *pActwk);
 static void sibuki_init(sprite_status *pActwk);
 static void sibuki_move(sprite_status *pActwk);
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 reserved0[16];
+    Uint8 splash_index;
+    Uint8 timer;
+} funsui4_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(funsui4_work, splash_index) == 16,
+               "funsui4_work.splash_index offset");
+_Static_assert(offsetof(funsui4_work, timer) == 17,
+               "funsui4_work.timer offset");
+_Static_assert(sizeof(funsui4_work) <= sizeof(((sprite_status *)0)->actfree),
+               "funsui4_work fits in actfree");
+
+static funsui4_work *funsui4_work_get(sprite_status *pActwk) {
+    return (funsui4_work *)pActwk->actfree;
+}
 
 Uint8 pchg0[7] = {0, 0, 1, 2, 3, 4, 255};
 Uint8 pchg1[6] = {0, 5, 6, 7, 8, 255};
@@ -74,7 +94,9 @@ static void funsui4_move(sprite_status *pActwk) {
 }
 
 static void sibuki_set(sprite_status *pActwk) {
+    funsui4_work *work = funsui4_work_get(pActwk);
     sprite_status *pNewActwk;
+    funsui4_work *new_work;
     Sint16 *a2;
     Uint8 d0;
 
@@ -83,18 +105,19 @@ static void sibuki_set(sprite_status *pActwk) {
                       -40, -72, 0,   -128, -8, -72, 0,   -128,
                       8,   -72, 0,   -128, 40, -72, 0,   -128};
 
-    if ((Uint16)pActwk->actfree[17] + 16 < 256) {
-        pActwk->actfree[17] += 16;
+    if ((Uint16)work->timer + 16 < 256) {
+        work->timer += 16;
         return;
     }
-    pActwk->actfree[17] += 16;
+    work->timer += 16;
 
     if (actwkchk(&pNewActwk) == 0) {
+        new_work = funsui4_work_get(pNewActwk);
         pNewActwk->actno = pActwk->actno;
         pNewActwk->userflag.b.h = -1;
         pNewActwk->patno = 5;
-        d0 = pActwk->actfree[16] & 3;
-        pNewActwk->actfree[16] = d0;
+        d0 = work->splash_index & 3;
+        new_work->splash_index = d0;
         d0 <<= 3;
         a2 = &tbl[d0 / 2];
         pNewActwk->xposi.w.h = pActwk->xposi.w.h + *a2++;
@@ -102,7 +125,7 @@ static void sibuki_set(sprite_status *pActwk) {
         pNewActwk->xspeed.w = *a2++;
         pNewActwk->yspeed.w = *a2++;
 
-        ++pActwk->actfree[16];
+        ++work->splash_index;
     }
 }
 
@@ -127,14 +150,15 @@ static void sibuki_init(sprite_status *pActwk) {
 }
 
 static void sibuki_move(sprite_status *pActwk) {
+    funsui4_work *work = funsui4_work_get(pActwk);
     Sint32 d0;
 
-    if ((Uint16)pActwk->actfree[17] + 2 > 255) {
-        pActwk->actfree[17] += 2;
+    if ((Uint16)work->timer + 2 > 255) {
+        work->timer += 2;
         frameout(pActwk);
         return;
     }
-    pActwk->actfree[17] += 2;
+    work->timer += 2;
 
     d0 = pActwk->xspeed.w;
     d0 <<= 8;

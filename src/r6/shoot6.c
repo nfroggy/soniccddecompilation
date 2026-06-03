@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "shoot6.h"
 #include "../action.h"
@@ -5,6 +7,7 @@
 #include "../dircol.h"
 #include "../io.h"
 #include "../loader2.h"
+#include "../player_work.h"
 #include "../playsub.h"
 #include "../ridechk.h"
 #include "coli6.h"
@@ -36,6 +39,103 @@ extern sprite_pattern *ringpat[9];
 static Sint16 stackpointer;
 extern sprite_pattern *bariapat[13];
 
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 ring_timer;
+    Uint8 ring_count;
+} megami_work;
+
+typedef struct {
+    Uint8 timer;
+    Uint8 unused1;
+    union {
+        sprite_status *parent;
+        struct {
+            Uint8 parent_bytes[4];
+            Uint8 ice_timer;
+            Uint8 ice_table;
+        } ice;
+    } u;
+} gas_work;
+
+typedef struct {
+    Uint8 unused0[2];
+    union {
+        sprite_status *parent;
+        struct {
+            Uint8 parent_bytes[2];
+            Sint16 origin_x;
+        } master;
+    } u;
+} cata_work;
+
+typedef struct {
+    Uint8 unused0[4];
+    Uint8 move_timer_high;
+    Uint8 move_timer_low;
+    Uint8 unused6[2];
+    Uint8 entry_timer;
+    Uint8 unused9[3];
+    Sint16 target_x;
+    Sint16 target_y;
+    Uint8 move_index;
+    Uint8 move_limit;
+    Uint16 *move_table;
+} shooter_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(megami_work, ring_timer) == 0,
+               "megami_work.ring_timer offset");
+_Static_assert(offsetof(megami_work, ring_count) == 1,
+               "megami_work.ring_count offset");
+_Static_assert(sizeof(megami_work) <= sizeof(((sprite_status *)0)->actfree),
+               "megami_work fits in actfree");
+_Static_assert(offsetof(gas_work, timer) == 0, "gas_work.timer offset");
+_Static_assert(offsetof(gas_work, u.parent) == 2, "gas_work.parent offset");
+_Static_assert(offsetof(gas_work, u.ice.ice_timer) == 6,
+               "gas_work.ice_timer offset");
+_Static_assert(offsetof(gas_work, u.ice.ice_table) == 7,
+               "gas_work.ice_table offset");
+_Static_assert(sizeof(gas_work) <= sizeof(((sprite_status *)0)->actfree),
+               "gas_work fits in actfree");
+_Static_assert(offsetof(cata_work, u.parent) == 2, "cata_work.parent offset");
+_Static_assert(offsetof(cata_work, u.master.origin_x) == 4,
+               "cata_work.origin_x offset");
+_Static_assert(sizeof(cata_work) <= sizeof(((sprite_status *)0)->actfree),
+               "cata_work fits in actfree");
+_Static_assert(offsetof(shooter_work, move_timer_high) == 4,
+               "shooter_work.move_timer_high offset");
+_Static_assert(offsetof(shooter_work, entry_timer) == 8,
+               "shooter_work.entry_timer offset");
+_Static_assert(offsetof(shooter_work, target_x) == 12,
+               "shooter_work.target_x offset");
+_Static_assert(offsetof(shooter_work, target_y) == 14,
+               "shooter_work.target_y offset");
+_Static_assert(offsetof(shooter_work, move_index) == 16,
+               "shooter_work.move_index offset");
+_Static_assert(offsetof(shooter_work, move_limit) == 17,
+               "shooter_work.move_limit offset");
+_Static_assert(offsetof(shooter_work, move_table) == 18,
+               "shooter_work.move_table offset");
+_Static_assert(sizeof(shooter_work) <= sizeof(((sprite_status *)0)->actfree),
+               "shooter_work fits in actfree");
+
+static megami_work *megami_get_work(sprite_status *megamiwk) {
+    return (megami_work *)megamiwk->actfree;
+}
+
+static gas_work *gas_get_work(sprite_status *gaswk) {
+    return (gas_work *)gaswk->actfree;
+}
+
+static cata_work *cata_get_work(sprite_status *catawk) {
+    return (cata_work *)catawk->actfree;
+}
+
+static shooter_work *shooter_get_work(sprite_status *shootwk) {
+    return (shooter_work *)shootwk->actfree;
+}
+
 void megami(sprite_status *megamiwk) {
     void (*tbl[4])(sprite_status *) = {&m_init, &m_move0, &m_move1, &m_move2};
 
@@ -46,7 +146,7 @@ void megami(sprite_status *megamiwk) {
 static void m_init(sprite_status *megamiwk) {
     megamiwk->r_no0 += 2;
     megamiwk->actflg |= 4;
-    megamiwk->actfree[1] = 50;
+    megami_get_work(megamiwk)->ring_count = 50;
     m_move0(megamiwk);
 }
 
@@ -64,10 +164,12 @@ static void m_move0(sprite_status *megamiwk) {
 }
 
 static void m_move1(sprite_status *megamiwk) {
-    if ((char)--megamiwk->actfree[0] >= 0)
+    megami_work *work = megami_get_work(megamiwk);
+
+    if ((char)--work->ring_timer >= 0)
         return;
-    megamiwk->actfree[0] = 10;
-    if ((char)--megamiwk->actfree[1] >= 0)
+    work->ring_timer = 10;
+    if ((char)--work->ring_count >= 0)
         ring_set(megamiwk);
     else
         megamiwk->r_no0 += 2;
@@ -139,23 +241,23 @@ static void gas_init(sprite_status *gaswk) {
     gaswk->actflg |= 4;
 
     gaswk->patbase = gaspat;
-    gaswk->actfree[0] = 120;
+    gas_get_work(gaswk)->timer = 120;
     gaswk->r_no0 += 2;
     gas_move0(gaswk);
 }
 
 static void gas_move0(sprite_status *gaswk) {
-    sprite_status *new_actwk, **parent;
+    sprite_status *new_actwk;
+    gas_work *work = gas_get_work(gaswk);
 
-    if (gaswk->actfree[0] == 0)
+    if (work->timer == 0)
         return;
-    if (--gaswk->actfree[0] != 0)
+    if (--work->timer != 0)
         return;
     if (actwkchk(&new_actwk) != 0)
         return;
-    parent = &((sprite_status **)new_actwk)[12];
 
-    *parent = gaswk;
+    gas_get_work(new_actwk)->u.parent = gaswk;
     new_actwk->actno = 5;
     new_actwk->sprpri = 3;
     new_actwk->actflg |= 4;
@@ -172,41 +274,42 @@ static void gas_move1(sprite_status *gaswk) {
 }
 
 static void gas_move2(sprite_status *gaswk) {
-    sprite_status **parent, *new_actwk;
+    sprite_status *new_actwk;
 
-    parent = &((sprite_status **)gaswk)[12];
-    new_actwk = *parent;
-    new_actwk->actfree[0] = 120;
+    new_actwk = gas_get_work(gaswk)->u.parent;
+    gas_get_work(new_actwk)->timer = 120;
     frameout(gaswk);
 }
 
 static void gas_move3(sprite_status *gaswk) {
     Sint16 collision_data;
-    sprite_status **parent, *new_actwk;
+    sprite_status *new_actwk;
+    gas_work *work = gas_get_work(gaswk);
 
     gaswk->yspeed.w += 56;
     gaswk->yposi.l += gaswk->yspeed.w << 8;
     if ((collision_data = emycol_d(gaswk)) < 0) {
         sub_sync(146);
-        gaswk->actfree[6] = 15;
+        work->u.ice.ice_timer = 15;
         gaswk->yposi.w.h += collision_data;
         gaswk->r_no0 += 2;
     }
-    parent = &((sprite_status **)gaswk)[12];
-    new_actwk = *parent;
+    new_actwk = work->u.parent;
     new_actwk->yposi.l = gaswk->yposi.l;
 }
 
 static void gas_move4(sprite_status *gaswk) {
-    sprite_status **parent, *new_actwk;
+    sprite_status *new_actwk;
+    gas_work *work = gas_get_work(gaswk);
+    player_work *player;
 
-    parent = &((sprite_status **)gaswk)[12];
-    new_actwk = *parent;
-    if (gaswk->actfree[6] != 0) {
-        --gaswk->actfree[6];
+    new_actwk = work->u.parent;
+    player = player_work_get(new_actwk);
+    if (work->u.ice.ice_timer != 0) {
+        --work->u.ice.ice_timer;
         if (!(swdata.b.l & 112))
             return;
-        new_actwk->actfree[2] &= 190;
+        player->status_flags &= 190;
         new_actwk->yspeed.w = -1664;
         new_actwk->sprvsize = 14;
         new_actwk->sprhs = 7;
@@ -216,13 +319,13 @@ static void gas_move4(sprite_status *gaswk) {
         new_actwk->mstno.b.h = 2;
         soundset(146);
     } else {
-        new_actwk->actfree[2] &= 190;
+        player->status_flags &= 190;
         playdamageset(new_actwk, gaswk);
     }
     gaswk->r_no0 += 2;
     gaswk->patno = 10;
-    gaswk->actfree[6] = 20;
-    gaswk->actfree[7] = 2;
+    work->u.ice.ice_timer = 20;
+    work->u.ice.ice_table = 2;
     ice_sub_set(gaswk);
 }
 
@@ -235,13 +338,14 @@ static char tbl2[32] = {0, 0, 10, 11, 0, -1, -1, 0, 0, 0, 10, 11, 0, 1,  -1, 0,
 
 static void gas_move5(sprite_status *gaswk) {
     char *tbl[3] = {tbl0, tbl1, tbl2};
+    gas_work *work = gas_get_work(gaswk);
 
-    if (--gaswk->actfree[6] == 0) {
+    if (--work->u.ice.ice_timer == 0) {
         if (gaswk->patno == 11) {
             frameout(gaswk);
             return;
         }
-        ice_sub0(gaswk, tbl[gaswk->actfree[7]], 3);
+        ice_sub0(gaswk, tbl[work->u.ice.ice_table], 3);
         frameout(gaswk);
         return;
     }
@@ -273,24 +377,23 @@ void ice_sub0(sprite_status *gaswk, char *tbl, Sint16 loop) {
         new_actwk->patbase = gaspat;
         new_actwk->xposi.w.h += tbl[index];
         new_actwk->yposi.w.h += tbl[index + 1];
-        new_actwk->actfree[6] = tbl[index + 2];
+        gas_get_work(new_actwk)->u.ice.ice_timer = tbl[index + 2];
         new_actwk->patno = tbl[index + 3];
         new_actwk->actflg |= tbl[index + 4];
         new_actwk->xspeed.w = tbl[index + 5];
         new_actwk->yspeed.w = tbl[index + 6];
-        new_actwk->actfree[7] = tbl[index + 7];
+        gas_get_work(new_actwk)->u.ice.ice_table = tbl[index + 7];
         index += 8;
     }
 }
 
 void ice_set(sprite_status *plwk) {
-    sprite_status *new_actwk, **parent;
+    sprite_status *new_actwk;
 
     if (actwkchk(&new_actwk) != 0)
         return;
-    plwk->actfree[2] |= 65;
-    parent = &((sprite_status **)new_actwk)[12];
-    *parent = plwk;
+    player_work_get(plwk)->status_flags |= 65;
+    gas_get_work(new_actwk)->u.parent = plwk;
     new_actwk->actno = 5;
     new_actwk->actflg |= 4;
     new_actwk->xposi.w.h = plwk->xposi.w.h;
@@ -320,7 +423,7 @@ static Sint16 gas_coli_colig(sprite_status *gaswk, sprite_status *plwk) {
         return 0;
     if (plwk->r_no0 >= 4)
         return 0;
-    if (plwk->actfree[2])
+    if (player_work_get(plwk)->status_flags)
         return 0;
     cal_posi = plwk->xposi.w.h - gaswk->xposi.w.h +
                (cal_size = (Sint16)plwk->sprhs + 16);
@@ -349,12 +452,12 @@ void catapalt(sprite_status *catawk) {
 }
 
 static void cata_init(sprite_status *catawk) {
-    sprite_status *new_actwk, **parent;
+    sprite_status *new_actwk;
 
     catawk->actflg |= 4;
 
     catawk->patbase = cata_pat;
-    ((Sint16 *)catawk)[25] = catawk->xposi.w.h;
+    cata_get_work(catawk)->u.master.origin_x = catawk->xposi.w.h;
     catawk->sprhs = catawk->sprhsize = 28;
     catawk->sprvsize = 4;
     catawk->r_no0 += 2;
@@ -367,8 +470,7 @@ static void cata_init(sprite_status *catawk) {
     new_actwk->sprhs = 4;
     new_actwk->sprvsize = 12;
     new_actwk->patno = 1;
-    parent = &((sprite_status **)new_actwk)[12];
-    *parent = catawk;
+    cata_get_work(new_actwk)->u.parent = catawk;
     new_actwk->r_no0 = 8;
     cata_wait(catawk);
 }
@@ -376,7 +478,7 @@ static void cata_init(sprite_status *catawk) {
 static void cata_wait(sprite_status *catawk) {
     if (ridechk(catawk, &actwk[0]) == 0)
         return;
-    actwk[0].actfree[2] |= 1;
+    player_work_get(&actwk[0])->status_flags |= 1;
     actwk[0].xposi.w.h = catawk->xposi.w.h;
     actwk[0].cddat &= 254;
     actwk[0].mstno.b.h = 58;
@@ -386,12 +488,13 @@ static void cata_wait(sprite_status *catawk) {
 
 static void cata_move0(sprite_status *catawk) {
     Sint16 cal_position;
+    player_work *player = player_work_get(&actwk[0]);
 
     catawk->xposi.l += catawk->xspeed.w << 8;
     ridechk(catawk, &actwk[0]);
-    if ((swdata1.b.h & 112) && (actwk[0].actfree[2] & 1)) {
+    if ((swdata1.b.h & 112) && (player->status_flags & 1)) {
 
-        actwk[0].actfree[2] &= 254;
+        player->status_flags &= 254;
 
         actwk[0].yspeed.w = -1664;
         actwk[0].xspeed.w = catawk->xspeed.w;
@@ -405,14 +508,14 @@ static void cata_move0(sprite_status *catawk) {
         actwk[0].mstno.b.h = 2;
         soundset(146);
     }
-    cal_position = ((Sint16 *)catawk)[25] + 912;
+    cal_position = cata_get_work(catawk)->u.master.origin_x + 912;
     if (cal_position >= catawk->xposi.w.h)
         return;
     catawk->xposi.w.h = cal_position;
     catawk->r_no0 += 2;
     if (!(catawk->cddat & 8))
         return;
-    actwk[0].actfree[2] &= 254;
+    player->status_flags &= 254;
     actwk[0].xspeed.w = catawk->xspeed.w;
     actwk[0].mstno.b.h = 0;
     actwk[0].cddat |= 2;
@@ -423,7 +526,7 @@ static void cata_move1(sprite_status *catawk) {
     Sint16 cal_position;
 
     catawk->xposi.w.h -= 4;
-    cal_position = ((Sint16 *)catawk)[25];
+    cal_position = cata_get_work(catawk)->u.master.origin_x;
     if (cal_position < catawk->xposi.w.h)
         return;
     catawk->xposi.w.h = cal_position;
@@ -431,10 +534,9 @@ static void cata_move1(sprite_status *catawk) {
 }
 
 static void cata_move2(sprite_status *catawk) {
-    sprite_status *new_actwk, **parent;
+    sprite_status *new_actwk;
 
-    parent = &((sprite_status **)catawk)[12];
-    new_actwk = *parent;
+    new_actwk = cata_get_work(catawk)->u.parent;
     if (new_actwk->r_no0 >= 4)
         return;
     catawk->xposi.w.h = new_actwk->xposi.w.h - 24;
@@ -543,8 +645,8 @@ label1:
 }
 
 static void shooterinit(sprite_status *shootwk) {
-    Uint16 **move;
     Uint16 *movetbl;
+    shooter_work *work = shooter_get_work(shootwk);
 
     shootwk->patbase = bariapat;
     shootwk->actflg = 4;
@@ -553,17 +655,17 @@ static void shooterinit(sprite_status *shootwk) {
 
     shootwk->r_no0 += 2;
     movetbl = shooterpositbl[shootwk->userflag.b.h & 127];
-    shootwk->actfree[16] = movetbl[0] >> 8;
-    shootwk->actfree[17] = movetbl[0] & 255;
-    move = &((Uint16 **)shootwk)[16];
-    *move = movetbl + 1;
-    ((Uint16 *)shootwk)[29] = movetbl[1];
-    ((Uint16 *)shootwk)[30] = movetbl[2];
+    work->move_index = movetbl[0] >> 8;
+    work->move_limit = movetbl[0] & 255;
+    work->move_table = movetbl + 1;
+    work->target_x = movetbl[1];
+    work->target_y = movetbl[2];
     shootermove(shootwk);
 }
 
 static void shootermove(sprite_status *shootwk) {
     Sint16 cal_position;
+    player_work *player = player_work_get(&actwk[0]);
 
     if (actwk[0].r_no0 >= 6)
         return;
@@ -573,16 +675,16 @@ static void shootermove(sprite_status *shootwk) {
     cal_position = actwk[0].yposi.w.h - shootwk->yposi.w.h + 48;
     if (cal_position >= 96 || cal_position < 0)
         return;
-    if (actwk[0].actfree[2] != 0)
+    if (player->status_flags != 0)
         return;
     if (actwk[0].r_no0 == 4) {
         actwk[0].r_no0 -= 2;
-        ((Sint16 *)&actwk[0])[26] = 120;
+        player->damage_invulnerability_timer = 120;
     }
     shootwk->r_no0 += 2;
-    actwk[0].actfree[2] = 129;
+    player->status_flags = 129;
     if (shootwk->userflag.b.l != 0)
-        actwk[0].actfree[2] |= 64;
+        player->status_flags |= 64;
     actwk[0].mstno.b.h = 2;
     actwk[0].mspeed.w = 2048;
     if (shootwk->userflag.b.h >= 0)
@@ -597,7 +699,7 @@ static void shootermove(sprite_status *shootwk) {
     actwk[0].cddat |= 2;
     actwk[0].xposi.w.h = shootwk->xposi.w.h;
     actwk[0].yposi.w.h = shootwk->yposi.w.h;
-    shootwk->actfree[8] = 0;
+    shooter_get_work(shootwk)->entry_timer = 0;
     soundset(145);
 }
 
@@ -611,61 +713,60 @@ static void shootermove2(sprite_status *shootwk) {
 static void shootermove3(sprite_status *shootwk) {
     Uint8 move_counter;
     Sint16 movetbl_data;
-    Uint16 **move;
     Uint16 *movetbl;
+    shooter_work *work = shooter_get_work(shootwk);
 
     actwk[0].mstno.b.h = 2;
     stackpointer = 4;
-    if ((char)--shootwk->actfree[4] < 0) {
-        actwk[0].xposi.w.h = ((Sint16 *)shootwk)[29] + shootwk->xposi.w.h;
-        actwk[0].yposi.w.h = ((Sint16 *)shootwk)[30] + shootwk->yposi.w.h;
-        move_counter = shootwk->actfree[16] + 6;
-        if (move_counter >= shootwk->actfree[17])
+    if ((char)--work->move_timer_high < 0) {
+        actwk[0].xposi.w.h = work->target_x + shootwk->xposi.w.h;
+        actwk[0].yposi.w.h = work->target_y + shootwk->yposi.w.h;
+        move_counter = work->move_index + 6;
+        if (move_counter >= work->move_limit)
             goto label2;
 
-        shootwk->actfree[16] = move_counter;
+        work->move_index = move_counter;
     label1:
-        move = &((Uint16 **)shootwk)[16];
-        movetbl = *move;
-        ((Uint16 *)shootwk)[29] = movetbl[move_counter / 2];
-        ((Uint16 *)shootwk)[30] = movetbl[move_counter / 2 + 1];
+        movetbl = work->move_table;
+        work->target_x = movetbl[move_counter / 2];
+        work->target_y = movetbl[move_counter / 2 + 1];
         shooterspdset(shootwk);
         return;
     }
 
     actwk[0].xposi.l += actwk[0].xspeed.w << 8;
     actwk[0].yposi.l += actwk[0].yspeed.w << 8;
-    move = &((Uint16 **)shootwk)[16];
-    movetbl = *move;
-    movetbl_data = movetbl[shootwk->actfree[16] / 2 + 2];
+    movetbl = work->move_table;
+    movetbl_data = movetbl[work->move_index / 2 + 2];
     if (movetbl_data >= 0)
         return;
     if (!(swdata1.b.h & 112))
         return;
     movetbl_data &= 32767;
     move_counter = movetbl_data;
-    move_counter = shootwk->actfree[17] + move_counter * 6;
-    shootwk->actfree[16] = move_counter;
+    move_counter = work->move_limit + move_counter * 6;
+    work->move_index = move_counter;
     goto label1;
 
 label2:
     actwk[0].yposi.w.h &= 2047;
     shootwk->r_no0 = 0;
-    actwk[0].actfree[2] = 0;
+    player_work_get(&actwk[0])->status_flags = 0;
 }
 
 void shooterspdset(sprite_status *shootwk) {
     Sint16 ms_work0, ms_work1, cal_position_x, cal_position_y;
     Sint32 cal_long_x, cal_long_y;
+    shooter_work *work = shooter_get_work(shootwk);
 
     ms_work0 = ms_work1 = actwk[0].mspeed.w;
-    cal_position_x = ((Sint16 *)shootwk)[29] + shootwk->xposi.w.h;
+    cal_position_x = work->target_x + shootwk->xposi.w.h;
     cal_position_x -= actwk[0].xposi.w.h;
     if (cal_position_x < 0) {
         cal_position_x = -cal_position_x;
         ms_work0 = -ms_work0;
     }
-    cal_position_y = ((Sint16 *)shootwk)[30] + shootwk->yposi.w.h;
+    cal_position_y = work->target_y + shootwk->yposi.w.h;
     cal_position_y -= actwk[0].yposi.w.h;
     if (cal_position_y < 0) {
         cal_position_y = -cal_position_y;
@@ -673,12 +774,12 @@ void shooterspdset(sprite_status *shootwk) {
     }
     if (cal_position_x <= cal_position_y) {
 
-        cal_position_y = ((Sint16 *)shootwk)[30] + shootwk->yposi.w.h;
+        cal_position_y = work->target_y + shootwk->yposi.w.h;
         cal_position_y -= actwk[0].yposi.w.h;
         cal_long_y = cal_position_y << 16;
         cal_long_y /= ms_work1;
 
-        cal_position_x = ((Sint16 *)shootwk)[29] + shootwk->xposi.w.h;
+        cal_position_x = work->target_x + shootwk->xposi.w.h;
         cal_position_x -= actwk[0].xposi.w.h;
         cal_long_x = cal_position_x << 16;
         if (cal_long_x != 0)
@@ -688,17 +789,17 @@ void shooterspdset(sprite_status *shootwk) {
         actwk[0].yspeed.w = ms_work1;
         if (cal_long_y < 0)
             cal_long_y = -cal_long_y;
-        shootwk->actfree[4] = cal_long_y >> 8;
-        shootwk->actfree[5] = cal_long_y & 255;
+        work->move_timer_high = cal_long_y >> 8;
+        work->move_timer_low = cal_long_y & 255;
         return;
     }
 
-    cal_position_x = ((Sint16 *)shootwk)[29] + shootwk->xposi.w.h;
+    cal_position_x = work->target_x + shootwk->xposi.w.h;
     cal_position_x -= actwk[0].xposi.w.h;
     cal_long_x = cal_position_x << 16;
     cal_long_x /= ms_work0;
 
-    cal_position_y = ((Sint16 *)shootwk)[30] + shootwk->yposi.w.h;
+    cal_position_y = work->target_y + shootwk->yposi.w.h;
     cal_position_y -= actwk[0].yposi.w.h;
     cal_long_y = cal_position_y << 16;
     if (cal_long_y != 0)
@@ -708,6 +809,6 @@ void shooterspdset(sprite_status *shootwk) {
     actwk[0].xspeed.w = ms_work0;
     if (cal_long_x < 0)
         cal_long_x = -cal_long_x;
-    shootwk->actfree[4] = cal_long_x >> 8;
-    shootwk->actfree[5] = cal_long_x & 255;
+    work->move_timer_high = cal_long_x >> 8;
+    work->move_timer_low = cal_long_x & 255;
 }

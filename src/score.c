@@ -26,6 +26,19 @@ static void timewrt0(sprite_data *pSprdat, Uint32 lDispVal, Uint32 *subval,
 
 extern Sint16 playdieset(sprite_status *pActwk);
 
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 display_timer;
+} ten_point_work;
+#pragma pack(pop)
+
+_Static_assert(sizeof(ten_point_work) <= sizeof(((sprite_status *)0)->actfree),
+               "ten_point_work must fit in sprite_status.actfree");
+
+static ten_point_work *ten_point_work_get(sprite_status *pAct) {
+    return (ten_point_work *)pAct->actfree;
+}
+
 #if defined(R31) || defined(R32)
 #define SPRITE_LIFEICON_PAST 359
 #define SPRITE_LIFEICON_PRESENT 358
@@ -164,17 +177,21 @@ static void tensuu(sprite_status *pAct) {
 }
 
 static void ten_init(sprite_status *pAct) {
+    ten_point_work *work = ten_point_work_get(pAct);
+
     pAct->r_no0 = 2;
     pAct->actflg = 4;
     pAct->patbase = tenpat;
     pAct->patno = pAct->userflag.b.h & 127;
-    pAct->actfree[0] = 24;
+    work->display_timer = 24;
 }
 
 static void ten_move(sprite_status *pAct) {
-    --pAct->actfree[0];
+    ten_point_work *work = ten_point_work_get(pAct);
 
-    if (!pAct->actfree[0])
+    --work->display_timer;
+
+    if (!work->display_timer)
         frameout(pAct);
     pAct->yposi.w.h -= 2;
 }

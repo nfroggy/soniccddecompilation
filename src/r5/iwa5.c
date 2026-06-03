@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "../dircol.h"
 #include "../action.h"
@@ -12,6 +14,24 @@ typedef struct {
     Sint32 sy;
 } init_data;
 
+#pragma pack(push, 1)
+typedef struct {
+    Sint32 x_velocity;
+    Sint32 y_velocity;
+} iwa5_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(iwa5_work, x_velocity) == 0,
+               "iwa5_work.x_velocity must map to offset 0");
+_Static_assert(offsetof(iwa5_work, y_velocity) == 4,
+               "iwa5_work.y_velocity must map to offset 4");
+_Static_assert(sizeof(iwa5_work) <= sizeof(((sprite_status *)0)->actfree),
+               "iwa5_work must fit in sprite_status.actfree");
+
+static iwa5_work *iwa5_work_get(sprite_status *pActwk) {
+    return (iwa5_work *)pActwk->actfree;
+}
+
 static void m_init(sprite_status *pActwk);
 static void m_wait(sprite_status *pActwk);
 static void m_fall(sprite_status *pActwk);
@@ -24,12 +44,13 @@ static sprite_pattern pat04 = {1, {{-8, -8, 0, 454}}};
 sprite_pattern *pat_iwa5[5] = {&pat00, &pat01, &pat02, &pat03, &pat04};
 
 void iwa5(sprite_status *pActwk) {
+    iwa5_work *work = iwa5_work_get(pActwk);
     void (*tbl[3])(sprite_status *) = {&m_init, &m_wait, &m_fall};
 
     if (pActwk->userflag.b.h & 128) {
-        *(Sint32 *)&pActwk->actfree[4] += 16384;
-        pActwk->xposi.l += *(Sint32 *)&pActwk->actfree[0];
-        pActwk->yposi.l += *(Sint32 *)&pActwk->actfree[4];
+        work->y_velocity += 16384;
+        pActwk->xposi.l += work->x_velocity;
+        pActwk->yposi.l += work->y_velocity;
         actionsub(pActwk);
 
         if (actwk[0].yposi.w.h - pActwk->yposi.w.h <= -224)
@@ -88,8 +109,10 @@ static void m_wait(sprite_status *pActwk) {
 }
 
 static void m_fall(sprite_status *pActwk) {
+    iwa5_work *work = iwa5_work_get(pActwk);
     sprite_status *pPlayerwk;
     sprite_status *pNewActwk;
+    iwa5_work *new_work;
     Sint16 a6;
     Sint16 d0, d1;
     Uint8 d6;
@@ -100,8 +123,8 @@ static void m_fall(sprite_status *pActwk) {
 
     if (pActwk->colicnt == 0) {
 
-        pActwk->yposi.l += *(Sint32 *)&pActwk->actfree[4];
-        *(Sint32 *)&pActwk->actfree[4] += 16384;
+        pActwk->yposi.l += work->y_velocity;
+        work->y_velocity += 16384;
         if (emycol_d(pActwk) >= 0) {
 
             pPlayerwk = &actwk[0];
@@ -134,8 +157,9 @@ static void m_fall(sprite_status *pActwk) {
         d1 = tbl0[a6].dy;
         pNewActwk->xposi.w.h += d0;
         pNewActwk->yposi.w.h += d1;
-        *(Sint32 *)&pNewActwk->actfree[0] = tbl0[a6].sx;
-        *(Sint32 *)&pNewActwk->actfree[4] = tbl0[a6].sy;
+        new_work = iwa5_work_get(pNewActwk);
+        new_work->x_velocity = tbl0[a6].sx;
+        new_work->y_velocity = tbl0[a6].sy;
         ++a6;
         pNewActwk->patno = d6 + 1;
     } while (d6--);

@@ -3,6 +3,7 @@
 #include "../action.h"
 #include "../actset.h"
 #include "../ridechk.h"
+#include <stddef.h>
 
 #if defined(R41A) || defined(R42A)
 #define SPRITE_WALLS_BASE 446
@@ -19,6 +20,37 @@
 static void main_init(sprite_status *pActwk);
 static void main_move(sprite_status *pActwk);
 static void opt_check(sprite_status *pActwk);
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint16 timer;
+    Sint32 x_velocity;
+    Sint16 origin_x;
+    Sint16 parent_actor;
+    Sint16 data_index;
+    Uint8 reserved0[14 - 12];
+    Uint8 child_actors[8];
+} walls_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(walls_work, timer) == 0,
+               "walls_work.timer offset");
+_Static_assert(offsetof(walls_work, x_velocity) == 2,
+               "walls_work.x_velocity offset");
+_Static_assert(offsetof(walls_work, origin_x) == 6,
+               "walls_work.origin_x offset");
+_Static_assert(offsetof(walls_work, parent_actor) == 8,
+               "walls_work.parent_actor offset");
+_Static_assert(offsetof(walls_work, data_index) == 10,
+               "walls_work.data_index offset");
+_Static_assert(offsetof(walls_work, child_actors) == 14,
+               "walls_work.child_actors offset");
+_Static_assert(sizeof(walls_work) <= sizeof(((sprite_status *)0)->actfree),
+               "walls_work fits in actfree");
+
+static walls_work *walls_work_get(sprite_status *pActwk) {
+    return (walls_work *)pActwk->actfree;
+}
 
 static sprite_pattern pat00 = {1, {{-16, -16, 0, SPRITE_WALLS_BASE}}};
 static sprite_pattern pat01 = {1, {{-32, -16, 0, SPRITE_WALLS_BASE + 1}}};
@@ -47,12 +79,13 @@ void walls(sprite_status *pActwk) {
 }
 
 static void main_init(sprite_status *pActwk) {
+    walls_work *work = walls_work_get(pActwk);
     Uint8 *pOptwk, *pPatno, patnowk;
     Sint32 i, j;
     sprite_status *pNewact;
 
     pActwk->r_no0 += 2;
-    ((Sint16 *)pActwk)[26] = pActwk->xposi.w.h;
+    work->origin_x = pActwk->xposi.w.h;
     pActwk->actflg |= 4;
     pActwk->sprpri = 3;
     pActwk->sprhs = 16;
@@ -61,11 +94,11 @@ static void main_init(sprite_status *pActwk) {
     pActwk->sproffset = 17514;
     pActwk->patbase = pat_walls;
     pActwk->patno = 4;
-    ((Sint16 *)pActwk)[27] = pActwk - actwk;
-    ((Sint16 *)pActwk)[23] = 192;
-    ((Sint32 *)pActwk)[12] = -32768;
+    work->parent_actor = pActwk - actwk;
+    work->timer = 192;
+    work->x_velocity = -32768;
 
-    pOptwk = &pActwk->actfree[14];
+    pOptwk = work->child_actors;
     pPatno = patno_tbl[pActwk->userflag.b.h + 1];
 
     for (i = 3; i >= 0; --i) {
@@ -92,7 +125,7 @@ static void main_init(sprite_status *pActwk) {
                     pActwk->xposi.w.h - 64 + (Sint16)(patnowk * 16);
             }
 
-            ((Sint16 *)pNewact)[27] = pActwk - actwk;
+            walls_work_get(pNewact)->parent_actor = pActwk - actwk;
             pNewact->actno = pActwk->actno;
             pNewact->actflg = pActwk->actflg;
             pNewact->sprpri = pActwk->sprpri;
@@ -106,13 +139,14 @@ static void main_init(sprite_status *pActwk) {
 }
 
 static void main_move(sprite_status *pActwk) {
+    walls_work *work = walls_work_get(pActwk);
     Uint8 *pOptwk;
     Sint32 i;
     Sint32 spdwk;
     sprite_status *pChildact;
 
-    pOptwk = &pActwk->actfree[14];
-    spdwk = ((Sint32 *)pActwk)[12];
+    pOptwk = work->child_actors;
+    spdwk = work->x_velocity;
 
     for (i = 3; i >= 0; --i) {
 
@@ -125,20 +159,22 @@ static void main_move(sprite_status *pActwk) {
         pChildact->xspeed.w = spdwk >> 8;
     }
 
-    if (--((Sint16 *)pActwk)[23] == 0) {
-        ((Sint16 *)pActwk)[23] = data_tbl[((Sint16 *)pActwk)[28] / 4];
+    if (--work->timer == 0) {
+        work->timer = data_tbl[work->data_index / 4];
 
-        ((Sint32 *)pActwk)[12] = data_tbl[((Sint16 *)pActwk)[28] / 4 + 1];
+        work->x_velocity = data_tbl[work->data_index / 4 + 1];
 
-        ((Sint16 *)pActwk)[28] += 8;
-        ((Sint16 *)pActwk)[28] &= 31;
+        work->data_index += 8;
+        work->data_index &= 31;
     }
 
-    frameout_s00(pActwk, ((Sint16 *)pActwk)[26]);
+    frameout_s00(pActwk, work->origin_x);
 }
 
 static void opt_check(sprite_status *pActwk) {
-    if (actwk[((Sint16 *)pActwk)[27]].actno != 51) {
+    walls_work *work = walls_work_get(pActwk);
+
+    if (actwk[work->parent_actor].actno != 51) {
         frameout(pActwk);
     } else {
         hitchk(pActwk, &actwk[0]);

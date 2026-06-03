@@ -4,6 +4,7 @@
 #include "../actset.h"
 #include "../loader2.h"
 #include "../ridechk.h"
+#include <stddef.h>
 
 static void a_ini(sprite_status *pActwk);
 static void a_born(sprite_status *pActwk);
@@ -11,6 +12,24 @@ static void a_off(sprite_status *pActwk);
 static void a_off1(sprite_status *pActwk);
 static void a_on(sprite_status *pActwk);
 static void a_on1(sprite_status *pActwk);
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint16 base_y;
+    Sint32 y_velocity;
+} daid4_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(daid4_work, base_y) == 0,
+               "daid4_work.base_y offset");
+_Static_assert(offsetof(daid4_work, y_velocity) == 2,
+               "daid4_work.y_velocity offset");
+_Static_assert(sizeof(daid4_work) <= sizeof(((sprite_status *)0)->actfree),
+               "daid4_work fits in actfree");
+
+static daid4_work *daid4_work_get(sprite_status *pActwk) {
+    return (daid4_work *)pActwk->actfree;
+}
 
 static sprite_pattern pat0 = {2, {{-32, -32, 0, 501}, {-32, 16, 0, 503}}};
 static sprite_pattern pat1 = {2, {{-32, -34, 0, 502}, {-32, 14, 0, 504}}};
@@ -24,6 +43,8 @@ void daid4(sprite_status *pActwk) {
 }
 
 static void a_ini(sprite_status *pActwk) {
+    daid4_work *work = daid4_work_get(pActwk);
+
     pActwk->r_no0 += 2;
     pActwk->actflg |= 4;
     pActwk->sprpri = 3;
@@ -31,16 +52,17 @@ static void a_ini(sprite_status *pActwk) {
     pActwk->sprhsize = 32;
     pActwk->sproffset = 17168;
     pActwk->patbase = pat_daid4;
-    ((Sint16 *)pActwk)[23] = pActwk->yposi.w.h;
+    work->base_y = pActwk->yposi.w.h;
     pActwk->sprvsize = 33;
 }
 
 static void a_born(sprite_status *pActwk) {
+    daid4_work *work = daid4_work_get(pActwk);
     Sint16 d0;
 
     d0 = actwk[0].yposi.w.h;
     d0 -= 224;
-    if (d0 > ((Sint16 *)pActwk)[23]) {
+    if (d0 > work->base_y) {
         pActwk->r_no0 += 2;
         pActwk->yposi.w.h = d0;
     }
@@ -48,22 +70,25 @@ static void a_born(sprite_status *pActwk) {
 }
 
 static void a_off(sprite_status *pActwk) {
+    daid4_work *work = daid4_work_get(pActwk);
+
     pActwk->r_no0 += 2;
     pActwk->sprvsize = 33;
     pActwk->patno &= 254;
-    ((Sint32 *)pActwk)[12] = 0;
+    work->y_velocity = 0;
     pActwk->yspeed.w = 0;
 
     a_off1(pActwk);
 }
 
 static void a_off1(sprite_status *pActwk) {
+    daid4_work *work = daid4_work_get(pActwk);
     Sint16 d0;
 
-    pActwk->yposi.l += ((Sint32 *)pActwk)[12];
-    ((Sint32 *)pActwk)[12] += 1024;
-    if (((Sint32 *)pActwk)[12] > 65536) {
-        ((Sint32 *)pActwk)[12] = 65536;
+    pActwk->yposi.l += work->y_velocity;
+    work->y_velocity += 1024;
+    if (work->y_velocity > 65536) {
+        work->y_velocity = 65536;
     }
     if (!(pActwk->actflg & 128)) {
         d0 = pActwk->yposi.w.h;
@@ -99,10 +124,11 @@ static void a_on(sprite_status *pActwk) {
 }
 
 static void a_on1(sprite_status *pActwk) {
+    daid4_work *work = daid4_work_get(pActwk);
     Sint16 d0;
 
     d0 = pActwk->yposi.w.h;
-    if (d0 <= ((Sint16 *)pActwk)[23]) {
+    if (d0 <= work->base_y) {
         pActwk->r_no0 = 2;
     } else {
         if (ridechk(pActwk, &actwk[0]) == 0) {

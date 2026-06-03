@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "hari5f.h"
 #include "../action.h"
@@ -10,6 +12,25 @@ static void f_fall(sprite_status *pActwk);
 
 static sprite_pattern hari5f_pat0 = {1, {{-8, -24, 0, 421}}};
 sprite_pattern *pat_hari5f[1] = {&hari5f_pat0};
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint32 y_velocity;
+    Uint8 reserved4[17];
+    Uint8 previous_collision;
+} hari5f_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(hari5f_work, y_velocity) == 0,
+               "hari5f_work.y_velocity must map to offset 0");
+_Static_assert(offsetof(hari5f_work, previous_collision) == 21,
+               "hari5f_work.previous_collision must map to offset 21");
+_Static_assert(sizeof(hari5f_work) <= sizeof(((sprite_status *)0)->actfree),
+               "hari5f_work must fit in sprite_status.actfree");
+
+static hari5f_work *hari5f_work_get(sprite_status *pActwk) {
+    return (hari5f_work *)pActwk->actfree;
+}
 
 void hari5f(sprite_status *pActwk) {
     void (*hari5f_move_tbl[3])(sprite_status *) = {&f_init, &f_wait, &f_fall};
@@ -51,6 +72,7 @@ static void f_wait(sprite_status *pActwk) {
 }
 
 static void f_fall(sprite_status *pActwk) {
+    hari5f_work *work = hari5f_work_get(pActwk);
     Uint8 bD0;
     Sint16 wD1;
 
@@ -66,15 +88,15 @@ static void f_fall(sprite_status *pActwk) {
 
     if (wD1 >= 0) {
         bD0 = 0;
-        if (pActwk->actfree[21] & 128) {
+        if (work->previous_collision & 128) {
             frameout(pActwk);
             return;
         }
 
     } else
         bD0 = 255;
-    pActwk->actfree[21] = bD0;
+    work->previous_collision = bD0;
 
-    pActwk->yposi.l += *(Sint32 *)((char *)&pActwk->actfree[0]);
-    *(Sint32 *)&pActwk->actfree[0] += 16384;
+    pActwk->yposi.l += work->y_velocity;
+    work->y_velocity += 16384;
 }

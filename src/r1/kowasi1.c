@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "kowasi1.h"
 #include "../action.h"
@@ -24,6 +26,34 @@ sprite_pattern *pat_kowasi[14] = {
     &spr_kowasi05, &spr_kowasi06, &spr_kowasi07, &spr_kowasi08, &spr_kowasi09,
     &spr_kowasi0a, &spr_kowasi0b, &spr_kowasi0c, &spr_kowasi0d};
 
+#pragma pack(push, 1)
+typedef struct {
+    union {
+        Sint32 x_velocity;
+        Sint16 saved_player_xspeed;
+    };
+    union {
+        Sint32 y_velocity;
+        Sint16 saved_player_yspeed;
+    };
+} kowasi1_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(kowasi1_work, x_velocity) == 0,
+               "kowasi1_work.x_velocity must map to offset 0");
+_Static_assert(offsetof(kowasi1_work, saved_player_xspeed) == 0,
+               "kowasi1_work.saved_player_xspeed must map to offset 0");
+_Static_assert(offsetof(kowasi1_work, y_velocity) == 4,
+               "kowasi1_work.y_velocity must map to offset 4");
+_Static_assert(offsetof(kowasi1_work, saved_player_yspeed) == 4,
+               "kowasi1_work.saved_player_yspeed must map to offset 4");
+_Static_assert(sizeof(kowasi1_work) <= sizeof(((sprite_status *)0)->actfree),
+               "kowasi1_work must fit in sprite_status.actfree");
+
+static kowasi1_work *kowasi1_work_get(sprite_status *pActwk) {
+    return (kowasi1_work *)pActwk->actfree;
+}
+
 void kowasi(sprite_status *pActwk) {
     void (*tbl[3])(sprite_status *) = {&m_init, &m_wait, &m_down};
 
@@ -46,7 +76,9 @@ void m_init(sprite_status *pActwk) {
 }
 
 void m_wait(sprite_status *pActwk) {
+    kowasi1_work *work = kowasi1_work_get(pActwk);
     sprite_status *pActwk_w;
+    kowasi1_work *fragment_work;
     sprite_status *pPlayerwk;
     Uint8 *pTbl0pat;
     Sint16 *pTbl0dposi;
@@ -69,8 +101,8 @@ void m_wait(sprite_status *pActwk) {
     if (pActwk->colicnt) {
         pActwk->colino = pActwk->colicnt = 0;
         pActwk->r_no0 += 2;
-        ((Sint16 *)pActwk)[23] = pPlayerwk->xspeed.w;
-        ((Sint16 *)pActwk)[25] = pPlayerwk->yspeed.w;
+        work->saved_player_xspeed = pPlayerwk->xspeed.w;
+        work->saved_player_yspeed = pPlayerwk->yspeed.w;
     } else {
         hitchk(pActwk, pPlayerwk);
         actionsub(pActwk);
@@ -106,21 +138,23 @@ void m_wait(sprite_status *pActwk) {
         pActwk_w->xposi.w.h += *pTbl0dposi++;
         pActwk_w->yposi.w.h += *pTbl0dposi++;
         speedx = *pTbl0speed++;
-        *(Sint32 *)&pActwk_w->actfree[4] = *pTbl0speed++;
+        fragment_work = kowasi1_work_get(pActwk_w);
+        fragment_work->y_velocity = *pTbl0speed++;
         if (pPlayerwk->xspeed.w < 0)
             speedx *= -1;
-        *(Sint32 *)&pActwk_w->actfree[0] = speedx;
+        fragment_work->x_velocity = speedx;
     }
     m_down(pActwk);
 }
 
 void m_down(sprite_status *pActwk) {
+    kowasi1_work *work = kowasi1_work_get(pActwk);
     sprite_status *pPlayerwk;
     Sint16 y;
 
-    *(Sint32 *)&pActwk->actfree[4] += 16384;
-    pActwk->xposi.l += *(Sint32 *)&pActwk->actfree[0];
-    pActwk->yposi.l += *(Sint32 *)&pActwk->actfree[4];
+    work->y_velocity += 16384;
+    pActwk->xposi.l += work->x_velocity;
+    pActwk->yposi.l += work->y_velocity;
     pPlayerwk = &actwk[0];
     y = pPlayerwk->yposi.w.h;
     y -= pActwk->yposi.w.h;

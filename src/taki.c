@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "equ.h"
 #include "taki.h"
 #include "action.h"
@@ -21,6 +23,21 @@ static sprite_pattern shibuki1 = {1, {{-96, -16, 0, SPRITE_SHIBUKI_BASE + 1}}};
 sprite_pattern *shibukipat[2] = {&shibuki0, &shibuki1};
 static void (*taki_move_tbl[2])(sprite_status *) = {&taki_init, &taki_move};
 
+#pragma pack(push, 1)
+typedef struct {
+    Sint16 end_yposi;
+} taki_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(taki_work, end_yposi) == 0,
+               "taki_work.end_yposi must map to offset 0");
+_Static_assert(sizeof(taki_work) <= sizeof(((sprite_status *)0)->actfree),
+               "taki_work must fit in sprite_status.actfree");
+
+static taki_work *taki_work_get(sprite_status *pActwk) {
+    return (taki_work *)pActwk->actfree;
+}
+
 void taki(sprite_status *pActwk) {
     taki_move_tbl[pActwk->r_no0 / 2](pActwk);
     patchg(pActwk, &shibukichg);
@@ -28,6 +45,8 @@ void taki(sprite_status *pActwk) {
 }
 
 static void taki_init(sprite_status *pActwk) {
+    taki_work *work = taki_work_get(pActwk);
+
     pActwk->r_no0 += 2;
     pActwk->patbase = shibukipat;
     pActwk->actflg = 4;
@@ -36,14 +55,15 @@ static void taki_init(sprite_status *pActwk) {
     pActwk->sproffset = 954;
     pActwk->yposi.w.h &= -16;
 
-    ((Sint16 *)pActwk)[23] = pActwk->yposi.w.h + 384;
+    work->end_yposi = pActwk->yposi.w.h + 384;
 }
 
 static void taki_move(sprite_status *pActwk) {
+    taki_work *work = taki_work_get(pActwk);
     Uint16 blkno;
     Sint16 i, xoffs;
 
-    if (pActwk->yposi.w.h + 4 >= ((Sint16 *)pActwk)[23]) {
+    if (pActwk->yposi.w.h + 4 >= work->end_yposi) {
 
         frameout(pActwk);
         return;

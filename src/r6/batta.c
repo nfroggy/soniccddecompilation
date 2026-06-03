@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "batta.h"
 #include "../action.h"
@@ -20,6 +22,44 @@ sprite_pattern bp_batta0 = {1, {{-16, -18, 0, SPRITE_BATTA_BASE + 2}}};
 sprite_pattern bp_batta1 = {1, {{-16, -29, 0, SPRITE_BATTA_BASE + 3}}};
 sprite_pattern *pat_batta_b[2] = {&bp_batta0, &bp_batta1};
 
+#pragma pack(push, 1)
+typedef struct {
+    Sint32 x_velocity;
+    Sint32 y_velocity;
+    Sint8 hop_count;
+    Uint8 hop_count_reset;
+    Sint16 wall_probe_offset;
+    Uint8 facing_flag;
+    Uint8 reserved13[3];
+    Sint16 wait_timer;
+    Uint8 reserved18[2];
+    Sint16 collision_delta;
+} batta_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(batta_work, x_velocity) == 0,
+               "batta_work.x_velocity must map to offset 0");
+_Static_assert(offsetof(batta_work, y_velocity) == 4,
+               "batta_work.y_velocity must map to offset 4");
+_Static_assert(offsetof(batta_work, hop_count) == 8,
+               "batta_work.hop_count must map to offset 8");
+_Static_assert(offsetof(batta_work, hop_count_reset) == 9,
+               "batta_work.hop_count_reset must map to offset 9");
+_Static_assert(offsetof(batta_work, wall_probe_offset) == 10,
+               "batta_work.wall_probe_offset must map to offset 10");
+_Static_assert(offsetof(batta_work, facing_flag) == 12,
+               "batta_work.facing_flag must map to offset 12");
+_Static_assert(offsetof(batta_work, wait_timer) == 16,
+               "batta_work.wait_timer must map to offset 16");
+_Static_assert(offsetof(batta_work, collision_delta) == 20,
+               "batta_work.collision_delta must map to offset 20");
+_Static_assert(sizeof(batta_work) <= sizeof(((sprite_status *)0)->actfree),
+               "batta_work must fit in sprite_status.actfree");
+
+static batta_work *batta_work_get(sprite_status *pActwk) {
+    return (batta_work *)pActwk->actfree;
+}
+
 void batta(sprite_status *pActwk) {
     if (enemy_suicide(pActwk))
         return;
@@ -29,86 +69,93 @@ void batta(sprite_status *pActwk) {
 }
 
 void batta_init(sprite_status *pActwk) {
+    batta_work *work = batta_work_get(pActwk);
+
     pActwk->r_no0 += 2;
     pActwk->actflg |= 4;
     pActwk->sprpri = 3;
     pActwk->sproffset = 9272;
     pActwk->sprhs = 16;
     pActwk->sprhsize = 16;
-    *(Sint32 *)&pActwk->actfree[4] = 458752;
-    pActwk->actfree[12] = 255;
-    ((Sint16 *)pActwk)[28] = -16;
+    work->y_velocity = 458752;
+    work->facing_flag = 255;
+    work->wall_probe_offset = -16;
     pActwk->patno = 1;
 
     batta_patexg(pActwk);
     if (pActwk->userflag.b.h == 0) {
         pActwk->patbase = pat_batta_e;
-        *(Sint32 *)&pActwk->actfree[0] = -40960;
-        pActwk->actfree[8] = 7;
-        pActwk->actfree[9] = 7;
+        work->x_velocity = -40960;
+        work->hop_count = 7;
+        work->hop_count_reset = 7;
     } else {
         pActwk->patbase = pat_batta_b;
-        *(Sint32 *)&pActwk->actfree[0] = -32768;
-        pActwk->actfree[8] = 3;
-        pActwk->actfree[9] = 3;
+        work->x_velocity = -32768;
+        work->hop_count = 3;
+        work->hop_count_reset = 3;
     }
 
-    ++pActwk->actfree[8];
+    ++work->hop_count;
 }
 
 Sint16 emylr_jump(sprite_status *pActwk, Uint8 byD3) {
-    if (pActwk->actfree[12] == 255)
-        emycol_r(pActwk, byD3);
-    else
-        emycol_l(pActwk, byD3);
+    batta_work *work = batta_work_get(pActwk);
+
+    if (work->facing_flag == 255)
+        return emycol_r(pActwk, byD3);
+    return emycol_l(pActwk, byD3);
 }
 
 void batta_down(sprite_status *pActwk) {
+    batta_work *work = batta_work_get(pActwk);
     Sint16 iD1, iD3;
 
-    pActwk->xposi.l += *(Sint32 *)&pActwk->actfree[0];
-    pActwk->yposi.l += *(Sint32 *)&pActwk->actfree[4];
+    pActwk->xposi.l += work->x_velocity;
+    pActwk->yposi.l += work->y_velocity;
 
     iD1 = emycol_d(pActwk);
-    ((Sint16 *)pActwk)[33] = iD1;
-    iD3 = ((Sint16 *)pActwk)[28];
+    work->collision_delta = iD1;
+    iD3 = work->wall_probe_offset;
     iD1 = emylr_jump(pActwk, iD3);
     if (iD1 < 0) {
-        if (((Sint16 *)pActwk)[33] >= 0) {
+        if (work->collision_delta >= 0) {
             batta_wall(pActwk);
             return;
         }
-        if (iD1 <= ((Sint16 *)pActwk)[33])
+        if (iD1 <= work->collision_delta)
             batta_wall(pActwk);
         else
             batta_floor(pActwk);
         return;
     }
 
-    if (((Sint16 *)pActwk)[33] < 0) {
+    if (work->collision_delta < 0) {
         batta_floor(pActwk);
         return;
     }
-    *(Sint32 *)&pActwk->actfree[4] += 8192;
-    if (*(Sint32 *)&pActwk->actfree[4] >= 458752)
-        *(Sint32 *)&pActwk->actfree[4] = 458752;
+    work->y_velocity += 8192;
+    if (work->y_velocity >= 458752)
+        work->y_velocity = 458752;
 }
 
 void batta_floor(sprite_status *pActwk) {
+    batta_work *work = batta_work_get(pActwk);
+
     pActwk->r_no0 += 2;
-    pActwk->yposi.w.h += ((Sint16 *)pActwk)[33];
+    pActwk->yposi.w.h += work->collision_delta;
     if (pActwk->userflag.b.h == 0)
-        ((Sint16 *)pActwk)[31] = 1;
+        work->wait_timer = 1;
     else
-        ((Sint16 *)pActwk)[31] = 20;
+        work->wait_timer = 20;
 }
 
 void batta_wait(sprite_status *pActwk) {
+    batta_work *work = batta_work_get(pActwk);
     Sint16 iD6;
 
     if (pActwk->userflag.b.h != 0) {
         iD6 = 7;
-        switch (((Sint16 *)pActwk)[31]) {
+        switch (work->wait_timer) {
         case 11:
         case 18:
             iD6 = -iD6;
@@ -120,32 +167,33 @@ void batta_wait(sprite_status *pActwk) {
         }
     }
 
-    --((Sint16 *)pActwk)[31];
-    if (((Sint16 *)pActwk)[31] == 0) {
+    --work->wait_timer;
+    if (work->wait_timer == 0) {
         pActwk->r_no0 += 2;
         pActwk->yposi.w.h -= 7;
         batta_patexg(pActwk);
         if (pActwk->userflag.b.h == 0)
-            *(Sint32 *)&pActwk->actfree[4] = -393216;
+            work->y_velocity = -393216;
         else
-            *(Sint32 *)&pActwk->actfree[4] = -327680;
-        --((char *)pActwk)[54];
-        if (((char *)pActwk)[54] < 0)
+            work->y_velocity = -327680;
+        --work->hop_count;
+        if (work->hop_count < 0)
             batta_wall(pActwk);
     }
 }
 
 void batta_up(sprite_status *pActwk) {
+    batta_work *work = batta_work_get(pActwk);
     Sint16 iD1, iD3;
 
-    pActwk->xposi.l += *(Sint32 *)&pActwk->actfree[0];
-    pActwk->yposi.l += *(Sint32 *)&pActwk->actfree[4];
+    pActwk->xposi.l += work->x_velocity;
+    pActwk->yposi.l += work->y_velocity;
     iD1 = emycol_u(pActwk);
-    ((Sint16 *)pActwk)[33] = iD1;
-    iD3 = ((Sint16 *)pActwk)[28];
+    work->collision_delta = iD1;
+    iD3 = work->wall_probe_offset;
     iD1 = emylr_jump(pActwk, iD3);
     if (iD1 < 0) {
-        if (((Sint16 *)pActwk)[33] >= 0 || iD1 <= ((Sint16 *)pActwk)[33]) {
+        if (work->collision_delta >= 0 || iD1 <= work->collision_delta) {
 
             batta_wall(pActwk);
         } else
@@ -153,18 +201,20 @@ void batta_up(sprite_status *pActwk) {
         return;
     }
 
-    if (((Sint16 *)pActwk)[33] < 0) {
+    if (work->collision_delta < 0) {
         batta_ceiling(pActwk);
         return;
     }
-    *(Sint32 *)&pActwk->actfree[4] += 8192;
-    if (*(Sint32 *)&pActwk->actfree[4] >= 0)
+    work->y_velocity += 8192;
+    if (work->y_velocity >= 0)
         batta_fall(pActwk);
 }
 
 void batta_ceiling(sprite_status *pActwk) {
-    pActwk->yposi.w.h -= ((Sint16 *)pActwk)[33];
-    *(Sint32 *)&pActwk->actfree[4] = 0;
+    batta_work *work = batta_work_get(pActwk);
+
+    pActwk->yposi.w.h -= work->collision_delta;
+    work->y_velocity = 0;
     batta_fall(pActwk);
 }
 
@@ -175,15 +225,17 @@ void batta_fall(sprite_status *pActwk) {
 }
 
 void batta_wall(sprite_status *pActwk) {
-    pActwk->actfree[8] = pActwk->actfree[9];
+    batta_work *work = batta_work_get(pActwk);
+
+    work->hop_count = work->hop_count_reset;
     pActwk->actflg ^= 1;
     pActwk->cddat ^= 1;
-    *(Sint32 *)&pActwk->actfree[0] = -(*(Sint32 *)&pActwk->actfree[0]);
-    ((Sint16 *)pActwk)[28] = -((Sint16 *)pActwk)[28];
-    if (pActwk->actfree[12] == 255)
-        pActwk->actfree[12] = 1;
+    work->x_velocity = -work->x_velocity;
+    work->wall_probe_offset = -work->wall_probe_offset;
+    if (work->facing_flag == 255)
+        work->facing_flag = 1;
     else
-        pActwk->actfree[12] = 255;
+        work->facing_flag = 255;
 }
 
 void batta_patexg(sprite_status *pActwk) {

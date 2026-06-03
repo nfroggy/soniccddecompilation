@@ -176,6 +176,23 @@ typedef struct {
     Uint8 actfree[22];
 } sprite_status;
 
+static inline Sint32 sprite_status_get_xspeed_yspeed(const sprite_status *actor) {
+    return (Sint32)((Uint32)(Uint16)actor->xspeed.w |
+                    ((Uint32)(Uint16)actor->yspeed.w << 16));
+}
+
+static inline void sprite_status_set_xspeed_yspeed(sprite_status *actor,
+                                                   Sint32 value) {
+    actor->xspeed.w = (Sint16)(Uint16)value;
+    actor->yspeed.w = (Sint16)((Uint32)value >> 16);
+}
+
+static inline void sprite_status_add_xspeed_yspeed(sprite_status *actor,
+                                                   Sint32 value) {
+    sprite_status_set_xspeed_yspeed(
+        actor, sprite_status_get_xspeed_yspeed(actor) + value);
+}
+
 typedef struct {
     Sint32 cnt;
     sprite_status *pActwk[63];

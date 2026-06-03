@@ -1,9 +1,12 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "awa.h"
 #include "../action.h"
 #include "../actset.h"
 #include "../loader2.h"
 #include "../io.h"
+#include "../player_work.h"
 #include "playsub4.h"
 
 Uint8 awachg0[5] = {14, 0, 1, 2, 252};
@@ -17,6 +20,43 @@ Uint8 *awachg[7] = {awachg0, awachg1, awachg2, awachg4,
 extern sprite_pattern *awapat[];
 extern Uint8 awasintbl[];
 
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 unused0[4];
+    Uint8 collider_enabled;
+    Uint8 unused5;
+    Sint16 origin_x;
+    Uint8 spawn_count;
+    Uint8 spawn_reload;
+    Uint8 spawn_index;
+    Uint8 unused11;
+    Uint16 state_flags;
+    Sint16 timer;
+    Uint8 unused16[2];
+    Uint8 table_offset;
+} awa_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(awa_work, collider_enabled) == 4,
+               "awa_work.collider_enabled offset");
+_Static_assert(offsetof(awa_work, origin_x) == 6, "awa_work.origin_x offset");
+_Static_assert(offsetof(awa_work, spawn_count) == 8, "awa_work.spawn_count offset");
+_Static_assert(offsetof(awa_work, spawn_reload) == 9,
+               "awa_work.spawn_reload offset");
+_Static_assert(offsetof(awa_work, spawn_index) == 10,
+               "awa_work.spawn_index offset");
+_Static_assert(offsetof(awa_work, state_flags) == 12,
+               "awa_work.state_flags offset");
+_Static_assert(offsetof(awa_work, timer) == 14, "awa_work.timer offset");
+_Static_assert(offsetof(awa_work, table_offset) == 18,
+               "awa_work.table_offset offset");
+_Static_assert(sizeof(awa_work) <= sizeof(((sprite_status *)0)->actfree),
+               "awa_work fits in actfree");
+
+static awa_work *awa_get_work(sprite_status *pActwk) {
+    return (awa_work *)pActwk->actfree;
+}
+
 void awa(sprite_status *pActwk) {
     void (*awa_move_tbl[6])(sprite_status *) = {
         &awainit, &awamove, &awamove2, &awamove3, &awamove4, &awamaster};
@@ -25,6 +65,8 @@ void awa(sprite_status *pActwk) {
 }
 
 void awainit(sprite_status *pActwk) {
+    awa_work *work = awa_get_work(pActwk);
+
     pActwk->r_no0 += 2;
     pActwk->patbase = awapat;
     pActwk->sproffset = 33930;
@@ -34,14 +76,14 @@ void awainit(sprite_status *pActwk) {
     if (pActwk->userflag.b.h & 128) {
 
         pActwk->r_no0 += 8;
-        pActwk->actfree[8] = pActwk->userflag.b.h & 127;
-        pActwk->actfree[9] = pActwk->userflag.b.h & 127;
+        work->spawn_count = pActwk->userflag.b.h & 127;
+        work->spawn_reload = pActwk->userflag.b.h & 127;
         pActwk->mstno.b.h = 6;
         awamaster(pActwk);
     } else {
 
         pActwk->mstno.b.h = pActwk->userflag.b.h;
-        ((Sint16 *)pActwk)[26] = pActwk->xposi.w.h;
+        work->origin_x = pActwk->xposi.w.h;
         pActwk->yspeed.w = -136;
         pActwk->direc.b.h = random() & 255;
         awamove(pActwk);
@@ -49,14 +91,18 @@ void awainit(sprite_status *pActwk) {
 }
 
 void awamove(sprite_status *pActwk) {
+    awa_work *work = awa_get_work(pActwk);
+
     patchg(pActwk, awachg);
     if (pActwk->patno == 6)
-        pActwk->actfree[4] = 1;
+        work->collider_enabled = 1;
 
     awamove2(pActwk);
 }
 
 void awamove2(sprite_status *pActwk) {
+    awa_work *work = awa_get_work(pActwk);
+
     if (waterposi >= pActwk->yposi.w.h) {
 
         pActwk->r_no0 = 6;
@@ -66,10 +112,12 @@ void awamove2(sprite_status *pActwk) {
     }
 
     pActwk->xposi.w.h = (Sint16)(char)awasintbl[pActwk->direc.b.h++ & 127] +
-                        ((Sint16 *)pActwk)[26];
+                        work->origin_x;
 
-    if (pActwk->actfree[4]) {
+    if (work->collider_enabled) {
         if (awacoli(pActwk) != 0) {
+            player_work *player = player_work_get(&actwk[0]);
+
             plairset();
             soundset(173);
 
@@ -77,8 +125,8 @@ void awamove2(sprite_status *pActwk) {
             actwk[0].yspeed.w = 0;
             actwk[0].mspeed.w = 0;
             actwk[0].mstno.b.h = 21;
-            ((Sint16 *)&actwk[0])[33] = 35;
-            actwk[0].actfree[18] = 0;
+            player->mode_word = 35;
+            player->jump_started = 0;
             actwk[0].cddat &= 223;
             actwk[0].cddat &= 239;
 
@@ -118,8 +166,9 @@ void awamaster(sprite_status *pActwk) {
     sprite_status *pNewactwk;
     Uint8 bD0;
     Sint16 wD1;
+    awa_work *work = awa_get_work(pActwk);
 
-    if (!((Uint16 *)pActwk)[29]) {
+    if (!work->state_flags) {
         if (waterposi >= pActwk->yposi.w.h) {
             awafoutchk(pActwk);
             return;
@@ -128,32 +177,32 @@ void awamaster(sprite_status *pActwk) {
             awafoutchk(pActwk);
             return;
         }
-        if (--((Sint16 *)pActwk)[30] >= 0)
+        if (--work->timer >= 0)
             goto label3;
 
-        ((Sint16 *)pActwk)[29] = 1;
+        work->state_flags = 1;
 
         do {
             wD1 = random();
             bD0 = wD1 & 7;
         } while (bD0 >= 6);
 
-        pActwk->actfree[10] = bD0;
+        work->spawn_index = bD0;
         wD1 &= 12;
 
-        pActwk->actfree[18] = wD1;
-        if (--pActwk->actfree[8] & 128) {
-            pActwk->actfree[8] = pActwk->actfree[9];
-            pActwk->actfree[12] |= 128;
+        work->table_offset = wD1;
+        if (--work->spawn_count & 128) {
+            work->spawn_count = work->spawn_reload;
+            work->state_flags |= 128;
         }
 
         goto label1;
     }
-    if (--((Sint16 *)pActwk)[30] >= 0)
+    if (--work->timer >= 0)
         goto label3;
 
 label1:
-    ((Sint16 *)pActwk)[30] = random() & 31;
+    work->timer = random() & 31;
 
     if (pActwk->actflg & 128) {
         if (actwkchk(&pNewactwk) == 0) {
@@ -162,20 +211,20 @@ label1:
                 pActwk->xposi.w.h + (Sint16)((random() & 15) - 8);
             pNewactwk->yposi.w.h = pActwk->yposi.w.h;
             pNewactwk->userflag.b.h =
-                awatbl[pActwk->actfree[18] + pActwk->actfree[10]];
+                awatbl[work->table_offset + work->spawn_index];
 
-            if (pActwk->actfree[12] & 128) {
+            if (work->state_flags & 128) {
                 if ((random() & 3) == 0) {
-                    if (pActwk->actfree[12] & 64)
+                    if (work->state_flags & 64)
                         goto label2;
 
-                    pActwk->actfree[12] |= 64;
+                    work->state_flags |= 64;
                     pNewactwk->userflag.b.h = 2;
                 }
 
-                if (!pActwk->actfree[10]) {
-                    if (!(pActwk->actfree[12] & 64)) {
-                        pActwk->actfree[12] |= 64;
+                if (!work->spawn_index) {
+                    if (!(work->state_flags & 64)) {
+                        work->state_flags |= 64;
                         pNewactwk->userflag.b.h = 2;
                     }
                 }
@@ -184,9 +233,9 @@ label1:
     }
 
 label2:
-    if (--pActwk->actfree[10] & 128) {
-        ((Sint16 *)pActwk)[30] += (random() & 127) + 128;
-        ((Sint16 *)pActwk)[29] = 0;
+    if (--work->spawn_index & 128) {
+        work->timer += (random() & 127) + 128;
+        work->state_flags = 0;
     }
 
 label3:
@@ -210,7 +259,7 @@ void awafoutchk(sprite_status *pActwk) {
 }
 
 Sint32 awacoli(sprite_status *pActwk) {
-    if (!(actwk[0].actfree[2] & 128)) {
+    if (!(player_work_get(&actwk[0])->status_flags & 128)) {
         if (pActwk->xposi.w.h - 16 < actwk[0].xposi.w.h) {
             if (pActwk->xposi.w.h + 16 >= actwk[0].xposi.w.h) {
                 if (pActwk->yposi.w.h < actwk[0].yposi.w.h) {

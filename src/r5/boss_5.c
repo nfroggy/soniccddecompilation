@@ -420,7 +420,7 @@ static Sint32 egg5meca2_down1(sprite_status *pActwk) {
 
         pActwk->actfree[0] = 0;
         pActwk->r_no0 += 2;
-        ((Sint32 *)pActwk)[4] = 77824;
+        sprite_status_set_xspeed_yspeed(pActwk, 77824);
         chg_mstno2(1, ((Sint16 *)pActwk)[26]);
         ((Sint16 *)pActwk)[30] = 648;
         ((Sint16 *)pActwk)[29] = 640;
@@ -892,7 +892,7 @@ static Sint32 egg5bomb2_ini(sprite_status *pActwk) {
     pActwk->xposi.w.h += bomb2_tbl[wD0++];
     pActwk->yposi.w.h += bomb2_tbl[wD0++];
     *(Sint32 *)&pActwk->actfree[16] = bomb2_tbl[wD0++];
-    ((Sint32 *)pActwk)[4] = bomb2_tbl[wD0];
+    sprite_status_set_xspeed_yspeed(pActwk, bomb2_tbl[wD0]);
 
     ret = egg5bomb2_1(pActwk);
     return ret;
@@ -928,12 +928,12 @@ static Sint32 egg5bomb2_2(sprite_status *pActwk) {
             ret = 0;
         else {
             pActwk->xposi.l += *(Sint32 *)&pActwk->actfree[16];
-            pActwk->yposi.l += ((Sint32 *)pActwk)[4];
+            pActwk->yposi.l += sprite_status_get_xspeed_yspeed(pActwk);
             wD0 = pActwk->userflag.b.h;
             wD0 *= 6;
             wD0 += 4;
             *(Sint32 *)&pActwk->actfree[16] += bomb2_tbl[wD0++];
-            ((Sint32 *)pActwk)[4] += bomb2_tbl[wD0];
+            sprite_status_add_xspeed_yspeed(pActwk, bomb2_tbl[wD0]);
 
             if (pActwk->yposi.w.h >= 712)
                 ret = 0;
@@ -980,7 +980,7 @@ static Sint32 egg5hibana_ini(sprite_status *pActwk) {
     pActwk->sproffset = 8892;
     pActwk->patbase = egg5hibana_pat;
     *(Sint32 *)&pActwk->actfree[16] = -0x20000;
-    ((Sint32 *)pActwk)[4] = -0x20000;
+    sprite_status_set_xspeed_yspeed(pActwk, -0x20000);
     if (!pActwk->actfree[3])
         ret = egg5hibana_1(pActwk);
     else {
@@ -1006,9 +1006,9 @@ static Sint32 egg5hibana_2(sprite_status *pActwk) {
     Sint32 ret;
 
     *(Sint32 *)&pActwk->actfree[16] -= 4096;
-    ((Sint32 *)pActwk)[4] += 8192;
+    sprite_status_add_xspeed_yspeed(pActwk, 8192);
     pActwk->xposi.l += *(Sint32 *)&pActwk->actfree[16];
-    pActwk->yposi.l += ((Sint32 *)pActwk)[4];
+    pActwk->yposi.l += sprite_status_get_xspeed_yspeed(pActwk);
     ret = hibana_delchk(pActwk);
     return ret;
 }

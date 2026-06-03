@@ -5,6 +5,7 @@
 #include "fcol.h"
 #include "io.h"
 #include "loader2.h"
+#include "player_work.h"
 #include "score.h"
 
 extern Sint32 FadeProc(void);
@@ -536,9 +537,11 @@ void game_init(void) {
 }
 
 void play_act_set(void) {
+    player_work *player = player_work_get(&actwk[0]);
+
     actwk[0].actno = 1;
     if (plflag) {
-        *(Sint16 *)&actwk[0].actfree[6] = 120;
+        player->damage_invulnerability_timer = 120;
     }
 }
 
@@ -589,7 +592,9 @@ void syspatchg(void) {
 }
 
 static void back_to_cnt(void) {
-    if (!actwk[0].actfree[0]) {
+    player_work *player = player_work_get(&actwk[0]);
+
+    if (!player->spin_dash_counter) {
         if (backto_cnt) {
             ++backto_cnt;
         }

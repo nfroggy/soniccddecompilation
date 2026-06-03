@@ -3,6 +3,28 @@
 #include "../action.h"
 #include "../actset.h"
 #include "playsub4.h"
+#include <stddef.h>
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint16 timer;
+    Sint32 x_velocity;
+    Sint16 spawn_x;
+} osumizu_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(osumizu_work, timer) == 0,
+               "osumizu_work.timer offset");
+_Static_assert(offsetof(osumizu_work, x_velocity) == 2,
+               "osumizu_work.x_velocity offset");
+_Static_assert(offsetof(osumizu_work, spawn_x) == 6,
+               "osumizu_work.spawn_x offset");
+_Static_assert(sizeof(osumizu_work) <= sizeof(((sprite_status *)0)->actfree),
+               "osumizu_work fits in actfree");
+
+static osumizu_work *osumizu_work_get(sprite_status *pActwk) {
+    return (osumizu_work *)pActwk->actfree;
+}
 
 sprite_pattern osumizu_pat0 = {1, {{-8, -16, 0, 471}}};
 sprite_pattern osumizu_pat1 = {1, {{-16, -8, 0, 472}}};
@@ -16,7 +38,9 @@ Uint8 osumizu_chg0[6] = {9, 0, 1, 2, 3, 255};
 Uint8 *osumizu_chg[1] = {osumizu_chg0};
 
 void osumizu(sprite_status *pActwk) {
+    osumizu_work *work = osumizu_work_get(pActwk);
     sprite_status *pNewactwk;
+    osumizu_work *new_work;
 
     if (!(pActwk->userflag.b.h & 128)) {
 
@@ -35,25 +59,26 @@ void osumizu(sprite_status *pActwk) {
                 pActwk->actflg |= 1;
                 pActwk->cddat |= 1;
 
-                ((Sint32 *)pActwk)[12] = 196608;
-                ((Sint16 *)pActwk)[26] = -32;
+                work->x_velocity = 196608;
+                work->spawn_x = -32;
             } else {
-                ((Sint32 *)pActwk)[12] = -196608;
-                ((Sint16 *)pActwk)[26] = 32;
+                work->x_velocity = -196608;
+                work->spawn_x = 32;
             }
-            ((Sint16 *)pActwk)[26] += pActwk->xposi.w.h;
+            work->spawn_x += pActwk->xposi.w.h;
         }
 
-        if (--((Sint16 *)pActwk)[23] < 0) {
-            ((Sint16 *)pActwk)[23] = 30;
+        if (--work->timer < 0) {
+            work->timer = 30;
 
             if (actwkchk(&pNewactwk) == 0) {
+                new_work = osumizu_work_get(pNewactwk);
 
                 pNewactwk->actno = pActwk->actno;
                 pNewactwk->userflag.b.h = -1;
-                pNewactwk->xposi.w.h = ((Sint16 *)pActwk)[26];
+                pNewactwk->xposi.w.h = work->spawn_x;
                 pNewactwk->yposi.w.h = pActwk->yposi.w.h + 4;
-                ((Sint32 *)pNewactwk)[12] = ((Sint32 *)pActwk)[12];
+                new_work->x_velocity = work->x_velocity;
                 pNewactwk->actflg = pActwk->actflg;
                 pNewactwk->sprpri = pActwk->sprpri + 1;
                 pNewactwk->sprhsize = 32;
@@ -69,10 +94,10 @@ void osumizu(sprite_status *pActwk) {
 
         if ((Uint16)(actwk[0].yposi.w.h - pActwk->yposi.w.h + 12) < 24) {
             if ((Uint16)(actwk[0].xposi.w.h - pActwk->xposi.w.h + 20) < 40) {
-                actwk[0].mspeed.w = ((Sint32 *)pActwk)[12] >> 8;
+                actwk[0].mspeed.w = work->x_velocity >> 8;
             }
         }
-        pActwk->xposi.l += ((Sint32 *)pActwk)[12];
+        pActwk->xposi.l += work->x_velocity;
 
         patchg(pActwk, osumizu_chg);
         actionsub(pActwk);

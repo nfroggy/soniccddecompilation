@@ -4,6 +4,7 @@
 #include "../actset.h"
 #include "../dircol.h"
 #include "../ridechk.h"
+#include <stddef.h>
 
 static void a_init(sprite_status *pActwk);
 static void a_moving(sprite_status *pActwk);
@@ -11,19 +12,52 @@ static void a_wait(sprite_status *pActwk);
 static void a_move(sprite_status *pActwk);
 static void a_move1(sprite_status *pActwk);
 
+#pragma pack(push, 1)
+typedef struct {
+    Sint32 collision_side;
+    Sint16 step_direction;
+    Sint16 probe_x_offset;
+    Sint16 remaining_delta;
+    Sint16 probe_y;
+    Sint16 origin_x;
+} ukidai_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(ukidai_work, collision_side) == 0,
+               "ukidai_work.collision_side offset");
+_Static_assert(offsetof(ukidai_work, step_direction) == 4,
+               "ukidai_work.step_direction offset");
+_Static_assert(offsetof(ukidai_work, probe_x_offset) == 6,
+               "ukidai_work.probe_x_offset offset");
+_Static_assert(offsetof(ukidai_work, remaining_delta) == 8,
+               "ukidai_work.remaining_delta offset");
+_Static_assert(offsetof(ukidai_work, probe_y) == 10,
+               "ukidai_work.probe_y offset");
+_Static_assert(offsetof(ukidai_work, origin_x) == 12,
+               "ukidai_work.origin_x offset");
+_Static_assert(sizeof(ukidai_work) <= sizeof(((sprite_status *)0)->actfree),
+               "ukidai_work fits in actfree");
+
+static ukidai_work *ukidai_work_get(sprite_status *pActwk) {
+    return (ukidai_work *)pActwk->actfree;
+}
+
 static sprite_pattern pat00 = {1, {{-16, -8, 0, 530}}};
 sprite_pattern *pat_ukidai[1] = {&pat00};
 
 void ukidai(sprite_status *pActwk) {
+    ukidai_work *work = ukidai_work_get(pActwk);
     void (*tbl[5])(sprite_status *) = {&a_init, &a_moving, &a_wait, &a_move,
                                        &a_move1};
 
     tbl[pActwk->r_no0 / 2](pActwk);
     actionsub(pActwk);
-    frameout_s00(pActwk, ((Sint16 *)pActwk)[29]);
+    frameout_s00(pActwk, work->origin_x);
 }
 
 static void a_init(sprite_status *pActwk) {
+    ukidai_work *work = ukidai_work_get(pActwk);
+
     pActwk->r_no0 += 2;
     pActwk->actflg |= 4;
     pActwk->sprpri = 3;
@@ -32,7 +66,7 @@ static void a_init(sprite_status *pActwk) {
     pActwk->sprvsize = 8;
     pActwk->sproffset = 848;
     pActwk->patbase = pat_ukidai;
-    ((Sint16 *)pActwk)[29] = pActwk->xposi.w.h;
+    work->origin_x = pActwk->xposi.w.h;
 
     if (watermoveposi != 1920) {
         if (watermoveposi != 1504) {
@@ -86,6 +120,7 @@ static void a_move(sprite_status *pActwk) {
 }
 
 static void a_move1(sprite_status *pActwk) {
+    ukidai_work *work = ukidai_work_get(pActwk);
     sprite_status *pPlayerwk;
     Sint32 a6;
     Sint16 d1;
@@ -110,20 +145,20 @@ static void a_move1(sprite_status *pActwk) {
             d5 *= -1;
             d4 *= -1;
         }
-        *(Sint32 *)&pActwk->actfree[0] = a6;
-        ((Sint16 *)pActwk)[25] = d6;
-        ((Sint16 *)pActwk)[26] = d5;
-        ((Sint16 *)pActwk)[27] = d4;
-        ((Sint16 *)pActwk)[28] = pActwk->yposi.w.h;
-        ((Sint16 *)pActwk)[28] += 7;
+        work->collision_side = a6;
+        work->step_direction = d6;
+        work->probe_x_offset = d5;
+        work->remaining_delta = d4;
+        work->probe_y = pActwk->yposi.w.h;
+        work->probe_y += 7;
         do {
-            a6 = *(Sint32 *)&pActwk->actfree[0];
+            a6 = work->collision_side;
             d3 = pActwk->xposi.w.h;
-            d3 += ((Sint16 *)pActwk)[26];
+            d3 += work->probe_x_offset;
             if (a6 != 2) {
                 d3 ^= 15;
             }
-            d2 = ((Sint16 *)pActwk)[28];
+            d2 = work->probe_y;
 
             if (a6 == 1)
                 d1 = emycol_l3(pActwk, d3, d2);
@@ -131,12 +166,12 @@ static void a_move1(sprite_status *pActwk) {
                 d1 = emycol_r3(pActwk, d3, d2);
             if (d1 < 0)
                 break;
-            if (((Sint16 *)pActwk)[27] < 2) {
-                --((Sint16 *)pActwk)[27];
+            if (work->remaining_delta < 2) {
+                --work->remaining_delta;
                 break;
             }
-            --((Sint16 *)pActwk)[27];
-            pActwk->xposi.w.h += ((Sint16 *)pActwk)[25];
+            --work->remaining_delta;
+            pActwk->xposi.w.h += work->step_direction;
         } while (1);
     }
     if (ridechk(pActwk, pPlayerwk)) {

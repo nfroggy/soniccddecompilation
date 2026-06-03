@@ -4,10 +4,29 @@
 #include "../actset.h"
 #include "../loader2.h"
 #include "../ridechk.h"
+#include <stddef.h>
 
 static void m_init(sprite_status *pActwk);
 static void m_wait(sprite_status *pActwk);
 static void m_down(sprite_status *pActwk);
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint32 x_velocity;
+    Sint32 y_velocity;
+} hasira5_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(hasira5_work, x_velocity) == 0,
+               "hasira5_work.x_velocity offset");
+_Static_assert(offsetof(hasira5_work, y_velocity) == 4,
+               "hasira5_work.y_velocity offset");
+_Static_assert(sizeof(hasira5_work) <= sizeof(((sprite_status *)0)->actfree),
+               "hasira5_work fits in actfree");
+
+static hasira5_work *hasira5_work_get(sprite_status *pActwk) {
+    return (hasira5_work *)pActwk->actfree;
+}
 
 static sprite_pattern pat00 = {
     3, {{-16, -32, 0, 509}, {-16, 24, 0, 510}, {-16, -48, 0, 511}}};
@@ -97,8 +116,8 @@ static void m_wait(sprite_status *pActwk) {
         a1->sprvsize = 12;
         a1->xposi.w.h += *a6++;
         a1->yposi.w.h += *a6++;
-        *(Sint32 *)&a1->actfree[0] = *a5++;
-        *(Sint32 *)&a1->actfree[4] = *a5++;
+        hasira5_work_get(a1)->x_velocity = *a5++;
+        hasira5_work_get(a1)->y_velocity = *a5++;
         a1->patno = *a4++;
     } while (d6--);
 
@@ -108,10 +127,11 @@ static void m_wait(sprite_status *pActwk) {
 static void m_down(sprite_status *pActwk) {
     sprite_status *pPlayerwk;
     Sint16 d0;
+    hasira5_work *work = hasira5_work_get(pActwk);
 
-    *(Sint32 *)&pActwk->actfree[4] += 16384;
-    pActwk->xposi.l += *(Sint32 *)&pActwk->actfree[0];
-    pActwk->yposi.l += *(Sint32 *)&pActwk->actfree[4];
+    work->y_velocity += 16384;
+    pActwk->xposi.l += work->x_velocity;
+    pActwk->yposi.l += work->y_velocity;
     pPlayerwk = &actwk[0];
     d0 = pPlayerwk->yposi.w.h;
     d0 -= pActwk->yposi.w.h;

@@ -4726,6 +4726,11 @@ function(soniccd_add_variant variant)
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
     ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
   )
+  
+  set_target_properties(${target} PROPERTIES
+    C_STANDARD 17
+    C_STANDARD_REQUIRED ON
+  )
 
   target_include_directories(${target} PRIVATE ${SONICCD_INCLUDE_DIRS})
   target_compile_definitions(${target} PRIVATE ${${variant}_DEFINES})

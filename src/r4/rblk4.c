@@ -5,6 +5,7 @@
 #include "../fcol.h"
 #include "../loader2.h"
 #include "../ridechk.h"
+#include <stddef.h>
 
 #if defined(R42B)
 #define SPRITE_RBLK4_BASE 494
@@ -18,6 +19,48 @@ static void rblk4_move(sprite_status *pActwk);
 static void rblk4_push(sprite_status *pActwk);
 static void rblk4_ract_init(sprite_status *pActwk);
 static void rblk4_ract_move(sprite_status *pActwk);
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 unused0[6];
+    Sint16 link_actor_a;
+    Uint8 unused8[2];
+    Sint16 link_actor_b;
+    Sint16 origin_x;
+    Uint8 unused14[2];
+    Uint8 timer;
+    Uint8 anim_index;
+    Uint8 role_marker;
+    Uint8 pattern_index;
+    Uint8 contact_flag;
+    Uint8 latch_flag;
+} rblk4_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(rblk4_work, link_actor_a) == 6,
+               "rblk4_work.link_actor_a offset");
+_Static_assert(offsetof(rblk4_work, link_actor_b) == 10,
+               "rblk4_work.link_actor_b offset");
+_Static_assert(offsetof(rblk4_work, origin_x) == 12,
+               "rblk4_work.origin_x offset");
+_Static_assert(offsetof(rblk4_work, timer) == 16,
+               "rblk4_work.timer offset");
+_Static_assert(offsetof(rblk4_work, anim_index) == 17,
+               "rblk4_work.anim_index offset");
+_Static_assert(offsetof(rblk4_work, role_marker) == 18,
+               "rblk4_work.role_marker offset");
+_Static_assert(offsetof(rblk4_work, pattern_index) == 19,
+               "rblk4_work.pattern_index offset");
+_Static_assert(offsetof(rblk4_work, contact_flag) == 20,
+               "rblk4_work.contact_flag offset");
+_Static_assert(offsetof(rblk4_work, latch_flag) == 21,
+               "rblk4_work.latch_flag offset");
+_Static_assert(sizeof(rblk4_work) <= sizeof(((sprite_status *)0)->actfree),
+               "rblk4_work fits in actfree");
+
+static rblk4_work *rblk4_work_get(sprite_status *pActwk) {
+    return (rblk4_work *)pActwk->actfree;
+}
 
 static sprite_pattern pat00 = {
     2, {{-8, -8, 0, SPRITE_RBLK4_BASE}, {-48, -48, 0, SPRITE_RBLK4_BASE + 1}}};
@@ -47,10 +90,11 @@ sprite_pattern *rblk4pat[9] = {&pat00, &pat01, &pat02, &pat03, &pat04,
                                &pat05, &pat06, &pat07, &pat08};
 
 void rblk4(sprite_status *pActwk) {
+    rblk4_work *work = rblk4_work_get(pActwk);
     void (*tbl[4])(sprite_status *) = {&rblk4_init, &rblk4_wait, &rblk4_move,
                                        &rblk4_push};
 
-    if (pActwk->actfree[18] == 255) {
+    if (work->role_marker == 255) {
         rblk4_ract(pActwk);
     } else {
         tbl[pActwk->r_no0 / 2](pActwk);
@@ -60,6 +104,7 @@ void rblk4(sprite_status *pActwk) {
 }
 
 static void rblk4_init(sprite_status *pActwk) {
+    rblk4_work *work = rblk4_work_get(pActwk);
     sprite_status *pNewActwk;
 
     pActwk->r_no0 += 2;
@@ -71,32 +116,33 @@ static void rblk4_init(sprite_status *pActwk) {
     pActwk->sprhsize = 64;
 
     pActwk->patno = pActwk->userflag.b.h & 3;
-    pActwk->actfree[19] = pActwk->patno;
+    work->pattern_index = pActwk->patno;
 
     if (actwkchk(&pNewActwk) != 0) {
         frameout_s0(pActwk);
         return;
     }
     pNewActwk->actno = 61;
-    ((Sint16 *)pNewActwk)[29] = pActwk->xposi.w.h;
-    ((Sint16 *)pNewActwk)[28] = (Uint16)(pActwk - actwk);
-    pNewActwk->actfree[18] = 255;
-    pNewActwk->actfree[19] = 0;
-    ((Sint16 *)pActwk)[26] = (Uint16)(pNewActwk - actwk);
+    rblk4_work_get(pNewActwk)->origin_x = pActwk->xposi.w.h;
+    rblk4_work_get(pNewActwk)->link_actor_b = (Uint16)(pActwk - actwk);
+    rblk4_work_get(pNewActwk)->role_marker = 255;
+    rblk4_work_get(pNewActwk)->pattern_index = 0;
+    work->link_actor_a = (Uint16)(pNewActwk - actwk);
 
     if (actwkchk(&pNewActwk) != 0) {
         frameout_s0(pActwk);
         return;
     }
     pNewActwk->actno = 61;
-    ((Sint16 *)pNewActwk)[29] = pActwk->xposi.w.h;
-    ((Sint16 *)pNewActwk)[28] = (Uint16)(pActwk - actwk);
-    pNewActwk->actfree[18] = 255;
-    pNewActwk->actfree[19] = 1;
-    ((Sint16 *)pActwk)[28] = (Uint16)(pNewActwk - actwk);
+    rblk4_work_get(pNewActwk)->origin_x = pActwk->xposi.w.h;
+    rblk4_work_get(pNewActwk)->link_actor_b = (Uint16)(pActwk - actwk);
+    rblk4_work_get(pNewActwk)->role_marker = 255;
+    rblk4_work_get(pNewActwk)->pattern_index = 1;
+    work->link_actor_b = (Uint16)(pNewActwk - actwk);
 }
 
 static void rblk4_wait(sprite_status *pActwk) {
+    rblk4_work *work = rblk4_work_get(pActwk);
     sprite_status *pActwk_y;
     sprite_status *pPlayerwk;
     char *a4;
@@ -104,12 +150,12 @@ static void rblk4_wait(sprite_status *pActwk) {
     Sint16 d1;
     Uint8 d3;
 
-    pActwk_y = &actwk[((Sint16 *)pActwk)[26]];
-    if (!(pActwk_y->actfree[20] & 128))
+    pActwk_y = &actwk[work->link_actor_a];
+    if (!(rblk4_work_get(pActwk_y)->contact_flag & 128))
         return;
 
     pPlayerwk = &actwk[0];
-    if (pActwk->actfree[19] < 2) {
+    if (work->pattern_index < 2) {
         d0 = pActwk->xposi.w.h;
         d1 = pPlayerwk->xposi.w.h + (Sint16)(pPlayerwk->sprhsize + 2);
     } else {
@@ -131,56 +177,58 @@ static void rblk4_wait(sprite_status *pActwk) {
     if (d1 >= 0) {
         if (d1 >= 16) {
             pActwk->r_no0 += 2;
-            pActwk->actfree[16] = 16;
-            pActwk->actfree[17] = 0;
+            work->timer = 16;
+            work->anim_index = 0;
             return;
         }
     }
-    pPlayerwk = &actwk[((Sint16 *)pActwk)[28]];
-    if (pPlayerwk->actfree[20]) {
+    pPlayerwk = &actwk[work->link_actor_b];
+    if (rblk4_work_get(pPlayerwk)->contact_flag) {
         pActwk->r_no0 = 6;
-        pActwk->actfree[16] = 16;
-        pActwk->actfree[17] = 0;
+        work->timer = 16;
+        work->anim_index = 0;
     }
 }
 
 static void rblk4_move(sprite_status *pActwk) {
+    rblk4_work *work = rblk4_work_get(pActwk);
     Uint8 d0;
     Uint8 rkpchg0[16] = {0, 4, 1, 255, 1, 5, 2, 255,
                          2, 5, 1, 255, 3, 6, 2, 255};
 
-    d0 = pActwk->actfree[19];
+    d0 = work->pattern_index;
     d0 *= 4;
-    d0 = d0 + pActwk->actfree[17];
+    d0 = d0 + work->anim_index;
     d0 = rkpchg0[d0];
     if (d0 & 128) {
-        pActwk->actfree[19] = pActwk->patno;
+        work->pattern_index = pActwk->patno;
         pActwk->r_no0 -= 2;
         return;
     }
     pActwk->patno = d0;
-    --pActwk->actfree[16];
-    if (pActwk->actfree[16])
+    --work->timer;
+    if (work->timer)
         return;
 
     soundset(191);
-    pActwk->actfree[16] = 4;
-    ++pActwk->actfree[17];
+    work->timer = 4;
+    ++work->anim_index;
 }
 
 static void rblk4_push(sprite_status *pActwk) {
+    rblk4_work *work = rblk4_work_get(pActwk);
     sprite_status *pPlayerwk;
     Sint16 sd0, sd1;
     Uint8 d0;
     Uint8 pspchg0[16] = {0, 7, 3, 255, 1, 4, 2, 255,
                          2, 4, 1, 255, 3, 7, 0, 255};
 
-    d0 = pActwk->actfree[19];
+    d0 = work->pattern_index;
     d0 *= 4;
-    d0 = d0 + pActwk->actfree[17];
+    d0 = d0 + work->anim_index;
     d0 = pspchg0[d0];
     if (d0 & 128) {
-        pActwk->actfree[19] = pActwk->patno;
+        work->pattern_index = pActwk->patno;
         pActwk->r_no0 = 2;
         return;
     }
@@ -194,19 +242,19 @@ static void rblk4_push(sprite_status *pActwk) {
     sd0 -= sd1;
     pPlayerwk->yposi.w.h = sd0;
 
-    --pActwk->actfree[16];
-    if (pActwk->actfree[16])
+    --work->timer;
+    if (work->timer)
         return;
 
-    pActwk->actfree[16] = 8;
-    ++pActwk->actfree[17];
-    if (pActwk->actfree[17] == 1) {
+    work->timer = 8;
+    ++work->anim_index;
+    if (work->anim_index == 1) {
         pPlayerwk->xposi.w.h = pActwk->xposi.w.h;
         return;
     }
-    if (pActwk->actfree[17] == 2) {
+    if (work->anim_index == 2) {
         sd0 = 16;
-        if (pActwk->actfree[19] & 2) {
+        if (work->pattern_index & 2) {
             sd0 *= -1;
         }
         sd0 += pActwk->xposi.w.h;
@@ -215,14 +263,16 @@ static void rblk4_push(sprite_status *pActwk) {
 }
 
 void rblk4_ract(sprite_status *pActwk) {
+    rblk4_work *work = rblk4_work_get(pActwk);
     void (*tbl[2])(sprite_status *) = {&rblk4_ract_init, &rblk4_ract_move};
 
     tbl[pActwk->r_no0 / 2](pActwk);
     actionsub(pActwk);
-    frameout_s00(pActwk, ((Sint16 *)pActwk)[29]);
+    frameout_s00(pActwk, work->origin_x);
 }
 
 static void rblk4_ract_init(sprite_status *pActwk) {
+    rblk4_work *work = rblk4_work_get(pActwk);
     Uint8 d0, d1;
 
     pActwk->r_no0 += 2;
@@ -234,7 +284,7 @@ static void rblk4_ract_init(sprite_status *pActwk) {
 
     d0 = 32;
     d1 = 16;
-    if (pActwk->actfree[19]) {
+    if (work->pattern_index) {
         d0 = 16;
         d1 = 16;
     }
@@ -245,13 +295,14 @@ static void rblk4_ract_init(sprite_status *pActwk) {
 }
 
 static void rblk4_ract_move(sprite_status *pActwk) {
+    rblk4_work *work = rblk4_work_get(pActwk);
     sprite_status *pRideact;
     char *a2;
     Uint8 d0;
     char xyofset_tbl1[8] = {-16, 0, -16, 0, 16, 0, 16, 0};
     char xyofset_tbl2[8] = {0, -32, 0, 32, 0, 32, 0, -32};
 
-    pRideact = &actwk[((Sint16 *)pActwk)[28]];
+    pRideact = &actwk[work->link_actor_b];
     d0 = pRideact->patno;
     if (d0 >= 4) {
         ride_on_clr(pActwk, &actwk[0]);
@@ -259,27 +310,27 @@ static void rblk4_ract_move(sprite_status *pActwk) {
     }
     d0 = d0 + d0;
     a2 = &xyofset_tbl1[d0];
-    if (pActwk->actfree[19]) {
+    if (work->pattern_index) {
         a2 = &xyofset_tbl2[d0];
     }
     pActwk->xposi.w.h = pRideact->xposi.w.h + (Sint16)*a2++;
     pActwk->yposi.w.h = pRideact->yposi.w.h + (Sint16)*a2++;
 
     hitchk(pActwk, &actwk[0]);
-    if (pActwk->actfree[19] == 0) {
+    if (work->pattern_index == 0) {
         if (pActwk->cddat & 8)
-            pActwk->actfree[20] = 255;
+            work->contact_flag = 255;
         else
-            pActwk->actfree[20] = 0;
+            work->contact_flag = 0;
     } else {
         if (!(pActwk->cddat & 32)) {
-            pActwk->actfree[20] = 0;
-            pActwk->actfree[21] = 0;
+            work->contact_flag = 0;
+            work->latch_flag = 0;
             return;
         }
-        if (pActwk->actfree[21] == 0) {
-            pActwk->actfree[20] = 255;
-            pActwk->actfree[21] = 255;
+        if (work->latch_flag == 0) {
+            work->contact_flag = 255;
+            work->latch_flag = 255;
             pActwk->cddat &= 223;
         }
     }

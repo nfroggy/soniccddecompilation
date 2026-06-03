@@ -19,7 +19,26 @@ sprite_pattern renketu4_pat0 = {1, {{-32, -8, 0, SPRITE_RENKETU4_BASE}}};
 sprite_pattern renketu4_pat1 = {1, {{-8, -8, 0, SPRITE_RENKETU4_BASE + 1}}};
 sprite_pattern *renketu4pat[2] = {&renketu4_pat0, &renketu4_pat1};
 
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 unused0[6];
+    Sint16 angular_speed;
+    Sint16 origin_y;
+    Uint8 unused10[2];
+    Sint16 origin_x;
+    Uint8 unused14[4];
+    Uint8 segment_index;
+    Uint8 switch_latch;
+    short_union angle;
+} renketu4_work;
+#pragma pack(pop)
+
+static renketu4_work *get_work(sprite_status *pActwk) {
+    return (renketu4_work *)pActwk->actfree;
+}
+
 void renketu4(sprite_status *pActwk) {
+    renketu4_work *work = get_work(pActwk);
     Uint16 xwk1;
     Uint16 xwk2;
     void (*renketu4_acttbl[2])(sprite_status *) = {&renketu4_init,
@@ -28,7 +47,7 @@ void renketu4(sprite_status *pActwk) {
     renketu4_acttbl[pActwk->r_no0 / 2](pActwk);
     actionsub(pActwk);
 
-    xwk1 = ((Uint16 *)pActwk)[29] & 65408;
+    xwk1 = (Uint16)work->origin_x & 65408;
     xwk2 = (Uint16)scra_h_posit.w.h - 128 & 65408;
     if ((Uint16)(xwk1 - xwk2) > 640) {
         frameout(pActwk);
@@ -46,6 +65,7 @@ void renketu4_ridechk(sprite_status *pActwk) {
 void renketu4_init(sprite_status *pActwk) {
     char renketu4_tbl[18] = {32, 0, 0, 0,  -32, 0,   24, 1,   16,
                              1,  8, 1, -8, 1,   -16, 1,  -24, 1};
+    renketu4_work *work = get_work(pActwk);
     sprite_status *pNewactwk;
     Uint8 i;
 
@@ -61,23 +81,25 @@ void renketu4_init(sprite_status *pActwk) {
     pActwk->sprhsize = 32;
     pActwk->sprvsize = 8;
 
-    if (!pActwk->actfree[18]) {
-        ((Sint16 *)pActwk)[29] = pActwk->xposi.w.h;
-        ((Sint16 *)pActwk)[27] = pActwk->yposi.w.h;
+    if (!work->segment_index) {
+        work->origin_x = pActwk->xposi.w.h;
+        work->origin_y = pActwk->yposi.w.h;
 
         for (i = 1; i <= 8; ++i) {
             if (actwkchk(&pNewactwk) == 0) {
+                renketu4_work *new_work = get_work(pNewactwk);
+
                 pNewactwk->actno = 62;
                 pNewactwk->userflag.b.h = pActwk->userflag.b.h;
-                pNewactwk->actfree[18] = i;
-                ((Sint16 *)pNewactwk)[29] = ((Sint16 *)pActwk)[29];
-                ((Sint16 *)pNewactwk)[27] = ((Sint16 *)pActwk)[27];
+                new_work->segment_index = i;
+                new_work->origin_x = work->origin_x;
+                new_work->origin_y = work->origin_y;
             }
         }
     }
 
-    pActwk->actfree[21] = renketu4_tbl[pActwk->actfree[18] * 2];
-    pActwk->patno = renketu4_tbl[pActwk->actfree[18] * 2 + 1];
+    work->angle.b.h = renketu4_tbl[work->segment_index * 2];
+    pActwk->patno = renketu4_tbl[work->segment_index * 2 + 1];
 
     pActwk->sprpri = 1;
     if (pActwk->patno) {
@@ -86,23 +108,24 @@ void renketu4_init(sprite_status *pActwk) {
     }
 
     if (pActwk->userflag.b.h & 16)
-        ((Sint16 *)pActwk)[26] = -256;
+        work->angular_speed = -256;
     else
-        ((Sint16 *)pActwk)[26] = 256;
+        work->angular_speed = 256;
 
     renketu4_move(pActwk);
 }
 
 void renketu4_move(sprite_status *pActwk) {
+    renketu4_work *work = get_work(pActwk);
     Uint16 wD0, wD1;
     int_union lD0, lD1, lD4, lD5;
     Sint16 wk;
 
     swchk(pActwk);
 
-    ((Sint16 *)pActwk)[33] += ((Sint16 *)pActwk)[26];
+    work->angle.w += work->angular_speed;
 
-    sinset(pActwk->actfree[21], (Sint16 *)&wD0, (Sint16 *)&wD1);
+    sinset((Uint8)work->angle.b.h, (Sint16 *)&wD0, (Sint16 *)&wD1);
 
     lD0.l = (Sint16)wD0 * 6 >> 4;
     lD1.l = (Sint16)wD1 * 6 >> 4;
@@ -114,8 +137,8 @@ void renketu4_move(sprite_status *pActwk) {
     lD1.w.l = wk;
 
     lD4.w.l = lD5.w.l = 0;
-    lD4.w.h = ((Sint16 *)pActwk)[27];
-    lD5.w.h = ((Sint16 *)pActwk)[29];
+    lD4.w.h = work->origin_y;
+    lD5.w.h = work->origin_x;
     lD0.l += lD4.l;
     lD1.l += lD5.l;
 
@@ -129,14 +152,16 @@ void renketu4_move(sprite_status *pActwk) {
 }
 
 void swchk(sprite_status *pActwk) {
+    renketu4_work *work = get_work(pActwk);
+
     if (!(pActwk->userflag.b.h & 128)) {
         if (switchflag[pActwk->userflag.b.h & 15] & 128) {
-            if (pActwk->actfree[19])
+            if (work->switch_latch)
                 return;
-            ((Sint16 *)pActwk)[26] *= -1;
-            pActwk->actfree[19] = 1;
+            work->angular_speed *= -1;
+            work->switch_latch = 1;
             return;
         }
-        pActwk->actfree[19] = 0;
+        work->switch_latch = 0;
     }
 }

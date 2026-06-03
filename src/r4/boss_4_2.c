@@ -349,7 +349,7 @@ static void make_tama(sprite_status *pActwk) {
         ((Sint16 *)pNewact)[30] = xposwk;
         ((Sint16 *)pNewact)[31] = tama_tbl[i].ypos;
         ((Sint32 *)pNewact)[16] = xspdwk;
-        ((Sint32 *)pNewact)[4] = tama_tbl[i].yspd;
+        sprite_status_set_xspeed_yspeed(pNewact, tama_tbl[i].yspd);
     }
 }
 
@@ -758,7 +758,7 @@ static Uint32 egg4awa_hiro(sprite_status *pActwk) {
     }
 
     if ((Sint32)pActwk->yspeed.w < 48) {
-        ((Sint32 *)pActwk)[4] += 16384;
+        sprite_status_add_xspeed_yspeed(pActwk, 16384);
     } else {
         pActwk->yspeed.w = 48;
         ++flg;
@@ -951,7 +951,7 @@ static Uint32 egg4awa_chi(sprite_status *pActwk) {
     pActwk->xposi.l = pEggact->xposi.l;
     pActwk->yposi.l = pEggact->yposi.l;
     ((Sint32 *)pActwk)[16] -= 65536;
-    ((Sint32 *)pActwk)[4] -= 65536;
+    sprite_status_add_xspeed_yspeed(pActwk, -65536);
 
     if (((Sint32 *)pActwk)[16] <= 0x100000) {
 
@@ -963,7 +963,7 @@ static Uint32 egg4awa_chi(sprite_status *pActwk) {
         ++pEggact->actfree[8];
 
         ((Sint32 *)pActwk)[16] = 0x100000;
-        ((Sint32 *)pActwk)[4] = 0x100000;
+        sprite_status_set_xspeed_yspeed(pActwk, 0x100000);
         pActwk->r_no0 = 6;
     }
 
@@ -1038,7 +1038,7 @@ static Uint32 egg4tama_02(sprite_status *pActwk) {
     }
 
     pActwk->xposi.l += ((Sint32 *)pActwk)[16];
-    pActwk->yposi.l += ((Sint32 *)pActwk)[4];
+    pActwk->yposi.l += sprite_status_get_xspeed_yspeed(pActwk);
 
     if (frameout_chk(pActwk) != 0) {
         return egg4tama_kill(pActwk);

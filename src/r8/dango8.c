@@ -1,11 +1,30 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "dango8.h"
 #include "../action.h"
 #include "../actset.h"
 #include "../dircol.h"
 #include "../etc.h"
+#include "../player_work.h"
 #include "../playsub.h"
 #include "../suicide.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint32 speed;
+    Sint32 form;
+} dango_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(dango_work, speed) == 0, "dango_work.speed offset");
+_Static_assert(offsetof(dango_work, form) == 4, "dango_work.form offset");
+_Static_assert(sizeof(dango_work) <= sizeof(((sprite_status *)0)->actfree),
+               "dango_work must fit in sprite_status.actfree");
+
+static dango_work *dango_get_work(sprite_status *pActwk) {
+    return (dango_work *)pActwk->actfree;
+}
 
 static void a_init(sprite_status *pActwk);
 static void a_fall(sprite_status *pActwk);
@@ -75,6 +94,8 @@ void dango(sprite_status *pActwk) {
 }
 
 static void a_init(sprite_status *pActwk) {
+    dango_work *work = dango_get_work(pActwk);
+
     pActwk->r_no0 += 2;
     pActwk->actflg = 4;
     pActwk->sprpri = 3;
@@ -85,10 +106,10 @@ static void a_init(sprite_status *pActwk) {
     pActwk->sproffset = 9263;
     if (!pActwk->userflag.b.h) {
         pActwk->patbase = pat_dango_e;
-        *(Sint32 *)&pActwk->actfree[4] = 0;
+        work->form = 0;
     } else {
         pActwk->patbase = pat_dango_b;
-        *(Sint32 *)&pActwk->actfree[4] = 1;
+        work->form = 1;
     }
 }
 
@@ -110,10 +131,11 @@ static void a_walk(sprite_status *pActwk) {
 
 static void a_walk1(sprite_status *pActwk) {
     Sint16 wD0, wD1;
+    dango_work *work = dango_get_work(pActwk);
 
     if (!a_move(pActwk)) {
 
-        *(Sint32 *)&pActwk->actfree[0] *= -1;
+        work->speed *= -1;
 
         pActwk->actflg ^= 1;
         pActwk->cddat ^= 1;
@@ -139,7 +161,9 @@ static void a_walk1(sprite_status *pActwk) {
 }
 
 static void a_patchg(sprite_status *pActwk) {
-    if (*(Sint32 *)&pActwk->actfree[4] == 0)
+    dango_work *work = dango_get_work(pActwk);
+
+    if (work->form == 0)
         patchg(pActwk, pchg_e);
     else
         patchg(pActwk, pchg_b);
@@ -158,12 +182,14 @@ static void a_to_roll(sprite_status *pActwk) {
 }
 
 static void a_roll_stop(sprite_status *pActwk) {
+    dango_work *work = dango_get_work(pActwk);
+
     pActwk->r_no0 += 2;
     ++pActwk->mstno.b.h;
     pActwk->yposi.w.h += 3;
     pActwk->sprvsize = 13;
     pActwk->colino = 237;
-    *(Sint32 *)&pActwk->actfree[0] = 0;
+    work->speed = 0;
 }
 
 static void a_roll(sprite_status *pActwk) {
@@ -175,10 +201,12 @@ static void a_roll(sprite_status *pActwk) {
 static void a_roll1(sprite_status *pActwk) {
     Sint16 wD0, wD1, wD2, sin, cos;
     Sint32 lD0, lD1;
+    dango_work *work = dango_get_work(pActwk);
+    player_work *player = player_work_get(&actwk[0]);
 
     if (!pActwk->colicnt) {
         if (a_move(pActwk)) {
-            if (*(Sint32 *)&pActwk->actfree[4] == 0)
+            if (work->form == 0)
                 patchg(pActwk, pchg_e);
             else
                 patchg(pActwk, pchg_b);
@@ -201,13 +229,13 @@ static void a_roll1(sprite_status *pActwk) {
         actwk[0].cddat |= 2;
         actwk[0].cddat &= 239;
         actwk[0].cddat &= 223;
-        actwk[0].actfree[18] = 0;
+        player->jump_started = 0;
 
         pActwk->colicnt = 0;
         lD1 &= 65535;
         lD1 = -lD1;
         lD1 <<= 8;
-        *(Sint32 *)&pActwk->actfree[0] = lD1;
+        work->speed = lD1;
         pActwk->mstno.b.h = 4;
         pActwk->r_no0 = 22;
     }
@@ -230,21 +258,24 @@ static void a_to_walk1(sprite_status *pActwk) {
 
 static void a_speedset(Sint32 new_speed, Sint32 old_speed,
                        sprite_status *pActwk) {
+    dango_work *work = dango_get_work(pActwk);
+
     if (pActwk->userflag.b.h)
         new_speed = old_speed;
 
     if (!(pActwk->actflg & 1))
         new_speed = -new_speed;
 
-    *(Sint32 *)&pActwk->actfree[0] = new_speed;
+    work->speed = new_speed;
 }
 
 static Sint16 a_move(sprite_status *pActwk) {
     Sint16 temp1, temp2;
     Sint16 ret;
+    dango_work *work = dango_get_work(pActwk);
 
-    pActwk->xposi.l += *(Sint32 *)&pActwk->actfree[0];
-    if (*(Sint32 *)&pActwk->actfree[0] >= 0)
+    pActwk->xposi.l += work->speed;
+    if (work->speed >= 0)
         temp1 = emycol_r(pActwk, pActwk->sprhs);
     else {
         temp1 = emycol_l(pActwk, -(char)pActwk->sprhs);
@@ -257,12 +288,12 @@ static Sint16 a_move(sprite_status *pActwk) {
             ret = -1;
         } else {
 
-            pActwk->xposi.l -= *(Sint32 *)&pActwk->actfree[0];
+            pActwk->xposi.l -= work->speed;
             ret = 0;
         }
     } else {
 
-        pActwk->xposi.l -= *(Sint32 *)&pActwk->actfree[0];
+        pActwk->xposi.l -= work->speed;
         ret = 0;
     }
     return ret;

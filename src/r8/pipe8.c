@@ -4,6 +4,31 @@
 #include "../actset.h"
 #include "../playsub.h"
 #include "../ridechk.h"
+#include <stddef.h>
+
+#pragma pack(push, 1)
+typedef struct {
+    union {
+        Sint16 origin_x;
+        Sint16 animation_timer;
+    };
+    Uint8 reserved0[20 - 2];
+    Sint16 parent_actor;
+} pipe8_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(pipe8_work, origin_x) == 0,
+               "pipe8_work.origin_x offset");
+_Static_assert(offsetof(pipe8_work, animation_timer) == 0,
+               "pipe8_work.animation_timer offset");
+_Static_assert(offsetof(pipe8_work, parent_actor) == 20,
+               "pipe8_work.parent_actor offset");
+_Static_assert(sizeof(pipe8_work) <= sizeof(((sprite_status *)0)->actfree),
+               "pipe8_work fits in actfree");
+
+static pipe8_work *pipe8_work_get(sprite_status *actionwk) {
+    return (pipe8_work *)actionwk->actfree;
+}
 
 static char p00[5] = {0, 1, 3, 5, -1};
 static char p01[6] = {0, 4, 3, 2, 1, -1};
@@ -25,7 +50,7 @@ void pipe8(sprite_status *actionwk) {
     }
 
     if (actionwk->userflag.b.h < 0) {
-        ano = ((Sint16 *)actionwk)[33];
+        ano = pipe8_work_get(actionwk)->parent_actor;
         if (actwk[ano].actno != 32) {
             frameout(actionwk);
             return;
@@ -47,11 +72,11 @@ void pipe8(sprite_status *actionwk) {
     actionsub(actionwk);
     if (actionwk->userflag.b.h < 0)
         return;
-    frameout_s00(actionwk, ((Sint16 *)actionwk)[23]);
+    frameout_s00(actionwk, pipe8_work_get(actionwk)->origin_x);
 }
 
 void act0wait(sprite_status *actionwk) {
-    ((Sint16 *)actionwk)[23] = actionwk->xposi.w.h;
+    pipe8_work_get(actionwk)->origin_x = actionwk->xposi.w.h;
     act0init_sub(actionwk, actionwk);
     actionwk->r_no0 = 2;
     actionwk->patno = 5;
@@ -75,7 +100,7 @@ void act0init(sprite_status *actionwk) {
         return;
     }
     a1->actno = actionwk->actno;
-    ((Uint16 *)a1)[33] = actionwk - actwk;
+    pipe8_work_get(a1)->parent_actor = (Sint16)(actionwk - actwk);
     a1->userflag.b.h = -1;
     a1->xposi.w.h = actionwk->xposi.w.h + 48;
     a1->actflg ^= 1;
@@ -93,7 +118,7 @@ void act0init(sprite_status *actionwk) {
     a1->userflag.b.l = -1;
     a1->xposi.w.h = actionwk->xposi.w.h + 24;
     a1->yposi.w.h = actionwk->yposi.w.h;
-    ((Uint16 *)a1)[33] = actionwk - actwk;
+    pipe8_work_get(a1)->parent_actor = (Sint16)(actionwk - actwk);
 }
 
 void act0init_sub(sprite_status *actionwk, sprite_status *a6) {
@@ -113,7 +138,7 @@ void act0move(sprite_status *actionwk) { ridechk(actionwk, &actwk[0]); }
 void shatter(sprite_status *actionwk) {
     Sint16 ano;
 
-    ano = ((Uint16 *)actionwk)[33];
+    ano = pipe8_work_get(actionwk)->parent_actor;
     if (actwk[ano].actno != 32) {
         frameout(actionwk);
         return;
@@ -176,7 +201,7 @@ void act1closed1(sprite_status *actionwk) {
 
 void to_act1open_a(sprite_status *actionwk) {
     actionwk->r_no0 += 2;
-    ((Sint16 *)actionwk)[23] = 5;
+    pipe8_work_get(actionwk)->animation_timer = 5;
 }
 
 void to_act1opend_b(sprite_status *actionwk) {
@@ -186,9 +211,10 @@ void to_act1opend_b(sprite_status *actionwk) {
 
 void act1open_a(sprite_status *actionwk) {
     Sint16 t;
+    pipe8_work *work = pipe8_work_get(actionwk);
 
-    --((Sint16 *)actionwk)[23];
-    t = ((Sint16 *)actionwk)[23];
+    --work->animation_timer;
+    t = work->animation_timer;
     if (t < 0) {
         actionwk->r_no0 += 2;
         actionwk->patno = 5;
@@ -216,13 +242,15 @@ void act1opend_b(sprite_status *actionwk) {
 void to_act1close_b(sprite_status *actionwk) {
     actionwk->r_no0 += 2;
     actionwk->mstno.b.h = 1;
-    ((Sint16 *)actionwk)[23] = 7;
+    pipe8_work_get(actionwk)->animation_timer = 7;
 }
 
 void act1close_b(sprite_status *actionwk) {
     Sint16 t;
-    --((Sint16 *)actionwk)[23];
-    t = ((Sint16 *)actionwk)[23];
+    pipe8_work *work = pipe8_work_get(actionwk);
+
+    --work->animation_timer;
+    t = work->animation_timer;
     if (t < 0) {
         actionwk->r_no0 -= 10;
         actionwk->mstno.b.h = 0;

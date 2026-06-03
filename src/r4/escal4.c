@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "escal4.h"
 #include "../action.h"
@@ -6,6 +8,22 @@
 sprite_pattern escal4_pat0 = {1, {{-16, -16, 0, 429}}};
 sprite_pattern escal4_pat1 = {1, {{-16, -16, 0, 430}}};
 sprite_pattern *escal4pat[2] = {&escal4_pat0, &escal4_pat1};
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 reserved0[20];
+    Sint16 move_timer;
+} escal4_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(escal4_work, move_timer) == 20,
+               "escal4_work.move_timer must map to offset 20");
+_Static_assert(sizeof(escal4_work) <= sizeof(((sprite_status *)0)->actfree),
+               "escal4_work must fit in sprite_status.actfree");
+
+static escal4_work *escal4_work_get(sprite_status *pActwk) {
+    return (escal4_work *)pActwk->actfree;
+}
 
 void escal4(sprite_status *pActwk) {
     void (*escal4_acttbl[3])(sprite_status *) = {&escal4_init, &escal4_wait,
@@ -36,6 +54,7 @@ void escal4_init(sprite_status *pActwk) {
 }
 
 void escal4_wait(sprite_status *pActwk) {
+    escal4_work *work = escal4_work_get(pActwk);
     Sint16 escal4_tbl[9] = {256, -256, 160, 256, -256, 160, 512, -512, 80};
 
     if (pActwk->actflg & 128) {
@@ -43,19 +62,21 @@ void escal4_wait(sprite_status *pActwk) {
             pActwk->r_no0 += 2;
             pActwk->xspeed.w = escal4_tbl[(time_flag & 3) * 6 / 2];
             pActwk->yspeed.w = escal4_tbl[(time_flag & 3) * 6 / 2 + 1];
-            ((Sint16 *)pActwk)[33] = escal4_tbl[(time_flag & 3) * 6 / 2 + 2];
+            work->move_timer = escal4_tbl[(time_flag & 3) * 6 / 2 + 2];
         }
     }
 }
 
 void escal4_moveup(sprite_status *pActwk) {
+    escal4_work *work = escal4_work_get(pActwk);
+
     escal4_ridechk(pActwk);
 
-    if (((Sint16 *)pActwk)[33]) {
+    if (work->move_timer) {
         pActwk->xposi.l += pActwk->xspeed.w << 8;
         pActwk->yposi.l += pActwk->yspeed.w << 8;
 
-        if (!(--((Sint16 *)pActwk)[33])) {
+        if (!(--work->move_timer)) {
             pActwk->xspeed.w = 0;
             pActwk->yspeed.w = 0;
         }

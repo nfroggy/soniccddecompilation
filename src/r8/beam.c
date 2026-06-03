@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "beam.h"
 #include "../action.h"
@@ -274,6 +276,29 @@ static Uint8 beamchg8[4] = {2, 3, 4, 255};
 static Uint8 *beamchg[9] = {beamchg0, beamchg1, beamchg2, beamchg3, beamchg4,
                             beamchg5, beamchg6, beamchg7, beamchg8};
 
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 delay_or_release;
+    Uint8 reserved1;
+    sprite_status *endcap_actor;
+    Uint8 reserved6[15];
+    Uint8 endcap_missing;
+} beam_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(beam_work, delay_or_release) == 0,
+               "beam_work.delay_or_release must map to offset 0");
+_Static_assert(offsetof(beam_work, endcap_actor) == 2,
+               "beam_work.endcap_actor must map to offset 2");
+_Static_assert(offsetof(beam_work, endcap_missing) == 21,
+               "beam_work.endcap_missing must map to offset 21");
+_Static_assert(sizeof(beam_work) <= sizeof(((sprite_status *)0)->actfree),
+               "beam_work must fit in sprite_status.actfree");
+
+static beam_work *beam_work_get(sprite_status *beamwk) {
+    return (beam_work *)beamwk->actfree;
+}
+
 void beam(sprite_status *beamwk) {
     void (*tbl[5])(sprite_status *) = {&beam_init, &beam_mast, &beam_move0,
                                        &beam_move1, &beam_move2};
@@ -284,6 +309,8 @@ void beam(sprite_status *beamwk) {
 }
 
 static void beam_init(sprite_status *beamwk) {
+    beam_work *work = beam_work_get(beamwk);
+
     beamwk->r_no0 += 2;
     beamwk->actflg |= 4;
 
@@ -293,14 +320,15 @@ static void beam_init(sprite_status *beamwk) {
         beamwk->patno = 2;
         beamwk->patbase = beampat0;
     }
-    beamwk->actfree[0] = 1;
+    work->delay_or_release = 1;
     beam_mast(beamwk);
 }
 
 static void beam_mast(sprite_status *beamwk) {
+    beam_work *work = beam_work_get(beamwk);
     sprite_status *new_actwk;
 
-    if (--beamwk->actfree[0])
+    if (--work->delay_or_release)
         return;
 
     if (actwkchk2(beamwk, &new_actwk) != 0) {
@@ -319,7 +347,7 @@ static void beam_mast(sprite_status *beamwk) {
 
     new_actwk->sprvsize = 4;
 
-    beamwk->actfree[0] = 30;
+    work->delay_or_release = 30;
     if ((char)beamwk->actflg < 0) {
         if (beamwk->userflag.b.h == 0)
             soundset(197);
@@ -329,7 +357,8 @@ static void beam_mast(sprite_status *beamwk) {
 }
 
 static void beam_move0(sprite_status *beamwk) {
-    sprite_status *new_actwk, **parent;
+    beam_work *work = beam_work_get(beamwk);
+    sprite_status *new_actwk;
 
     beamwk->yposi.w.h += 4;
     if (!(beamwk->yposi.w.h & 15)) {
@@ -342,7 +371,7 @@ static void beam_move0(sprite_status *beamwk) {
         goto label1;
     beamwk->r_no0 += 2;
     if (actwkchk2(beamwk, &new_actwk) != 0) {
-        beamwk->actfree[21] = 255;
+        work->endcap_missing = 255;
         goto label1;
     }
     new_actwk->actno = 29;
@@ -353,15 +382,15 @@ static void beam_move0(sprite_status *beamwk) {
     new_actwk->yposi.w.h = beamwk->yposi.w.h;
     new_actwk->r_no0 = 8;
     new_actwk->mstno.b.h = 8;
-    parent = &((sprite_status **)beamwk)[12];
-    *parent = new_actwk;
+    work->endcap_actor = new_actwk;
 label1:
     beam_coli0(beamwk);
 }
 
 static void beam_move1(sprite_status *beamwk) {
+    beam_work *work = beam_work_get(beamwk);
     Sint16 cal_yposi;
-    sprite_status **parent, *new_actwk;
+    sprite_status *new_actwk;
 
     cal_yposi = beamwk->yposi.w.h + 4;
     if (!(cal_yposi & 15)) {
@@ -375,16 +404,17 @@ static void beam_move1(sprite_status *beamwk) {
     beam_coli0(beamwk);
     return;
 label1:
-    if (beamwk->actfree[21] == 0) {
-        parent = &((sprite_status **)beamwk)[12];
-        new_actwk = *parent;
-        new_actwk->actfree[0] = 1;
+    if (work->endcap_missing == 0) {
+        new_actwk = work->endcap_actor;
+        beam_work_get(new_actwk)->delay_or_release = 1;
     }
     frameout(beamwk);
 }
 
 static void beam_move2(sprite_status *beamwk) {
-    if (beamwk->actfree[0]) {
+    beam_work *work = beam_work_get(beamwk);
+
+    if (work->delay_or_release) {
         frameout(beamwk);
         return;
     }

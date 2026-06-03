@@ -6,6 +6,7 @@
 #include "../score.h"
 #include "../ridechk.h"
 #include "playsub4.h"
+#include <stddef.h>
 
 #if defined(R41B)
 #define SPRITE_ET4_BASE 459
@@ -41,6 +42,39 @@ static char tbl0[64] = {
     -10, 20, -10, 18,  22,  8,   23,  25, 13, -10, 26,  23,  -22, 28,  -3,  -25,
     30,  10, 20,  32,  -10, 2,   34,  30, -8, 35,  13,  -10, 40,  -10, 10,  -1};
 
+#pragma pack(push, 1)
+typedef struct {
+    union {
+        Sint16 hover_counter;
+        struct {
+            Uint8 delay_timer;
+            Uint8 hover_counter_high;
+        };
+    };
+    Sint16 explosion_table_index;
+    Uint8 reserved4[2];
+    Sint16 base_y;
+    Sint16 hover_direction;
+} et4_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(et4_work, hover_counter) == 0,
+               "et4_work.hover_counter offset");
+_Static_assert(offsetof(et4_work, delay_timer) == 0,
+               "et4_work.delay_timer offset");
+_Static_assert(offsetof(et4_work, explosion_table_index) == 2,
+               "et4_work.explosion_table_index offset");
+_Static_assert(offsetof(et4_work, base_y) == 6,
+               "et4_work.base_y offset");
+_Static_assert(offsetof(et4_work, hover_direction) == 8,
+               "et4_work.hover_direction offset");
+_Static_assert(sizeof(et4_work) <= sizeof(((sprite_status *)0)->actfree),
+               "et4_work fits in actfree");
+
+static et4_work *et4_work_get(sprite_status *pActwk) {
+    return (et4_work *)pActwk->actfree;
+}
+
 void et(sprite_status *pActwk) {
     et_jmp_tbl[pActwk->r_no0 / 2](pActwk);
     actionsub(pActwk);
@@ -51,6 +85,7 @@ void et(sprite_status *pActwk) {
 }
 
 static void m_init(sprite_status *pActwk) {
+    et4_work *work = et4_work_get(pActwk);
     Uint8 patnowk;
     Uint16 tbl0sproffset[3][4] = {
         {1104, 1104, 0, 0}, {1104, 1104, 0, 0}, {0, 0, 0, 0}};
@@ -64,10 +99,10 @@ static void m_init(sprite_status *pActwk) {
     pActwk->sproffset = tbl0sproffset[stageno.b.l][time_flag];
 
     pActwk->patbase = pat_et;
-    ((char **)pActwk)[12] = tbl0;
-    ((Sint16 *)pActwk)[26] = pActwk->yposi.w.h;
-    ((Sint16 *)pActwk)[23] = 4;
-    ((Sint16 *)pActwk)[27] = 1;
+    work->explosion_table_index = 0;
+    work->base_y = pActwk->yposi.w.h;
+    work->hover_counter = 4;
+    work->hover_direction = 1;
 
     patnowk = 0;
 
@@ -90,11 +125,13 @@ static void m_init(sprite_status *pActwk) {
 }
 
 static void m_wait(sprite_status *pActwk) {
+    et4_work *work = et4_work_get(pActwk);
+
     if (!generate_flag && time_flag == 0) {
         a_hover(pActwk);
         if (pActwk->colicnt) {
             pActwk->colino = pActwk->colicnt = 0;
-            ((Sint16 *)pActwk)[23] = 0;
+            work->hover_counter = 0;
             pActwk->patno = 7;
             pActwk->r_no0 += 2;
             generate_flag = 1;
@@ -111,24 +148,23 @@ static void m_wait(sprite_status *pActwk) {
 }
 
 static void m_die(sprite_status *pActwk) {
-    char *pTbl, timewk;
+    et4_work *work = et4_work_get(pActwk);
+    char timewk;
     Sint16 xwk, ywk;
+    Sint16 table_index;
     sprite_status *pNewact;
 
-    pTbl = ((char **)pActwk)[12];
-    timewk = *pTbl;
-    ++pTbl;
+    table_index = work->explosion_table_index;
+    timewk = tbl0[table_index++];
 
     if (timewk < 0) {
 
         pActwk->r_no0 += 2;
-        pActwk->actfree[0] = 8;
-    } else if (++pActwk->actfree[0] == timewk) {
-        xwk = *pTbl;
-        ++pTbl;
-        ywk = *pTbl;
-        ++pTbl;
-        ((char **)pActwk)[12] = pTbl;
+        work->delay_timer = 8;
+    } else if (++work->delay_timer == (Uint8)timewk) {
+        xwk = tbl0[table_index++];
+        ywk = tbl0[table_index++];
+        work->explosion_table_index = table_index;
 
         if (actwkchk(&pNewact) == 0) {
             pNewact->actno = 24;
@@ -141,25 +177,28 @@ static void m_die(sprite_status *pActwk) {
 }
 
 static void m1wait(sprite_status *pActwk) {
-    if (--pActwk->actfree[0] == 0) {
+    et4_work *work = et4_work_get(pActwk);
+
+    if (--work->delay_timer == 0) {
         pActwk->r_no0 -= 6;
-        pActwk->yposi.w.h = ((Sint16 *)pActwk)[26];
+        pActwk->yposi.w.h = work->base_y;
         soundset(217);
     }
 }
 
 static void a_hover(sprite_status *pActwk) {
+    et4_work *work = et4_work_get(pActwk);
     Sint16 timewk;
 
-    ++((Sint16 *)pActwk)[23];
+    ++work->hover_counter;
 
-    timewk = ((Sint16 *)pActwk)[23];
+    timewk = work->hover_counter;
     if (!(timewk & 7)) {
-        pActwk->yposi.w.h += ((Sint16 *)pActwk)[27];
+        pActwk->yposi.w.h += work->hover_direction;
     }
 
-    timewk = ((Sint16 *)pActwk)[23];
+    timewk = work->hover_counter;
     if (!(timewk & 31)) {
-        ((Sint16 *)pActwk)[27] *= -1;
+        work->hover_direction *= -1;
     }
 }

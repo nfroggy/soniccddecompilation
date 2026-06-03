@@ -4,11 +4,40 @@
 #include "../actset.h"
 #include "../loader2.h"
 #include "../ridechk.h"
+#include <stddef.h>
 
 static void m_init(sprite_status *pActwk);
 static void m_wait(sprite_status *pActwk);
 static void m_down(sprite_status *pActwk);
 static void m_make(sprite_status *pActwk);
+
+#pragma pack(push, 1)
+typedef struct {
+    union {
+        Sint32 x_velocity;
+        Sint16 saved_player_xspeed;
+    };
+    union {
+        Sint32 y_velocity;
+        Sint16 saved_player_yspeed;
+    };
+} kowasi5_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(kowasi5_work, x_velocity) == 0,
+               "kowasi5_work.x_velocity offset");
+_Static_assert(offsetof(kowasi5_work, saved_player_xspeed) == 0,
+               "kowasi5_work.saved_player_xspeed offset");
+_Static_assert(offsetof(kowasi5_work, y_velocity) == 4,
+               "kowasi5_work.y_velocity offset");
+_Static_assert(offsetof(kowasi5_work, saved_player_yspeed) == 4,
+               "kowasi5_work.saved_player_yspeed offset");
+_Static_assert(sizeof(kowasi5_work) <= sizeof(((sprite_status *)0)->actfree),
+               "kowasi5_work fits in actfree");
+
+static kowasi5_work *kowasi5_work_get(sprite_status *pActwk) {
+    return (kowasi5_work *)pActwk->actfree;
+}
 
 static sprite_pattern pat00 = {1, {{-8, -24, 0, 487}}};
 static sprite_pattern pat01 = {1, {{-8, -24, 0, 488}}};
@@ -45,10 +74,12 @@ static void m_init(sprite_status *pActwk) {
 
 static void m_wait(sprite_status *pActwk) {
     if (pActwk->colicnt) {
+        kowasi5_work *work = kowasi5_work_get(pActwk);
+
         pActwk->colino = pActwk->colicnt = 0;
         pActwk->r_no0 += 2;
-        ((Sint16 *)pActwk)[23] = actwk[0].xspeed.w;
-        ((Sint16 *)pActwk)[25] = actwk[0].yspeed.w;
+        work->saved_player_xspeed = actwk[0].xspeed.w;
+        work->saved_player_yspeed = actwk[0].yspeed.w;
         if (hitchk(pActwk, &actwk[0])) {
             ride_on_clr(pActwk, &actwk[0]);
         }
@@ -63,9 +94,11 @@ static void m_wait(sprite_status *pActwk) {
 }
 
 static void m_down(sprite_status *pActwk) {
-    *(Sint32 *)&pActwk->actfree[4] += 16384;
-    pActwk->xposi.l += *(Sint32 *)&pActwk->actfree[0];
-    pActwk->yposi.l += *(Sint32 *)&pActwk->actfree[4];
+    kowasi5_work *work = kowasi5_work_get(pActwk);
+
+    work->y_velocity += 16384;
+    pActwk->xposi.l += work->x_velocity;
+    pActwk->yposi.l += work->y_velocity;
     if (actwk[0].yposi.w.h - pActwk->yposi.w.h <= -224) {
 
         frameout(pActwk);
@@ -99,6 +132,7 @@ static void m_make(sprite_status *pActwk) {
 
     pNewact = pActwk;
     for (i = 0; i < 3; ++i) {
+        kowasi5_work *work;
 
         if (i != 0) {
             if (actwkchk(&pNewact) != 0)
@@ -118,13 +152,14 @@ static void m_make(sprite_status *pActwk) {
         pNewact->sprhs = pNewact->sprhsize = pNewact->sprvsize = 8;
         pNewact->yposi.w.h += *pPosiy++;
         spdwk = *pSpeed++;
-        *(Sint32 *)&pNewact->actfree[4] = *pSpeed++;
+        work = kowasi5_work_get(pNewact);
+        work->y_velocity = *pSpeed++;
 
         if (actwk[0].xspeed.w < 0) {
             spdwk *= -1;
         }
 
-        *(Sint32 *)&pNewact->actfree[0] = spdwk;
+        work->x_velocity = spdwk;
     }
 
     m_down(pActwk);

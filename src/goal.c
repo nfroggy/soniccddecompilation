@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "equ.h"
 #include "goal.h"
 #include "action.h"
@@ -19,6 +21,25 @@ extern sprite_pattern *bringpat[];
 extern Uint8 *bringchg[];
 extern sprite_pattern *goalpat[];
 extern Uint8 *goalchg[];
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 timer;
+    Uint8 reserved1[7];
+    Sint16 score_display_delay;
+} goal_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(goal_work, timer) == 0,
+               "goal_work.timer must map to offset 0");
+_Static_assert(offsetof(goal_work, score_display_delay) == 8,
+               "goal_work.score_display_delay must map to offset 8");
+_Static_assert(sizeof(goal_work) <= sizeof(((sprite_status *)0)->actfree),
+               "goal_work must fit in sprite_status.actfree");
+
+static goal_work *goal_work_get(sprite_status *pActwk) {
+    return (goal_work *)pActwk->actfree;
+}
 
 void gene(sprite_status *pActwk) {
     gene_tbl[pActwk->r_no0 / 2](pActwk);
@@ -47,6 +68,7 @@ void gene_init(sprite_status *pActwk) {
 }
 
 void gene_move0(sprite_status *pActwk) {
+    goal_work *work = goal_work_get(pActwk);
     Sint16 coli;
     Sint16 iD0, iD1;
 
@@ -57,7 +79,7 @@ void gene_move0(sprite_status *pActwk) {
 
     pltime_f = 0;
     pActwk->patno = 2;
-    pActwk->actfree[0] = 120;
+    work->timer = 120;
     pActwk->r_no0 += 2;
 
     iD0 = actwk[0].xposi.w.h;
@@ -84,6 +106,7 @@ label1:
 }
 
 void gene_move1(sprite_status *pActwk) {
+    goal_work *work = goal_work_get(pActwk);
     sprite_status *pActfree;
     Sint16 iD0, iD1, ret;
     Uint16 wOff;
@@ -91,10 +114,10 @@ void gene_move1(sprite_status *pActwk) {
     char tbl[16] = {0,  0, 32,  -8, -32, 0, -24, -8,
                     24, 8, -16, 8,  16,  8, -8,  -8};
 
-    bywk = pActwk->actfree[0];
+    bywk = work->timer;
     iD0 = bywk;
     --iD0;
-    pActwk->actfree[0] = iD0;
+    work->timer = iD0;
     if (iD0 >= 0) {
         iD1 = iD0;
         iD1 &= 3;
@@ -120,7 +143,7 @@ void gene_move1(sprite_status *pActwk) {
     }
     kira_set(pActwk);
     pActwk->r_no0 += 2;
-    pActwk->actfree[0] = 60;
+    work->timer = 60;
 }
 
 void kira_set(sprite_status *pActwk) {
@@ -449,6 +472,7 @@ void goal_init(sprite_status *pActwk) {
 }
 
 void goal_move0(sprite_status *pActwk) {
+    goal_work *work = goal_work_get(pActwk);
     sprite_status *pPlaywk;
     Sint16 iD0;
 
@@ -464,7 +488,7 @@ void goal_move0(sprite_status *pActwk) {
     scralim_left = scra_h_posit.w.h;
     scralim_n_left = scra_h_posit.w.h;
     pltime_f = 0;
-    pActwk->actfree[0] = 120;
+    work->timer = 120;
     pActwk->patno = 0;
     pActwk->r_no0 += 2;
     plpower_s = 0;
@@ -473,16 +497,19 @@ void goal_move0(sprite_status *pActwk) {
 }
 
 void goal_move1(sprite_status *pActwk) {
+    goal_work *work = goal_work_get(pActwk);
+
     patchg(pActwk, goalchg);
-    --pActwk->actfree[0];
-    if (pActwk->actfree[0] != 0)
+    --work->timer;
+    if (work->timer != 0)
         return;
     pActwk->r_no0 += 2;
     pActwk->patno = 3;
-    pActwk->actfree[0] = 60;
+    work->timer = 60;
 }
 
 void goal_move2(sprite_status *pActwk) {
+    goal_work *work = goal_work_get(pActwk);
     sprite_status *pActfree;
     Sint16 iD0;
     char cTime;
@@ -490,8 +517,8 @@ void goal_move2(sprite_status *pActwk) {
                                3000,  2000,  2000,  2000, 2000, 1000, 1000,
                                1000,  1000,  500,   500,  500,  500,  0};
 
-    cTime = ((char *)pActwk)[46] - 1;
-    pActwk->actfree[0] = cTime;
+    cTime = (char)work->timer - 1;
+    work->timer = cTime;
     if (cTime != 0)
         return;
     if (time_flag == 0) {
@@ -504,7 +531,7 @@ void goal_move2(sprite_status *pActwk) {
     if (stageno.w == 1282) {
         swdata.w = 0;
     }
-    pActwk->actfree[0] = 180;
+    work->timer = 180;
     pActwk->r_no0 += 2;
 
     if (actwkchk(&pActfree) != 0) {
@@ -514,7 +541,7 @@ void goal_move2(sprite_status *pActwk) {
     }
 
     pActfree->actno = 58;
-    ((Sint16 *)pActfree)[27] = 16;
+    goal_work_get(pActfree)->score_display_delay = 16;
 
     bonus_f = 1;
     iD0 = pltime.b.b3 + pltime.b.b2 * 60;

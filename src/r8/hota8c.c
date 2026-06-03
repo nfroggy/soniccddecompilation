@@ -371,7 +371,7 @@ static void ht8main_move4(sprite_status *roomwk) {
     hotaru->actno = 57;
     hotaru->yposi.w.h = 392;
     hotaru->xposi.w.h = 3200;
-    ((Uint16 *)roomwk)[5] = hotaru - actwk;
+    roomwk->xposi.w.h = (Sint16)(hotaru - actwk);
     hotaru->userflag.b.h = 0;
     roomwk->actfree[16] = roomwk->actfree[17] = 0;
     roomwk->r_no0 += 2;
@@ -381,7 +381,7 @@ static void ht8main_move5(sprite_status *roomwk) {
     if (actwk[((Uint16 *)roomwk)[28]].actno == 57)
         return;
 
-    if (actwk[((Uint16 *)roomwk)[5]].actno == 57)
+    if (actwk[(Uint16)roomwk->xposi.w.h].actno == 57)
         return;
 
     roomwk->r_no0 += 2;

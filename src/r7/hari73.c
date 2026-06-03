@@ -1,8 +1,11 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "hari73.h"
 #include "../action.h"
 #include "../actset.h"
 #include "../loader2.h"
+#include "../player_work.h"
 #include "../ridechk.h"
 #include "boss_7.h"
 #include "coli7.h"
@@ -12,6 +15,34 @@ static void hari73_move(sprite_status *pActwk);
 static void msnc_hit(sprite_status *pActwk);
 static void hari73_tobi(sprite_status *pActwk);
 static Sint16 act_search(sprite_status **ppActwk, Uint8 bD0);
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint16 linked_actor_index;
+    Uint8 unused2[4];
+    Sint16 x_speed_delta;
+    Sint16 y_speed_delta;
+    Uint8 blink_counter;
+    Uint8 player_was_riding;
+} hari73_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(hari73_work, linked_actor_index) == 0,
+               "hari73_work.linked_actor_index offset");
+_Static_assert(offsetof(hari73_work, x_speed_delta) == 6,
+               "hari73_work.x_speed_delta offset");
+_Static_assert(offsetof(hari73_work, y_speed_delta) == 8,
+               "hari73_work.y_speed_delta offset");
+_Static_assert(offsetof(hari73_work, blink_counter) == 10,
+               "hari73_work.blink_counter offset");
+_Static_assert(offsetof(hari73_work, player_was_riding) == 11,
+               "hari73_work.player_was_riding offset");
+_Static_assert(sizeof(hari73_work) <= sizeof(((sprite_status *)0)->actfree),
+               "hari73_work fits in actfree");
+
+static hari73_work *hari73_get_work(sprite_status *pActwk) {
+    return (hari73_work *)pActwk->actfree;
+}
 
 static sprite_pattern hari73_pat0 = {1, {{-16, -16, 0, 419}}};
 static sprite_pattern hari73_pat1 = {1, {{-4, -16, 0, 420}}};
@@ -36,7 +67,7 @@ static void hari73_init(sprite_status *pActwk) {
     pActwk->sprhsize = 16;
     pActwk->sprvsize = 12;
     if (!act_search(&pNewactwk, 47)) {
-        ((Sint16 *)pActwk)[23] = pNewactwk - actwk;
+        hari73_get_work(pActwk)->linked_actor_index = pNewactwk - actwk;
 
         if (pActwk->xposi.w.h - (Sint16)pActwk->sprhsize -
                 pNewactwk->xposi.w.h - (Sint16)pNewactwk->sprhsize >=
@@ -52,9 +83,10 @@ static void hari73_init(sprite_status *pActwk) {
 static void hari73_move(sprite_status *pActwk) {
     Sint16 wD0;
     sprite_status *pNewactwk;
+    hari73_work *work = hari73_get_work(pActwk);
 
-    if (((Sint16 *)pActwk)[23]) {
-        pNewactwk = &actwk[((Sint16 *)pActwk)[23]];
+    if (work->linked_actor_index) {
+        pNewactwk = &actwk[work->linked_actor_index];
         wD0 = pActwk->xposi.w.h - pNewactwk->xposi.w.h;
         if (pActwk->xposi.w.h < pNewactwk->xposi.w.h) {
             wD0 *= -1;
@@ -67,13 +99,13 @@ static void hari73_move(sprite_status *pActwk) {
 
     if (hitchk(pActwk, &actwk[0])) {
         actwk[0].colino = 0;
-        pActwk->actfree[11] = 0;
+        work->player_was_riding = 0;
         if (actwk[0].cddat & 8) {
-            pActwk->actfree[11] = 1;
+            work->player_was_riding = 1;
 
             if (!plpower_m) {
                 if (actwk[0].r_no0 != 4) {
-                    if (!actwk[0].actfree[6]) {
+                    if (!player_work_get(&actwk[0])->damage_invulnerability_timer) {
                         actwk[0].yposi.l -= actwk[0].yspeed.w << 8;
                         playdamageset(&actwk[0], pActwk);
                         ride_on_clr(pActwk, &actwk[0]);
@@ -118,12 +150,14 @@ static void msnc_hit(sprite_status *pActwk) {
 
         pNewactwk->xspeed.w = spd_tbl[i];
         pNewactwk->yspeed.w = spd_tbl[i + 1];
-        ((Sint16 *)pNewactwk)[26] = spd_tbl[i + 2];
-        ((Sint16 *)pNewactwk)[27] = spd_tbl[i + 3];
+        hari73_work *new_work = hari73_get_work(pNewactwk);
+
+        new_work->x_speed_delta = spd_tbl[i + 2];
+        new_work->y_speed_delta = spd_tbl[i + 3];
         wD4 += 8;
     }
 
-    if (pActwk->actfree[11]) {
+    if (hari73_get_work(pActwk)->player_was_riding) {
         ride_on_clr(pActwk, &actwk[0]);
     }
     frameout(pActwk);
@@ -132,9 +166,9 @@ static void msnc_hit(sprite_status *pActwk) {
 static void hari73_tobi(sprite_status *pActwk) {
     hari_spdadd(pActwk);
 
-    ++pActwk->actfree[10];
-    pActwk->actfree[10] &= 3;
-    if (pActwk->actfree[10] & 2) {
+    ++hari73_get_work(pActwk)->blink_counter;
+    hari73_get_work(pActwk)->blink_counter &= 3;
+    if (hari73_get_work(pActwk)->blink_counter & 2) {
         actionsub(pActwk);
     }
     frameout_s(pActwk);

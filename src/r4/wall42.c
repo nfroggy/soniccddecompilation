@@ -2,11 +2,30 @@
 #include "wall42.h"
 #include "../action.h"
 #include "../ridechk.h"
+#include <stddef.h>
 
 static void act_init(sprite_status *pActwk);
 static void act_wait(sprite_status *pActwk);
 static void act_move(sprite_status *pActwk);
 static void act_stop(sprite_status *pActwk);
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint16 timer;
+    Uint8 *flagwork_entry;
+} wall42_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(wall42_work, timer) == 0,
+               "wall42_work.timer offset");
+_Static_assert(offsetof(wall42_work, flagwork_entry) == 2,
+               "wall42_work.flagwork_entry offset");
+_Static_assert(sizeof(wall42_work) <= sizeof(((sprite_status *)0)->actfree),
+               "wall42_work fits in actfree");
+
+static wall42_work *wall42_work_get(sprite_status *pActwk) {
+    return (wall42_work *)pActwk->actfree;
+}
 
 static sprite_pattern pat00 = {1, {{-32, -64, 0, 531}}};
 sprite_pattern *pat_wall42[1] = {&pat00};
@@ -24,7 +43,7 @@ void wall42(sprite_status *pActwk) {
     d1 = scra_h_posit.w.h - 128 & -128;
     d0 -= d1;
     if (d0 > 640) {
-        a1 = ((Uint8 **)pActwk)[12];
+        a1 = wall42_work_get(pActwk)->flagwork_entry;
         *a1 &= 127;
         frameout(pActwk);
     }
@@ -45,11 +64,11 @@ static void act_init(sprite_status *pActwk) {
     index *= 3;
     index += (Uint16)time_flag;
     a1 = &flagwork[index];
-    ((Uint8 **)pActwk)[12] = a1;
+    wall42_work_get(pActwk)->flagwork_entry = a1;
 
     if (!(*a1 & 1)) {
         *a1 |= 1;
-        ((Sint16 *)pActwk)[23] = 60;
+        wall42_work_get(pActwk)->timer = 60;
         pActwk->r_no0 += 2;
     } else {
         pActwk->xposi.w.h += 192;
@@ -58,11 +77,13 @@ static void act_init(sprite_status *pActwk) {
 }
 
 static void act_wait(sprite_status *pActwk) {
-    if (((Sint16 *)pActwk)[23] == -1) {
-        ((Sint16 *)pActwk)[23] = 384;
+    wall42_work *work = wall42_work_get(pActwk);
+
+    if (work->timer == -1) {
+        work->timer = 384;
         pActwk->r_no0 += 2;
     }
-    --((Sint16 *)pActwk)[23];
+    --work->timer;
     act_stop(pActwk);
 }
 
@@ -75,10 +96,10 @@ static void act_move(sprite_status *pActwk) {
         actwk[0].mspeed.w = d0 & 65535;
     }
     pActwk->xposi.l += 32768;
-    if (((Sint16 *)pActwk)[23] == -1) {
+    if (wall42_work_get(pActwk)->timer == -1) {
         pActwk->r_no0 += 2;
     }
-    --((Sint16 *)pActwk)[23];
+    --wall42_work_get(pActwk)->timer;
 }
 
 static void act_stop(sprite_status *pActwk) { hitchk(pActwk, &actwk[0]); }

@@ -1,20 +1,43 @@
+#include <stddef.h>
+
 #include "equ.h"
 #include "tree.h"
 #include "action.h"
 #include "actset.h"
+#include "player_work.h"
 #include "playsub.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint16 origin_x;
+    Sint16 base_x;
+    Uint8 bounce_timer;
+} tree_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(tree_work, origin_x) == 0,
+               "tree_work.origin_x offset");
+_Static_assert(offsetof(tree_work, base_x) == 2,
+               "tree_work.base_x offset");
+_Static_assert(offsetof(tree_work, bounce_timer) == 4,
+               "tree_work.bounce_timer offset");
+_Static_assert(sizeof(tree_work) <= sizeof(((sprite_status *)0)->actfree),
+               "tree_work must fit in sprite_status.actfree");
+
+static tree_work *tree_get_work(sprite_status *pActwk) {
+    return (tree_work *)pActwk->actfree;
+}
 
 void (*hoshi_tbl[2])(sprite_status *, sprite_status *) = {&hoshi_init,
                                                           &hoshi_move};
 extern sprite_pattern *hoshipat[];
 
 void hoshi(sprite_status *pActwk) {
-    Sint16 iXposi;
+    tree_work *work = tree_get_work(pActwk);
 
     hoshi_tbl[pActwk->r_no0 / 2](pActwk, &actwk[0]);
     actionsub(pActwk);
-    iXposi = ((Uint16 *)pActwk)[23];
-    frameout_s00(pActwk, iXposi);
+    frameout_s00(pActwk, work->origin_x);
 }
 
 void hoshi_init(sprite_status *pActwk, sprite_status *pPlaywk) {
@@ -46,14 +69,14 @@ void hoshi_init(sprite_status *pActwk, sprite_status *pPlaywk) {
         pActfree->actno = 44;
         pActfree->xposi.w.h = iXwork;
         pActfree->yposi.w.h = pActwk->yposi.w.h;
-        ((Sint16 *)pActfree)[23] = iXwork;
+        tree_get_work(pActfree)->origin_x = iXwork;
         pActfree->patbase = pActwk->patbase;
         pActfree->sproffset = pActwk->sproffset;
         pActfree->sprhsize = pActwk->sprhsize;
         pActfree->sprvsize = pActwk->sprvsize;
         pActfree->actflg |= 4;
         pActfree->xposi.w.h += tbl0[iOffset];
-        ((Sint16 *)pActfree)[24] = pActfree->xposi.w.h;
+        tree_get_work(pActfree)->base_x = pActfree->xposi.w.h;
     }
 
     iLp = 3;
@@ -67,7 +90,7 @@ void hoshi_init(sprite_status *pActwk, sprite_status *pPlaywk) {
         pActfree->patno = 1;
         pActfree->sprpri = 4;
         pActfree->xposi.w.h = iXwork;
-        ((Sint16 *)pActfree)[23] = iXwork;
+        tree_get_work(pActfree)->origin_x = iXwork;
         pActfree->yposi.w.h = pActwk->yposi.w.h;
         pActfree->patbase = pActwk->patbase;
         pActfree->sproffset = pActwk->sproffset;
@@ -104,13 +127,15 @@ sprite_pattern *kasokupat[10] = {
 
 void hoshi_move(sprite_status *pActwk, sprite_status *pPlaywk) {
     Sint16 iXwork = 0;
+    tree_work *work = tree_get_work(pActwk);
+    player_work *player = player_work_get(pPlaywk);
 
     if (pActwk->userflag.b.h != 0)
         return;
-    if (pPlaywk->actfree[2] & 2) {
+    if (player->status_flags & 2) {
         iXwork = pPlaywk->xposi.w.h;
         iXwork &= 255;
-        if (pPlaywk->xposi.w.h < ((Sint16 *)pActwk)[23])
+        if (pPlaywk->xposi.w.h < work->origin_x)
             iXwork = 255 - iXwork;
 
         if (iXwork >= 192) {
@@ -121,10 +146,10 @@ void hoshi_move(sprite_status *pActwk, sprite_status *pPlaywk) {
         }
 
         iXwork >>= 1;
-        if (pPlaywk->xposi.w.h < ((Sint16 *)pActwk)[23])
+        if (pPlaywk->xposi.w.h < work->origin_x)
             iXwork *= -1;
     }
-    iXwork += ((Uint16 *)pActwk)[24];
+    iXwork += work->base_x;
     pActwk->xposi.w.h = iXwork;
 }
 
@@ -141,6 +166,7 @@ void k0_init(sprite_status *pActwk, sprite_status *pPlaywk) {
 
 void k0_move(sprite_status *pActwk, sprite_status *pPlaywk) {
     Sint16 iD0;
+    player_work *player = player_work_get(pPlaywk);
 
     if (pPlaywk->mstno.b.h == 43)
         return;
@@ -163,8 +189,8 @@ void k0_move(sprite_status *pActwk, sprite_status *pPlaywk) {
     pPlaywk->xspeed.w = 0;
     pPlaywk->mspeed.w = 0;
     pPlaywk->mstno.b.h = 55;
-    pPlaywk->actfree[18] = 1;
-    pPlaywk->actfree[14] = 0;
+    player->jump_started = 1;
+    player->jump_lock = 0;
     pActwk->sprvsize = 14;
     pActwk->sprhs = 7;
     pActwk->yposi.w.h += 5;
@@ -174,7 +200,7 @@ void k0_move(sprite_status *pActwk, sprite_status *pPlaywk) {
 }
 
 void kasoku(sprite_status *pActwk) {
-    Sint16 iXwork;
+    tree_work *work = tree_get_work(pActwk);
 
     if (pActwk->userflag.b.l != 0) {
         kasoku0(pActwk);
@@ -182,11 +208,12 @@ void kasoku(sprite_status *pActwk) {
     }
     kasoku_tbl[pActwk->r_no0 / 2](pActwk, &actwk[0]);
     actionsub(pActwk);
-    iXwork = ((Uint16 *)pActwk)[23];
-    frameout_s00(pActwk, iXwork);
+    frameout_s00(pActwk, work->origin_x);
 }
 
 void kasoku_init(sprite_status *pActwk, sprite_status *pPlaywk) {
+    tree_work *work = tree_get_work(pActwk);
+
     pActwk->r_no0 += 2;
     pActwk->actflg |= 4;
     pActwk->sprpri = 1;
@@ -194,7 +221,7 @@ void kasoku_init(sprite_status *pActwk, sprite_status *pPlaywk) {
     pActwk->sproffset = 1089;
     pActwk->sprhsize = 32;
     pActwk->sprvsize = 32;
-    ((Sint16 *)pActwk)[23] = pActwk->xposi.w.h;
+    work->origin_x = pActwk->xposi.w.h;
     if (pActwk->userflag.b.h != 0) {
         pActwk->actflg |= 1;
         pActwk->cddat |= 1;
@@ -205,17 +232,19 @@ void kasoku_init(sprite_status *pActwk, sprite_status *pPlaywk) {
 void kasoku_move(sprite_status *pActwk, sprite_status *pPlaywk) {
     Sint16 iD0, iD1, iD2;
     Sint32 lD0wk;
+    tree_work *work = tree_get_work(pActwk);
+    player_work *player = player_work_get(pPlaywk);
 
-    if (pActwk->actfree[4] != 0) {
+    if (work->bounce_timer != 0) {
         pActwk->mstno.b.h = 1;
-        if (!(pPlaywk->actfree[2] & 2))
+        if (!(player->status_flags & 2))
             ++pActwk->mstno.b.h;
 
         patchg(pActwk, kasokuchg);
     } else {
         pActwk->patno = 0;
         iD1 = 0;
-        if (!(pPlaywk->actfree[2] & 2))
+        if (!(player->status_flags & 2))
             goto label1;
     }
 
@@ -231,7 +260,7 @@ void kasoku_move(sprite_status *pActwk, sprite_status *pPlaywk) {
 
     lD0wk = iD0;
     iD1 = iD0;
-    if (pActwk->actfree[4] == 0) {
+    if (work->bounce_timer == 0) {
         lD0wk /= 48;
         pActwk->patno = lD0wk & 255;
     }
@@ -242,10 +271,10 @@ void kasoku_move(sprite_status *pActwk, sprite_status *pPlaywk) {
     if (pActwk->userflag.b.h != 0)
         iD1 *= -1;
 label1:
-    pActwk->xposi.w.h = ((Sint16 *)pActwk)[23] + iD1;
+    pActwk->xposi.w.h = work->origin_x + iD1;
 
-    if (pActwk->actfree[4] != 0)
-        --pActwk->actfree[4];
+    if (work->bounce_timer != 0)
+        --work->bounce_timer;
 
     iD1 = pActwk->sprhsize;
     iD0 = pPlaywk->xposi.w.h - pActwk->xposi.w.h;
@@ -267,8 +296,8 @@ label1:
     if (pPlaywk->mstno.b.h == 43)
         return;
 
-    if (pActwk->actfree[4] == 0)
-        pActwk->actfree[4] = 60;
+    if (work->bounce_timer == 0)
+        work->bounce_timer = 60;
 
     if (pPlaywk->yspeed.w < 0) {
         pPlaywk->yspeed.w = -3072;

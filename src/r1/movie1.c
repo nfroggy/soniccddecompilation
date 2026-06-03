@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "movie1.h"
 #include "../action.h"
@@ -36,6 +38,36 @@ char tbl0[37] = {1,   0,  0,   5, -18, -10, 10,  -10, 10,  15, 0,   -18, 20,
                  -10, 18, 22,  8, 23,  25,  13,  -10, 28,  -3, -25, 30,  10,
                  20,  32, -10, 2, 35,  13,  -10, 40,  -10, 10, -1};
 
+#pragma pack(push, 1)
+typedef struct {
+    Uint16 explosion_timer;
+    char *explosion_script;
+    Uint8 reserved_after_script[20 - 2 - sizeof(char *)];
+    union {
+        Uint16 parent_actor;
+        struct {
+            Uint8 parent_actor_low;
+            Uint8 parent_destroyed;
+        };
+    };
+} movie1_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(movie1_work, explosion_timer) == 0,
+               "movie1_work.explosion_timer must map to offset 0");
+_Static_assert(offsetof(movie1_work, explosion_script) == 2,
+               "movie1_work.explosion_script must map to offset 2");
+_Static_assert(offsetof(movie1_work, parent_actor) == 20,
+               "movie1_work.parent_actor must map to offset 20");
+_Static_assert(offsetof(movie1_work, parent_destroyed) == 21,
+               "movie1_work.parent_destroyed must map to offset 21");
+_Static_assert(sizeof(movie1_work) <= sizeof(((sprite_status *)0)->actfree),
+               "movie1_work must fit in sprite_status.actfree");
+
+static movie1_work *movie1_work_get(sprite_status *pActwk) {
+    return (movie1_work *)pActwk->actfree;
+}
+
 void movie1(sprite_status *pActwk) {
     void (*tbl_m[5])(sprite_status *) = {&mm_init, &mm_wait, &mm_die, &m_baku,
                                          &mm1wait};
@@ -55,7 +87,9 @@ void movie1(sprite_status *pActwk) {
 void die(sprite_status *pActwk) { frameout(pActwk); }
 
 void mm_init(sprite_status *pActwk) {
+    movie1_work *work = movie1_work_get(pActwk);
     sprite_status *subactwk;
+    movie1_work *sub_work;
 
     if (projector_flag) {
         die(pActwk);
@@ -76,7 +110,7 @@ void mm_init(sprite_status *pActwk) {
         pActwk->sproffset = 1027;
 
     pActwk->patbase = pat_movie;
-    ((char **)pActwk)[12] = tbl0;
+    work->explosion_script = tbl0;
 
     if (actwkchk(&subactwk) != 0) {
         die(pActwk);
@@ -86,7 +120,8 @@ void mm_init(sprite_status *pActwk) {
     subactwk->xposi.w.h = pActwk->xposi.w.h - 21;
     subactwk->yposi.w.h = pActwk->yposi.w.h - 7;
     subactwk->userflag.b.h = -1;
-    ((Sint16 *)subactwk)[33] = (Uint16)(Uint8)(pActwk - actwk);
+    sub_work = movie1_work_get(subactwk);
+    sub_work->parent_actor = (Uint16)(Uint8)(pActwk - actwk);
 
     if (actwkchk(&subactwk) != 0) {
         die(pActwk);
@@ -96,7 +131,8 @@ void mm_init(sprite_status *pActwk) {
     subactwk->xposi.w.h = pActwk->xposi.w.h - 88;
     subactwk->yposi.w.h = pActwk->yposi.w.h - 4;
     subactwk->userflag.b.h = 1;
-    ((Sint16 *)subactwk)[33] = (Uint16)(Uint8)(pActwk - actwk);
+    sub_work = movie1_work_get(subactwk);
+    sub_work->parent_actor = (Uint16)(Uint8)(pActwk - actwk);
 
     if (actwkchk(&subactwk) != 0) {
         die(pActwk);
@@ -106,7 +142,8 @@ void mm_init(sprite_status *pActwk) {
     subactwk->xposi.w.h = pActwk->xposi.w.h - 88;
     subactwk->yposi.w.h = pActwk->yposi.w.h - 24;
     subactwk->userflag.b.h = -128;
-    ((Sint16 *)subactwk)[33] = (Uint16)(Uint8)(pActwk - actwk);
+    sub_work = movie1_work_get(subactwk);
+    sub_work->parent_actor = (Uint16)(Uint8)(pActwk - actwk);
 
     if (actwkchk(&subactwk) != 0) {
         die(pActwk);
@@ -116,7 +153,8 @@ void mm_init(sprite_status *pActwk) {
     subactwk->xposi.w.h = pActwk->xposi.w.h - 100;
     subactwk->yposi.w.h = pActwk->yposi.w.h + 4;
     subactwk->userflag.b.h = -127;
-    ((Sint16 *)subactwk)[33] = (Uint16)(Uint8)(pActwk - actwk);
+    sub_work = movie1_work_get(subactwk);
+    sub_work->parent_actor = (Uint16)(Uint8)(pActwk - actwk);
 }
 
 void mm_wait(sprite_status *pActwk) {
@@ -129,23 +167,26 @@ void mm_wait(sprite_status *pActwk) {
 }
 
 void mm_die(sprite_status *pActwk) {
+    movie1_work *work = movie1_work_get(pActwk);
+
     pActwk->r_no0 += 2;
     pActwk->patno = 1;
-    pActwk->actfree[21] = 255;
+    work->parent_destroyed = 255;
     if (hitchk(pActwk, &actwk[0]))
         ride_on_clr(pActwk, &actwk[0]);
 }
 
 void m_baku(sprite_status *pActwk) {
+    movie1_work *work = movie1_work_get(pActwk);
     char *temp;
     Uint8 timeb;
     char xx, yy;
     sprite_status *subactwk;
 
-    temp = ((char **)pActwk)[12];
+    temp = work->explosion_script;
     if (*temp >= 0) {
-        ((Uint16 *)pActwk)[23] += 256;
-        timeb = ((Uint16 *)pActwk)[23] >> 8;
+        work->explosion_timer += 256;
+        timeb = work->explosion_timer >> 8;
         if (timeb != *temp)
             return;
 
@@ -154,7 +195,7 @@ void m_baku(sprite_status *pActwk) {
         ++temp;
         yy = *temp;
         ++temp;
-        ((char **)pActwk)[12] = temp;
+        work->explosion_script = temp;
         if (actwkchk(&subactwk) != 0)
             return;
 
@@ -170,26 +211,29 @@ void m_baku(sprite_status *pActwk) {
     }
 
     pActwk->r_no0 += 2;
-    ((Sint16 *)pActwk)[23] = 60;
+    work->explosion_timer = 60;
 }
 
 void mm1wait(sprite_status *pActwk) {
-    --((Uint16 *)pActwk)[23];
-    if (!((Uint16 *)pActwk)[23]) {
+    movie1_work *work = movie1_work_get(pActwk);
+
+    --work->explosion_timer;
+    if (!work->explosion_timer) {
         projector_flag = 255;
         die(pActwk);
     }
 }
 
 void sub(sprite_status *pActwk) {
+    movie1_work *work = movie1_work_get(pActwk);
     Sint16 subact;
 
-    subact = ((Sint16 *)pActwk)[33];
+    subact = work->parent_actor;
     if (actwk[subact].actno != 46) {
         die(pActwk);
         return;
     }
-    if (actwk[subact].actfree[21]) {
+    if (movie1_work_get(&actwk[subact])->parent_destroyed) {
         die(pActwk);
         return;
     }

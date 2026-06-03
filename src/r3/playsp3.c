@@ -4,6 +4,7 @@
 #include "../etc.h"
 #include "../fcol.h"
 #include "../loader2.h"
+#include "../player_work.h"
 #include "scr31a.h"
 
 static Sint16 fcol3a[17] = {15,  316, 326, 411, 430, 131, 132, 137, 138,
@@ -91,7 +92,7 @@ char bycol_sub0(Sint16 cal_x, Sint16 cal_y) {
 label1:
     if (actwk[0].r_no0 == 4) {
         actwk[0].r_no0 -= 2;
-        ((Sint16 *)&actwk[0])[26] = 120;
+        player_work_get(&actwk[0])->damage_invulnerability_timer = 120;
     }
     col_y.b.h = 0;
     jump_no[i](i, cal_x, cal_y, block_back);
@@ -131,7 +132,7 @@ void bob(Sint16 i, Sint16 cal_x, Sint16 cal_y, Sint16 block_back) {
     actwk[0].yspeed.w = cal_sin;
     actwk[0].cddat |= 2;
     actwk[0].cddat &= 207;
-    actwk[0].actfree[18] = 0;
+    player_work_get(&actwk[0])->jump_started = 0;
     if (actwkchk(&new_actwk) == 0) {
         new_actwk->actno = 41;
         new_actwk->xposi.w.h = tmp_x;
@@ -166,7 +167,7 @@ void bob_s(Sint16 i, Sint16 cal_x, Sint16 cal_y, Sint16 block_back) {
 void bob_j(void) {
     actwk[0].cddat |= 2;
     actwk[0].cddat &= 207;
-    actwk[0].actfree[18] = 0;
+    player_work_get(&actwk[0])->jump_started = 0;
 }
 
 void bob0(Sint16 i, Sint16 cal_x, Sint16 cal_y, Sint16 block_back) {

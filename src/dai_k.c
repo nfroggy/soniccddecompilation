@@ -4,6 +4,7 @@
 #include "actset.h"
 #include "etc.h"
 #include "loader2.h"
+#include "player_work.h"
 #include "playsub.h"
 #include "ridechk.h"
 
@@ -53,6 +54,7 @@ static void dai_k_init(sprite_status *pActwk) {
 
 static void dai_k_move(sprite_status *pActwk) {
     Sint16 lenwk, sinwk, coswk;
+    player_work *player = player_work_get(&actwk[0]);
     static Uint8 pattbl[16] = {0, 0, 0, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 5, 5, 5};
 
     if (!(pActwk->actflg & 128))
@@ -61,33 +63,33 @@ static void dai_k_move(sprite_status *pActwk) {
     if (!ride_on_chk(pActwk, actwk))
         return;
 
-    if (!(actwk[0].actfree[2] & 1)) {
-        actwk[0].actfree[2] |= 1;
+    if (!(player->status_flags & 1)) {
+        player->status_flags |= 1;
         actwk[0].mstno.b.h = 45;
         lenwk = actwk[0].xposi.w.h - pActwk->xposi.w.h;
 
         if (lenwk >= 0) {
-            actwk[0].actfree[1] = 0;
+            player->special_angle = 0;
         } else {
-            actwk[0].actfree[1] = 128;
+            player->special_angle = 128;
             lenwk = -lenwk;
         }
 
-        actwk[0].actfree[15] = lenwk;
+        player->orbit_radius = lenwk;
     }
 
     if (actwk[0].r_no0 >= 6)
         return;
 
-    actwk[0].actfree[1] += 8;
-    sinset(actwk[0].actfree[1], &sinwk, &coswk);
+    player->special_angle += 8;
+    sinset(player->special_angle, &sinwk, &coswk);
     actwk[0].xposi.w.h =
-        pActwk->xposi.w.h + ((Uint32)(actwk[0].actfree[15] * coswk) >> 8);
+        pActwk->xposi.w.h + ((Uint32)(player->orbit_radius * coswk) >> 8);
 
-    actwk[0].patcnt = pattbl[actwk[0].actfree[1] >> 4];
+    actwk[0].patcnt = pattbl[player->special_angle >> 4];
 
-    if (!(actwk[0].actfree[1] & 63)) {
-        ++actwk[0].actfree[15];
+    if (!(player->special_angle & 63)) {
+        ++player->orbit_radius;
     }
 
     swdata = swdata1;
@@ -96,22 +98,24 @@ static void dai_k_move(sprite_status *pActwk) {
 }
 
 static void k_move(sprite_status *pActwk, sprite_status *pSonicwk) {
+    player_work *player = player_work_get(pSonicwk);
+
     if (pSonicwk->xposi.w.h >= pActwk->xposi.w.h) {
 
         if (swdata.b.h & 8) {
-            ++pSonicwk->actfree[15];
+            ++player->orbit_radius;
         } else if (swdata.b.h & 4) {
-            if (pSonicwk->actfree[15]) {
-                --pSonicwk->actfree[15];
+            if (player->orbit_radius) {
+                --player->orbit_radius;
             }
         }
     } else {
 
         if (swdata.b.h & 4) {
-            ++pSonicwk->actfree[15];
+            ++player->orbit_radius;
         } else if (swdata.b.h & 8) {
-            if (pSonicwk->actfree[15]) {
-                --pSonicwk->actfree[15];
+            if (player->orbit_radius) {
+                --player->orbit_radius;
             }
         }
     }
@@ -119,11 +123,12 @@ static void k_move(sprite_status *pActwk, sprite_status *pSonicwk) {
 
 static void jumpchk_d(sprite_status *pActwk, sprite_status *pSonicwk) {
     Sint16 jumpwk, sinwk, coswk;
+    player_work *player = player_work_get(pSonicwk);
 
     if (!(swdata.b.l & 112))
         return;
 
-    pSonicwk->actfree[2] = 0;
+    player->status_flags = 0;
     if (pActwk->cddat & 64) {
         jumpwk = 896;
     } else {
@@ -136,8 +141,8 @@ static void jumpchk_d(sprite_status *pActwk, sprite_status *pSonicwk) {
 
     pSonicwk->cddat |= 2;
     pSonicwk->cddat &= 223;
-    pSonicwk->actfree[18] = 1;
-    pSonicwk->actfree[14] = 0;
+    player->jump_started = 1;
+    player->jump_lock = 0;
 
     soundset(160);
 

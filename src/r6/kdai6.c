@@ -3,28 +3,57 @@
 #include "../action.h"
 #include "../actset.h"
 #include "../etc.h"
+#include "../player_work.h"
 #include "../playsub.h"
 #include "../ridechk.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 unused0[8];
+    Sint16 origin_y;
+    Uint8 unused10[2];
+    Sint16 origin_x;
+    Uint8 unused14[2];
+    Uint8 wobble_counter;
+} kdai6_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(kdai6_work, origin_y) == 8,
+               "kdai6_work.origin_y offset");
+_Static_assert(offsetof(kdai6_work, origin_x) == 12,
+               "kdai6_work.origin_x offset");
+_Static_assert(offsetof(kdai6_work, wobble_counter) == 16,
+               "kdai6_work.wobble_counter offset");
+_Static_assert(sizeof(kdai6_work) <= sizeof(((sprite_status *)0)->actfree),
+               "kdai6_work must fit in sprite_status.actfree");
+
+static kdai6_work *kdai6_get_work(sprite_status *pActwk) {
+    return (kdai6_work *)pActwk->actfree;
+}
 
 void (*kdai6_tbl[2])(sprite_status *) = {&kdai6_init, &kdai6_move};
 extern Uint8 *kdai6pchg[1];
 extern sprite_pattern *kdai6pat[6];
 
 void kdai6(sprite_status *pActwk) {
+    kdai6_work *work = kdai6_get_work(pActwk);
+
     kdai6_tbl[pActwk->r_no0 / 2](pActwk);
     actionsub(pActwk);
-    frameout_s00(pActwk, ((Sint16 *)pActwk)[29]);
+    frameout_s00(pActwk, work->origin_x);
 }
 
 Sint16 kdai6_ridechk(sprite_status *pActwk) { ridechk(pActwk, &actwk[0]); }
 
 void kdai6_init(sprite_status *pActwk) {
+    kdai6_work *work = kdai6_get_work(pActwk);
+
     pActwk->actflg |= 4;
     pActwk->sprpri = 1;
     pActwk->sproffset = 17258;
     pActwk->patbase = kdai6pat;
-    ((Sint16 *)pActwk)[29] = pActwk->xposi.w.h;
-    ((Sint16 *)pActwk)[27] = pActwk->yposi.w.h;
+    work->origin_x = pActwk->xposi.w.h;
+    work->origin_y = pActwk->yposi.w.h;
     pActwk->sprvsize = 12;
     pActwk->sprhsize = 16;
     pActwk->r_no0 += 2;
@@ -33,8 +62,10 @@ void kdai6_init(sprite_status *pActwk) {
 void kdai6_move(sprite_status *pActwk) {
     Sint16 iD0;
     sprite_status *pPlaywk;
+    player_work *player;
 
     pPlaywk = &actwk[0];
+    player = player_work_get(pPlaywk);
     dai6_move(pActwk);
 
     patchg(pActwk, kdai6pchg);
@@ -46,19 +77,19 @@ void kdai6_move(sprite_status *pActwk) {
     pPlaywk->cddat |= 1;
     pPlaywk->actflg &= 252;
     pPlaywk->actflg |= 1;
-    if (!(pPlaywk->actfree[2] & 1)) {
+    if (!(player->status_flags & 1)) {
         pPlaywk->mstno.b.h = 45;
-        pPlaywk->actfree[1] = 0;
+        player->special_angle = 0;
         iD0 = pPlaywk->xposi.w.h - pActwk->xposi.w.h;
         if (iD0 < 0) {
             iD0 = -iD0;
-            pPlaywk->actfree[1] = 128;
+            player->special_angle = 128;
         }
 
-        pPlaywk->actfree[15] = iD0;
+        player->orbit_radius = iD0;
     }
 
-    pPlaywk->actfree[2] |= 1;
+    player->status_flags |= 1;
     if ((Uint32)pPlaywk->r_no0 >= 6)
         return;
 
@@ -82,24 +113,26 @@ void kaiten_play(sprite_status *pActwk) {
     Uint8 byD0, byD1;
     Sint16 iSin, iCos;
     sprite_status *pPlaywk;
+    player_work *player;
     int_union lD0;
 
     pPlaywk = &actwk[0];
-    pPlaywk->actfree[1] += 4;
-    sinset(pPlaywk->actfree[1], &iSin, &iCos);
-    byD0 = pPlaywk->actfree[15];
+    player = player_work_get(pPlaywk);
+    player->special_angle += 4;
+    sinset(player->special_angle, &iSin, &iCos);
+    byD0 = player->orbit_radius;
     lD0.w.l = (Uint16)byD0;
     lD0.l = lD0.w.l * iCos;
     lD0.l >>= 8;
     pPlaywk->xposi.w.h = pActwk->xposi.w.h + lD0.w.l;
 
-    byD0 = pPlaywk->actfree[1];
+    byD0 = player->special_angle;
     byD1 = byD0;
     byD0 &= 240;
     byD0 >>= 4;
     pPlaywk->patcnt = tbl[byD0];
     if (!(byD1 & 63))
-        ++pPlaywk->actfree[15];
+        ++player->orbit_radius;
 
     swdata.w = swdata1.w;
     if (pPlaywk->actno != 1)
@@ -124,44 +157,48 @@ sprite_pattern *kdai6pat[6] = {&kdai6pat0, &kdai6pat1, &kdai6pat2,
 
 void k_move(sprite_status *pActwk) {
     sprite_status *pPlaywk;
+    player_work *player;
 
     pPlaywk = &actwk[0];
+    player = player_work_get(pPlaywk);
     if (pPlaywk->xposi.w.h - pActwk->xposi.w.h < 0) {
 
         if (swdata.b.h & 4) {
-            ++pPlaywk->actfree[15];
+            ++player->orbit_radius;
             return;
         }
         if (swdata.b.h & 8) {
-            --pPlaywk->actfree[15];
-            if (((char *)pPlaywk)[61] < 0)
-                pPlaywk->actfree[15] = 0;
+            --player->orbit_radius;
+            if ((char)player->orbit_radius < 0)
+                player->orbit_radius = 0;
         }
     } else {
 
         if (swdata.b.h & 8) {
-            ++pPlaywk->actfree[15];
+            ++player->orbit_radius;
             return;
         }
         if (swdata.b.h & 4) {
-            --pPlaywk->actfree[15];
-            if (((char *)pPlaywk)[61] < 0)
-                pPlaywk->actfree[15] = 0;
+            --player->orbit_radius;
+            if ((char)player->orbit_radius < 0)
+                player->orbit_radius = 0;
         }
     }
 }
 
 void jumpchk_d(sprite_status *pActwk) {
     sprite_status *pPlaywk;
+    player_work *player;
     Sint16 iSin, iCos;
     Uint8 byD0;
     int_union lD1;
 
     pPlaywk = &actwk[0];
+    player = player_work_get(pPlaywk);
     byD0 = pActwk->actno;
     if (!(swdata.b.l & 112))
         return;
-    pPlaywk->actfree[2] = 0;
+    player->status_flags = 0;
 
     byD0 = pPlaywk->direc.b.h;
     byD0 -= 64;
@@ -175,8 +212,8 @@ void jumpchk_d(sprite_status *pActwk) {
 
     pPlaywk->cddat |= 2;
     pPlaywk->cddat &= 223;
-    pPlaywk->actfree[18] = 1;
-    pPlaywk->actfree[14] = 0;
+    player->jump_started = 1;
+    player->jump_lock = 0;
 
     if (chibi_flag != 0) {
         pPlaywk->sprvsize = 10;
@@ -211,27 +248,30 @@ void dai6_move(sprite_status *pActwk) {
 
 void kd_mv_up(sprite_status *pActwk) {
     Sint16 iD0;
+    kdai6_work *work = kdai6_get_work(pActwk);
 
     iD0 = kd_dair6_sub2(pActwk);
-    iD0 = -iD0 + ((Sint16 *)pActwk)[27];
+    iD0 = -iD0 + work->origin_y;
     pActwk->yposi.w.h = iD0;
 }
 
 void kd_mv_down(sprite_status *pActwk) {
     Sint16 iD0;
+    kdai6_work *work = kdai6_get_work(pActwk);
 
     iD0 = kd_dair6_sub2(pActwk);
-    pActwk->yposi.w.h = iD0 + ((Sint16 *)pActwk)[27];
+    pActwk->yposi.w.h = iD0 + work->origin_y;
 }
 
 void kd_mv_right(sprite_status *pActwk) {
     Sint16 iD0;
     Sint32 lXsv;
     int_union lD0;
+    kdai6_work *work = kdai6_get_work(pActwk);
 
     lXsv = pActwk->xposi.l;
     iD0 = kd_dair6_sub2(pActwk);
-    pActwk->xposi.w.h = iD0 + ((Sint16 *)pActwk)[29];
+    pActwk->xposi.w.h = iD0 + work->origin_x;
 
     lD0.l = pActwk->xposi.l - lXsv;
     lD0.l >>= 8;
@@ -242,10 +282,11 @@ void kd_mv_left(sprite_status *pActwk) {
     Sint16 iD0;
     Sint32 lXsv;
     int_union lD0;
+    kdai6_work *work = kdai6_get_work(pActwk);
 
     lXsv = pActwk->xposi.l;
     iD0 = kd_dair6_sub2(pActwk);
-    pActwk->xposi.w.h = -iD0 + ((Sint16 *)pActwk)[29];
+    pActwk->xposi.w.h = -iD0 + work->origin_x;
 
     lD0.l = pActwk->xposi.l - lXsv;
     lD0.l >>= 8;
@@ -256,6 +297,7 @@ Sint16 kd_dair6_sub2(sprite_status *pActwk) {
     Sint16 iSin;
     Sint16 iCos;
     Uint16 wD0;
+    kdai6_work *work = kdai6_get_work(pActwk);
 
     wD0 = gametimer.w & 255;
     sinset(wD0, &iSin, &iCos);
@@ -264,6 +306,6 @@ Sint16 kd_dair6_sub2(sprite_status *pActwk) {
     iSin += iSin;
     iSin /= 16;
 
-    ++pActwk->actfree[16];
+    ++work->wobble_counter;
     return iSin;
 }

@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "equ.h"
 #include "ring.h"
 #include "action.h"
@@ -39,6 +41,25 @@ Uint8 ringchg1[6] = {7, 0, 1, 2, 3, 255};
 Uint8 ringchg2[6] = {7, 0, 1, 2, 3, 255};
 Uint8 *ringchg[3] = {ringchg0, ringchg1, ringchg2};
 
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 reserved0[8];
+    Sint16 spawn_x_anchor;
+    Uint8 ring_counter;
+} ring_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(ring_work, spawn_x_anchor) == 8,
+               "ring_work.spawn_x_anchor must map to offset 8");
+_Static_assert(offsetof(ring_work, ring_counter) == 10,
+               "ring_work.ring_counter must map to offset 10");
+_Static_assert(sizeof(ring_work) <= sizeof(((sprite_status *)0)->actfree),
+               "ring_work must fit in sprite_status.actfree");
+
+static ring_work *ring_work_get(sprite_status *pActwk) {
+    return (ring_work *)pActwk->actfree;
+}
+
 void ring(sprite_status *pActwk) {
     void (*ring_move_tbl[5])(sprite_status *) = {&ringinit, &ringmove, &ringget,
                                                  &ringdie, &ringerase};
@@ -56,6 +77,7 @@ void ringinit(sprite_status *pActwk) {
     Sint16 d0, d1, d2, d3, d5, d6;
     char d4;
     sprite_status *new_actwk;
+    ring_work *new_work;
 
     d1 = time_flag & 127;
     if (time_flag & 128) {
@@ -117,7 +139,8 @@ label1:
         new_actwk->actno = 16;
         new_actwk->r_no0 = 2;
         new_actwk->xposi.w.h = d2;
-        ((Sint16 *)new_actwk)[27] = pActwk->xposi.w.h;
+        new_work = ring_work_get(new_actwk);
+        new_work->spawn_x_anchor = pActwk->xposi.w.h;
         new_actwk->yposi.w.h = d3;
         new_actwk->patbase = ringpat;
         new_actwk->sproffset = 42926;
@@ -135,7 +158,7 @@ label1:
         new_actwk->sprhsize = 8;
         new_actwk->sprvsize = 8;
         new_actwk->cdsts = pActwk->cdsts;
-        new_actwk->actfree[10] = ring_counter;
+        new_work->ring_counter = ring_counter;
         new_actwk->mstno.b.h = 1;
     label3:
         ++ring_counter;
@@ -164,10 +187,11 @@ label1:
 }
 
 void ringmove(sprite_status *pActwk) {
+    ring_work *work = ring_work_get(pActwk);
     Uint16 d0;
 
     if (pActwk->actflg >= 0) {
-        d0 = (((Uint16 *)pActwk)[27] & 65408) -
+        d0 = ((Uint16)work->spawn_x_anchor & 65408) -
              (((uint_union *)&scra_h_posit)->w.h - 128 & 65408);
         if (d0 > 640) {
             ringerase(pActwk);
@@ -182,6 +206,7 @@ void ringmove(sprite_status *pActwk) {
 }
 
 void ringget(sprite_status *pActwk) {
+    ring_work *work = ring_work_get(pActwk);
     Sint16 d0, d1;
 
     pActwk->r_no0 += 2;
@@ -200,7 +225,7 @@ void ringget(sprite_status *pActwk) {
             d1 = 2;
     }
 
-    flagwork[d0 + d1] |= 1 << (pActwk->actfree[10] - 1);
+    flagwork[d0 + d1] |= 1 << (work->ring_counter - 1);
     ringdie(pActwk);
 }
 

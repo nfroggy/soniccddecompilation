@@ -1,6 +1,7 @@
 #include "../equ.h"
 #include "scr11a.h"
 #include "../impfuncs.h"
+#include "../player_work.h"
 #include "../save.h"
 #include "../scrchk.h"
 #include "col1a.h"
@@ -167,7 +168,7 @@ void scroll(void) {
     vscroll.w.h = scra_v_posit.w.h;
     vscroll.w.l = scrb_v_posit.w.h;
 
-    if ((actwk[0].actfree[2] & 2) != 0 && scra_hz != 0) {
+    if ((player_work_get(&actwk[0])->status_flags & 2) != 0 && scra_hz != 0) {
         HspdWk = actwk[0].xspeed.w << 8;
     } else {
         HspdWk = 0;

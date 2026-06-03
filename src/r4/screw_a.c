@@ -3,6 +3,7 @@
 #include "../action.h"
 #include "../actset.h"
 #include "playsub4.h"
+#include <stddef.h>
 
 #if defined(R41A) || defined(R42A)
 #define SPRITE_SCREWA_BASE 457
@@ -16,6 +17,26 @@
 
 static Uint8 pchg_00[7] = {1, 0, 1, 2, 3, 4, 255};
 static Uint8 *pchg[1] = {pchg_00};
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 reserved0[20];
+    Uint8 switch_latched;
+    Uint8 animation_enabled;
+} screw_a_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(screw_a_work, switch_latched) == 20,
+               "screw_a_work.switch_latched offset");
+_Static_assert(offsetof(screw_a_work, animation_enabled) == 21,
+               "screw_a_work.animation_enabled offset");
+_Static_assert(sizeof(screw_a_work) <= sizeof(((sprite_status *)0)->actfree),
+               "screw_a_work fits in actfree");
+
+static screw_a_work *screw_a_work_get(sprite_status *pActwk) {
+    return (screw_a_work *)pActwk->actfree;
+}
+
 static sprite_pattern screw0_pat00 = {1, {{-16, -8, 0, SPRITE_SCREWA_BASE}}};
 static sprite_pattern screw0_pat01 = {1,
                                       {{-12, -8, 0, SPRITE_SCREWA_BASE + 1}}};
@@ -39,6 +60,8 @@ sprite_pattern *pat_screw1[5] = {&screw1_pat00, &screw1_pat01, &screw1_pat02,
                                  &screw1_pat03, &screw1_pat04};
 
 void screw(sprite_status *pActwk) {
+    screw_a_work *work = screw_a_work_get(pActwk);
+
     if (!pActwk->r_no0) {
 
         pActwk->r_no0 += 2;
@@ -47,7 +70,7 @@ void screw(sprite_status *pActwk) {
         pActwk->sproffset = 17280;
 
         if (pActwk->userflag.b.h & 128) {
-            pActwk->actfree[21] = 255;
+            work->animation_enabled = 255;
         }
 
         if (!(pActwk->userflag.b.h & 2)) {
@@ -66,14 +89,14 @@ void screw(sprite_status *pActwk) {
         }
     }
 
-    if (!(pActwk->userflag.b.l & 128) && !pActwk->actfree[20] &&
+    if (!(pActwk->userflag.b.l & 128) && !work->switch_latched &&
         switchflag[pActwk->userflag.b.l]) {
 
-        pActwk->actfree[20] = 1;
-        pActwk->actfree[21] = ~pActwk->actfree[21];
+        work->switch_latched = 1;
+        work->animation_enabled = ~work->animation_enabled;
     }
 
-    if (!pActwk->actfree[21]) {
+    if (!work->animation_enabled) {
         pActwk->patno = 0;
     } else {
         patchg(pActwk, pchg);

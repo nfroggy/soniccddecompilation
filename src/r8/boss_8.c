@@ -303,7 +303,7 @@ static void egg8_move_l(sprite_status *pActwk, sprite_status *pMecawk) {
 }
 
 static void egg8_move_d(sprite_status *pActwk, sprite_status *pMecawk) {
-    pActwk->yposi.l += ((Sint32 *)pActwk)[4];
+    pActwk->yposi.l += sprite_status_get_xspeed_yspeed(pActwk);
     if (pActwk->yposi.w.h >= ((Sint16 *)pActwk)[30]) {
 
         pActwk->yposi.w.h = ((Sint16 *)pActwk)[30];
@@ -312,7 +312,7 @@ static void egg8_move_d(sprite_status *pActwk, sprite_status *pMecawk) {
 }
 
 static void egg8_move_u(sprite_status *pActwk, sprite_status *pMecawk) {
-    pActwk->yposi.l -= ((Sint32 *)pActwk)[4];
+    pActwk->yposi.l -= sprite_status_get_xspeed_yspeed(pActwk);
     if (pActwk->yposi.w.h <= ((Sint16 *)pActwk)[30]) {
 
         pActwk->yposi.w.h = ((Sint16 *)pActwk)[30];
@@ -743,7 +743,7 @@ static void egg8target_ini(sprite_status *pActwk, sprite_status *pMecawk) {
         ((Sint32 *)pActwk)[14] = xwk.l;
 
         ywk.l = (380 - pActwk->yposi.w.h) * 16 / 90 * 4096;
-        ((Sint32 *)pActwk)[4] = ywk.l;
+        sprite_status_set_xspeed_yspeed(pActwk, ywk.l);
 
         if (pActwk->actfree[16] != 2) {
 
@@ -764,7 +764,7 @@ static void egg8target_ini(sprite_status *pActwk, sprite_status *pMecawk) {
         ((Sint32 *)pActwk)[14] = xwk.l;
 
         ywk.l = (394 - pActwk->yposi.w.h) * 16 / 90 * 4096;
-        ((Sint32 *)pActwk)[4] = ywk.l;
+        sprite_status_set_xspeed_yspeed(pActwk, ywk.l);
 
         if (pActwk->actfree[16] != 2 && xSav >= 0) {
             pMecawk->actfree[12] = 2;
@@ -791,20 +791,21 @@ static void egg8target_move(sprite_status *pActwk, sprite_status *pMecawk) {
     }
 
     pActwk->xposi.l += ((Sint32 *)pActwk)[14];
-    pActwk->yposi.l += ((Sint32 *)pActwk)[4];
+    pActwk->yposi.l += sprite_status_get_xspeed_yspeed(pActwk);
 
     if (pActwk->yposi.w.h >= ywk) {
 
         pActwk->yposi.w.h = ywk;
         ((Sint32 *)pActwk)[14] *= -1;
-        ((Sint32 *)pActwk)[4] *= -1;
+        sprite_status_set_xspeed_yspeed(
+            pActwk, -sprite_status_get_xspeed_yspeed(pActwk));
         pActwk->actfree[3] |= 4;
     }
 }
 
 static void egg8_targetreset(sprite_status *pActwk, sprite_status *pMecawk) {
     pActwk->xposi.l += ((Sint32 *)pActwk)[14];
-    pActwk->yposi.l += ((Sint32 *)pActwk)[4];
+    pActwk->yposi.l += sprite_status_get_xspeed_yspeed(pActwk);
 
     if (pActwk->yposi.w.h <= 316) {
 
@@ -1761,7 +1762,7 @@ static Sint32 egg8hane_fire1(sprite_status *pActwk, sprite_status *pMecawk,
                                                   pActwk->actfree[14]];
 
                 ((Sint32 *)pActwk)[14] = 0;
-                ((Sint32 *)pActwk)[4] = 229376;
+                sprite_status_set_xspeed_yspeed(pActwk, 229376);
             } else {
                 pActwk->patbase = egg8hane0_pat2;
 
@@ -1781,7 +1782,7 @@ static Sint32 egg8hane_fire1(sprite_status *pActwk, sprite_status *pMecawk,
 
                         pActwk->xposi.w.h = 4040;
                         ((Sint32 *)pActwk)[14] = -211897;
-                        ((Sint32 *)pActwk)[4] = 87759;
+                        sprite_status_set_xspeed_yspeed(pActwk, 87759);
                     } else {
                         pActwk->patno = 13;
 
@@ -1795,7 +1796,7 @@ static Sint32 egg8hane_fire1(sprite_status *pActwk, sprite_status *pMecawk,
 
                         pActwk->xposi.w.h = 3640;
                         ((Sint32 *)pActwk)[14] = 211897;
-                        ((Sint32 *)pActwk)[4] = 87759;
+                        sprite_status_set_xspeed_yspeed(pActwk, 87759);
                     }
                 } else if (!pActwk->actfree[14]) {
 
@@ -1803,12 +1804,12 @@ static Sint32 egg8hane_fire1(sprite_status *pActwk, sprite_status *pMecawk,
                                                       pActwk->actfree[14]];
 
                     ((Sint32 *)pActwk)[14] = 0;
-                    ((Sint32 *)pActwk)[4] = 229376;
+                    sprite_status_set_xspeed_yspeed(pActwk, 229376);
                 } else {
 
                     pActwk->xposi.w.h = actwk[0].xposi.w.h;
                     ((Sint32 *)pActwk)[14] = 0;
-                    ((Sint32 *)pActwk)[4] = 229376;
+                    sprite_status_set_xspeed_yspeed(pActwk, 229376);
                 }
             }
         }
@@ -1817,7 +1818,7 @@ static Sint32 egg8hane_fire1(sprite_status *pActwk, sprite_status *pMecawk,
 
     case 4:
         pActwk->xposi.l += ((Sint32 *)pActwk)[14];
-        pActwk->yposi.l += ((Sint32 *)pActwk)[4];
+        pActwk->yposi.l += sprite_status_get_xspeed_yspeed(pActwk);
 
         if (pActwk->patno != 0) {
 
@@ -1904,7 +1905,7 @@ static Sint32 egg8hane_kill(sprite_status *pActwk, sprite_status *pMecawk,
         pActwk->colicnt = 0;
 
         ((Sint32 *)pActwk)[14] = 65536;
-        ((Sint32 *)pActwk)[4] = -196608;
+        sprite_status_set_xspeed_yspeed(pActwk, -196608);
 
         if (pActwk->patno > 8) {
             ((Sint32 *)pActwk)[14] *= -1;
@@ -1923,8 +1924,8 @@ static Sint32 egg8hane_kill(sprite_status *pActwk, sprite_status *pMecawk,
     }
 
     pActwk->xposi.l += ((Sint32 *)pActwk)[14];
-    pActwk->yposi.l += ((Sint32 *)pActwk)[4];
-    ((Sint32 *)pActwk)[4] += 12288;
+    pActwk->yposi.l += sprite_status_get_xspeed_yspeed(pActwk);
+    sprite_status_add_xspeed_yspeed(pActwk, 12288);
 
     if (pActwk->yposi.w.h >= 480) {
         frameout(pActwk);
@@ -2172,7 +2173,8 @@ static void egg8_spd_set(sprite_status *pActwk, sprite_status *pMecawk) {
 
     ((Sint32 *)pActwk)[14] = spd_tbl[pActwk->actfree[16]].X_Speed;
 
-    ((Sint32 *)pActwk)[4] = spd_tbl[pActwk->actfree[16]].Y_Speed;
+    sprite_status_set_xspeed_yspeed(
+        pActwk, spd_tbl[pActwk->actfree[16]].Y_Speed);
 
     pMecawk->actfree[13] = spd_tbl[pActwk->actfree[16]].Roll_Speed;
 }

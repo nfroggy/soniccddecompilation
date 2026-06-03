@@ -1,8 +1,11 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "hashi5.h"
 #include "../action.h"
 #include "../actset.h"
 #include "../etc.h"
+#include "../player_work.h"
 #include "../ridechk.h"
 
 static void hashi5_init(sprite_status *pActwk);
@@ -12,6 +15,45 @@ static void hashi5_posiget1p(sprite_status *pActwk);
 static void hashi5_rideplayset1p(sprite_status *pActwk);
 static void hashi5_posiset(sprite_status *pActwk);
 static Sint32 hashi5_ridechk1p(sprite_status *pActwk);
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 child_indices[8];
+    Sint16 origin_y;
+    Sint16 parent_index;
+    Sint16 origin_x;
+    Uint8 unused14[2];
+    Uint8 bend_angle;
+    Uint8 unused17;
+    Uint8 segment_order;
+    Uint8 ride_segment;
+    Uint8 unused20;
+    Uint8 remove_flag;
+} hashi5_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(hashi5_work, child_indices) == 0,
+               "hashi5_work.child_indices offset");
+_Static_assert(offsetof(hashi5_work, origin_y) == 8,
+               "hashi5_work.origin_y offset");
+_Static_assert(offsetof(hashi5_work, parent_index) == 10,
+               "hashi5_work.parent_index offset");
+_Static_assert(offsetof(hashi5_work, origin_x) == 12,
+               "hashi5_work.origin_x offset");
+_Static_assert(offsetof(hashi5_work, bend_angle) == 16,
+               "hashi5_work.bend_angle offset");
+_Static_assert(offsetof(hashi5_work, segment_order) == 18,
+               "hashi5_work.segment_order offset");
+_Static_assert(offsetof(hashi5_work, ride_segment) == 19,
+               "hashi5_work.ride_segment offset");
+_Static_assert(offsetof(hashi5_work, remove_flag) == 21,
+               "hashi5_work.remove_flag offset");
+_Static_assert(sizeof(hashi5_work) <= sizeof(((sprite_status *)0)->actfree),
+               "hashi5_work fits in actfree");
+
+static hashi5_work *hashi5_get_work(sprite_status *pActwk) {
+    return (hashi5_work *)pActwk->actfree;
+}
 
 static sprite_pattern hashi5_pat0 = {1, {{-8, -8, 0, 429}}};
 static sprite_pattern hashi5_pat1;
@@ -64,6 +106,7 @@ void hashi5(sprite_status *pActwk) {
 static void hashi5_init(sprite_status *pActwk) {
     sprite_status *pNewactwk;
     Sint32 i;
+    hashi5_work *work = hashi5_get_work(pActwk);
 
     Sint16 xofsettbl[8] = {48, 32, 16, 0, -16, -32, -48, -64};
 
@@ -72,8 +115,8 @@ static void hashi5_init(sprite_status *pActwk) {
     pActwk->sprpri = 3;
     pActwk->sproffset = 17152;
     pActwk->patbase = hashi5pat;
-    ((Sint16 *)pActwk)[29] = pActwk->xposi.w.h;
-    ((Sint16 *)pActwk)[27] = pActwk->yposi.w.h;
+    work->origin_x = pActwk->xposi.w.h;
+    work->origin_y = pActwk->yposi.w.h;
     pActwk->sprhsize = 64;
     pActwk->sprvsize = 8;
     pActwk->patno = 1;
@@ -81,11 +124,11 @@ static void hashi5_init(sprite_status *pActwk) {
     for (i = 0; i < 8; ++i) {
 
         if (actwkchk(&pNewactwk) == 0) {
-            pActwk->actfree[i] = (char)(pNewactwk - actwk);
+            work->child_indices[i] = (Uint8)(pNewactwk - actwk);
             pNewactwk->actno = 47;
             pNewactwk->r_no0 = 4;
-            ((Sint16 *)pNewactwk)[29] = pActwk->xposi.w.h;
-            ((Sint16 *)pNewactwk)[27] = pActwk->yposi.w.h;
+            hashi5_get_work(pNewactwk)->origin_x = pActwk->xposi.w.h;
+            hashi5_get_work(pNewactwk)->origin_y = pActwk->yposi.w.h;
             pNewactwk->yposi.w.h = pActwk->yposi.w.h;
             pNewactwk->actflg |= 4;
             pNewactwk->sprpri = 3;
@@ -93,33 +136,35 @@ static void hashi5_init(sprite_status *pActwk) {
             pNewactwk->patbase = hashi5pat;
             pNewactwk->sprvsize = 8;
             pNewactwk->sprhsize = 8;
-            ((Sint16 *)pNewactwk)[28] = pActwk - actwk;
-            pNewactwk->actfree[21] = 255;
+            hashi5_get_work(pNewactwk)->parent_index = pActwk - actwk;
+            hashi5_get_work(pNewactwk)->remove_flag = 255;
 
-            pNewactwk->actfree[18] = 7 - i;
+            hashi5_get_work(pNewactwk)->segment_order = 7 - i;
             pNewactwk->xposi.w.h = xofsettbl[7 - i] + pActwk->xposi.w.h;
         }
     }
 }
 
 static void hashi5_move(sprite_status *pActwk) {
-    pActwk->actfree[19] = 0;
+    hashi5_work *work = hashi5_get_work(pActwk);
+
+    work->ride_segment = 0;
     if (hashi5_ridechk1p(pActwk) != 0) {
         hashi5_posiget1p(pActwk);
     }
-    if (pActwk->actfree[19]) {
-        if (pActwk->actfree[16] != 64) {
-            pActwk->actfree[16] += 4;
+    if (work->ride_segment) {
+        if (work->bend_angle != 64) {
+            work->bend_angle += 4;
         }
         hashi5_posiset(pActwk);
 
-        if (pActwk->actfree[19]) {
+        if (work->ride_segment) {
             hashi5_rideplayset1p(pActwk);
         }
     } else {
 
-        if (pActwk->actfree[16]) {
-            pActwk->actfree[16] -= 4;
+        if (work->bend_angle) {
+            work->bend_angle -= 4;
             hashi5_posiset(pActwk);
         }
     }
@@ -128,9 +173,11 @@ static void hashi5_move(sprite_status *pActwk) {
 }
 
 static void hashi5_move2(sprite_status *pActwk) {
-    if (actwk[((Sint16 *)pActwk)[28]].actno != 47)
+    hashi5_work *work = hashi5_get_work(pActwk);
+
+    if (actwk[work->parent_index].actno != 47)
         frameout(pActwk);
-    if (actwk[((Sint16 *)pActwk)[28]].actfree[21])
+    if (hashi5_get_work(&actwk[work->parent_index])->remove_flag)
         frameout(pActwk);
 }
 
@@ -142,20 +189,21 @@ static void hashi5_posiget1p(sprite_status *pActwk) {
         if (!(wD0 & 32768)) {
             if (wD0 < 128) {
 
-                pActwk->actfree[19] = wD0 >> 4;
+                hashi5_get_work(pActwk)->ride_segment = wD0 >> 4;
                 return;
             }
         }
     }
 
-    pActwk->actfree[19] = 0;
+    hashi5_get_work(pActwk)->ride_segment = 0;
 }
 
 static void hashi5_rideplayset1p(sprite_status *pActwk) {
     Uint8 bD0;
+    hashi5_work *work = hashi5_get_work(pActwk);
 
-    bD0 = pActwk->actfree[19];
-    actwk[0].yposi.w.h = actwk[pActwk->actfree[bD0]].yposi.w.h - 8 -
+    bD0 = work->ride_segment;
+    actwk[0].yposi.w.h = actwk[work->child_indices[bD0]].yposi.w.h - 8 -
                          (Sint16)(Uint16)actwk[0].sprvsize;
 }
 
@@ -167,24 +215,25 @@ static void hashi5_posiset(sprite_status *pActwk) {
     Uint8 bD5;
     Uint8 *pA2;
     Uint8 *pA3;
+    hashi5_work *work = hashi5_get_work(pActwk);
 
-    wD2 = (Uint16)pActwk->actfree[19];
+    wD2 = (Uint16)work->ride_segment;
 
-    sinset(pActwk->actfree[16], (Sint16 *)&Sin, (Sint16 *)&Cos);
+    sinset(work->bend_angle, (Sint16 *)&Sin, (Sint16 *)&Cos);
     bD5 = hashitbl[wD2 + 128];
     pA3 = &hashitbl2[(wD2 + 128 & 15) * 16];
-    pA2 = pActwk->actfree;
+    pA2 = work->child_indices;
 
     for (; wD2 >= 0; --wD2) {
         pSubactwk = &actwk[*pA2++];
         lD0.l = 0;
         lD0.b.b4 = *pA3++;
         lD0.l = (lD0.w.l + 1) * bD5 * Sin;
-        pSubactwk->yposi.w.h = ((Sint16 *)pSubactwk)[27] + lD0.w.h;
+        pSubactwk->yposi.w.h = hashi5_get_work(pSubactwk)->origin_y + lD0.w.h;
     }
 
     lD0.l = 0;
-    lD0.b.b4 = pActwk->actfree[19];
+    lD0.b.b4 = work->ride_segment;
     lD0.b.b4 = -(lD0.b.b4 - 7);
     if (lD0.b.b4 >= 0) {
         wD2 = lD0.w.l;
@@ -198,7 +247,8 @@ static void hashi5_posiset(sprite_status *pActwk) {
             lD0.l = 0;
             lD0.w.l = (Uint16)(*--pA3) + 1;
             lD0.l = (lD0.w.l + 1) * bD5 * Sin;
-            pSubactwk->yposi.w.h = ((Sint16 *)pSubactwk)[27] + lD0.w.h;
+            pSubactwk->yposi.w.h =
+                hashi5_get_work(pSubactwk)->origin_y + lD0.w.h;
         }
     }
 }
@@ -237,8 +287,8 @@ static Sint32 hashi5_ridechk1p(sprite_status *pActwk) {
         }
     }
 
-    if (actwk[0].actfree[19] == pActwk - actwk) {
-        actwk[0].actfree[14] = 0;
+    if (player_work_get(&actwk[0])->ride_actor_index == pActwk - actwk) {
+        player_work_get(&actwk[0])->jump_lock = 0;
         actwk[0].cddat &= 247;
     }
 

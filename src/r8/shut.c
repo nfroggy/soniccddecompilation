@@ -1,8 +1,11 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "shut.h"
 #include "../action.h"
 #include "../actset.h"
 #include "../etc.h"
+#include "../player_work.h"
 #include "../playsub.h"
 #include "../ridechk.h"
 #include "scr81a.h"
@@ -23,6 +26,26 @@ static void kaiten_move2(sprite_status *loopwk);
 static Sint16 ridechk_k(sprite_status *loopwk);
 static void kaiten_bou0(sprite_status *loopwk);
 static void kaiten_bou1(sprite_status *loopwk);
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint16 origin_x;
+    Uint8 counter;
+    Uint8 angle;
+    Uint8 return_angle;
+} shut_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(shut_work, origin_x) == 0, "shut_work.origin_x offset");
+_Static_assert(offsetof(shut_work, counter) == 2, "shut_work.counter offset");
+_Static_assert(offsetof(shut_work, angle) == 3, "shut_work.angle offset");
+_Static_assert(offsetof(shut_work, return_angle) == 4, "shut_work.return_angle offset");
+_Static_assert(sizeof(shut_work) <= sizeof(((sprite_status *)0)->actfree),
+               "shut_work fits in actfree");
+
+static shut_work *shut_get_work(sprite_status *shutwk) {
+    return (shut_work *)shutwk->actfree;
+}
 
 static Uint8 kaitenchg0[4] = {2, 0, 1, 255};
 static Uint8 *kaitenchg[1] = {kaitenchg0};
@@ -60,8 +83,9 @@ void shut(sprite_status *shutwk) {
 
 static void shut_init(sprite_status *shutwk) {
     sprite_status *new_actwk;
+    shut_work *work = shut_get_work(shutwk);
 
-    ((Sint16 *)shutwk)[23] = shutwk->xposi.w.h;
+    work->origin_x = shutwk->xposi.w.h;
     shutwk->userflag.b.h = 1;
     shutwk->actflg |= 1;
 
@@ -80,7 +104,8 @@ static void shut_init(sprite_status *shutwk) {
         return;
     }
     new_actwk->actno = 61;
-    new_actwk->xposi.w.h = ((Sint16 *)new_actwk)[23] = ((Sint16 *)shutwk)[23];
+    shut_get_work(new_actwk)->origin_x = work->origin_x;
+    new_actwk->xposi.w.h = work->origin_x;
 
     new_actwk->yposi.w.h = shutwk->yposi.w.h;
     if (new_actwk->userflag.b.h)
@@ -103,10 +128,11 @@ void shut_wait(sprite_status *shutwk) {
 
 void shut_move(sprite_status *shutwk) {
     Uint16 cal_xposi, block_wrt_x, block_wrt_y, i = 0;
+    shut_work *work = shut_get_work(shutwk);
 
     block_wrt_x = cal_xposi = shutwk->xposi.w.h - 8;
     if (!(cal_xposi & 15)) {
-        if (++shutwk->actfree[2] >= 17) {
+        if (++work->counter >= 17) {
             frameout_s0(shutwk);
             return;
         }
@@ -155,7 +181,7 @@ void kaiten(sprite_status *loopwk) {
         frameout_s(loopwk);
         return;
     }
-    frameout_s00(loopwk, ((Sint16 *)loopwk)[23]);
+    frameout_s00(loopwk, shut_get_work(loopwk)->origin_x);
 }
 
 static void kaiten_init(sprite_status *loopwk) {
@@ -199,19 +225,22 @@ static void kaiten_init(sprite_status *loopwk) {
 
         new_actwk->sprhsize = 8;
         new_actwk->sprvsize = 80;
-        new_actwk->actfree[3] = tbl[2 - i];
+        shut_work *new_work = shut_get_work(new_actwk);
+
+        new_work->angle = tbl[2 - i];
         new_actwk->patno = 2;
         new_actwk->r_no0 = 8;
-        ((Sint16 *)new_actwk)[23] = loopwk->xposi.w.h;
+        new_work->origin_x = loopwk->xposi.w.h;
         new_actwk->yposi.w.h = loopwk->yposi.w.h - 88;
-        sinset(new_actwk->actfree[3], &sin_tmp, &cos_tmp);
+        sinset(new_work->angle, &sin_tmp, &cos_tmp);
         cos_data = cos_tmp << 5 >> 8;
-        new_actwk->xposi.w.h = ((Sint16 *)new_actwk)[23] + (Sint16)cos_data;
+        new_actwk->xposi.w.h = new_work->origin_x + (Sint16)cos_data;
     }
 }
 
 void kaiten_move0(sprite_status *loopwk) {
     Sint16 cal_xposi;
+    shut_work *work = shut_get_work(loopwk);
 
     if (loopwk->userflag.b.h) {
         if (actwk[0].mstno.b.h >= 51)
@@ -220,18 +249,18 @@ void kaiten_move0(sprite_status *loopwk) {
     }
 
     if (ridechk_k(loopwk) == 0) {
-        loopwk->actfree[2] = 0;
+        work->counter = 0;
         return;
     }
     cal_xposi = loopwk->xposi.w.h - actwk[0].xposi.w.h + 8;
     if (cal_xposi < 0 || cal_xposi >= 16) {
-        loopwk->actfree[2] = 0;
+        work->counter = 0;
         return;
     }
-    if (loopwk->actfree[2] & 1)
+    if (work->counter & 1)
         return;
-    loopwk->actfree[2] |= 1;
-    actwk[0].actfree[2] |= 1;
+    work->counter |= 1;
+    player_work_get(&actwk[0])->status_flags |= 1;
     actwk[0].xposi.w.h = loopwk->xposi.w.h;
     actwk[0].xspeed.w = actwk[0].mspeed.w = 0;
     actwk[0].mstno.b.h = 51;
@@ -251,7 +280,7 @@ void kaiten_move1(sprite_status *loopwk) {
 }
 
 void kaiten_move2(sprite_status *loopwk) {
-    actwk[0].actfree[2] &= 254;
+    player_work_get(&actwk[0])->status_flags &= 254;
     ridechk_k(loopwk);
     prio_flag ^= 1;
     actwk[0].actflg ^= 1;
@@ -265,20 +294,23 @@ void kaiten_move2(sprite_status *loopwk) {
 Sint16 ridechk_k(sprite_status *loopwk) { ridechk(loopwk, &actwk[0]); }
 
 void kaiten_bou0(sprite_status *loopwk) {
+    shut_work *work = shut_get_work(loopwk);
+
     if (actwk[0].mstno.b.h < 51)
         return;
     loopwk->r_no0 += 2;
-    loopwk->actfree[4] = loopwk->actfree[3] + 128;
+    work->return_angle = work->angle + 128;
 }
 
 void kaiten_bou1(sprite_status *loopwk) {
     Uint8 cal_dir;
     Sint16 sin_tmp, cos_tmp;
     Sint32 cos_data;
+    shut_work *work = shut_get_work(loopwk);
 
     if (actwk[0].mstno.b.h < 51) {
         loopwk->r_no0 -= 2;
-        loopwk->actfree[3] = loopwk->actfree[4];
+        work->angle = work->return_angle;
     } else {
         cal_dir = 4;
         if (!(actwk[0].cddat & 1)) {
@@ -289,13 +321,13 @@ void kaiten_bou1(sprite_status *loopwk) {
             if (!prio_flag)
                 cal_dir = -cal_dir;
         }
-        loopwk->actfree[3] += cal_dir;
+        work->angle += cal_dir;
     }
-    sinset(loopwk->actfree[3], &sin_tmp, &cos_tmp);
+    sinset(work->angle, &sin_tmp, &cos_tmp);
     cos_data = cos_tmp * 24 >> 8;
-    loopwk->xposi.w.h = ((Sint16 *)loopwk)[23] + (Sint16)cos_data;
+    loopwk->xposi.w.h = work->origin_x + (Sint16)cos_data;
 
     loopwk->sprpri = 1;
-    if ((char)loopwk->actfree[3] >= 0)
+    if ((char)work->angle >= 0)
         loopwk->sprpri = 4;
 }

@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "equ.h"
 #include "fcol.h"
 
@@ -5,6 +7,22 @@ extern Uint8 scdtblwk[257][16];
 extern Uint8 scddirtbl[256];
 extern Uint8 scdtblwk2[257][16];
 extern Uint8 mapwka[8][64];
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 reserved0[14];
+    Uint8 force_position_adjust;
+} fcol_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(fcol_work, force_position_adjust) == 14,
+               "fcol_work.force_position_adjust must map to offset 14");
+_Static_assert(sizeof(fcol_work) <= sizeof(((sprite_status *)0)->actfree),
+               "fcol_work must fit in sprite_status.actfree");
+
+static fcol_work *fcol_work_get(sprite_status *pActwk) {
+    return (fcol_work *)pActwk->actfree;
+}
 
 Sint16 fcol(sprite_status *pActwk) {
     Sint16 iColliVal;
@@ -61,6 +79,7 @@ Sint16 fcol(sprite_status *pActwk) {
 }
 
 Sint16 fcol_d(sprite_status *pActwk) {
+    fcol_work *work = fcol_work_get(pActwk);
     Sint16 iXposi, iYposi;
     Sint16 iScd, iScd0, iScd1;
     char *cpDirStk;
@@ -103,7 +122,7 @@ Sint16 fcol_d(sprite_status *pActwk) {
         return 1;
     }
 
-    if (pActwk->actfree[14] == 0) {
+    if (work->force_position_adjust == 0) {
 
         pActwk->cddat |= 2;
         pActwk->cddat &= 223;
@@ -116,6 +135,7 @@ Sint16 fcol_d(sprite_status *pActwk) {
 }
 
 Sint16 fcol_r(sprite_status *pActwk) {
+    fcol_work *work = fcol_work_get(pActwk);
     Sint16 iXposi, iYposi;
     Sint16 scd0, scd1;
     char *cpDirStk;
@@ -141,7 +161,7 @@ Sint16 fcol_r(sprite_status *pActwk) {
 
     if (scd0 > 14) {
 
-        if (pActwk->actfree[14] == 0) {
+        if (work->force_position_adjust == 0) {
 
             pActwk->cddat |= 2;
             pActwk->cddat &= 223;
@@ -156,6 +176,7 @@ Sint16 fcol_r(sprite_status *pActwk) {
 }
 
 Sint16 fcol_u(sprite_status *pActwk) {
+    fcol_work *work = fcol_work_get(pActwk);
     Sint16 iXposi, iYposi;
     Sint16 scd0, scd1;
     char *cpDirStk;
@@ -182,7 +203,7 @@ Sint16 fcol_u(sprite_status *pActwk) {
 
     if (scd0 > 14) {
 
-        if (pActwk->actfree[14] == 0) {
+        if (work->force_position_adjust == 0) {
 
             pActwk->cddat |= 2;
             pActwk->cddat &= 223;
@@ -197,6 +218,7 @@ Sint16 fcol_u(sprite_status *pActwk) {
 }
 
 Sint16 fcol_l(sprite_status *pActwk) {
+    fcol_work *work = fcol_work_get(pActwk);
     Sint16 iXposi, iYposi;
     Sint16 scd0, scd1;
     char *cpDirStk;
@@ -222,7 +244,7 @@ Sint16 fcol_l(sprite_status *pActwk) {
 
     if (scd0 > 14) {
 
-        if (pActwk->actfree[14] == 0) {
+        if (work->force_position_adjust == 0) {
 
             pActwk->cddat |= 2;
             pActwk->cddat &= 223;

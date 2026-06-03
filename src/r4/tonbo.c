@@ -44,6 +44,23 @@ sprite_pattern *pat_tonbo_e[3] = {&spr_tonbo_e_00, &spr_tonbo_e_01,
 sprite_pattern *pat_tonbo_b[3] = {&spr_tonbo_b_00, &spr_tonbo_b_01,
                                   &spr_tonbo_b_02};
 
+#pragma pack(push, 1)
+typedef struct {
+    Sint32 base_y;
+    short_union angle;
+    Sint32 x_velocity;
+    Sint16 turn_step;
+    Sint16 turn_timer;
+    Sint16 turn_period;
+    Uint8 unused[4];
+    Sint16 origin_x;
+} tonbo_work;
+#pragma pack(pop)
+
+static tonbo_work *get_work(sprite_status *pActwk) {
+    return (tonbo_work *)pActwk->actfree;
+}
+
 void tonbo(sprite_status *pActwk) {
     Sint16 temp;
     static void (*act_tbl[2])(sprite_status *) = {&act_init, &act_lr};
@@ -52,11 +69,13 @@ void tonbo(sprite_status *pActwk) {
         return;
     act_tbl[pActwk->r_no0 / 2](pActwk);
     actionsub(pActwk);
-    temp = ((Sint16 *)pActwk)[33];
+    temp = get_work(pActwk)->origin_x;
     frameout_s00(pActwk, temp);
 }
 
 static void act_init(sprite_status *pActwk) {
+    tonbo_work *work = get_work(pActwk);
+
     pActwk->r_no0 += 2;
     pActwk->actflg = 4;
     pActwk->colino = 44;
@@ -65,43 +84,44 @@ static void act_init(sprite_status *pActwk) {
     pActwk->sprhsize = 28;
     pActwk->sprvsize = 16;
     pActwk->sproffset = 9238;
-    ((Sint16 *)pActwk)[33] = pActwk->xposi.w.h;
-    *(Sint32 *)&pActwk->actfree[0] = pActwk->yposi.l;
+    work->origin_x = pActwk->xposi.w.h;
+    work->base_y = pActwk->yposi.l;
 
     if (!pActwk->userflag.b.h) {
         pActwk->patbase = pat_tonbo_e;
-        ((Sint32 *)pActwk)[13] = -65536;
-        ((Sint16 *)pActwk)[28] = 4;
-        ((Sint16 *)pActwk)[30] = 256;
+        work->x_velocity = -65536;
+        work->turn_step = 4;
+        work->turn_period = 256;
     } else {
         pActwk->patbase = pat_tonbo_b;
-        ((Sint32 *)pActwk)[13] = -32768;
-        ((Sint16 *)pActwk)[28] = 1;
-        ((Sint16 *)pActwk)[30] = 512;
+        work->x_velocity = -32768;
+        work->turn_step = 1;
+        work->turn_period = 512;
     }
-    ((Sint16 *)pActwk)[29] = ((Sint16 *)pActwk)[30];
-    ((Sint16 *)pActwk)[29] >>= 1;
+    work->turn_timer = work->turn_period;
+    work->turn_timer >>= 1;
 }
 
 static void act_lr(sprite_status *pActwk) {
+    tonbo_work *work = get_work(pActwk);
     Sint16 sin;
     Sint16 cos;
     int_union sinl;
 
-    pActwk->xposi.l += ((Sint32 *)pActwk)[13];
-    sinset(pActwk->actfree[4], &sin, &cos);
+    pActwk->xposi.l += work->x_velocity;
+    sinset((Uint8)work->angle.b.l, &sin, &cos);
     sinl.l = 0;
     sinl.w.h = sin;
 
     sinl.l >>= 4;
-    pActwk->yposi.l = *(Sint32 *)&pActwk->actfree[0] + sinl.l;
+    pActwk->yposi.l = work->base_y + sinl.l;
 
-    ((Sint16 *)pActwk)[25] += ((Sint16 *)pActwk)[28];
+    work->angle.w += work->turn_step;
 
-    --((Sint16 *)pActwk)[29];
-    if (!((Sint16 *)pActwk)[29]) {
-        ((Sint16 *)pActwk)[29] = ((Sint16 *)pActwk)[30];
-        ((Sint32 *)pActwk)[13] *= -1;
+    --work->turn_timer;
+    if (!work->turn_timer) {
+        work->turn_timer = work->turn_period;
+        work->x_velocity *= -1;
         pActwk->actflg ^= 1;
         pActwk->cddat ^= 1;
     }

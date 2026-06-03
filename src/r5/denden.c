@@ -6,12 +6,35 @@
 #include "../loader2.h"
 #include "../playsub.h"
 #include "../suicide.h"
+#include <stddef.h>
 
 static void m_init(sprite_status *pActwk);
 static void m_fall(sprite_status *pActwk);
 static void m_move(sprite_status *pActwk);
 static Sint16 m_check(sprite_status *pActwk);
 static void sub(sprite_status *pActwk);
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint16 origin_x;
+    Sint32 x_velocity;
+    Uint8 reserved0[20 - 6];
+    Sint16 linked_actor;
+} denden_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(denden_work, origin_x) == 0,
+               "denden_work.origin_x offset");
+_Static_assert(offsetof(denden_work, x_velocity) == 2,
+               "denden_work.x_velocity offset");
+_Static_assert(offsetof(denden_work, linked_actor) == 20,
+               "denden_work.linked_actor offset");
+_Static_assert(sizeof(denden_work) <= sizeof(((sprite_status *)0)->actfree),
+               "denden_work fits in actfree");
+
+static denden_work *denden_work_get(sprite_status *pActwk) {
+    return (denden_work *)pActwk->actfree;
+}
 
 static sprite_pattern pat00 = {1, {{-16, -24, 0, 456}}};
 static sprite_pattern pat01 = {2, {{-16, -8, 0, 457}, {-16, -24, 0, 458}}};
@@ -40,11 +63,11 @@ void denden(sprite_status *pActwk) {
         return;
     tbl[pActwk->r_no0 / 2](pActwk);
     actionsub(pActwk);
-    frameout_s00(pActwk, ((Sint16 *)pActwk)[23]);
+    frameout_s00(pActwk, denden_work_get(pActwk)->origin_x);
 }
 
 static void m_init(sprite_status *pActwk) {
-    ((Sint16 *)pActwk)[23] = pActwk->xposi.w.h;
+    denden_work_get(pActwk)->origin_x = pActwk->xposi.w.h;
     pActwk->actflg |= 4;
     pActwk->sprpri = 3;
     pActwk->sproffset = 9104;
@@ -52,7 +75,7 @@ static void m_init(sprite_status *pActwk) {
     pActwk->sprhsize = 16;
     pActwk->sprvsize = 15;
     pActwk->colino = 47;
-    ((Sint32 *)pActwk)[12] = -16384;
+    denden_work_get(pActwk)->x_velocity = -16384;
     pActwk->r_no0 += 2;
 
     if (pActwk->userflag.b.h)
@@ -78,10 +101,11 @@ static void m_move(sprite_status *pActwk) {
     sprite_status *pPlayerwk;
     sprite_status *pNewActwk;
     Sint16 d0, d1;
+    denden_work *work = denden_work_get(pActwk);
 
-    pActwk->xposi.l += ((Sint32 *)pActwk)[12];
+    pActwk->xposi.l += work->x_velocity;
     d0 = pActwk->xposi.w.h;
-    d0 -= ((Sint16 *)pActwk)[23];
+    d0 -= work->origin_x;
     if (d0 < 0) {
         d0 *= -1;
     }
@@ -100,7 +124,7 @@ static void m_move(sprite_status *pActwk) {
     if (m_check(pActwk) == 0)
         goto label1;
     pActwk->mstno.b.h = 1;
-    if (((Sint16 *)pActwk)[33])
+    if (work->linked_actor)
         goto label2;
     if (actwkchk(&pNewActwk) != 0)
         goto label2;
@@ -113,23 +137,23 @@ static void m_move(sprite_status *pActwk) {
     pNewActwk->sproffset = pActwk->sproffset;
     pNewActwk->patbase = pat_none;
     pNewActwk->colino = 176;
-    ((Sint16 *)pNewActwk)[33] = (Uint16)(pActwk - actwk);
-    ((Sint16 *)pActwk)[33] = (Uint16)(pNewActwk - actwk);
+    denden_work_get(pNewActwk)->linked_actor = (Sint16)(pActwk - actwk);
+    work->linked_actor = (Sint16)(pNewActwk - actwk);
     if (pActwk->actflg & 128) {
         soundset(183);
     }
     goto label2;
 label1:
     pActwk->mstno.b.h = 0;
-    if (((Sint16 *)pActwk)[33] == 0)
+    if (work->linked_actor == 0)
         goto label2;
-    frameout(&actwk[((Sint16 *)pActwk)[33]]);
-    ((Sint16 *)pActwk)[33] = 0;
+    frameout(&actwk[work->linked_actor]);
+    work->linked_actor = 0;
 label2:
     patchg(pActwk, pchg);
     return;
 label3:
-    ((Sint32 *)pActwk)[12] *= -1;
+    work->x_velocity *= -1;
     pActwk->actflg ^= 1;
     pActwk->cddat ^= 1;
 }
@@ -162,7 +186,7 @@ static Sint16 m_check(sprite_status *pActwk) {
 static void sub(sprite_status *pActwk) {
     sprite_status *pMainwk;
 
-    pMainwk = &actwk[((Sint16 *)pActwk)[33]];
+    pMainwk = &actwk[denden_work_get(pActwk)->linked_actor];
     if (pMainwk->actno != 32) {
         frameout(pActwk);
         return;

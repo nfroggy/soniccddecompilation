@@ -1,11 +1,30 @@
+#include <stddef.h>
+
 #include "equ.h"
 #include "item.h"
 #include "action.h"
 #include "actset.h"
 #include "dircol.h"
 #include "loader2.h"
+#include "player_work.h"
 #include "playsub.h"
 #include "ridechk.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 unused0;
+    Uint8 collection_timer;
+} time_item_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(time_item_work, collection_timer) == 1,
+               "time_item_work.collection_timer offset");
+_Static_assert(sizeof(time_item_work) <= sizeof(((sprite_status *)0)->actfree),
+               "time_item_work must fit in sprite_status.actfree");
+
+static time_item_work *time_item_get_work(sprite_status *t_itemwk) {
+    return (time_item_work *)t_itemwk->actfree;
+}
 
 static Uint8 itemchg0[11] = {1, 16, 0, 0, 8, 0, 0, 9, 0, 0, 255};
 static Uint8 itemchg1[11] = {1, 16, 1, 1, 8, 1, 1, 9, 1, 1, 255};
@@ -157,6 +176,7 @@ void t_item_init(sprite_status *t_itemwk) {
 
 void t_item_move0(sprite_status *t_itemwk) {
     Sint16 flag_no;
+    time_item_work *work = time_item_get_work(t_itemwk);
 
     if (t_itemwk->colicnt == 0)
         return;
@@ -172,8 +192,8 @@ void t_item_move0(sprite_status *t_itemwk) {
         }
     }
 
-    t_itemwk->actfree[0] = 0;
-    t_itemwk->actfree[1] = 60;
+    work->unused0 = 0;
+    work->collection_timer = 60;
     t_itemwk->r_no0 += 2;
     flag_no = flagwkadr(t_itemwk);
     flagwork[flag_no] |= 1;
@@ -187,7 +207,9 @@ void t_item_move0(sprite_status *t_itemwk) {
 }
 
 void t_item_move1(sprite_status *t_itemwk) {
-    if (--t_itemwk->actfree[1] != 0) {
+    time_item_work *work = time_item_get_work(t_itemwk);
+
+    if (--work->collection_timer != 0) {
         patchg(t_itemwk, itemchg);
         return;
     }
@@ -393,6 +415,8 @@ void item2init(sprite_status *itemwk) {
 }
 
 void item2move(sprite_status *itemwk) {
+    player_work *player = player_work_get(&actwk[0]);
+
     if (itemwk->yspeed.w < 0) {
         speedset2(itemwk);
         itemwk->yspeed.w += 24;
@@ -429,7 +453,7 @@ void item2move(sprite_status *itemwk) {
         break;
     case 3:
         plpower_m = 1;
-        ((Sint16 *)&actwk[0])[27] = 1320;
+        player->invincibility_timer = 1320;
         powerup_init(&actwk[8]);
         actwk[8].actno = 3;
         actwk[8].mstno.b.h = 1;
@@ -449,7 +473,7 @@ void item2move(sprite_status *itemwk) {
         break;
     case 4:
         plpower_s = 1;
-        ((Sint16 *)&actwk[0])[28] = 1320;
+        player->speed_shoes_timer = 1320;
         plmaxspdwk = 3072;
         pladdspdwk = 24;
         plretspdwk = 128;
@@ -470,7 +494,7 @@ void item2move(sprite_status *itemwk) {
         powerup_init(&actwk[6]);
         actwk[6].actno = 3;
         plpower_m = 1;
-        ((Sint16 *)&actwk[0])[27] = 1320;
+        player->invincibility_timer = 1320;
         powerup_init(&actwk[8]);
         actwk[8].actno = 3;
         actwk[8].mstno.b.h = 1;
@@ -484,7 +508,7 @@ void item2move(sprite_status *itemwk) {
         actwk[11].actno = 3;
         actwk[11].mstno.b.h = 4;
         plpower_s = 1;
-        ((Sint16 *)&actwk[0])[28] = 1320;
+        player->speed_shoes_timer = 1320;
         plmaxspdwk = 3072;
         pladdspdwk = 24;
         plretspdwk = 128;

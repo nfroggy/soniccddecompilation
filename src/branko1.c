@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "equ.h"
 #include "branko1.h"
 #include "action.h"
@@ -42,16 +44,63 @@ static brankodata branko1_initbl[8] = {
     {-32768, -1, -256, 0},
     {-32768, 1, 256, 0}};
 
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 reserved0[5];
+    Uint8 total_segments;
+    Sint16 swing_speed;
+    Sint16 origin_y;
+    Sint16 area1;
+    Sint16 origin_x;
+    Sint16 area2;
+    Sint16 angle;
+    Uint8 segment_index;
+    Uint8 direction;
+    Sint16 acceleration;
+} branko1_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(branko1_work, total_segments) == 5,
+               "branko1_work.total_segments must map to offset 5");
+_Static_assert(offsetof(branko1_work, swing_speed) == 6,
+               "branko1_work.swing_speed must map to offset 6");
+_Static_assert(offsetof(branko1_work, origin_y) == 8,
+               "branko1_work.origin_y must map to offset 8");
+_Static_assert(offsetof(branko1_work, area1) == 10,
+               "branko1_work.area1 must map to offset 10");
+_Static_assert(offsetof(branko1_work, origin_x) == 12,
+               "branko1_work.origin_x must map to offset 12");
+_Static_assert(offsetof(branko1_work, area2) == 14,
+               "branko1_work.area2 must map to offset 14");
+_Static_assert(offsetof(branko1_work, angle) == 16,
+               "branko1_work.angle must map to offset 16");
+_Static_assert(offsetof(branko1_work, segment_index) == 18,
+               "branko1_work.segment_index must map to offset 18");
+_Static_assert(offsetof(branko1_work, direction) == 19,
+               "branko1_work.direction must map to offset 19");
+_Static_assert(offsetof(branko1_work, acceleration) == 20,
+               "branko1_work.acceleration must map to offset 20");
+_Static_assert(sizeof(branko1_work) <= sizeof(((sprite_status *)0)->actfree),
+               "branko1_work must fit in sprite_status.actfree");
+
+static branko1_work *branko1_work_get(sprite_status *pActwk) {
+    return (branko1_work *)pActwk->actfree;
+}
+
 void branko1(sprite_status *pActwk) {
+    branko1_work *work = branko1_work_get(pActwk);
+
     branko1_move_tbl[pActwk->r_no0 / 2](pActwk);
     actionsub(pActwk);
-    frameout_s00(pActwk, ((Sint16 *)pActwk)[29]);
+    frameout_s00(pActwk, work->origin_x);
 }
 
 static void branko1_init(sprite_status *pActwk) {
+    branko1_work *work = branko1_work_get(pActwk);
     Sint32 i;
     Uint8 knum;
     sprite_status *pNewact;
+    branko1_work *new_work;
 
     pActwk->r_no0 += 2;
     pActwk->actflg |= 4;
@@ -61,24 +110,25 @@ static void branko1_init(sprite_status *pActwk) {
     pActwk->sprhsize = 24;
     pActwk->sprvsize = 8;
 
-    if (pActwk->actfree[18] == 0) {
-        ((Uint16 *)pActwk)[29] = pActwk->xposi.w.h;
-        ((Uint16 *)pActwk)[27] = pActwk->yposi.w.h;
-        pActwk->actfree[5] = knum = (Uint8)(pActwk->userflag.b.h & 15);
+    if (work->segment_index == 0) {
+        work->origin_x = pActwk->xposi.w.h;
+        work->origin_y = pActwk->yposi.w.h;
+        work->total_segments = knum = (Uint8)(pActwk->userflag.b.h & 15);
 
         for (; knum > 0; --knum) {
             if (actwkchk(&pNewact) == 0) {
+                new_work = branko1_work_get(pNewact);
 
                 pNewact->actno = 41;
-                ((Uint16 *)pNewact)[29] = ((Uint16 *)pActwk)[29];
+                new_work->origin_x = work->origin_x;
 
-                ((Uint16 *)pNewact)[27] = ((Uint16 *)pActwk)[27];
+                new_work->origin_y = work->origin_y;
 
                 pNewact->userflag.b.h = pActwk->userflag.b.h;
-                pNewact->actfree[5] = pActwk->actfree[5];
-                pNewact->actfree[18] = knum;
+                new_work->total_segments = work->total_segments;
+                new_work->segment_index = knum;
 
-                if (pActwk->actfree[5] == knum) {
+                if (work->total_segments == knum) {
 
                     pNewact->patno = 1;
                 } else {
@@ -89,21 +139,22 @@ static void branko1_init(sprite_status *pActwk) {
     }
 
     i = (Uint8)(pActwk->userflag.b.h & 112) >> 4;
-    ((Sint16 *)pActwk)[31] = branko1_initbl[i].angle;
-    ((Sint16 *)pActwk)[33] = branko1_initbl[i].accel;
-    ((Sint16 *)pActwk)[28] = branko1_initbl[i].area1;
-    ((Sint16 *)pActwk)[30] = branko1_initbl[i].area2;
+    work->angle = branko1_initbl[i].angle;
+    work->acceleration = branko1_initbl[i].accel;
+    work->area1 = branko1_initbl[i].area1;
+    work->area2 = branko1_initbl[i].area2;
 
     branko1_move(pActwk);
 }
 
 static void branko1_move(sprite_status *pActwk) {
+    branko1_work *work = branko1_work_get(pActwk);
     Sint32 xwk, ywk;
 
     xwk = pActwk->xposi.l;
     ywk = pActwk->yposi.l;
     branko1_posiset(pActwk);
-    if (pActwk->actfree[5] == pActwk->actfree[18]) {
+    if (work->total_segments == work->segment_index) {
         pActwk->xspeed.w = (pActwk->xposi.l - xwk) >> 8;
         pActwk->yspeed.w = (pActwk->yposi.l - ywk) >> 8;
         branko1_ridechk(pActwk);
@@ -111,37 +162,38 @@ static void branko1_move(sprite_status *pActwk) {
 }
 
 static void branko1_posiset(sprite_status *pActwk) {
+    branko1_work *work = branko1_work_get(pActwk);
     Sint16 spdwk, sinwk, coswk;
     Uint32 lSinwk, lCoswk;
     ushort_union direc;
 
-    if (pActwk->actfree[19] == 0) {
-        spdwk = ((Sint16 *)pActwk)[26] + ((Sint16 *)pActwk)[33];
+    if (work->direction == 0) {
+        spdwk = work->swing_speed + work->acceleration;
 
-        ((Sint16 *)pActwk)[26] = spdwk;
-        ((Sint16 *)pActwk)[31] += spdwk;
-        if (((Sint16 *)pActwk)[28] == spdwk) {
-            pActwk->actfree[19] = 255;
+        work->swing_speed = spdwk;
+        work->angle += spdwk;
+        if (work->area1 == spdwk) {
+            work->direction = 255;
         }
     } else {
-        spdwk = ((Sint16 *)pActwk)[26] - ((Sint16 *)pActwk)[33];
+        spdwk = work->swing_speed - work->acceleration;
 
-        ((Sint16 *)pActwk)[26] = spdwk;
-        ((Sint16 *)pActwk)[31] += spdwk;
-        if (((Sint16 *)pActwk)[30] == spdwk) {
-            pActwk->actfree[19] = 0;
+        work->swing_speed = spdwk;
+        work->angle += spdwk;
+        if (work->area2 == spdwk) {
+            work->direction = 0;
         }
     }
 
-    direc.w = ((Uint16 *)pActwk)[31];
+    direc.w = work->angle;
     sinset(direc.b.h, &sinwk, &coswk);
-    spdwk = (Sint16)((char *)pActwk)[64] << 4;
+    spdwk = (Sint16)work->segment_index << 4;
     lSinwk = sinwk * spdwk;
     lCoswk = coswk * spdwk;
     sinwk = (Sint16)((Sint32)lSinwk >> 4) >> 4;
     coswk = (Sint16)((Sint32)lCoswk >> 4) >> 4;
-    pActwk->yposi.w.h = coswk + ((Sint16 *)pActwk)[27];
-    pActwk->xposi.w.h = sinwk + ((Sint16 *)pActwk)[29];
+    pActwk->yposi.w.h = coswk + work->origin_y;
+    pActwk->xposi.w.h = sinwk + work->origin_x;
 }
 
 static void branko1_ridechk(sprite_status *pActwk) {
@@ -163,8 +215,8 @@ static void branko1_ridechk(sprite_status *pActwk) {
         if (pActwk->yposi.w.h >= pPlayerwk->yposi.w.h) {
 
             pPlayerwk->yposi.w.h = pActwk->yposi.w.h -
-                                   (Sint16)((char *)pActwk)[23] -
-                                   (Sint16)((char *)pPlayerwk)[23] + 2;
+                                   (Sint16)pActwk->sprvsize -
+                                   (Sint16)pPlayerwk->sprvsize + 2;
         }
 
     label1:

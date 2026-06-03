@@ -8,6 +8,7 @@
 #include "etc.h"
 #include "fcol.h"
 #include "impfuncs.h"
+#include "player_work.h"
 
 extern void sub_sync(Sint16 ReqNo);
 extern Sint16 playdamageset(sprite_status *pActwk, sprite_status *pColliAct);
@@ -55,6 +56,7 @@ void bye_chk(void) {
 }
 
 void play00(sprite_status *actionwk) {
+    player_work *work = player_work_get(&actwk[0]);
     Uint8 d0;
 
     Brake_Req = 0;
@@ -67,7 +69,7 @@ void play00(sprite_status *actionwk) {
         return;
     }
 
-    d0 = actwk[0].actfree[0];
+    d0 = work->spin_dash_counter;
     if (d0 != 0) {
         ++d0;
         if (actwk[0].cddat & 4) {
@@ -76,7 +78,7 @@ void play00(sprite_status *actionwk) {
         } else if (d0 >= 30)
             d0 = 30;
 
-        actwk[0].actfree[0] = d0;
+        work->spin_dash_counter = d0;
     }
 
     switch (actwk[0].r_no0) {
@@ -136,6 +138,7 @@ void play00init(void) {
 }
 
 void mizuki_set(void) {
+    player_work *work = player_work_get(&actwk[0]);
     Sint16 d2, d3;
     Uint32 d1;
     sprite_status *new_actwk;
@@ -153,7 +156,7 @@ void mizuki_set(void) {
     if (actwk[0].xposi.w.h >= 5568)
         return;
 
-    if (actwk[0].actfree[2] == 0)
+    if (work->status_flags == 0)
         return;
     if (actwkchk(&new_actwk) != 0)
         return;
@@ -175,23 +178,24 @@ Uint32 mapno_chk(Sint16 d2, Sint16 d3) {
 }
 
 void kuru2(void) {
+    player_work *work = player_work_get(&actwk[0]);
     Uint16 tmp_xposi;
 
     if (actwk[0].mstno.b.h == 43 || actwk[0].r_no0 >= 4 ||
-        actwk[0].actfree[2] & 8)
+        work->status_flags & 8)
         return;
 
     if ((scramapad(&actwk[0], actwk[0].xposi.w.h, actwk[0].yposi.w.h) & 2047) !=
         259)
         return;
 
-    actwk[0].actfree[2] |= 8;
+    work->status_flags |= 8;
     actwk[0].xspeed.w = 0;
     actwk[0].yspeed.w = actwk[0].yspeed.w < 0 ? -512 : 512;
-    actwk[0].actfree[1] = 64;
+    work->special_angle = 64;
     tmp_xposi = actwk[0].xposi.w.h;
     tmp_xposi = (tmp_xposi & 65520) + 8;
-    *(Sint16 *)&actwk[0].actfree[20] = actwk[0].xposi.w.h = tmp_xposi;
+    work->mode_word = actwk[0].xposi.w.h = tmp_xposi;
 
     actwk[0].mstno.b.h = 2;
     actwk[0].cddat |= 4;
@@ -200,9 +204,10 @@ void kuru2(void) {
 }
 
 void bura(void) {
+    player_work *work = player_work_get(&actwk[0]);
     Uint16 tmp_yposi;
 
-    if (actwk[0].mstno.b.h == 43 || plflag == 2 || actwk[0].actfree[2] & 5)
+    if (actwk[0].mstno.b.h == 43 || plflag == 2 || work->status_flags & 5)
         return;
 
     if ((scramapad(&actwk[0], actwk[0].xposi.w.h, actwk[0].yposi.w.h - 24) &
@@ -219,7 +224,7 @@ void bura(void) {
     actwk[0].cddat &= 251;
     actwk[0].xspeed.w = actwk[0].yspeed.w = actwk[0].mspeed.w = 0;
     actwk[0].mstno.b.h = 44;
-    actwk[0].actfree[2] |= 4;
+    work->status_flags |= 4;
     actwk[0].pattimm = 7;
     tmp_yposi = actwk[0].yposi.w.h;
     tmp_yposi = (tmp_yposi - 24 & 65520) + 24;
@@ -227,12 +232,14 @@ void bura(void) {
 }
 
 void sibi2(void) {
+    player_work *work = player_work_get(&actwk[0]);
     Sint16 block_no, i;
     Sint16 *volatile block_tbl;
     Sint16 *tbl[3] = {tate, yoko, naname};
 
     if (actwk[0].mstno.b.h == 43 || actwk[0].r_no0 >= 4 || plpower_a != 0 ||
-        plpower_m != 0 || ((Sint16 *)&actwk[0])[26] != 0 || st6clrchg == 0)
+        plpower_m != 0 || work->damage_invulnerability_timer != 0 ||
+        st6clrchg == 0)
         return;
 
     block_tbl = tbl[st6clrchg - 1];
@@ -248,6 +255,7 @@ void sibi2(void) {
 }
 
 void sibi(void) {
+    player_work *work = player_work_get(&actwk[0]);
     Sint16 block_no, i;
     Sint16 *block_tbl;
     Sint16 tbl[3] = {579, 580, 581};
@@ -258,7 +266,7 @@ void sibi(void) {
     if (actwk[0].xposi.w.h >= 2432 && actwk[0].xposi.w.h < 2592)
         return;
 
-    if (bossflag & 128 || ((Sint16 *)&actwk[0])[26])
+    if (bossflag & 128 || work->damage_invulnerability_timer)
         return;
     if (stageno.b.l == 2) {
         if (actwk[0].xposi.w.h < 2576)
@@ -288,6 +296,7 @@ label1:
 }
 
 void bfloor(void) {
+    player_work *work = player_work_get(&actwk[0]);
     Uint8 counter;
 
     if (actwk[0].mstno.b.h == 43 || bossflag)
@@ -316,7 +325,7 @@ label1:
     actwk[0].cddat |= 2;
     actwk[0].cddat &= 239;
     actwk[0].cddat &= 223;
-    actwk[0].actfree[18] = 0;
+    work->jump_started = 0;
     if (actwk[0].cddat & 4)
         return;
     actwk[0].cddat |= 4;
@@ -330,6 +339,8 @@ label1:
 void scr_h(void) {}
 
 void play00move(void) {
+    player_work *work = player_work_get(&actwk[0]);
+
     scr_h();
     mizuki_set();
     if (debugflag.w != 0 && swdata1.b.l & 16) {
@@ -342,7 +353,7 @@ void play00move(void) {
     else
         swdata.b.l |= swdata1.b.l & 128;
 
-    if (actwk[0].actfree[2] & 1) {
+    if (work->status_flags & 1) {
         backto_chk();
     } else {
         switch (actwk[0].cddat & 6) {
@@ -370,11 +381,11 @@ void play00move(void) {
     playpowercnt();
     playposiwkset();
 
-    actwk[0].actfree[12] = dirstk[0];
-    actwk[0].actfree[13] = dirstk[2];
+    work->floor_left = dirstk[0];
+    work->floor_right = dirstk[2];
 
     patchgmain();
-    if ((char)actwk[0].actfree[2] >= 0 && actwk[0].mstno.b.h != 43) {
+    if ((char)work->status_flags >= 0 && actwk[0].mstno.b.h != 43) {
 
         pcol(&actwk[0]);
     }
@@ -382,29 +393,30 @@ void play00move(void) {
 }
 
 void playpowercnt(void) {
+    player_work *work = player_work_get(&actwk[0]);
     Uint16 d0;
     Uint16 cal;
 
     if (backto_cnt < 157) {
-        d0 = ((Uint16 *)&actwk[0])[26];
+        d0 = work->damage_invulnerability_timer;
         if (d0 != 0) {
-            --((Uint16 *)&actwk[0])[26];
+            --work->damage_invulnerability_timer;
             if (d0 & 4) {
                 d0 >>= 3;
-                if (!(actwk[0].actfree[2] & 64))
+                if (!(work->status_flags & 64))
                     actionsub(&actwk[0]);
             } else
                 d0 >>= 3;
-        } else if (!(actwk[0].actfree[2] & 64)) {
+        } else if (!(work->status_flags & 64)) {
             actionsub(&actwk[0]);
         }
     }
 
     if (plpower_m != 0) {
-        d0 = ((Uint16 *)&actwk[0])[27];
+        d0 = work->invincibility_timer;
         if (d0 != 0) {
             cal = d0 - 1;
-            --((Uint16 *)&actwk[0])[27];
+            --work->invincibility_timer;
             if (cal == 0) {
                 if (plpower_s == 0 && boss_sound == 0) {
                     if (time_flag == 0) {
@@ -420,10 +432,10 @@ void playpowercnt(void) {
     }
 
     if (plpower_s != 0) {
-        d0 = ((Uint16 *)&actwk[0])[28];
+        d0 = work->speed_shoes_timer;
         if (d0 != 0) {
             cal = d0 - 1;
-            --((Uint16 *)&actwk[0])[28];
+            --work->speed_shoes_timer;
             if (cal == 0) {
                 plmaxspdwk = 1536;
                 pladdspdwk = 12;
@@ -483,13 +495,14 @@ void playsave(void) {
 }
 
 void backto_chk(void) {
+    player_work *work = player_work_get(&actwk[0]);
     Sint16 d0, d1, d2;
     char cal;
 
     if (lpKeepWork->TimeWarp == 0)
         return;
 
-    if (actwk[0].actfree[0] != 0)
+    if (work->spin_dash_counter != 0)
         return;
     if (time_item == 0)
         return;
@@ -582,9 +595,11 @@ void play00walk(void) {
 }
 
 void play00jump(void) {
+    player_work *work = player_work_get(&actwk[0]);
+
     if (actwk[0].yspeed.w >= 0 && actwk[0].mstno.b.h != 44)
         actwk[0].mstno.b.h = 0;
-    if (actwk[0].actfree[2] & 4) {
+    if (work->status_flags & 4) {
         buramove();
         jumpcolchk();
         return;
@@ -604,6 +619,8 @@ void play00jump(void) {
 }
 
 void ball00walk(void) {
+    player_work *work = player_work_get(&actwk[0]);
+
     chk11();
     backto_chk();
     if (jumpchk() != 0)
@@ -611,7 +628,7 @@ void ball00walk(void) {
     keispd2();
     balllmove();
     limitchk();
-    if (actwk[0].actfree[0] == 0)
+    if (work->spin_dash_counter == 0)
         speedset2(&actwk[0]);
 
     fcol(&actwk[0]);
@@ -619,13 +636,15 @@ void ball00walk(void) {
 }
 
 void ball00jump(void) {
-    if (actwk[0].actfree[2] & 8) {
+    player_work *work = player_work_get(&actwk[0]);
+
+    if (work->status_flags & 8) {
         kuru2move();
         backto_chk();
         jumpcolchk();
         return;
     }
-    if (actwk[0].actfree[2] & 4) {
+    if (work->status_flags & 4) {
         buramove();
         backto_chk();
         jumpcolchk();
@@ -648,43 +667,45 @@ void ball00jump(void) {
 }
 
 void kuru2move(void) {
+    player_work *work = player_work_get(&actwk[0]);
     Sint16 tmp_sin, tmp_cos;
 
-    if (actwk[0].actfree[2] & 16) {
-        if ((actwk[0].actfree[1] & 127) == 0) {
-            actwk[0].xspeed.w = (char)actwk[0].actfree[1] < 0 ? -3072 : 3072;
+    if (work->status_flags & 16) {
+        if ((work->special_angle & 127) == 0) {
+            actwk[0].xspeed.w = (char)work->special_angle < 0 ? -3072 : 3072;
 
             actwk[0].sproffset &= 32767;
-            actwk[0].actfree[2] &= 231;
-            *(Sint16 *)&actwk[0].actfree[20] = 0;
+            work->status_flags &= 231;
+            work->mode_word = 0;
             return;
         }
     } else if (swdata.b.l & 112)
-        actwk[0].actfree[2] |= 16;
+        work->status_flags |= 16;
 
-    if ((char)(actwk[0].actfree[1] += 8) >= 0)
+    if ((char)(work->special_angle += 8) >= 0)
         actwk[0].sproffset |= 32768;
     else
         actwk[0].sproffset &= 32767;
 
-    sinset(actwk[0].actfree[1], &tmp_sin, &tmp_cos);
+    sinset(work->special_angle, &tmp_sin, &tmp_cos);
     tmp_cos = (tmp_cos * 23) / 256;
-    actwk[0].xposi.w.h = *(Sint16 *)&actwk[0].actfree[20] + tmp_cos;
+    actwk[0].xposi.w.h = work->mode_word + tmp_cos;
 
     actwk[0].yposi.l += actwk[0].yspeed.w << 8;
 
-    if ((scramapad(&actwk[0], *(Sint16 *)&actwk[0].actfree[20],
-                   actwk[0].yposi.w.h) &
+    if ((scramapad(&actwk[0], work->mode_word, actwk[0].yposi.w.h) &
          2047) != 259)
         actwk[0].yspeed.w = -actwk[0].yspeed.w;
 }
 
 void buramove(void) {
+    player_work *work = player_work_get(&actwk[0]);
+
     if ((scramapad(&actwk[0], actwk[0].xposi.w.h, actwk[0].yposi.w.h - 24) &
          2047) != 345 ||
         (swdata.b.l & 112)) {
 
-        actwk[0].actfree[2] &= 251;
+        work->status_flags &= 251;
         actwk[0].yposi.w.h += 16;
         actwk[0].sprvsize = 19;
         actwk[0].sprhs = 9;
@@ -712,6 +733,7 @@ void chk11(void) {
     Sint16 d0;
     char mapdata;
     char chk11tbl[7] = {6, 7, 8, 68, 69, 70, 73};
+    player_work *work = player_work_get(&actwk[0]);
 
     if (time_flag != 1)
         return;
@@ -723,13 +745,13 @@ void chk11(void) {
     mapdata = mapwka[d0 / 128][d0 & 63];
     for (d0 = 0; d0 < 7; ++d0) {
         if (mapdata == chk11tbl[d0]) {
-            actwk[0].actfree[2] |= 2;
+            work->status_flags |= 2;
             return;
         }
     }
-    if (!(actwk[0].actfree[2] & 2))
+    if (!(work->status_flags & 2))
         return;
-    actwk[0].actfree[2] &= 253;
+    work->status_flags &= 253;
     if (actwk[0].yspeed.w >= 0)
         return;
     if ((Uint16)actwk[0].yspeed.w >= 63488)
@@ -749,10 +771,11 @@ void levermove(void) {
     Sint32 cos_data;
     Sint16 sin_tmp;
     Sint16 cos_tmp;
+    player_work *work = player_work_get(&actwk[0]);
 
     if (mizuflag != 0)
         goto label12;
-    if (((Uint16 *)&actwk[0])[33] != 0)
+    if (work->mode_word != 0)
         goto label10;
     if (swdata.b.h & 4)
         plwalk_l();
@@ -761,7 +784,7 @@ void levermove(void) {
 
     if ((Uint8)actwk[0].direc.b.h + 32 & 192)
         goto label10;
-    if (actwk[0].mspeed.w != 0 && actwk[0].actfree[0] == 0)
+    if (actwk[0].mspeed.w != 0 && work->spin_dash_counter == 0)
         goto label10;
 
     if (actwk[0].mspeed.w == 0) {
@@ -771,7 +794,7 @@ void levermove(void) {
     if (!(actwk[0].cddat & 8))
         goto label1;
 
-    ride_number = actwk[0].actfree[19];
+    ride_number = work->ride_actor_index;
     if ((char)actwk[ride_number].cddat < 0)
         goto label4;
     if (actwk[ride_number].actno == 30) {
@@ -792,7 +815,7 @@ label1:
     d1 = emycol_d(&actwk[0]);
     if (d1 < 12)
         goto label4;
-    if (actwk[0].actfree[12] == 3) {
+    if (work->floor_left == 3) {
 
     label2:
         if (actwk[0].cddat & 1)
@@ -802,7 +825,7 @@ label1:
         goto label10;
     }
 
-    if (actwk[0].actfree[13] == 3) {
+    if (work->floor_right == 3) {
 
     label3:
         if (!(actwk[0].cddat & 1))
@@ -834,7 +857,7 @@ label4:
     if (!(swdata.b.h & 1))
         goto label6;
     actwk[0].mstno.b.h = 7;
-    if (actwk[0].actfree[0] == 0)
+    if (work->spin_dash_counter == 0)
         goto label5;
     actwk[0].mstno.b.h = 0;
     d0 = 100;
@@ -863,22 +886,22 @@ label4:
 label5:
     if (!(swdata.b.l & 112))
         goto label11;
-    actwk[0].actfree[0] = 1;
+    work->spin_dash_counter = 1;
     soundset(156);
     WaveClear = 1;
 
     goto label11;
 
 label6:
-    if (actwk[0].actfree[0] != 30) {
+    if (work->spin_dash_counter != 30) {
         soundset(171);
         if (WaveClear != 0)
             WaveAllStop(), WaveClear = 0;
-        actwk[0].actfree[0] = 0;
+        work->spin_dash_counter = 0;
         actwk[0].mspeed.w = 0;
         goto label8;
     }
-    actwk[0].actfree[0] = 0;
+    work->spin_dash_counter = 0;
     soundset(145);
     WaveClear = 0;
     goto label10;
@@ -906,11 +929,11 @@ label8:
     if (!(swdata.b.h & 2))
         goto label10;
     actwk[0].mstno.b.h = 8;
-    if (actwk[0].actfree[0] != 0)
+    if (work->spin_dash_counter != 0)
         goto label11;
     if (!(swdata.b.l & 112))
         goto label11;
-    actwk[0].actfree[0] = 1;
+    work->spin_dash_counter = 1;
     actwk[0].mspeed.w = 22;
     if (actwk[0].cddat & 1)
         actwk[0].mspeed.w = -actwk[0].mspeed.w;
@@ -1013,8 +1036,9 @@ void lmovecol(void) {
 
 void plwalk_l(void) {
     Sint16 cal_speed;
+    player_work *work = player_work_get(&actwk[0]);
 
-    if (actwk[0].actfree[0] != 0)
+    if (work->spin_dash_counter != 0)
         return;
     cal_speed = actwk[0].mspeed.w;
     if (cal_speed <= 0) {
@@ -1055,8 +1079,9 @@ void plwalk_l(void) {
 
 void plwalk_r(void) {
     Sint16 cal_speed;
+    player_work *work = player_work_get(&actwk[0]);
 
-    if (actwk[0].actfree[0] != 0)
+    if (work->spin_dash_counter != 0)
         return;
     cal_speed = actwk[0].mspeed.w;
     if (cal_speed >= 0) {
@@ -1102,17 +1127,18 @@ void balllmove(void) {
     Sint32 cos_data;
     Sint16 sin_tmp;
     Sint16 cos_tmp;
+    player_work *work = player_work_get(&actwk[0]);
 
     if (mizuflag != 0)
         goto label3;
-    if (((Uint16 *)&actwk[0])[33] == 0) {
+    if (work->mode_word == 0) {
         if (swdata.b.h & 4)
             ballwalk_l();
         if (swdata.b.h & 8)
             ballwalk_r();
     }
 
-    if (actwk[0].actfree[0] == 0)
+    if (work->spin_dash_counter == 0)
         goto label1;
     d0 = 50;
     d1 = d2 = plmaxspdwk;
@@ -1137,15 +1163,15 @@ void balllmove(void) {
     if ((swdata.b.h & 2) != 0)
         return;
 
-    if (actwk[0].actfree[0] != 45) {
+    if (work->spin_dash_counter != 45) {
         soundset(171);
         if (WaveClear != 0)
             WaveAllStop(), WaveClear = 0;
-        actwk[0].actfree[0] = 0;
+        work->spin_dash_counter = 0;
         actwk[0].mspeed.w = actwk[0].xspeed.w = actwk[0].yspeed.w = 0;
         goto label2;
     }
-    actwk[0].actfree[0] = 0;
+    work->spin_dash_counter = 0;
     soundset(145);
     WaveClear = 0;
     if (!(actwk[0].cddat & 1))
@@ -1239,17 +1265,18 @@ void ballwalk_r(void) {
 void jumpmove(void) {
     Sint16 cal_speed;
     Sint16 cmp_speed;
+    player_work *work = player_work_get(&actwk[0]);
 
     cal_speed = actwk[0].xspeed.w;
     if (stageno.w == 0) {
 
         if (actwk[0].xposi.w.h < 1736 || actwk[0].xposi.w.h >= 2112) {
-            if (actwk[0].actfree[2] & 2)
+            if (work->status_flags & 2)
                 goto label2;
             else
                 goto label1;
         } else {
-            if (actwk[0].actfree[2] & 2)
+            if (work->status_flags & 2)
                 goto label2;
         }
     }
@@ -1382,12 +1409,13 @@ Uint8 jumpchk(void) {
     Uint8 cal_direc, ret_flag;
     Sint32 cal_jump, sin_data, cos_data;
     Sint16 sin_tmp, cos_tmp;
+    player_work *work = player_work_get(&actwk[0]);
 
     cal_direc = 0;
     cal_jump = 0;
     ret_flag = 0;
 
-    if (actwk[0].actfree[0] != 0)
+    if (work->spin_dash_counter != 0)
         return ret_flag;
     if ((swdata.b.h & 3) && actwk[0].mspeed.w == 0)
         return ret_flag;
@@ -1422,8 +1450,8 @@ label1:
     actwk[0].cddat &= 223;
     ret_flag = 255;
 
-    actwk[0].actfree[18] = 1;
-    actwk[0].actfree[14] = 0;
+    work->jump_started = 1;
+    work->jump_lock = 0;
 
     scr_cnt = 0;
     soundset(146);
@@ -1447,14 +1475,15 @@ label1:
 
 void jumpchk2(void) {
     Sint16 cal_speed;
+    player_work *work = player_work_get(&actwk[0]);
 
-    if (actwk[0].actfree[18] != 0) {
+    if (work->jump_started != 0) {
         cal_speed = -1024;
         if (actwk[0].cddat & 64)
             cal_speed = -512;
         if (cal_speed > actwk[0].yspeed.w) {
             if (!(swdata.b.h & 112)) {
-                actwk[0].actfree[0] = 0;
+                work->spin_dash_counter = 0;
                 actwk[0].yspeed.w = cal_speed;
             }
         }
@@ -1465,8 +1494,9 @@ void keispd(void) {
     Uint8 cal_direc;
     Sint32 sin_data;
     Sint16 sin_tmp, cos_tmp;
+    player_work *work = player_work_get(&actwk[0]);
 
-    if (actwk[0].actfree[0] != 0)
+    if (work->spin_dash_counter != 0)
         return;
     cal_direc = (Uint8)actwk[0].direc.b.h + 96;
     if (cal_direc >= 192)
@@ -1493,8 +1523,9 @@ void keispd2(void) {
     Uint8 cal_direc;
     Sint32 sin_data;
     Sint16 sin_tmp, cos_tmp;
+    player_work *work = player_work_get(&actwk[0]);
 
-    if (actwk[0].actfree[0] != 0)
+    if (work->spin_dash_counter != 0)
         return;
     cal_direc = (Uint8)actwk[0].direc.b.h + 96;
     if (cal_direc >= 192)
@@ -1518,25 +1549,28 @@ void keispd2(void) {
 }
 
 void fallchk(void) {
-    if (actwk[0].actfree[14] != 0)
+    player_work *work = player_work_get(&actwk[0]);
+
+    if (work->jump_lock != 0)
         return;
-    if (((Uint16 *)&actwk[0])[33] == 0) {
+    if (work->mode_word == 0) {
         if (!((Uint8)actwk[0].direc.b.h + 32 & 192))
             return;
         if (actwk[0].mspeed.w > 640 || actwk[0].mspeed.w < -640)
             return;
         actwk[0].mspeed.w = 0;
         actwk[0].cddat |= 2;
-        ((Uint16 *)&actwk[0])[33] = 30;
+        work->mode_word = 30;
     } else {
-        --((Uint16 *)&actwk[0])[33];
+        --work->mode_word;
     }
 }
 
 void direcchg(void) {
     char cal_direc;
+    player_work *work = player_work_get(&actwk[0]);
 
-    if ((actwk[0].actfree[2] & 2) != 0)
+    if ((work->status_flags & 2) != 0)
         return;
     if ((cal_direc = actwk[0].direc.b.h) == 0)
         return;
@@ -1711,6 +1745,8 @@ void jumpcolchk(void) {
 }
 
 void jumpcolsub(void) {
+    player_work *work = player_work_get(&actwk[0]);
+
     actwk[0].cddat &= 205;
     if (actwk[0].cddat & 4) {
         actwk[0].cddat &= 251;
@@ -1725,13 +1761,15 @@ void jumpcolsub(void) {
         actwk[0].mstno.b.h = 0;
     }
 
-    actwk[0].actfree[18] = 0;
+    work->jump_started = 0;
     emyscorecnt = 0;
 }
 
 void jumpcolsub0(void) {
+    player_work *work = player_work_get(&actwk[0]);
+
     actwk[0].cddat &= 205;
-    actwk[0].actfree[18] = 0;
+    work->jump_started = 0;
     emyscorecnt = 0;
 }
 
@@ -1748,6 +1786,8 @@ void play00damage(void) {
 }
 
 void play00damage_sub(void) {
+    player_work *work = player_work_get(&actwk[0]);
+
     if (scralim_down + 224 < actwk[0].yposi.w.h) {
         playdieset(&actwk[0]);
         return;
@@ -1758,7 +1798,7 @@ void play00damage_sub(void) {
     actwk[0].yspeed.w = actwk[0].xspeed.w = actwk[0].mspeed.w = 0;
     actwk[0].mstno.b.h = 0;
     actwk[0].r_no0 -= 2;
-    ((Sint16 *)&actwk[0])[26] = 120;
+    work->damage_invulnerability_timer = 120;
 }
 
 void play00die(void) {
@@ -1771,6 +1811,7 @@ void play00die(void) {
 
 void play00die_sub(void) {
     sprite_status *new_actwk;
+    player_work *work = player_work_get(&actwk[0]);
 
     if (scralim_down + 256 >= actwk[0].yposi.w.h)
         return;
@@ -1784,20 +1825,22 @@ void play00die_sub(void) {
     if (actwk[0].mstno.b.h == 43 || ta_flag == 0) {
         actwkchk(&new_actwk);
         new_actwk->actno = 59;
-        ((Sint16 *)&actwk[0])[31] = 480;
+        work->erase_timer = 480;
         if (pl_suu == 0)
             return;
     } else {
         pl_suu = 0;
     }
-    ((Sint16 *)&actwk[0])[31] = 60;
+    work->erase_timer = 60;
 }
 
 void play00erase(void) {
-    if (((Uint16 *)&actwk[0])[31] == 0)
+    player_work *work = player_work_get(&actwk[0]);
+
+    if (work->erase_timer == 0)
         return;
-    --((Uint16 *)&actwk[0])[31];
-    if (((Uint16 *)&actwk[0])[31] != 0)
+    --work->erase_timer;
+    if (work->erase_timer != 0)
         return;
     gameflag.w = 1;
 
@@ -1890,6 +1933,7 @@ void playrunchg(Uint8 pat_no) {
     Uint8 direction, cal_data, chara_data;
     Uint8 *pat_pointer;
     Sint16 cal_speed;
+    player_work *work = player_work_get(&actwk[0]);
 
     if ((char)--actwk[0].pattim >= 0)
         return;
@@ -1907,7 +1951,7 @@ void playrunchg(Uint8 pat_no) {
     chara_data = actwk[0].cddat & 1;
     if (chara_data == 0)
         direction = 255 - direction;
-    if (!(actwk[0].actfree[2] & 2))
+    if (!(work->status_flags & 2))
         direction += 16;
     else
         direction += 8;
@@ -1925,7 +1969,7 @@ void playrunchg(Uint8 pat_no) {
     if ((cal_speed = actwk[0].mspeed.w) < 0)
         cal_speed = -cal_speed;
 
-    if (actwk[0].actfree[2] & 2) {
+    if (work->status_flags & 2) {
         direction >>= 4, direction &= 15;
         direction <<= 1;
         direction &= 14;
@@ -1956,6 +2000,7 @@ void playrunchg2(Uint8 pat_no) {
     Uint8 direction;
     Uint8 *pat_pointer;
     Sint16 cal_speed;
+    player_work *work = player_work_get(&actwk[0]);
 
     if (pat_no != 254) {
         playrunchg3(pat_no);
@@ -1966,7 +2011,7 @@ void playrunchg2(Uint8 pat_no) {
     if (chibi_flag != 0)
         pat_pointer = plchg35;
     else {
-        if (actwk[0].actfree[2] & 2) {
+        if (work->status_flags & 2) {
             direction = (char)actwk[0].direc.b.h;
             direction = direction + 16 & 192;
             if (direction != 0)
@@ -2076,8 +2121,9 @@ void playwrt(void) {}
 Uint8 frip_spd(Sint32 *cal_jump, Uint8 *cal_direc) {
     Sint16 cal_x;
     char ride_no;
+    player_work *work = player_work_get(&actwk[0]);
 
-    ride_no = actwk[0].actfree[19];
+    ride_no = work->ride_actor_index;
     if (actwk[ride_no].actno != 30)
         return 255;
 

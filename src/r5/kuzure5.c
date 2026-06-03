@@ -4,6 +4,7 @@
 #include "../actset.h"
 #include "../loader2.h"
 #include "../ridechk.h"
+#include <stddef.h>
 
 #if defined(R53C) || defined(R53D)
 #define SPRITE_KUZURE5_BASE 403
@@ -18,6 +19,29 @@ static void main_break(sprite_status *pActwk);
 static void parts_ini(sprite_status *pActwk);
 static void parts_wait(sprite_status *pActwk);
 static void parts_fall(sprite_status *pActwk);
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint16 wait_timer;
+    union {
+        Sint16 break_step;
+        Sint32 y_velocity;
+    };
+} kuzure5_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(kuzure5_work, wait_timer) == 0,
+               "kuzure5_work.wait_timer offset");
+_Static_assert(offsetof(kuzure5_work, break_step) == 2,
+               "kuzure5_work.break_step offset");
+_Static_assert(offsetof(kuzure5_work, y_velocity) == 2,
+               "kuzure5_work.y_velocity offset");
+_Static_assert(sizeof(kuzure5_work) <= sizeof(((sprite_status *)0)->actfree),
+               "kuzure5_work fits in actfree");
+
+static kuzure5_work *kuzure5_work_get(sprite_status *pActwk) {
+    return (kuzure5_work *)pActwk->actfree;
+}
 
 static sprite_pattern pat_00 = {1, {{-8, -16, 0, SPRITE_KUZURE5_BASE}}};
 static sprite_pattern pat_01 = {1, {{-16, -16, 0, SPRITE_KUZURE5_BASE + 1}}};
@@ -65,14 +89,16 @@ static void main_ini(sprite_status *pActwk) {
 
 static void main_check(sprite_status *pActwk) {
     if (ridechk(pActwk, &actwk[0])) {
+        kuzure5_work *work = kuzure5_work_get(pActwk);
+
         pActwk->r_no0 += 2;
         pActwk->cdsts = 0;
-        ((Sint16 *)pActwk)[23] = 8;
+        work->wait_timer = 8;
 
         if (actwk[0].xspeed.w >= 0) {
-            ((Sint16 *)pActwk)[24] = 8;
+            work->break_step = 8;
         } else
-            ((Sint16 *)pActwk)[24] = -8;
+            work->break_step = -8;
 
         soundset(163);
     }
@@ -84,7 +110,7 @@ static void main_check(sprite_status *pActwk) {
 static void main_wait(sprite_status *pActwk) {
     ridechk(pActwk, &actwk[0]);
 
-    if (--((Sint16 *)pActwk)[23] < 0) {
+    if (--kuzure5_work_get(pActwk)->wait_timer < 0) {
         pActwk->r_no0 += 2;
     }
 
@@ -101,7 +127,7 @@ static void main_break(sprite_status *pActwk) {
     ywk = 8;
     xwk = ((Sint16)pActwk->userflag.b.h - 1) * 8;
 
-    if (((Sint16 *)pActwk)[24] >= 0) {
+    if (kuzure5_work_get(pActwk)->break_step >= 0) {
         xwk *= -1;
     }
 
@@ -117,7 +143,7 @@ static void main_break(sprite_status *pActwk) {
         pNewact->userflag.b.l = flagwk;
         pNewact->yposi.w.h -= ywk;
         pNewact->xposi.w.h += xwk;
-        ((Sint16 *)pNewact)[23] = 4;
+        kuzure5_work_get(pNewact)->wait_timer = 4;
         pNewact->patno = 8;
 
         if (actwkchk(&pNewact) == 0) {
@@ -147,8 +173,8 @@ static void main_break(sprite_status *pActwk) {
         --pActwk->patno;
         pActwk->sprhs -= 8;
         pActwk->sprhsize -= 8;
-        ((Sint16 *)pActwk)[23] = 7;
-        pActwk->xposi.w.h += ((Sint16 *)pActwk)[24];
+        kuzure5_work_get(pActwk)->wait_timer = 7;
+        pActwk->xposi.w.h += kuzure5_work_get(pActwk)->break_step;
         ridechk(pActwk, &actwk[0]);
         actionsub(pActwk);
     }
@@ -163,7 +189,7 @@ static void parts_ini(sprite_status *pActwk) {
 }
 
 static void parts_wait(sprite_status *pActwk) {
-    if (--((Sint16 *)pActwk)[23] < 0) {
+    if (--kuzure5_work_get(pActwk)->wait_timer < 0) {
         pActwk->r_no0 += 2;
     }
 
@@ -176,11 +202,11 @@ static void parts_fall(sprite_status *pActwk) {
     if (!(pActwk->actflg & 128)) {
         frameout(pActwk);
     } else {
-        spdwk = ((Sint32 *)pActwk)[12] + 16384;
+        spdwk = kuzure5_work_get(pActwk)->y_velocity + 16384;
         if (spdwk > 1441792) {
             spdwk = 1441792;
         }
-        ((Sint32 *)pActwk)[12] = spdwk;
+        kuzure5_work_get(pActwk)->y_velocity = spdwk;
         pActwk->yposi.l += spdwk;
         actionsub(pActwk);
     }

@@ -21,6 +21,19 @@ sprite_pattern *gate_pat[8] = {&pat00, &pat01, &pat02, &pat03,
 static char pchg0[10] = {0, 0, 1, 2, 3, 4, 5, 6, 7, 7};
 static char *pchg[1] = {pchg0};
 
+#pragma pack(push, 1)
+typedef struct {
+    Uint8 target_patno;
+} gate_work;
+#pragma pack(pop)
+
+_Static_assert(sizeof(gate_work) <= sizeof(((sprite_status *)0)->actfree),
+               "gate_work must fit in sprite_status.actfree");
+
+static gate_work *gate_work_get(sprite_status *actionwk) {
+    return (gate_work *)actionwk->actfree;
+}
+
 void gate(sprite_status *actionwk) {
     if (actionwk->r_no0 == 4) {
 
@@ -43,13 +56,13 @@ void gate(sprite_status *actionwk) {
 }
 
 void act_init6(sprite_status *actionwk) {
-    actionwk->actfree[0] = 5;
+    gate_work_get(actionwk)->target_patno = 5;
     actionwk->r_no0 = 0;
     act_init10(actionwk);
 }
 
 static void act_init(sprite_status *actionwk) {
-    actionwk->actfree[0] = 7;
+    gate_work_get(actionwk)->target_patno = 7;
     act_init10(actionwk);
 }
 
@@ -66,7 +79,7 @@ void act_init10(sprite_status *actionwk) {
 
 static void act_open(sprite_status *actionwk) {
     patchg(actionwk, (Uint8 **)pchg);
-    if (actionwk->patno == actionwk->actfree[0]) {
+    if (actionwk->patno == gate_work_get(actionwk)->target_patno) {
         actionwk->r_no0 += 2;
     }
 }

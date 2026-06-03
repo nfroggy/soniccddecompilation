@@ -112,7 +112,7 @@ static Uint32 egg4air_ini(sprite_status *pActwk) {
     pActwk->patbase = egg4air_pat;
 
     ((Sint32 *)pActwk)[16] = 114688;
-    ((Sint32 *)pActwk)[4] = 81000;
+    sprite_status_set_xspeed_yspeed(pActwk, 81000);
 
     colorset2(5);
     make_airhead(pActwk);
@@ -202,7 +202,7 @@ static Uint32 egg4air_01(sprite_status *pActwk) {
 
         flg = 0;
 
-        spdwk = ((Sint32 *)pActwk)[4];
+        spdwk = sprite_status_get_xspeed_yspeed(pActwk);
         pActwk->yposi.l += spdwk;
         if (pActwk->yposi.w.h >= pEscRoot->E4A_Y) {
             pActwk->yposi.w.h = pEscRoot->E4A_Y;
@@ -229,7 +229,7 @@ static Uint32 egg4air_01(sprite_status *pActwk) {
 
         flg = 0;
 
-        spdwk = ((Sint32 *)pActwk)[4];
+        spdwk = sprite_status_get_xspeed_yspeed(pActwk);
         pActwk->yposi.l += spdwk;
         if (pActwk->yposi.w.h >= pEscRoot->E4A_Y) {
             pActwk->yposi.w.h = pEscRoot->E4A_Y;
@@ -380,7 +380,7 @@ static void egg4air_hitchk(sprite_status *pActwk) {
 
     if (pActwk->actfree[2] && !(--pActwk->actfree[2])) {
         ((Sint32 *)pActwk)[16] = 114688;
-        ((Sint32 *)pActwk)[4] = 81000;
+        sprite_status_set_xspeed_yspeed(pActwk, 81000);
     }
 
     if (!pActwk->colicnt)
@@ -403,7 +403,7 @@ static void egg4air_hitchk(sprite_status *pActwk) {
             actwk[actidx].actfree[0] = 40;
             pActwk->actfree[2] = 70;
             ((Sint32 *)pActwk)[16] = 294912;
-            ((Sint32 *)pActwk)[4] = 208000;
+            sprite_status_set_xspeed_yspeed(pActwk, 208000);
 
             pActwk->actfree[3] = 16;
             if (pActwk->colicnt == 1) {
@@ -504,10 +504,10 @@ static void e4a_03_most_near(sprite_status *pActwk) {
     if ((Sint32)pActwk->yspeed.w > 2048 || (Sint32)pActwk->xspeed.w > 2048) {
 
         ((Sint32 *)pActwk)[16] = 0x100000;
-        ((Sint32 *)pActwk)[4] = 741000;
+        sprite_status_set_xspeed_yspeed(pActwk, 741000);
     } else {
         ((Sint32 *)pActwk)[16] = 0x80000;
-        ((Sint32 *)pActwk)[4] = 370000;
+        sprite_status_set_xspeed_yspeed(pActwk, 370000);
     }
 
     egg4air_01(pActwk);
@@ -515,14 +515,14 @@ static void e4a_03_most_near(sprite_status *pActwk) {
 
 static void e4a_03_near(sprite_status *pActwk) {
     ((Sint32 *)pActwk)[16] = 196608;
-    ((Sint32 *)pActwk)[4] = 139000;
+    sprite_status_set_xspeed_yspeed(pActwk, 139000);
 
     egg4air_01(pActwk);
 }
 
 static void e4a_03_normal(sprite_status *pActwk) {
     ((Sint32 *)pActwk)[16] = 114688;
-    ((Sint32 *)pActwk)[4] = 81000;
+    sprite_status_set_xspeed_yspeed(pActwk, 81000);
 
     egg4air_01(pActwk);
 }
@@ -544,7 +544,7 @@ static Uint32 egg4air_04(sprite_status *pActwk) {
         pActwk->r_no0 = 2;
 
         bossstart = 4;
-        ((Sint32 *)pActwk)[4] = 208000;
+        sprite_status_set_xspeed_yspeed(pActwk, 208000);
     }
 
     return 1;

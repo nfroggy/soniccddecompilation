@@ -1,11 +1,37 @@
+#include <stddef.h>
+
 #include "../equ.h"
 #include "kumo.h"
 #include "../action.h"
 #include "../actset.h"
 #include "../dircol.h"
 #include "../loader2.h"
+#include "../player_work.h"
 #include "../playsub.h"
 #include "../suicide.h"
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint16 timer;
+    Uint8 **change_table;
+    Sint32 initial_y_speed;
+    Sint32 velocity;
+} kumo_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(kumo_work, timer) == 0, "kumo_work.timer offset");
+_Static_assert(offsetof(kumo_work, change_table) == 2,
+               "kumo_work.change_table offset");
+_Static_assert(offsetof(kumo_work, initial_y_speed) == 6,
+               "kumo_work.initial_y_speed offset");
+_Static_assert(offsetof(kumo_work, velocity) == 10,
+               "kumo_work.velocity offset");
+_Static_assert(sizeof(kumo_work) <= sizeof(((sprite_status *)0)->actfree),
+               "kumo_work must fit in sprite_status.actfree");
+
+static kumo_work *kumo_get_work(sprite_status *pActwk) {
+    return (kumo_work *)pActwk->actfree;
+}
 
 static void kumo_init(sprite_status *pActwk);
 static void kumo_jump(sprite_status *pActwk);
@@ -54,6 +80,8 @@ void kumo(sprite_status *pActwk) {
 }
 
 static void kumo_init(sprite_status *pActwk) {
+    kumo_work *work = kumo_get_work(pActwk);
+
     pActwk->r_no0 += 2;
     pActwk->actflg |= 4;
     pActwk->sprpri = 3;
@@ -65,12 +93,12 @@ static void kumo_init(sprite_status *pActwk) {
 
     if (!pActwk->userflag.b.h) {
         pActwk->patbase = pat_kumo_e;
-        ((Uint8 ***)pActwk)[12] = pchg_e;
-        ((Sint32 *)pActwk)[13] = -524288;
+        work->change_table = pchg_e;
+        work->initial_y_speed = -524288;
     } else {
         pActwk->patbase = pat_kumo_b;
-        ((Uint8 ***)pActwk)[12] = pchg_b;
-        ((Sint32 *)pActwk)[13] = -327680;
+        work->change_table = pchg_b;
+        work->initial_y_speed = -327680;
     }
 
     if (pActwk->userflag.b.l) {
@@ -83,18 +111,21 @@ static void kumo_init(sprite_status *pActwk) {
 }
 
 static void kumo_jump(sprite_status *pActwk) {
+    kumo_work *work = kumo_get_work(pActwk);
+
     pActwk->r_no0 += 2;
     pActwk->patno = 0;
     pActwk->yposi.w.h -= 8;
-    ((Sint32 *)pActwk)[14] = ((Sint32 *)pActwk)[13];
+    work->velocity = work->initial_y_speed;
     kumo_jump1(pActwk);
 }
 
 static void kumo_jump1(sprite_status *pActwk) {
     Sint16 wD1;
+    kumo_work *work = kumo_get_work(pActwk);
 
-    ((Sint32 *)pActwk)[14] += 16384;
-    pActwk->yposi.l += ((Sint32 *)pActwk)[14];
+    work->velocity += 16384;
+    pActwk->yposi.l += work->velocity;
     if ((wD1 = emycol_d(pActwk)) < 0) {
         pActwk->yposi.w.h += wD1;
         pActwk->r_no0 += 2;
@@ -104,26 +135,30 @@ static void kumo_jump1(sprite_status *pActwk) {
 }
 
 static void kumo_move(sprite_status *pActwk) {
+    kumo_work *work = kumo_get_work(pActwk);
+
     pActwk->r_no0 += 2;
     pActwk->colino = 54;
-    ((Sint16 *)pActwk)[23] = 180;
+    work->timer = 180;
     kumo_move1(pActwk);
 }
 
 static void kumo_move1(sprite_status *pActwk) {
+    kumo_work *work = kumo_get_work(pActwk);
+
     if (!pActwk->userflag.b.h) {
         if (kumo_check(pActwk, &actwk[0])) {
             pActwk->r_no0 += 2;
             pActwk->patno = 1;
-            ((Sint16 *)pActwk)[23] = 60;
+            work->timer = 60;
             return;
         }
     }
 
-    if (--((Sint16 *)pActwk)[23] == 0) {
+    if (--work->timer == 0) {
         pActwk->r_no0 -= 6;
     }
-    patchg(pActwk, ((Uint8 ***)pActwk)[12]);
+    patchg(pActwk, work->change_table);
 }
 
 static Sint16 kumo_check(sprite_status *pActwk0, sprite_status *pActwk1) {
@@ -153,7 +188,9 @@ static Sint16 kumo_check(sprite_status *pActwk0, sprite_status *pActwk1) {
 }
 
 static void kumo_tama(sprite_status *pActwk) {
-    if (!(--((Sint16 *)pActwk)[23])) {
+    kumo_work *work = kumo_get_work(pActwk);
+
+    if (!(--work->timer)) {
         pActwk->r_no0 += 2;
     }
 }
@@ -184,7 +221,7 @@ static void kumo_tama1(sprite_status *pActwk) {
         }
 
         pNewactwk->xposi.w.h += wD0;
-        ((Sint32 *)pNewactwk)[14] = lD1;
+        kumo_get_work(pNewactwk)->velocity = lD1;
         if (pActwk->actflg & 128) {
             soundset(160);
         }
@@ -193,21 +230,24 @@ static void kumo_tama1(sprite_status *pActwk) {
 }
 
 static void tama(sprite_status *pActwk) {
-    if (!((Sint16 *)pActwk)[23]) {
+    kumo_work *work = kumo_get_work(pActwk);
+    player_work *player = player_work_get(&actwk[0]);
+
+    if (!work->timer) {
         if (pActwk->colicnt) {
             pActwk->colicnt = 0;
             if (actwk[0].r_no0 != 4) {
                 if (actwk[0].r_no0 != 6) {
-                    if (!((Sint16 *)&actwk[0])[26]) {
+                    if (!player->damage_invulnerability_timer) {
 
-                        ((Sint16 *)pActwk)[23] = 120;
+                        work->timer = 120;
                         goto label1;
                     }
                 }
             }
         }
 
-        pActwk->xposi.l += ((Sint32 *)pActwk)[14];
+        pActwk->xposi.l += work->velocity;
         patchg(pActwk, pchg_tama);
         actionsub(pActwk);
         frameout_s(pActwk);
@@ -215,7 +255,7 @@ static void tama(sprite_status *pActwk) {
     }
 
 label1:
-    if (!(--((Sint16 *)pActwk)[23])) {
+    if (!(--work->timer)) {
         frameout(pActwk);
         return;
     }

@@ -11,6 +11,22 @@ static void com(sprite_status *pActwk);
 static sprite_pattern pat00 = {1, {{-32, -16, 0, 455}}};
 sprite_pattern *pat_iwa5wave[1] = {&pat00};
 
+#pragma pack(push, 1)
+typedef struct {
+    Sint16 parent_actor;
+    Sint16 origin_x;
+    Sint32 left_bound;
+    Sint32 right_bound;
+    Sint16 origin_y;
+    Sint16 angle;
+    Sint16 saved_xspeed;
+} iwa5wave_work;
+#pragma pack(pop)
+
+static iwa5wave_work *get_work(sprite_status *pActwk) {
+    return (iwa5wave_work *)pActwk->actfree;
+}
+
 void iwa5wave(sprite_status *pActwk) {
     if (pActwk->r_no0)
         a_move(pActwk);
@@ -20,16 +36,17 @@ void iwa5wave(sprite_status *pActwk) {
 
 static void a_init(sprite_status *pActwk) {
     sprite_status *pNewActwk;
+    iwa5wave_work *work = get_work(pActwk);
     int_union ld0;
     Sint16 d3, d4, d5, d6;
 
-    ((Sint16 *)pActwk)[24] = pActwk->xposi.w.h;
+    work->origin_x = pActwk->xposi.w.h;
     ld0.w.h = pActwk->xposi.w.h;
     ld0.w.l = 0;
     ld0.l -= 0x800000;
-    *(Sint32 *)&pActwk->actfree[4] = ld0.l;
+    work->left_bound = ld0.l;
     ld0.l += 0x1000000;
-    *(Sint32 *)&pActwk->actfree[8] = ld0.l;
+    work->right_bound = ld0.l;
 
     d6 = 1;
     d5 = pActwk->xposi.w.h;
@@ -49,17 +66,20 @@ static void a_init(sprite_status *pActwk) {
     pNewActwk->sprvsize = 16;
     pNewActwk->sproffset = 17543;
     pNewActwk->patbase = pat_iwa5wave;
-    ((Sint16 *)pNewActwk)[29] = pActwk->yposi.w.h;
+    get_work(pNewActwk)->origin_y = pActwk->yposi.w.h;
 
     do {
         if (d6 != 1) {
+            iwa5wave_work *new_work;
+
             if (actwkchk(&pNewActwk) != 0)
                 return;
 
-            ((Sint16 *)pNewActwk)[23] = (Uint16)(pActwk - actwk);
+            new_work = get_work(pNewActwk);
+            new_work->parent_actor = (Uint16)(pActwk - actwk);
             pNewActwk->actno = pActwk->actno;
-            *(Sint32 *)&pNewActwk->actfree[4] = *(Sint32 *)&pActwk->actfree[4];
-            *(Sint32 *)&pNewActwk->actfree[8] = *(Sint32 *)&pActwk->actfree[8];
+            new_work->left_bound = work->left_bound;
+            new_work->right_bound = work->right_bound;
             pNewActwk->yposi.w.h = pActwk->yposi.w.h;
 
             pNewActwk->actflg |= 4;
@@ -70,16 +90,17 @@ static void a_init(sprite_status *pActwk) {
             pNewActwk->sprvsize = 16;
             pNewActwk->sproffset = 17543;
             pNewActwk->patbase = pat_iwa5wave;
-            ((Sint16 *)pNewActwk)[29] = pActwk->yposi.w.h;
+            new_work->origin_y = pActwk->yposi.w.h;
         }
         pNewActwk->xposi.w.h = d5;
         d5 -= d4;
-        ((Sint16 *)pNewActwk)[30] = d3;
+        get_work(pNewActwk)->angle = d3;
     } while (d6--);
 }
 
 static void a_move(sprite_status *pActwk) {
     sprite_status *pMainwk;
+    iwa5wave_work *work = get_work(pActwk);
     int_union ld0, ld1;
     Sint32 d0, d1;
     Sint16 sd0, sd1;
@@ -88,8 +109,8 @@ static void a_move(sprite_status *pActwk) {
     d0 = pActwk->xposi.l;
     d1 = d0;
     d1 -= 32768;
-    if (d1 <= *(Sint32 *)&pActwk->actfree[4]) {
-        d0 = *(Sint32 *)&pActwk->actfree[8];
+    if (d1 <= work->left_bound) {
+        d0 = work->right_bound;
         d1 = d0;
     }
     pActwk->xposi.l = d1;
@@ -97,8 +118,8 @@ static void a_move(sprite_status *pActwk) {
     d1 >>= 8;
     pActwk->xspeed.w = (Uint16)d1;
 
-    ((Sint16 *)pActwk)[30] += 256;
-    sd0 = ((Sint16 *)pActwk)[30];
+    work->angle += 256;
+    sd0 = work->angle;
     sd0 >>= 8;
     kakudo = (Uint16)(sd0 & 255);
     sinset(kakudo, &sd0, &sd1);
@@ -112,10 +133,10 @@ static void a_move(sprite_status *pActwk) {
     sd0 = ld0.w.h;
     ld0.w.h = ld0.w.l;
     ld0.w.l = sd0;
-    ld0.w.l += ((Sint16 *)pActwk)[29];
+    ld0.w.l += work->origin_y;
     pActwk->yposi.w.h = ld0.w.l;
-    if (((Sint16 *)pActwk)[23]) {
-        pMainwk = &actwk[((Sint16 *)pActwk)[23]];
+    if (work->parent_actor) {
+        pMainwk = &actwk[work->parent_actor];
         if (pMainwk->actno == 41) {
             com(pActwk);
             return;
@@ -126,20 +147,21 @@ static void a_move(sprite_status *pActwk) {
     }
 
     com(pActwk);
-    frameout_s00(pActwk, ((Sint16 *)pActwk)[24]);
+    frameout_s00(pActwk, work->origin_x);
 }
 
 static void com(sprite_status *pActwk) {
+    iwa5wave_work *work = get_work(pActwk);
     Uint8 d0;
 
-    ((Sint16 *)pActwk)[31] = pActwk->xspeed.w;
+    work->saved_xspeed = pActwk->xspeed.w;
     pActwk->xspeed.w = 0;
     pActwk->sprvsize = 18;
     if (ridechk(pActwk, &actwk[0]))
         d0 = 255;
     else
         d0 = 0;
-    pActwk->xspeed.w = ((Sint16 *)pActwk)[31];
+    pActwk->xspeed.w = work->saved_xspeed;
     pActwk->sprvsize = 16;
     if (d0) {
         ridechk(pActwk, &actwk[0]);

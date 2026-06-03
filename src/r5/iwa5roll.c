@@ -4,9 +4,37 @@
 #include "../actset.h"
 #include "../etc.h"
 #include "../ridechk.h"
+#include <stddef.h>
 
 static void iwa5roll_init(sprite_status *pActwk);
 static void iwa5roll_move(sprite_status *pActwk);
+
+#pragma pack(push, 1)
+typedef struct {
+    Sint16 parent_actor;
+    int_union origin_x;
+    int_union origin_y;
+    short_union angle;
+    Sint16 angular_speed;
+} iwa5roll_work;
+#pragma pack(pop)
+
+_Static_assert(offsetof(iwa5roll_work, parent_actor) == 0,
+               "iwa5roll_work.parent_actor offset");
+_Static_assert(offsetof(iwa5roll_work, origin_x) == 2,
+               "iwa5roll_work.origin_x offset");
+_Static_assert(offsetof(iwa5roll_work, origin_y) == 6,
+               "iwa5roll_work.origin_y offset");
+_Static_assert(offsetof(iwa5roll_work, angle) == 10,
+               "iwa5roll_work.angle offset");
+_Static_assert(offsetof(iwa5roll_work, angular_speed) == 12,
+               "iwa5roll_work.angular_speed offset");
+_Static_assert(sizeof(iwa5roll_work) <= sizeof(((sprite_status *)0)->actfree),
+               "iwa5roll_work fits in actfree");
+
+static iwa5roll_work *iwa5roll_work_get(sprite_status *pActwk) {
+    return (iwa5roll_work *)pActwk->actfree;
+}
 
 static sprite_pattern pat_iwa5roll_00 = {1, {{-8, -8, 0, 429}}};
 sprite_pattern *pat_iwa5roll[1] = {&pat_iwa5roll_00};
@@ -19,7 +47,9 @@ void iwa5roll(sprite_status *pActwk) {
 }
 
 static void iwa5roll_init(sprite_status *pActwk) {
+    iwa5roll_work *work = iwa5roll_work_get(pActwk);
     sprite_status *pNewactwk;
+    iwa5roll_work *new_work;
     Sint16 wD1, wD3, wD4, wD5, wD6;
     Sint16 wA5;
     Sint16 iwa5roll_tbl[6] = {128, 1, 192, 1, 256, 1};
@@ -29,7 +59,7 @@ static void iwa5roll_init(sprite_status *pActwk) {
     if (pActwk->userflag.b.h)
         wD1 *= -1;
 
-    ((Sint16 *)pActwk)[29] = wD1;
+    work->angular_speed = wD1;
 
     wD6 = 3;
     wD5 = 0;
@@ -47,7 +77,8 @@ static void iwa5roll_init(sprite_status *pActwk) {
                 goto label2;
 
         label1:
-            ((Sint16 *)pNewactwk)[23] = pActwk - actwk;
+            new_work = iwa5roll_work_get(pNewactwk);
+            new_work->parent_actor = pActwk - actwk;
             pNewactwk->actflg |= 4;
             pNewactwk->r_no0 = 2;
             pNewactwk->sprpri = 3;
@@ -59,21 +90,22 @@ static void iwa5roll_init(sprite_status *pActwk) {
             pNewactwk->actno = pActwk->actno;
             pNewactwk->xposi.w.h = pActwk->xposi.w.h;
             pNewactwk->yposi.w.h = pActwk->yposi.w.h;
-            ((Sint32 *)pNewactwk)[12] = pActwk->xposi.l;
-            ((Sint32 *)pNewactwk)[13] = pActwk->yposi.l;
-            ((Sint16 *)pNewactwk)[29] = ((Sint16 *)pActwk)[29];
+            new_work->origin_x.l = pActwk->xposi.l;
+            new_work->origin_y.l = pActwk->yposi.l;
+            new_work->angular_speed = work->angular_speed;
 
-            ((Sint16 *)pNewactwk)[28] = wD3;
+            new_work->angle.w = wD3;
             wD3 += 2048;
         } while (++wD5 <= wA5);
         wD4 += 16384;
     } while (--wD6 >= 0);
 
 label2:
-    ((Sint16 *)pActwk)[23] = 0;
+    work->parent_actor = 0;
 }
 
 static void iwa5roll_move(sprite_status *pActwk) {
+    iwa5roll_work *work = iwa5roll_work_get(pActwk);
     Uint8 bD0;
     Sint16 Sp;
     Uint16 Sin, Cos;
@@ -81,23 +113,23 @@ static void iwa5roll_move(sprite_status *pActwk) {
     int_union lD4, lD5;
     Sint32 lD3;
 
-    if (((Sint16 *)pActwk)[23]) {
-        if (actwk[((Sint16 *)pActwk)[23]].actno != 39) {
+    if (work->parent_actor) {
+        if (actwk[work->parent_actor].actno != 39) {
             frameout(pActwk);
             return;
         }
     }
 
-    ((Sint16 *)pActwk)[28] += ((Sint16 *)pActwk)[29];
+    work->angle.w += work->angular_speed;
     lD1.l = 0;
     lD0.l = 0;
-    sinset(pActwk->actfree[11], (Sint16 *)&Sin, (Sint16 *)&Cos);
+    sinset(work->angle.b.h, (Sint16 *)&Sin, (Sint16 *)&Cos);
     lD1.w.h = Cos;
     lD0.w.h = Sin;
     lD5.l = lD1.l / 4 + lD1.l / 8;
     lD4.l = lD0.l / 4 + lD0.l / 8;
-    lD5.l += ((Sint32 *)pActwk)[12];
-    lD4.l += ((Sint32 *)pActwk)[13];
+    lD5.l += work->origin_x.l;
+    lD4.l += work->origin_y.l;
     lD3 = pActwk->xposi.l;
     pActwk->xposi.l = lD5.l;
     pActwk->yposi.l = lD4.l;
@@ -118,7 +150,7 @@ static void iwa5roll_move(sprite_status *pActwk) {
 
     actionsub(pActwk);
 
-    if (!((Sint16 *)pActwk)[23]) {
-        frameout_s00(pActwk, ((Sint16 *)pActwk)[25]);
+    if (!work->parent_actor) {
+        frameout_s00(pActwk, work->origin_x.w.h);
     }
 }
