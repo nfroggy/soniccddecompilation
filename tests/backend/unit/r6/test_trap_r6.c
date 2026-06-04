@@ -178,7 +178,7 @@ static void test_optbr6_mov1_counts_frames_and_reaches_check2(
     reset_optbr6_state();
     bridge->r_no0 = 4;
     bridge->patno = 2;
-    bridge->actfree[16] = 128;
+    optbr6_get_work(bridge)->animation_counter_low = 128;
 
     optbr6_mov1(bridge);
 
@@ -274,7 +274,7 @@ static void test_optbr6_mov2_counts_down_and_returns_to_check1(
     reset_optbr6_state();
     bridge->r_no0 = 8;
     bridge->patno = 1;
-    bridge->actfree[16] = 128;
+    optbr6_get_work(bridge)->animation_counter_low = 128;
 
     optbr6_mov2(bridge);
 
@@ -289,11 +289,11 @@ static void test_tobira_cnt_waits_until_counter_wraps_negative(
 
     reset_optbr6_state();
     bridge->patno = 2;
-    bridge->actfree[16] = 0;
+    optbr6_get_work(bridge)->animation_counter_low = 0;
 
     tobira_cnt(bridge);
 
-    TEST_ASSERT_EQ_INT(ctx, 64, bridge->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 64, optbr6_get_work(bridge)->animation_counter_low);
     TEST_ASSERT_EQ_INT(ctx, 2, bridge->patno);
 }
 

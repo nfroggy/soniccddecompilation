@@ -1,4 +1,3 @@
-#include <stddef.h>
 #include <string.h>
 
 #include "support/test_runner.h"
@@ -74,25 +73,6 @@ void sinset(Uint8 kakudo, Sint16 *sin, Sint16 *cos) {
     *cos = sinset_cos;
 }
 
-static size_t short_alias_offset(int short_index) {
-    return (size_t)short_index * sizeof(Sint16) -
-           offsetof(sprite_status, actfree);
-}
-
-static void set_actor_short_alias(sprite_status *actor, int short_index,
-                                  Sint16 value) {
-    size_t offset = short_alias_offset(short_index);
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)bits;
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 actor_short_alias(sprite_status *actor, int short_index) {
-    size_t offset = short_alias_offset(short_index);
-    return (Sint16)((Uint16)actor->actfree[offset] |
-                    ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
 static void reset_logs(void) {
     actionsub_count = 0;
     actionsub_actor = 0;
@@ -158,23 +138,23 @@ static void test_type1_type2_type3(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, actor->patbase == udblk4pat1);
     TEST_ASSERT_EQ_INT(ctx, 16, actor->sprhsize);
     TEST_ASSERT_EQ_INT(ctx, 64, actor->sprvsize);
-    TEST_ASSERT_EQ_INT(ctx, 114, actor_short_alias(actor, 27));
-    TEST_ASSERT_EQ_INT(ctx, 100, actor_short_alias(actor, 29));
-    TEST_ASSERT_EQ_INT(ctx, 193, actor->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 114, udblk4_get_work(actor)->base_y);
+    TEST_ASSERT_EQ_INT(ctx, 100, udblk4_get_work(actor)->base_x);
+    TEST_ASSERT_EQ_INT(ctx, 193, udblk4_get_work(actor)->phase_high);
     TEST_ASSERT_EQ_INT(ctx, 6, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 35, actwk[20].actno);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[20].actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 1, udblk4_get_work(&actwk[20])->child_index);
     assert_action_origin(ctx, actor, 100);
 
     reset_udblk4_state();
     actor = &actwk[3];
     actor->userflag.b.h = 1;
-    actor->actfree[18] = 3;
+    udblk4_get_work(actor)->child_index = 3;
     actor->yposi.w.h = 40;
 
     udblk4(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 121, actor->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 121, udblk4_get_work(actor)->phase_high);
     TEST_ASSERT_EQ_INT(ctx, -96, actor->xposi.w.h);
 
     reset_udblk4_state();
@@ -194,7 +174,7 @@ static void test_type1_type2_type3(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, actor->patbase == udblk4pat3);
     TEST_ASSERT_EQ_INT(ctx, 32, actor->sprhsize);
     TEST_ASSERT_EQ_INT(ctx, 96, actor->sprvsize);
-    TEST_ASSERT_EQ_INT(ctx, 20, actor_short_alias(actor, 27));
+    TEST_ASSERT_EQ_INT(ctx, 20, udblk4_get_work(actor)->base_y);
     TEST_ASSERT_EQ_INT(ctx, 64, sinset_angle);
     assert_action_origin(ctx, actor, 200);
 }
@@ -215,14 +195,14 @@ static void test_type4_type5_type6_type7(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 192, sinset_angle);
     TEST_ASSERT_EQ_INT(ctx, 3, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 34, actwk[20].actno);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor_short_alias(&actwk[20], 28));
+    TEST_ASSERT_EQ_INT(ctx, 4, udblk4_get_work(&actwk[20])->parent_index);
     TEST_ASSERT_EQ_INT(ctx, 35, actwk[21].actno);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[21].actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 1, udblk4_get_work(&actwk[21])->child_index);
     assert_action_origin(ctx, actor, 300);
 
     reset_logs();
     actor->r_no0 = 2;
-    set_actor_short_alias(actor, 28, 20);
+    udblk4_get_work(actor)->parent_index = 20;
     udblk4(actor);
     TEST_ASSERT_EQ_INT(ctx, actor->yspeed.w, actwk[20].yspeed.w);
 
@@ -240,7 +220,7 @@ static void test_type4_type5_type6_type7(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 3, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 35, actwk[20].actno);
     TEST_ASSERT_EQ_INT(ctx, 5, actwk[20].userflag.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 240, actwk[20].actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 240, udblk4_get_work(&actwk[20])->phase_high);
     assert_action_origin(ctx, actor, 300);
 
     reset_udblk4_state();
@@ -255,8 +235,8 @@ static void test_type4_type5_type6_type7(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 7, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 35, actwk[20].actno);
     TEST_ASSERT_EQ_INT(ctx, 9, actwk[20].userflag.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 255, actwk[20].actfree[19]);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor_short_alias(&actwk[20], 28));
+    TEST_ASSERT_EQ_INT(ctx, 255, udblk4_get_work(&actwk[20])->variant);
+    TEST_ASSERT_EQ_INT(ctx, 4, udblk4_get_work(&actwk[20])->parent_index);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s00_count);
     TEST_ASSERT_EQ_INT(ctx, 400, frameout_s00_x);
 
@@ -269,10 +249,10 @@ static void test_type4_type5_type6_type7(test_context *ctx) {
     udblk4(actor);
 
     TEST_ASSERT_TRUE(ctx, actor->patbase == udblk4pat7);
-    TEST_ASSERT_EQ_INT(ctx, 548, actor_short_alias(actor, 29));
+    TEST_ASSERT_EQ_INT(ctx, 548, udblk4_get_work(actor)->base_x);
     TEST_ASSERT_EQ_INT(ctx, 3, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 7, actwk[20].userflag.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 224, actwk[20].actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 224, udblk4_get_work(&actwk[20])->phase_high);
     assert_action_origin(ctx, actor, 548);
 }
 
@@ -300,7 +280,7 @@ static void test_type8_type9_typeA_typeB(test_context *ctx) {
     actor->userflag.b.h = 9;
     actor->xposi.w.h = 640;
     actor->yposi.w.h = 260;
-    actor->actfree[19] = 128;
+    udblk4_get_work(actor)->variant = 128;
 
     udblk4(actor);
 
@@ -324,7 +304,7 @@ static void test_type8_type9_typeA_typeB(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 16, actor->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 6, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 10, actwk[20].userflag.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 224, actwk[20].actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 224, udblk4_get_work(&actwk[20])->phase_high);
     TEST_ASSERT_EQ_INT(ctx, 668, actwk[20].xposi.w.h);
 
     reset_udblk4_state();
@@ -332,7 +312,7 @@ static void test_type8_type9_typeA_typeB(test_context *ctx) {
     actor->userflag.b.h = 11;
     actor->xposi.w.h = 800;
     actor->yposi.w.h = 400;
-    actor->actfree[18] = 2;
+    udblk4_get_work(actor)->child_index = 2;
 
     udblk4(actor);
 
@@ -351,8 +331,8 @@ static void test_parent_frameout_edges_and_typeB_moves(test_context *ctx) {
     actor->userflag.b.h = 1;
     actor->r_no0 = 2;
     actor->yspeed.w = -1;
-    set_actor_short_alias(actor, 27, 10);
-    set_actor_short_alias(actor, 29, 20);
+    udblk4_get_work(actor)->base_y = 10;
+    udblk4_get_work(actor)->base_x = 20;
     udblk4(actor);
     TEST_ASSERT_EQ_INT(ctx, 2, ride_on_chk_count);
 
@@ -360,7 +340,7 @@ static void test_parent_frameout_edges_and_typeB_moves(test_context *ctx) {
     actor = &actwk[6];
     actor->userflag.b.h = 6;
     actor->r_no0 = 2;
-    set_actor_short_alias(actor, 29, 123);
+    udblk4_get_work(actor)->base_x = 123;
     udblk4(actor);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s00_count);
     TEST_ASSERT_EQ_INT(ctx, 123, frameout_s00_x);
@@ -368,7 +348,7 @@ static void test_parent_frameout_edges_and_typeB_moves(test_context *ctx) {
     reset_udblk4_state();
     actor->userflag.b.h = 8;
     actor->r_no0 = 2;
-    set_actor_short_alias(actor, 28, 20);
+    udblk4_get_work(actor)->parent_index = 20;
     actwk[20].actno = 0;
     udblk4(actor);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s0_count);
@@ -378,7 +358,7 @@ static void test_parent_frameout_edges_and_typeB_moves(test_context *ctx) {
     actor = &actwk[6];
     actor->userflag.b.h = 9;
     actor->r_no0 = 2;
-    set_actor_short_alias(actor, 28, 20);
+    udblk4_get_work(actor)->parent_index = 20;
     actwk[20].actno = 0;
     udblk4(actor);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s0_count);
@@ -387,7 +367,7 @@ static void test_parent_frameout_edges_and_typeB_moves(test_context *ctx) {
     actor = &actwk[6];
     actor->userflag.b.h = 10;
     actor->r_no0 = 2;
-    set_actor_short_alias(actor, 28, 20);
+    udblk4_get_work(actor)->parent_index = 20;
     actwk[20].actno = 0;
     udblk4(actor);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s0_count);
@@ -400,14 +380,14 @@ static void test_parent_frameout_edges_and_typeB_moves(test_context *ctx) {
     udblk4(actor);
     TEST_ASSERT_EQ_INT(ctx, 5, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 11, actwk[20].userflag.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[20].actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 1, udblk4_get_work(&actwk[20])->child_index);
     TEST_ASSERT_EQ_INT(ctx, 500, actor->yposi.w.h);
 
     reset_udblk4_state();
     actor = &actwk[6];
     actor->userflag.b.h = 11;
     actor->r_no0 = 2;
-    set_actor_short_alias(actor, 28, 20);
+    udblk4_get_work(actor)->parent_index = 20;
     actwk[20].actno = 0;
     udblk4(actor);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s0_count);
@@ -419,7 +399,7 @@ static void test_parent_frameout_edges_and_typeB_moves(test_context *ctx) {
     actor->xposi.w.h = 100;
     actor->yposi.w.h = 50;
     actor->yspeed.w = -256;
-    set_actor_short_alias(actor, 27, 200);
+    udblk4_get_work(actor)->base_y = 200;
 
     udblk4(actor);
 
@@ -431,7 +411,7 @@ static void test_parent_frameout_edges_and_typeB_moves(test_context *ctx) {
     actor->r_no0 = 2;
     actor->yposi.w.h = 220;
     actor->yspeed.w = -256;
-    set_actor_short_alias(actor, 27, 200);
+    udblk4_get_work(actor)->base_y = 200;
 
     udblk4(actor);
 
@@ -443,7 +423,7 @@ static void test_parent_frameout_edges_and_typeB_moves(test_context *ctx) {
     actor->r_no0 = 2;
     actor->yposi.w.h = 170;
     actor->yspeed.w = -256;
-    set_actor_short_alias(actor, 27, 200);
+    udblk4_get_work(actor)->base_y = 200;
 
     udblk4(actor);
 
@@ -456,7 +436,7 @@ static void test_parent_frameout_edges_and_typeB_moves(test_context *ctx) {
     actor->xposi.w.h = 400;
     actor->yposi.w.h = 50;
     actor->yspeed.w = 256;
-    set_actor_short_alias(actor, 27, 200);
+    udblk4_get_work(actor)->base_y = 200;
 
     udblk4(actor);
 
@@ -469,7 +449,7 @@ static void test_parent_frameout_edges_and_typeB_moves(test_context *ctx) {
     actor->xposi.w.h = 100;
     actor->yposi.w.h = 50;
     actor->yspeed.w = 256;
-    set_actor_short_alias(actor, 27, 200);
+    udblk4_get_work(actor)->base_y = 200;
 
     udblk4(actor);
 
@@ -482,7 +462,7 @@ static void test_parent_frameout_edges_and_typeB_moves(test_context *ctx) {
     actor->xposi.w.h = 250;
     actor->yposi.w.h = 50;
     actor->yspeed.w = 256;
-    set_actor_short_alias(actor, 27, 200);
+    udblk4_get_work(actor)->base_y = 200;
 
     udblk4(actor);
 

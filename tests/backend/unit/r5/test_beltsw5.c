@@ -102,7 +102,7 @@ static void test_beltsw5_initializes_and_records_current_direction(
     TEST_ASSERT_EQ_INT(ctx, 18327, actor->sproffset);
     TEST_ASSERT_TRUE(ctx, actor->patbase == beltsw5pat);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->patno);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 0, beltsw5_work_get(actor)->last_direction);
     assert_common_callbacks(ctx, actor);
 
     reset_beltsw5_state();
@@ -115,7 +115,7 @@ static void test_beltsw5_initializes_and_records_current_direction(
 
     TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 2, actor->patno);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 1, beltsw5_work_get(actor)->last_direction);
     assert_common_callbacks(ctx, actor);
 }
 
@@ -128,7 +128,7 @@ static void test_beltsw5_move1_toggles_when_player_overlaps(
     actor->actflg = 128;
     actor->xposi.w.h = 80;
     actor->yposi.w.h = 40;
-    actor->actfree[18] = 0;
+    beltsw5_work_get(actor)->last_direction = 0;
     actwk[0].xposi.w.h = 87;
     actwk[0].yposi.w.h = 55;
 
@@ -136,7 +136,7 @@ static void test_beltsw5_move1_toggles_when_player_overlaps(
 
     TEST_ASSERT_EQ_INT(ctx, 1, colrevflag);
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 0, beltsw5_work_get(actor)->last_direction);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 191, soundset_requests[0]);
     assert_common_callbacks(ctx, actor);
@@ -147,7 +147,7 @@ static void test_beltsw5_move1_toggles_when_player_overlaps(
     actor->actflg = 0;
     actor->xposi.w.h = 80;
     actor->yposi.w.h = 40;
-    actor->actfree[18] = 0;
+    beltsw5_work_get(actor)->last_direction = 0;
     actwk[0].xposi.w.h = 73;
     actwk[0].yposi.w.h = 25;
 
@@ -167,7 +167,7 @@ static void test_beltsw5_move1_tracks_external_direction_change(
     actor->r_no0 = 2;
     actor->xposi.w.h = 80;
     actor->yposi.w.h = 40;
-    actor->actfree[18] = 0;
+    beltsw5_work_get(actor)->last_direction = 0;
     colrevflag = 1;
     actwk[0].xposi.w.h = 200;
     actwk[0].yposi.w.h = 100;
@@ -176,8 +176,9 @@ static void test_beltsw5_move1_tracks_external_direction_change(
 
     TEST_ASSERT_EQ_INT(ctx, 1, colrevflag);
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[18]);
-    TEST_ASSERT_EQ_INT(ctx, 255, actor->actfree[19]);
+    TEST_ASSERT_EQ_INT(ctx, 1, beltsw5_work_get(actor)->last_direction);
+    TEST_ASSERT_EQ_INT(ctx, 255,
+                       beltsw5_work_get(actor)->external_change_pending);
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
     assert_common_callbacks(ctx, actor);
 }
@@ -187,27 +188,28 @@ static void test_beltsw5_move2_animates_and_finishes_cycle(test_context *ctx) {
 
     reset_beltsw5_state();
     actor->r_no0 = 4;
-    actor->actfree[16] = 6;
+    beltsw5_work_get(actor)->animation_timer = 6;
 
     beltsw5(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 7, actor->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 7, beltsw5_work_get(actor)->animation_timer);
     TEST_ASSERT_EQ_INT(ctx, 1, actor->patno);
     assert_common_callbacks(ctx, actor);
 
     reset_callbacks();
     colrevflag = 1;
     actor->r_no0 = 4;
-    actor->actfree[16] = 13;
-    actor->actfree[19] = 255;
+    beltsw5_work_get(actor)->animation_timer = 13;
+    beltsw5_work_get(actor)->external_change_pending = 255;
 
     beltsw5(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 0, beltsw5_work_get(actor)->animation_timer);
     TEST_ASSERT_EQ_INT(ctx, 2, actor->patno);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[19]);
+    TEST_ASSERT_EQ_INT(ctx, 0,
+                       beltsw5_work_get(actor)->external_change_pending);
     assert_common_callbacks(ctx, actor);
 }
 
@@ -218,14 +220,14 @@ static void test_beltsw5_move3_waits_until_player_leaves(test_context *ctx) {
     actor->r_no0 = 6;
     actor->xposi.w.h = 80;
     actor->yposi.w.h = 40;
-    actor->actfree[18] = 0;
+    beltsw5_work_get(actor)->last_direction = 0;
     actwk[0].xposi.w.h = 95;
     actwk[0].yposi.w.h = 71;
 
     beltsw5(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 0, beltsw5_work_get(actor)->last_direction);
     assert_common_callbacks(ctx, actor);
 
     reset_callbacks();
@@ -238,7 +240,7 @@ static void test_beltsw5_move3_waits_until_player_leaves(test_context *ctx) {
     beltsw5(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 0, beltsw5_work_get(actor)->last_direction);
     assert_common_callbacks(ctx, actor);
 
     reset_callbacks();
@@ -249,7 +251,7 @@ static void test_beltsw5_move3_waits_until_player_leaves(test_context *ctx) {
     beltsw5(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 1, beltsw5_work_get(actor)->last_direction);
     assert_common_callbacks(ctx, actor);
 }
 

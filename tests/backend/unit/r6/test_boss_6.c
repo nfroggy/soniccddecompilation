@@ -184,23 +184,63 @@ void sinset(Uint8 kakudo, Sint16 *sin, Sint16 *cos) {
 
 Sint32 random(void) { return random_result; }
 
-static size_t short_alias_offset(int short_index) {
-    return (size_t)short_index * sizeof(Sint16) -
-           offsetof(sprite_status, actfree);
-}
-
-static void set_actor_short_alias(sprite_status *actor, int short_index,
+static void set_egg6_field(sprite_status *actor, int short_index,
                                   Sint16 value) {
-    size_t offset = short_alias_offset(short_index);
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)bits;
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
+    egg6_work *work = egg6_get_work(actor);
+
+    if (actor == &actwk[0] && short_index == 26) {
+        player_work_get(actor)->damage_invulnerability_timer = value;
+        return;
+    }
+
+    switch (short_index) {
+    case 23:
+        work->timer_word = value;
+        break;
+    case 25:
+        work->parent_index = value;
+        break;
+    case 26:
+        work->x_acceleration = value;
+        break;
+    case 27:
+        work->y_acceleration = value;
+        break;
+    case 28:
+        work->table_offset = value;
+        break;
+    case 30:
+        work->ride_y_offset = value;
+        break;
+    case 31:
+        work->bob_offset = value;
+        break;
+    default:
+        break;
+    }
 }
 
-static Sint16 actor_short_alias(sprite_status *actor, int short_index) {
-    size_t offset = short_alias_offset(short_index);
-    return (Sint16)((Uint16)actor->actfree[offset] |
-                    ((Uint16)actor->actfree[offset + 1] << 8));
+static Sint16 egg6_field(sprite_status *actor, int short_index) {
+    egg6_work *work = egg6_get_work(actor);
+
+    switch (short_index) {
+    case 23:
+        return work->timer_word;
+    case 25:
+        return work->parent_index;
+    case 26:
+        return work->x_acceleration;
+    case 27:
+        return work->y_acceleration;
+    case 28:
+        return work->table_offset;
+    case 30:
+        return work->ride_y_offset;
+    case 31:
+        return work->bob_offset;
+    default:
+        return 0;
+    }
 }
 
 static void reset_boss6_state(void) {
@@ -288,8 +328,8 @@ static void test_floor_beam_color_and_motion_helpers(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 11, actor->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 18, actor->yposi.w.h);
 
-    set_actor_short_alias(actor, 26, 16);
-    set_actor_short_alias(actor, 27, -32);
+    set_egg6_field(actor, 26, 16);
+    set_egg6_field(actor, 27, -32);
     add_spd2(actor);
     TEST_ASSERT_EQ_INT(ctx, 272, actor->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, -544, actor->yspeed.w);
@@ -325,8 +365,8 @@ static void test_start_initializes_boss_and_meca_parts(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 53, actwk[20].actno);
     TEST_ASSERT_EQ_INT(ctx, 54, actwk[21].actno);
     TEST_ASSERT_EQ_INT(ctx, 55, actwk[22].actno);
-    TEST_ASSERT_EQ_INT(ctx, 20, actor_short_alias(boss, 25));
-    TEST_ASSERT_EQ_INT(ctx, 4, actor_short_alias(&actwk[20], 25));
+    TEST_ASSERT_EQ_INT(ctx, 20, egg6_field(boss, 25));
+    TEST_ASSERT_EQ_INT(ctx, 4, egg6_field(&actwk[20], 25));
     TEST_ASSERT_EQ_INT(ctx, 60, boss->colino);
     TEST_ASSERT_EQ_INT(ctx, 61, actwk[20].colino);
     TEST_ASSERT_EQ_INT(ctx, 22, bossflag);
@@ -336,12 +376,12 @@ static void test_start_initializes_boss_and_meca_parts(test_context *ctx) {
 
     reset_boss6_state();
     bossflag = 1;
-    set_actor_short_alias(boss, 23, 119);
+    set_egg6_field(boss, 23, 119);
     egg6_ini(boss);
     TEST_ASSERT_EQ_INT(ctx, 4, boss->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 0, boss->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 768, boss->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, -1, actor_short_alias(boss, 27));
+    TEST_ASSERT_EQ_INT(ctx, -1, egg6_field(boss, 27));
     TEST_ASSERT_EQ_INT(ctx, 1, sub_sync_count);
     TEST_ASSERT_EQ_INT(ctx, 103, sub_sync_requests[0]);
 }
@@ -351,8 +391,8 @@ static void test_hit_coliset_and_beam_control(test_context *ctx) {
     sprite_status *meca = &actwk[20];
 
     reset_boss6_state();
-    set_actor_short_alias(boss, 25, 20);
-    boss->actfree[2] = 1;
+    set_egg6_field(boss, 25, 20);
+    egg6_get_work(boss)->flags = 1;
     egg6_coliset(boss);
     TEST_ASSERT_EQ_INT(ctx, 60, boss->colino);
     TEST_ASSERT_EQ_INT(ctx, 2, boss->colicnt);
@@ -364,15 +404,15 @@ static void test_hit_coliset_and_beam_control(test_context *ctx) {
 
     meca->colino = 0;
     egg6_hitchk(boss);
-    TEST_ASSERT_EQ_INT(ctx, 1, boss->actfree[15]);
+    TEST_ASSERT_EQ_INT(ctx, 1, egg6_get_work(boss)->hit_count);
     TEST_ASSERT_EQ_INT(ctx, 0, boss->colino);
     TEST_ASSERT_EQ_INT(ctx, 0, meca->colino);
     TEST_ASSERT_EQ_INT(ctx, 1, boss->mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 30, boss->actfree[13]);
+    TEST_ASSERT_EQ_INT(ctx, 30, egg6_get_work(boss)->hit_timer);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 172, soundset_requests[0]);
 
-    boss->actfree[13] = 1;
+    egg6_get_work(boss)->hit_timer = 1;
     egg6_hitchk(boss);
     TEST_ASSERT_EQ_INT(ctx, 60, boss->colino);
     TEST_ASSERT_EQ_INT(ctx, 61, meca->colino);
@@ -395,68 +435,68 @@ static void test_vertical_state_transitions_and_event_helpers(test_context *ctx)
     sprite_status *boss = &actwk[4];
 
     reset_boss6_state();
-    boss->actfree[3] = 0;
+    egg6_get_work(boss)->floor_index = 0;
     boss->yposi.w.h = 1500;
     boss->yspeed.w = 256;
-    set_actor_short_alias(boss, 27, 0);
+    set_egg6_field(boss, 27, 0);
     egg6_down(boss);
     TEST_ASSERT_EQ_INT(ctx, 0, boss->r_no0);
     boss->yposi.w.h = 1567;
     egg6_down(boss);
     TEST_ASSERT_EQ_INT(ctx, 1568, boss->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 6, boss->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 1, boss->actfree[11]);
+    TEST_ASSERT_EQ_INT(ctx, 1, egg6_get_work(boss)->state);
     TEST_ASSERT_EQ_INT(ctx, 177, soundset_requests[0]);
 
     reset_boss6_state();
-    boss->actfree[3] = 0;
+    egg6_get_work(boss)->floor_index = 0;
     boss->yposi.w.h = 1064;
     boss->yspeed.w = -256;
-    set_actor_short_alias(boss, 27, 0);
+    set_egg6_field(boss, 27, 0);
     egg6_up(boss);
     TEST_ASSERT_EQ_INT(ctx, 1064, boss->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 10, boss->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 240, boss->actfree[14]);
-    TEST_ASSERT_EQ_INT(ctx, 1, boss->actfree[3]);
+    TEST_ASSERT_EQ_INT(ctx, 240, egg6_get_work(boss)->quake_timer);
+    TEST_ASSERT_EQ_INT(ctx, 1, egg6_get_work(boss)->floor_index);
     TEST_ASSERT_EQ_INT(ctx, 163, soundset_requests[0]);
 
     reset_boss6_state();
-    boss->actfree[3] = 0;
+    egg6_get_work(boss)->floor_index = 0;
     sinset_sin = 512;
-    boss->actfree[18] = 7;
+    egg6_get_work(boss)->bob_angle = 7;
     fuwafuwa(boss);
     TEST_ASSERT_EQ_INT(ctx, 1, sinset_count);
     TEST_ASSERT_EQ_INT(ctx, 7, sinset_angle);
-    TEST_ASSERT_EQ_INT(ctx, 8, actor_short_alias(boss, 31));
-    TEST_ASSERT_EQ_INT(ctx, 9, boss->actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 8, egg6_field(boss, 31));
+    TEST_ASSERT_EQ_INT(ctx, 9, egg6_get_work(boss)->bob_angle);
 
-    boss->actfree[3] = 3;
-    boss->actfree[18] = 3;
+    egg6_get_work(boss)->floor_index = 3;
+    egg6_get_work(boss)->bob_angle = 3;
     boss->xposi.w.h = 100;
     fuwafuwa(boss);
     TEST_ASSERT_EQ_INT(ctx, 99, boss->xposi.w.h);
 
     reset_boss6_state();
-    boss->actfree[3] = 2;
+    egg6_get_work(boss)->floor_index = 2;
     event_end(boss);
     TEST_ASSERT_EQ_INT(ctx, 4, boss->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 768, boss->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, -1, actor_short_alias(boss, 27));
-    boss->actfree[3] = 3;
+    TEST_ASSERT_EQ_INT(ctx, -1, egg6_field(boss, 27));
+    egg6_get_work(boss)->floor_index = 3;
     event_end(boss);
     TEST_ASSERT_EQ_INT(ctx, 10, boss->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 360, actor_short_alias(boss, 23));
+    TEST_ASSERT_EQ_INT(ctx, 360, egg6_field(boss, 23));
 }
 
 static void test_spawn_helpers_and_projectiles(test_context *ctx) {
     sprite_status *boss = &actwk[4];
 
     reset_boss6_state();
-    boss->actfree[3] = 1;
+    egg6_get_work(boss)->floor_index = 1;
     TEST_ASSERT_EQ_INT(ctx, 1420, get_gareki_y(boss));
-    boss->actfree[3] = 2;
+    egg6_get_work(boss)->floor_index = 2;
     TEST_ASSERT_EQ_INT(ctx, 908, get_gareki_y(boss));
-    boss->actfree[3] = 3;
+    egg6_get_work(boss)->floor_index = 3;
     TEST_ASSERT_EQ_INT(ctx, 396, get_gareki_y(boss));
 
     make_beam(1);
@@ -467,7 +507,7 @@ static void test_spawn_helpers_and_projectiles(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, actwk[21].userflag.b.h);
 
     reset_boss6_state();
-    boss->actfree[3] = 1;
+    egg6_get_work(boss)->floor_index = 1;
     actwk[0].xposi.w.h = 2600;
     make_toge(boss, 1);
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
@@ -489,7 +529,7 @@ static void test_spawn_helpers_and_projectiles(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 57, actwk[22].actno);
     TEST_ASSERT_EQ_INT(ctx, 2808, actwk[22].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 376, actwk[22].xspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 16, actor_short_alias(&actwk[22], 27));
+    TEST_ASSERT_EQ_INT(ctx, 16, egg6_field(&actwk[22], 27));
 
     reset_boss6_state();
     make_bakuha(boss);
@@ -505,7 +545,7 @@ static void test_child_actor_initializers_and_small_states(test_context *ctx) {
     reset_boss6_state();
     parent->xposi.w.h = 300;
     parent->yposi.w.h = 500;
-    set_actor_short_alias(child, 25, 4);
+    set_egg6_field(child, 25, 4);
     egg6meca0(child);
     TEST_ASSERT_EQ_INT(ctx, 2, child->r_no0);
     TEST_ASSERT_TRUE(ctx, child->patbase == egg6meca0_pat);
@@ -518,20 +558,20 @@ static void test_child_actor_initializers_and_small_states(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, ride_on_chk_count);
 
     reset_boss6_state();
-    set_actor_short_alias(child, 25, 4);
-    parent->actfree[10] = 1;
+    set_egg6_field(child, 25, 4);
+    egg6_get_work(parent)->state_timer = 1;
     egg6meca1(child);
     egg6meca1(child);
-    TEST_ASSERT_EQ_INT(ctx, 2, parent->actfree[10]);
+    TEST_ASSERT_EQ_INT(ctx, 2, egg6_get_work(parent)->state_timer);
     TEST_ASSERT_EQ_INT(ctx, 20, child->pattimm);
     TEST_ASSERT_EQ_INT(ctx, 2, child->pattim);
-    parent->actfree[10] = 255;
+    egg6_get_work(parent)->state_timer = 255;
     egg6meca1(child);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
 
     reset_boss6_state();
-    set_actor_short_alias(child, 25, 4);
-    parent->actfree[11] = 255;
+    set_egg6_field(child, 25, 4);
+    egg6_get_work(parent)->state = 255;
     egg6meca2(child);
     egg6meca2(child);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
@@ -540,7 +580,7 @@ static void test_child_actor_initializers_and_small_states(test_context *ctx) {
     child->mstno.b.h = 0;
     egg6bakuha(child);
     TEST_ASSERT_EQ_INT(ctx, 4, child->r_no0);
-    set_actor_short_alias(child, 23, 23);
+    set_egg6_field(child, 23, 23);
     egg6bakuha(child);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
 
@@ -549,11 +589,11 @@ static void test_child_actor_initializers_and_small_states(test_context *ctx) {
     egg6toge(child);
     TEST_ASSERT_EQ_INT(ctx, 4, child->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 0, child->colino);
-    child->actfree[1] = 3;
+    egg6_get_work(child)->anim_timer = 3;
     egg6toge(child);
     TEST_ASSERT_EQ_INT(ctx, 2, actionsub_count);
-    child->actfree[1] = 9;
-    child->actfree[0] = 6;
+    egg6_get_work(child)->anim_timer = 9;
+    egg6_get_work(child)->timer = 6;
     egg6toge(child);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
 }
@@ -590,7 +630,7 @@ static void test_yuka_door_damage_and_death_helpers(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 2, door->r_no0);
     TEST_ASSERT_TRUE(ctx, door->patbase == egg6door_pat);
     TEST_ASSERT_EQ_INT(ctx, 512, door->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 16384, actor_short_alias(door, 28));
+    TEST_ASSERT_EQ_INT(ctx, 16384, egg6_field(door, 28));
     actwk[0].xposi.w.h = 2700;
     egg6door_closewait(door);
     TEST_ASSERT_EQ_INT(ctx, 8, door->r_no0);
@@ -617,7 +657,7 @@ static void test_yuka_door_damage_and_death_helpers(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, genecolor_count);
 
     reset_boss6_state();
-    set_actor_short_alias(boss, 23, 468);
+    set_egg6_field(boss, 23, 468);
     dead2_end(boss);
     TEST_ASSERT_EQ_INT(ctx, 16, boss->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 3904, scralim_right);
@@ -637,21 +677,21 @@ static void test_beam_yuka_and_door_state_machines(test_context *ctx) {
     beam->userflag.b.h = 1;
     egg6beam(beam);
     TEST_ASSERT_EQ_INT(ctx, 2, beam->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 3, beam->actfree[10]);
-    TEST_ASSERT_EQ_INT(ctx, 0, beam->actfree[11]);
+    TEST_ASSERT_EQ_INT(ctx, 3, egg6_get_work(beam)->state_timer);
+    TEST_ASSERT_EQ_INT(ctx, 0, egg6_get_work(beam)->state);
     TEST_ASSERT_TRUE(ctx, beam->patbase == egg6beam_pat);
     TEST_ASSERT_EQ_INT(ctx, 1, beam->actflg & 1);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 
-    beam->actfree[10] = 1;
-    beam->actfree[11] = 2;
-    beam->actfree[1] = 29;
+    egg6_get_work(beam)->state_timer = 1;
+    egg6_get_work(beam)->state = 2;
+    egg6_get_work(beam)->anim_timer = 29;
     egg6beam_01(beam);
-    TEST_ASSERT_EQ_INT(ctx, 4, beam->actfree[10]);
-    TEST_ASSERT_EQ_INT(ctx, 0, beam->actfree[11]);
+    TEST_ASSERT_EQ_INT(ctx, 4, egg6_get_work(beam)->state_timer);
+    TEST_ASSERT_EQ_INT(ctx, 0, egg6_get_work(beam)->state);
     TEST_ASSERT_EQ_INT(ctx, 0, beam->patno);
 
-    beam->actfree[1] = 44;
+    egg6_get_work(beam)->anim_timer = 44;
     egg6beam_01(beam);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
     TEST_ASSERT_TRUE(ctx, frameout_actor == beam);
@@ -662,7 +702,7 @@ static void test_beam_yuka_and_door_state_machines(test_context *ctx) {
     egg6yuka(platform);
     TEST_ASSERT_EQ_INT(ctx, 2, platform->r_no0);
     TEST_ASSERT_TRUE(ctx, platform->patbase == egg6yuka_pat);
-    TEST_ASSERT_EQ_INT(ctx, 8, actor_short_alias(platform, 28));
+    TEST_ASSERT_EQ_INT(ctx, 8, egg6_field(platform, 28));
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 
     egg6yuka_01(platform);
@@ -670,31 +710,31 @@ static void test_beam_yuka_and_door_state_machines(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1168, platform->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 180, soundset_requests[0]);
 
-    set_actor_short_alias(platform, 25, 4);
+    set_egg6_field(platform, 25, 4);
     platform->xposi.w.h = 100;
     actwk[0].xposi.w.h = 110;
-    parent->actfree[12] = 0;
+    egg6_get_work(parent)->release_flag = 0;
     egg6yuka_02(platform);
     TEST_ASSERT_EQ_INT(ctx, 4, platform->r_no0);
 
-    parent->actfree[12] = 1;
+    egg6_get_work(parent)->release_flag = 1;
     egg6yuka_02(platform);
     TEST_ASSERT_EQ_INT(ctx, 2, platform->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor_short_alias(platform, 30));
+    TEST_ASSERT_EQ_INT(ctx, 4, egg6_field(platform, 30));
     TEST_ASSERT_EQ_INT(ctx, -1536, platform->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 14, actor_short_alias(platform, 27));
+    TEST_ASSERT_EQ_INT(ctx, 14, egg6_field(platform, 27));
 
     reset_boss6_state();
     door->userflag.b.h = 1;
     egg6door_ini(door);
     TEST_ASSERT_EQ_INT(ctx, 4, door->r_no0);
     TEST_ASSERT_EQ_INT(ctx, -512, door->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, -24576, actor_short_alias(door, 28));
+    TEST_ASSERT_EQ_INT(ctx, -24576, egg6_field(door, 28));
     TEST_ASSERT_EQ_INT(ctx, 80, door->sprvsize);
 
     egg6door_move(door);
     TEST_ASSERT_EQ_INT(ctx, 4, door->r_no0);
-    set_actor_short_alias(door, 23, -24064);
+    set_egg6_field(door, 23, -24064);
     egg6door_move(door);
     TEST_ASSERT_EQ_INT(ctx, 10, door->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 9, door->sprhsize);
@@ -747,42 +787,42 @@ static void test_dead_state_helpers_and_timed_dead2_events(test_context *ctx) {
 
     reset_boss6_state();
     bossstart = 255;
-    set_actor_short_alias(boss, 23, 120);
+    set_egg6_field(boss, 23, 120);
     egg6_dead2(boss);
     TEST_ASSERT_EQ_INT(ctx, 31, bossstart);
 
     reset_boss6_state();
-    set_actor_short_alias(boss, 23, 239);
+    set_egg6_field(boss, 23, 239);
     egg6_dead2(boss);
     TEST_ASSERT_EQ_INT(ctx, 128, clchgtim[0]);
     TEST_ASSERT_EQ_INT(ctx, 1, fout_boss6_count);
 
     reset_boss6_state();
-    set_actor_short_alias(boss, 23, 324);
+    set_egg6_field(boss, 23, 324);
     egg6_dead2(boss);
     TEST_ASSERT_EQ_INT(ctx, 1, flashout_count);
 
     reset_boss6_state();
-    set_actor_short_alias(boss, 25, 20);
+    set_egg6_field(boss, 25, 20);
     meca->yposi.w.h = 200;
-    set_actor_short_alias(boss, 23, 325);
+    set_egg6_field(boss, 23, 325);
     egg6_dead2(boss);
     TEST_ASSERT_EQ_INT(ctx, 4, boss->mstno.b.h);
     TEST_ASSERT_EQ_INT(ctx, 2864, boss->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 216, meca->yposi.w.h);
 
     reset_boss6_state();
-    set_actor_short_alias(boss, 23, 382);
+    set_egg6_field(boss, 23, 382);
     egg6_dead2(boss);
     TEST_ASSERT_EQ_INT(ctx, 1, flashin_count);
 
     reset_boss6_state();
-    set_actor_short_alias(boss, 23, 383);
+    set_egg6_field(boss, 23, 383);
     egg6_dead2(boss);
     TEST_ASSERT_EQ_INT(ctx, 1, fin_boss6_count);
 
     reset_boss6_state();
-    set_actor_short_alias(boss, 23, 468);
+    set_egg6_field(boss, 23, 468);
     egg6_dead2(boss);
     TEST_ASSERT_EQ_INT(ctx, 16, boss->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, scoreup_count);
@@ -810,7 +850,7 @@ static void test_event_wrappers_and_search_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 8, actwk[3].r_no0);
 
     reset_boss6_state();
-    boss->actfree[3] = 2;
+    egg6_get_work(boss)->floor_index = 2;
     actwk[0].yposi.w.h = 600;
     beamdemo_start(boss);
     TEST_ASSERT_EQ_INT(ctx, 178, soundset_requests[0]);
@@ -831,16 +871,16 @@ static void test_event_wrappers_and_search_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 131, bossstart);
 
     reset_boss6_state();
-    boss->actfree[3] = 3;
+    egg6_get_work(boss)->floor_index = 3;
     boss->colino = 60;
     actwk[0].xposi.w.h = 2800;
-    set_actor_short_alias(boss, 23, 1);
+    set_egg6_field(boss, 23, 1);
     rakkabutu(boss);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 56, actwk[20].actno);
 
     reset_boss6_state();
-    boss->actfree[3] = 3;
+    egg6_get_work(boss)->floor_index = 3;
     boss->colino = 0;
     rakkabutu(boss);
     TEST_ASSERT_EQ_INT(ctx, 12, boss->r_no0);
@@ -849,14 +889,14 @@ static void test_event_wrappers_and_search_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 63, actwk[20].actno);
 
     reset_boss6_state();
-    set_actor_short_alias(boss, 23, 497);
+    set_egg6_field(boss, 23, 497);
     egg6_event(boss);
     TEST_ASSERT_EQ_INT(ctx, 178, soundset_requests[0]);
-    set_actor_short_alias(boss, 23, 539);
+    set_egg6_field(boss, 23, 539);
     egg6_event(boss);
     TEST_ASSERT_TRUE(ctx, bossstart != 0);
-    set_actor_short_alias(boss, 23, 839);
-    boss->actfree[3] = 1;
+    set_egg6_field(boss, 23, 839);
+    egg6_get_work(boss)->floor_index = 1;
     egg6_event(boss);
     TEST_ASSERT_EQ_INT(ctx, 4, boss->r_no0);
 }
@@ -865,23 +905,23 @@ static void test_additional_boss_hover_and_event_edges(test_context *ctx) {
     sprite_status *boss = &actwk[4];
 
     reset_boss6_state();
-    boss->actfree[2] = 0;
+    egg6_get_work(boss)->flags = 0;
     egg6_hitchk(boss);
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
 
     reset_boss6_state();
     bossflag = 1;
-    set_actor_short_alias(boss, 23, 0);
+    set_egg6_field(boss, 23, 0);
     egg6_ini(boss);
     TEST_ASSERT_EQ_INT(ctx, 0, boss->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor_short_alias(boss, 23));
+    TEST_ASSERT_EQ_INT(ctx, 1, egg6_field(boss, 23));
 
     boss->actno = 42;
     egg6_none(boss);
     TEST_ASSERT_EQ_INT(ctx, 42, boss->actno);
 
     reset_boss6_state();
-    boss->actfree[3] = 0;
+    egg6_get_work(boss)->floor_index = 0;
     boss->yposi.w.h = 1200;
     boss->yspeed.w = -256;
     egg6_up(boss);
@@ -890,34 +930,34 @@ static void test_additional_boss_hover_and_event_edges(test_context *ctx) {
 
     reset_boss6_state();
     actwk[0].yposi.w.h = 1500;
-    boss->actfree[3] = 1;
+    egg6_get_work(boss)->floor_index = 1;
     egg6_hover(boss);
     TEST_ASSERT_EQ_INT(ctx, 10, boss->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 360, actor_short_alias(boss, 23));
+    TEST_ASSERT_EQ_INT(ctx, 360, egg6_field(boss, 23));
 
     reset_boss6_state();
     actwk[0].yposi.w.h = 1500;
-    boss->actfree[3] = 0;
-    set_actor_short_alias(boss, 23, 298);
+    egg6_get_work(boss)->floor_index = 0;
+    set_egg6_field(boss, 23, 298);
     egg6_hover(boss);
     TEST_ASSERT_EQ_INT(ctx, 0, boss->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 299, actor_short_alias(boss, 23));
+    TEST_ASSERT_EQ_INT(ctx, 299, egg6_field(boss, 23));
 
     egg6_hover(boss);
     TEST_ASSERT_EQ_INT(ctx, 8, boss->r_no0);
     TEST_ASSERT_EQ_INT(ctx, -256, boss->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, -16, actor_short_alias(boss, 27));
+    TEST_ASSERT_EQ_INT(ctx, -16, egg6_field(boss, 27));
 
     reset_boss6_state();
-    boss->actfree[3] = 3;
-    boss->actfree[18] = 4;
+    egg6_get_work(boss)->floor_index = 3;
+    egg6_get_work(boss)->bob_angle = 4;
     boss->xposi.w.h = 100;
     stbRad = 1;
     fuwafuwa(boss);
     TEST_ASSERT_EQ_INT(ctx, 101, boss->xposi.w.h);
 
     reset_boss6_state();
-    boss->actfree[14] = 2;
+    egg6_get_work(boss)->quake_timer = 2;
     egg6_jisin(boss);
     TEST_ASSERT_EQ_INT(ctx, -6, scralim_down);
     egg6_jisin(boss);
@@ -938,27 +978,27 @@ static void test_additional_boss_hover_and_event_edges(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 
     reset_boss6_state();
-    boss->actfree[3] = 3;
+    egg6_get_work(boss)->floor_index = 3;
     boss->colino = 60;
-    set_actor_short_alias(boss, 23, 181);
+    set_egg6_field(boss, 23, 181);
     rakkabutu(boss);
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 0, boss->r_no0);
 
     reset_boss6_state();
-    set_actor_short_alias(boss, 23, 569);
+    set_egg6_field(boss, 23, 569);
     bossflag = 255;
     egg6_event(boss);
     TEST_ASSERT_EQ_INT(ctx, 223, bossflag);
 
     reset_boss6_state();
-    set_actor_short_alias(boss, 23, 599);
+    set_egg6_field(boss, 23, 599);
     egg6_event(boss);
-    TEST_ASSERT_EQ_INT(ctx, 1, boss->actfree[12]);
+    TEST_ASSERT_EQ_INT(ctx, 1, egg6_get_work(boss)->release_flag);
 
-    set_actor_short_alias(boss, 23, 629);
+    set_egg6_field(boss, 23, 629);
     egg6_event(boss);
-    TEST_ASSERT_EQ_INT(ctx, 0, boss->actfree[12]);
+    TEST_ASSERT_EQ_INT(ctx, 0, egg6_get_work(boss)->release_flag);
     TEST_ASSERT_EQ_INT(ctx, 32, bossflag & 32);
 }
 
@@ -967,21 +1007,21 @@ static void test_additional_spawn_failure_and_fragment_paths(test_context *ctx) 
     sprite_status *piece = &actwk[10];
 
     reset_boss6_state();
-    boss->actfree[3] = 1;
+    egg6_get_work(boss)->floor_index = 1;
     actwkchk_fail_after = 0;
     make_toge(boss, 0);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[20].actno);
 
     reset_boss6_state();
-    boss->actfree[3] = 1;
+    egg6_get_work(boss)->floor_index = 1;
     actwkchk_fail_after = 0;
     make_yuka(boss, 0);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[20].actno);
 
     reset_boss6_state();
-    boss->actfree[3] = 1;
+    egg6_get_work(boss)->floor_index = 1;
     actwkchk_fail_after = 0;
     make_gareki(boss, 0);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
@@ -1004,7 +1044,7 @@ static void test_additional_spawn_failure_and_fragment_paths(test_context *ctx) 
     actwkchk_fail_after = 0;
     make_meca(boss);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor_short_alias(boss, 25));
+    TEST_ASSERT_EQ_INT(ctx, 0, egg6_field(boss, 25));
 
     reset_boss6_state();
     actwkchk_fail_after = 1;
@@ -1041,7 +1081,7 @@ static void test_additional_spawn_failure_and_fragment_paths(test_context *ctx) 
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[22].patno);
     TEST_ASSERT_EQ_INT(ctx, 512, piece->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, -448, piece->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 48, actor_short_alias(piece, 27));
+    TEST_ASSERT_EQ_INT(ctx, 48, egg6_field(piece, 27));
 
     reset_boss6_state();
     actwkchk_fail_after = 1;
@@ -1077,10 +1117,10 @@ static void test_additional_child_and_door_edges(test_context *ctx) {
     sprite_status *platform = &actwk[40];
 
     reset_boss6_state();
-    set_actor_short_alias(child, 25, 4);
+    set_egg6_field(child, 25, 4);
     parent->xposi.w.h = 700;
     parent->yposi.w.h = 900;
-    parent->actfree[10] = 2;
+    egg6_get_work(parent)->state_timer = 2;
     child->r_no0 = 2;
     child->pattimm = 5;
     child->pattim = 1;
@@ -1098,17 +1138,17 @@ static void test_additional_child_and_door_edges(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 3, child->pattimm);
 
     reset_boss6_state();
-    set_actor_short_alias(child, 25, 4);
+    set_egg6_field(child, 25, 4);
     parent->xposi.w.h = 900;
     parent->yposi.w.h = 500;
     child->mstno.b.h = 1;
     child->patno = 3;
-    set_actor_short_alias(child, 23, 419);
+    set_egg6_field(child, 23, 419);
     egg6bakuha(child);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
 
     reset_boss6_state();
-    set_actor_short_alias(child, 25, 4);
+    set_egg6_field(child, 25, 4);
     parent->xposi.w.h = 900;
     parent->yposi.w.h = 500;
     child->mstno.b.h = 1;
@@ -1121,23 +1161,23 @@ static void test_additional_child_and_door_edges(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 63, actwk[20].actno);
 
     reset_boss6_state();
-    child->actfree[1] = 5;
+    egg6_get_work(child)->anim_timer = 5;
     egg6toge_02(child);
     TEST_ASSERT_EQ_INT(ctx, 0, actionsub_count);
-    TEST_ASSERT_EQ_INT(ctx, 6, child->actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 6, egg6_get_work(child)->anim_timer);
 
-    child->actfree[1] = 9;
-    child->actfree[0] = 5;
+    egg6_get_work(child)->anim_timer = 9;
+    egg6_get_work(child)->timer = 5;
     egg6toge_02(child);
-    TEST_ASSERT_EQ_INT(ctx, 0, child->actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 0, egg6_get_work(child)->anim_timer);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_count);
 
     reset_boss6_state();
     child->actno = 57;
     child->xspeed.w = 128;
     child->yspeed.w = 256;
-    set_actor_short_alias(child, 26, 16);
-    set_actor_short_alias(child, 27, 32);
+    set_egg6_field(child, 26, 16);
+    set_egg6_field(child, 27, 32);
     egg6gareki(child);
     TEST_ASSERT_EQ_INT(ctx, 2, child->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -1214,7 +1254,7 @@ static void test_additional_child_and_door_edges(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, pcole_count);
 
     pcole_count = 0;
-    set_actor_short_alias(&actwk[0], 26, 1);
+    set_egg6_field(&actwk[0], 26, 1);
     egg6door_beamer(door);
     TEST_ASSERT_EQ_INT(ctx, 0, pcole_count);
 }
@@ -1227,16 +1267,16 @@ static void test_remaining_boss6_edge_branches(test_context *ctx) {
     sprite_status *door = &actwk[40];
 
     reset_boss6_state();
-    set_actor_short_alias(boss, 23, 99);
+    set_egg6_field(boss, 23, 99);
     egg6_event(boss);
-    TEST_ASSERT_EQ_INT(ctx, 100, actor_short_alias(boss, 23));
+    TEST_ASSERT_EQ_INT(ctx, 100, egg6_field(boss, 23));
 
     reset_boss6_state();
     actwk[2].actno = 62;
     actwk[2].r_no0 = 4;
-    set_actor_short_alias(boss, 23, 179);
+    set_egg6_field(boss, 23, 179);
     egg6_dead2(boss);
-    TEST_ASSERT_EQ_INT(ctx, 180, actor_short_alias(boss, 23));
+    TEST_ASSERT_EQ_INT(ctx, 180, egg6_field(boss, 23));
     TEST_ASSERT_EQ_INT(ctx, 8, actwk[2].r_no0);
 
     reset_boss6_state();
@@ -1246,15 +1286,15 @@ static void test_remaining_boss6_edge_branches(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 28, sub_sync_requests[0]);
 
     reset_boss6_state();
-    set_actor_short_alias(child, 25, 4);
+    set_egg6_field(child, 25, 4);
     parent->xposi.w.h = 1000;
     parent->yposi.w.h = 700;
-    parent->actfree[10] = 0;
+    egg6_get_work(parent)->state_timer = 0;
     child->r_no0 = 2;
     egg6meca1(child);
     TEST_ASSERT_EQ_INT(ctx, 636, child->yposi.w.h);
 
-    parent->actfree[10] = 2;
+    egg6_get_work(parent)->state_timer = 2;
     child->pattim = 2;
     child->pattimm = 9;
     egg6meca1(child);
@@ -1268,9 +1308,9 @@ static void test_remaining_boss6_edge_branches(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 2, child->pattim);
 
     reset_boss6_state();
-    set_actor_short_alias(platform, 28, 0);
-    set_actor_short_alias(platform, 30, 0);
-    set_actor_short_alias(platform, 27, 0);
+    set_egg6_field(platform, 28, 0);
+    set_egg6_field(platform, 30, 0);
+    set_egg6_field(platform, 27, 0);
     platform->yposi.w.h = 1000;
     egg6yuka_01(platform);
     TEST_ASSERT_EQ_INT(ctx, 1024, platform->yposi.w.h);
@@ -1298,12 +1338,12 @@ static void test_remaining_boss6_edge_branches(test_context *ctx) {
     reset_boss6_state();
     door->userflag.b.h = 0;
     door->yspeed.w = 512;
-    set_actor_short_alias(door, 28, 16384);
-    set_actor_short_alias(door, 23, 0);
+    set_egg6_field(door, 28, 16384);
+    set_egg6_field(door, 23, 0);
     egg6door_move(door);
     TEST_ASSERT_EQ_INT(ctx, 0, door->r_no0);
 
-    set_actor_short_alias(door, 23, 15872);
+    set_egg6_field(door, 23, 15872);
     egg6door_move(door);
     TEST_ASSERT_EQ_INT(ctx, 6, door->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 9, door->sprhsize);

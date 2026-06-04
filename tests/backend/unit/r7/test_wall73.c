@@ -65,13 +65,11 @@ static void reset_wall73_state(void) {
 }
 
 static void set_move_target(sprite_status *actor, Sint16 value) {
-    actor->actfree[0] = (Uint8)value;
-    actor->actfree[1] = (Uint8)((Uint16)value >> 8);
+    wall73_work_get(actor)->move_target_y = value;
 }
 
 static Sint16 get_move_target(sprite_status *actor) {
-    return (Sint16)((Uint16)actor->actfree[0] |
-                    ((Uint16)actor->actfree[1] << 8));
+    return wall73_work_get(actor)->move_target_y;
 }
 
 static void assert_common_callbacks(test_context *ctx, sprite_status *wall) {

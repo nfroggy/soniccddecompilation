@@ -130,33 +130,6 @@ static void set_hitchk_result(int index, Sint16 value) {
     }
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int offset) {
-    return (Sint16)((Uint16)actor->actfree[offset] |
-                    ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
-static void set_actfree_long(sprite_status *actor, int offset, Sint32 value) {
-    Uint32 bits = (Uint32)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)((bits >> 8) & 255);
-    actor->actfree[offset + 2] = (Uint8)((bits >> 16) & 255);
-    actor->actfree[offset + 3] = (Uint8)(bits >> 24);
-}
-
-static Sint32 get_actfree_long(sprite_status *actor, int offset) {
-    Uint32 bits = (Uint32)actor->actfree[offset] |
-                  ((Uint32)actor->actfree[offset + 1] << 8) |
-                  ((Uint32)actor->actfree[offset + 2] << 16) |
-                  ((Uint32)actor->actfree[offset + 3] << 24);
-    return (Sint32)bits;
-}
-
 static void assert_move_callbacks(test_context *ctx, sprite_status *actor) {
     TEST_ASSERT_EQ_INT(ctx, 1, sinset_count);
     TEST_ASSERT_TRUE(ctx, hitchk_actor == actor);
@@ -197,22 +170,26 @@ static void test_init_allocates_full_orbit_for_time_variants(
     TEST_ASSERT_EQ_INT(ctx, 8, main->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 17152, main->sproffset);
     TEST_ASSERT_TRUE(ctx, main->patbase == pat_iwa5roll);
-    TEST_ASSERT_EQ_INT(ctx, 0, get_actfree_word(main, 0));
-    TEST_ASSERT_EQ_INT(ctx, 128, get_actfree_word(main, 12));
-    TEST_ASSERT_EQ_INT(ctx, expected_angles[0], get_actfree_word(main, 10));
-    TEST_ASSERT_EQ_INT(ctx, 100 << 16, get_actfree_long(main, 2));
-    TEST_ASSERT_EQ_INT(ctx, 200 << 16, get_actfree_long(main, 6));
+    TEST_ASSERT_EQ_INT(ctx, 0, iwa5roll_work_get(main)->parent_actor);
+    TEST_ASSERT_EQ_INT(ctx, 128, iwa5roll_work_get(main)->angular_speed);
+    TEST_ASSERT_EQ_INT(ctx, expected_angles[0],
+                       iwa5roll_work_get(main)->angle.w);
+    TEST_ASSERT_EQ_INT(ctx, 100 << 16, iwa5roll_work_get(main)->origin_x.l);
+    TEST_ASSERT_EQ_INT(ctx, 200 << 16, iwa5roll_work_get(main)->origin_y.l);
 
     for (i = 0; i < 7; ++i) {
         sprite_status *child = &actwk[20 + i];
         TEST_ASSERT_EQ_INT(ctx, 39, child->actno);
         TEST_ASSERT_EQ_INT(ctx, 2, child->r_no0);
-        TEST_ASSERT_EQ_INT(ctx, 3, get_actfree_word(child, 0));
-        TEST_ASSERT_EQ_INT(ctx, 128, get_actfree_word(child, 12));
+        TEST_ASSERT_EQ_INT(ctx, 3, iwa5roll_work_get(child)->parent_actor);
+        TEST_ASSERT_EQ_INT(ctx, 128,
+                           iwa5roll_work_get(child)->angular_speed);
         TEST_ASSERT_EQ_INT(ctx, expected_angles[i + 1],
-                           get_actfree_word(child, 10));
-        TEST_ASSERT_EQ_INT(ctx, 100 << 16, get_actfree_long(child, 2));
-        TEST_ASSERT_EQ_INT(ctx, 200 << 16, get_actfree_long(child, 6));
+                           iwa5roll_work_get(child)->angle.w);
+        TEST_ASSERT_EQ_INT(ctx, 100 << 16,
+                           iwa5roll_work_get(child)->origin_x.l);
+        TEST_ASSERT_EQ_INT(ctx, 200 << 16,
+                           iwa5roll_work_get(child)->origin_y.l);
     }
 
     reset_iwa5roll_state();
@@ -224,7 +201,7 @@ static void test_init_allocates_full_orbit_for_time_variants(
 
     iwa5roll(main);
 
-    TEST_ASSERT_EQ_INT(ctx, -192, get_actfree_word(main, 12));
+    TEST_ASSERT_EQ_INT(ctx, -192, iwa5roll_work_get(main)->angular_speed);
 
     reset_iwa5roll_state();
     time_flag = 2;
@@ -234,7 +211,7 @@ static void test_init_allocates_full_orbit_for_time_variants(
 
     iwa5roll(main);
 
-    TEST_ASSERT_EQ_INT(ctx, 256, get_actfree_word(main, 12));
+    TEST_ASSERT_EQ_INT(ctx, 256, iwa5roll_work_get(main)->angular_speed);
 }
 
 static void test_init_stops_cleanly_when_child_allocation_fails(
@@ -250,7 +227,7 @@ static void test_init_stops_cleanly_when_child_allocation_fails(
     iwa5roll(main);
 
     TEST_ASSERT_EQ_INT(ctx, 3, actwkchk_count);
-    TEST_ASSERT_EQ_INT(ctx, 0, get_actfree_word(main, 0));
+    TEST_ASSERT_EQ_INT(ctx, 0, iwa5roll_work_get(main)->parent_actor);
     TEST_ASSERT_EQ_INT(ctx, 39, actwk[20].actno);
     TEST_ASSERT_EQ_INT(ctx, 39, actwk[21].actno);
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[22].actno);
@@ -265,11 +242,11 @@ static void test_move_without_parent_updates_position_and_frameout_origin(
     actor->xposi.l = 100 << 16;
     actor->yposi.l = 200 << 16;
     actor->sprvsize = 8;
-    set_actfree_word(actor, 0, 0);
-    set_actfree_long(actor, 2, 100 << 16);
-    set_actfree_long(actor, 6, 200 << 16);
-    set_actfree_word(actor, 10, 0);
-    set_actfree_word(actor, 12, 128);
+    iwa5roll_work_get(actor)->parent_actor = 0;
+    iwa5roll_work_get(actor)->origin_x.l = 100 << 16;
+    iwa5roll_work_get(actor)->origin_y.l = 200 << 16;
+    iwa5roll_work_get(actor)->angle.w = 0;
+    iwa5roll_work_get(actor)->angular_speed = 128;
 
     iwa5roll(actor);
 
@@ -293,10 +270,10 @@ static void test_move_collision_hit_runs_second_hitchk_with_restored_speed(
     actor->r_no0 = 2;
     actor->xposi.l = 100 << 16;
     actor->yposi.l = 200 << 16;
-    set_actfree_long(actor, 2, 100 << 16);
-    set_actfree_long(actor, 6, 200 << 16);
-    set_actfree_word(actor, 10, 0);
-    set_actfree_word(actor, 12, 128);
+    iwa5roll_work_get(actor)->origin_x.l = 100 << 16;
+    iwa5roll_work_get(actor)->origin_y.l = 200 << 16;
+    iwa5roll_work_get(actor)->angle.w = 0;
+    iwa5roll_work_get(actor)->angular_speed = 128;
     set_hitchk_result(0, 1);
 
     iwa5roll(actor);
@@ -317,11 +294,11 @@ static void test_child_move_requires_live_parent(test_context *ctx) {
     child->r_no0 = 2;
     child->xposi.l = 100 << 16;
     child->yposi.l = 200 << 16;
-    set_actfree_word(child, 0, 3);
-    set_actfree_long(child, 2, 100 << 16);
-    set_actfree_long(child, 6, 200 << 16);
-    set_actfree_word(child, 10, 0);
-    set_actfree_word(child, 12, 128);
+    iwa5roll_work_get(child)->parent_actor = 3;
+    iwa5roll_work_get(child)->origin_x.l = 100 << 16;
+    iwa5roll_work_get(child)->origin_y.l = 200 << 16;
+    iwa5roll_work_get(child)->angle.w = 0;
+    iwa5roll_work_get(child)->angular_speed = 128;
 
     iwa5roll(child);
 

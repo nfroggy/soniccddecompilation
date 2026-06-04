@@ -316,7 +316,7 @@ static void test_bobin_collision_bounces_player_and_awards_limited_scores(
     player->cddat = 255;
     player->xspeed.w = 1;
     player->yspeed.w = 2;
-    player->actfree[18] = 77;
+    player_work_get(player)->jump_started = 77;
     atan_sonic_result = 9;
     sinset_sin = 128;
     sinset_cos = -64;

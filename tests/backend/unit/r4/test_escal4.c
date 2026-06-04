@@ -56,31 +56,6 @@ static void reset_state(void) {
     hitchk_result = 0;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int offset) {
-    Uint16 bits = (Uint16)actor->actfree[offset] |
-                  ((Uint16)actor->actfree[offset + 1] << 8);
-    return (Sint16)bits;
-}
-
-static int legacy_word_actfree_offset(int word_index) {
-    return (word_index * 2) - (int)offsetof(sprite_status, actfree);
-}
-
-static void set_legacy_word(sprite_status *actor, int word_index,
-                            Sint16 value) {
-    set_actfree_word(actor, legacy_word_actfree_offset(word_index), value);
-}
-
-static Sint16 get_legacy_word(sprite_status *actor, int word_index) {
-    return get_actfree_word(actor, legacy_word_actfree_offset(word_index));
-}
-
 static void test_escal4_patterns_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, escal4pat[0] == &escal4_pat0);
     TEST_ASSERT_TRUE(ctx, escal4pat[1] == &escal4_pat1);
@@ -143,7 +118,7 @@ static void test_escal4_wait_uses_hitchk_return_for_motion_table(
     TEST_ASSERT_EQ_INT(ctx, 4, platform->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 256, platform->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, -256, platform->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 160, get_legacy_word(platform, 33));
+    TEST_ASSERT_EQ_INT(ctx, 160, escal4_work_get(platform)->move_timer);
 
     reset_state();
     platform->r_no0 = 2;
@@ -156,7 +131,7 @@ static void test_escal4_wait_uses_hitchk_return_for_motion_table(
     TEST_ASSERT_EQ_INT(ctx, 4, platform->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 512, platform->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, -512, platform->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 80, get_legacy_word(platform, 33));
+    TEST_ASSERT_EQ_INT(ctx, 80, escal4_work_get(platform)->move_timer);
 }
 
 static void test_escal4_wait_stays_put_when_hitchk_is_clear(test_context *ctx) {
@@ -183,14 +158,14 @@ static void test_escal4_moveup_moves_until_counter_expires(test_context *ctx) {
     platform->yposi.l = 200 << 16;
     platform->xspeed.w = 256;
     platform->yspeed.w = -256;
-    set_legacy_word(platform, 33, 2);
+    escal4_work_get(platform)->move_timer = 2;
 
     escal4_moveup(platform);
 
     TEST_ASSERT_EQ_INT(ctx, 1, hitchk_count);
     TEST_ASSERT_EQ_INT(ctx, 101, platform->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 199, platform->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 1, get_legacy_word(platform, 33));
+    TEST_ASSERT_EQ_INT(ctx, 1, escal4_work_get(platform)->move_timer);
     TEST_ASSERT_EQ_INT(ctx, 256, platform->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, -256, platform->yspeed.w);
 
@@ -198,7 +173,7 @@ static void test_escal4_moveup_moves_until_counter_expires(test_context *ctx) {
 
     TEST_ASSERT_EQ_INT(ctx, 102, platform->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 198, platform->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 0, get_legacy_word(platform, 33));
+    TEST_ASSERT_EQ_INT(ctx, 0, escal4_work_get(platform)->move_timer);
     TEST_ASSERT_EQ_INT(ctx, 0, platform->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 0, platform->yspeed.w);
 }
@@ -211,7 +186,7 @@ static void test_escal4_moveup_counter_zero_only_checks_ride(test_context *ctx) 
     platform->yposi.w.h = 200;
     platform->xspeed.w = 111;
     platform->yspeed.w = 222;
-    set_legacy_word(platform, 33, 0);
+    escal4_work_get(platform)->move_timer = 0;
 
     escal4_moveup(platform);
 

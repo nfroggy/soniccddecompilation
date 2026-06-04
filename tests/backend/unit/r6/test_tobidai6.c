@@ -263,7 +263,7 @@ static void test_yuka_ridechk_adjusts_collision_height(test_context *ctx) {
 
     yuka_ridechk(platform);
 
-    TEST_ASSERT_EQ_INT(ctx, 4, platform->actfree[4]);
+    TEST_ASSERT_EQ_INT(ctx, 4, tobidai6_get_work(platform)->ride_height_adjust);
     TEST_ASSERT_EQ_INT(ctx, 16, platform->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 1, ride_on_chk_count);
 

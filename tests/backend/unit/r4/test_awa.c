@@ -121,16 +121,6 @@ static void set_random_value(int index, Sint32 value) {
     random_values[index] = value;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int offset) {
-    return (Sint16)(Uint16)(actor->actfree[offset] |
-                            ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
 static void test_awa_tables_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, awachg[0] == awachg0);
     TEST_ASSERT_TRUE(ctx, awachg[6] == awachg6);
@@ -160,7 +150,7 @@ static void test_awainit_normal_sets_motion_and_moves(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 16, actor->sprhsize);
     TEST_ASSERT_EQ_INT(ctx, 1, actor->sprpri);
     TEST_ASSERT_EQ_INT(ctx, 1, actor->mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 120, get_actfree_word(actor, 6));
+    TEST_ASSERT_EQ_INT(ctx, 120, awa_get_work(actor)->origin_x);
     TEST_ASSERT_EQ_INT(ctx, -136, actor->yspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 6, actor->direc.b.h);
     TEST_ASSERT_EQ_INT(ctx, 127, actor->xposi.w.h);
@@ -196,12 +186,12 @@ static void test_awainit_master_spawns_and_records_spawn_counters(
     TEST_ASSERT_TRUE(ctx, actor->patbase == awapat);
     TEST_ASSERT_EQ_INT(ctx, 33930, actor->sproffset);
     TEST_ASSERT_EQ_INT(ctx, 132, actor->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[8]);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->actfree[9]);
-    TEST_ASSERT_EQ_INT(ctx, 1, get_actfree_word(actor, 12));
-    TEST_ASSERT_EQ_INT(ctx, 9, get_actfree_word(actor, 14));
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[10]);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 1, awa_get_work(actor)->spawn_count);
+    TEST_ASSERT_EQ_INT(ctx, 2, awa_get_work(actor)->spawn_reload);
+    TEST_ASSERT_EQ_INT(ctx, 1, awa_get_work(actor)->state_flags);
+    TEST_ASSERT_EQ_INT(ctx, 9, awa_get_work(actor)->timer);
+    TEST_ASSERT_EQ_INT(ctx, 1, awa_get_work(actor)->spawn_index);
+    TEST_ASSERT_EQ_INT(ctx, 0, awa_get_work(actor)->table_offset);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 32, bubble->actno);
     TEST_ASSERT_EQ_INT(ctx, 306, bubble->xposi.w.h);
@@ -224,23 +214,23 @@ static void test_awamove_marks_large_bubble_and_collision_refills_air(
     actor->r_no0 = 2;
     actor->mstno.b.h = 1;
     actor->patno = 6;
-    actor->actfree[4] = 0;
-    set_actfree_word(actor, 6, 100);
+    awa_get_work(actor)->collider_enabled = 0;
+    awa_get_work(actor)->origin_x = 100;
     player->xposi.w.h = 100;
     player->yposi.w.h = 105;
     player->xspeed.w = 22;
     player->yspeed.w = -33;
     player->mspeed.w = 44;
     player->mstno.b.h = 3;
-    player->actfree[2] = 0;
-    player->actfree[18] = 77;
+    player_work_get(player)->status_flags = 0;
+    player_work_get(player)->jump_started = 77;
     player->cddat = 64;
 
     awamove(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 4, actor->mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[4]);
+    TEST_ASSERT_EQ_INT(ctx, 1, awa_get_work(actor)->collider_enabled);
     TEST_ASSERT_EQ_INT(ctx, 1, plairset_count);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 173, soundset_last);
@@ -248,7 +238,7 @@ static void test_awamove_marks_large_bubble_and_collision_refills_air(
     TEST_ASSERT_EQ_INT(ctx, 0, player->yspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 0, player->mspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 21, player->mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 0, player->actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 0, player_work_get(player)->jump_started);
     TEST_ASSERT_EQ_INT(ctx, 0, player->cddat & 48);
     TEST_ASSERT_EQ_INT(ctx, 2, patchg_count);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -265,8 +255,8 @@ static void test_awamove_collision_restores_crouched_player_shape(
     actor->actflg = 128;
     actor->r_no0 = 2;
     actor->mstno.b.h = 1;
-    actor->actfree[4] = 1;
-    set_actfree_word(actor, 6, 100);
+    awa_get_work(actor)->collider_enabled = 1;
+    awa_get_work(actor)->origin_x = 100;
     player->xposi.w.h = 100;
     player->yposi.w.h = 105;
     player->sprvsize = 14;
@@ -307,7 +297,7 @@ static void test_awamove2_rises_hits_water_and_frameout_paths(
     actor->xposi.w.h = 80;
     actor->yposi.w.h = 100;
     actor->actflg = 0;
-    set_actfree_word(actor, 6, 80);
+    awa_get_work(actor)->origin_x = 80;
     awasintbl[3] = (Uint8)-4;
     actor->direc.b.h = 3;
     waterposi = 10;
@@ -328,9 +318,9 @@ static void test_awamaster_countdown_and_fade_paths(test_context *ctx) {
     actor->xposi.w.h = 200;
     actor->yposi.w.h = 100;
     actor->actflg = 128;
-    actor->actfree[10] = 0;
-    actor->actfree[12] = 128;
-    set_actfree_word(actor, 14, 0);
+    awa_get_work(actor)->spawn_index = 0;
+    awa_get_work(actor)->state_flags = 128;
+    awa_get_work(actor)->timer = 0;
     queue_actor(bubble);
     set_random_value(0, 3);
     set_random_value(1, 4);
@@ -342,7 +332,7 @@ static void test_awamaster_countdown_and_fade_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 32, bubble->actno);
     TEST_ASSERT_EQ_INT(ctx, 196, bubble->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 2, bubble->userflag.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 255, actor->actfree[10]);
+    TEST_ASSERT_EQ_INT(ctx, 255, awa_get_work(actor)->spawn_index);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 
@@ -399,12 +389,12 @@ static void test_awamaster_early_exit_and_countdown_paths(test_context *ctx) {
     actor = &actwk[4];
     actor->yposi.w.h = 100;
     actor->actflg = 128;
-    set_actfree_word(actor, 14, 2);
+    awa_get_work(actor)->timer = 2;
     waterposi = 0;
 
     awamaster(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 1, get_actfree_word(actor, 14));
+    TEST_ASSERT_EQ_INT(ctx, 1, awa_get_work(actor)->timer);
     TEST_ASSERT_EQ_INT(ctx, 0, random_count);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -413,13 +403,13 @@ static void test_awamaster_early_exit_and_countdown_paths(test_context *ctx) {
     actor = &actwk[4];
     actor->yposi.w.h = 100;
     actor->actflg = 128;
-    set_actfree_word(actor, 12, 1);
-    set_actfree_word(actor, 14, 2);
+    awa_get_work(actor)->state_flags = 1;
+    awa_get_work(actor)->timer = 2;
     waterposi = 0;
 
     awamaster(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 1, get_actfree_word(actor, 14));
+    TEST_ASSERT_EQ_INT(ctx, 1, awa_get_work(actor)->timer);
     TEST_ASSERT_EQ_INT(ctx, 0, random_count);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -434,16 +424,16 @@ static void test_awamaster_underflow_and_special_spawn_flags(
     actor->xposi.w.h = 200;
     actor->yposi.w.h = 100;
     actor->actflg = 128;
-    actor->actfree[8] = 0;
-    actor->actfree[9] = 5;
-    set_actfree_word(actor, 14, 0);
+    awa_get_work(actor)->spawn_count = 0;
+    awa_get_work(actor)->spawn_reload = 5;
+    awa_get_work(actor)->timer = 0;
     waterposi = 0;
     set_random_value(0, 1);
 
     awamaster(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 5, actor->actfree[8]);
-    TEST_ASSERT_EQ_INT(ctx, 128, actor->actfree[12] & 128);
+    TEST_ASSERT_EQ_INT(ctx, 5, awa_get_work(actor)->spawn_count);
+    TEST_ASSERT_EQ_INT(ctx, 128, awa_get_work(actor)->state_flags & 128);
 
     reset_awa_state();
     actor = &actwk[4];
@@ -451,9 +441,9 @@ static void test_awamaster_underflow_and_special_spawn_flags(
     actor->xposi.w.h = 200;
     actor->yposi.w.h = 100;
     actor->actflg = 128;
-    actor->actfree[10] = 1;
-    actor->actfree[12] = 192;
-    set_actfree_word(actor, 14, 0);
+    awa_get_work(actor)->spawn_index = 1;
+    awa_get_work(actor)->state_flags = 192;
+    awa_get_work(actor)->timer = 0;
     queue_actor(bubble);
     waterposi = 0;
     set_random_value(0, 3);
@@ -465,7 +455,7 @@ static void test_awamaster_underflow_and_special_spawn_flags(
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 32, bubble->actno);
     TEST_ASSERT_EQ_INT(ctx, 1, bubble->userflag.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[10]);
+    TEST_ASSERT_EQ_INT(ctx, 0, awa_get_work(actor)->spawn_index);
 
     reset_awa_state();
     actor = &actwk[4];
@@ -473,9 +463,9 @@ static void test_awamaster_underflow_and_special_spawn_flags(
     actor->xposi.w.h = 200;
     actor->yposi.w.h = 100;
     actor->actflg = 128;
-    actor->actfree[10] = 0;
-    actor->actfree[12] = 128;
-    set_actfree_word(actor, 14, 0);
+    awa_get_work(actor)->spawn_index = 0;
+    awa_get_work(actor)->state_flags = 128;
+    awa_get_work(actor)->timer = 0;
     queue_actor(bubble);
     waterposi = 0;
     set_random_value(0, 3);
@@ -487,8 +477,8 @@ static void test_awamaster_underflow_and_special_spawn_flags(
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 32, bubble->actno);
     TEST_ASSERT_EQ_INT(ctx, 2, bubble->userflag.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 255, actor->actfree[10]);
-    TEST_ASSERT_EQ_INT(ctx, 0, get_actfree_word(actor, 12));
+    TEST_ASSERT_EQ_INT(ctx, 255, awa_get_work(actor)->spawn_index);
+    TEST_ASSERT_EQ_INT(ctx, 0, awa_get_work(actor)->state_flags);
 }
 
 static void test_awacoli_bounds(test_context *ctx) {
@@ -503,10 +493,10 @@ static void test_awacoli_bounds(test_context *ctx) {
 
     TEST_ASSERT_EQ_INT(ctx, 1, awacoli(actor));
 
-    player->actfree[2] = 128;
+    player_work_get(player)->status_flags = 128;
     TEST_ASSERT_EQ_INT(ctx, 0, awacoli(actor));
 
-    player->actfree[2] = 0;
+    player_work_get(player)->status_flags = 0;
     player->xposi.w.h = 83;
     TEST_ASSERT_EQ_INT(ctx, 0, awacoli(actor));
 

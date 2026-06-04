@@ -110,7 +110,7 @@ static void test_pcol_scans_active_collision_slots(test_context *ctx) {
     sprite_status *enemy = &actwk[32];
 
     reset_coli3_state();
-    player->actfree[2] = 64;
+    player_work_get(player)->status_flags = 64;
     TEST_ASSERT_EQ_INT(ctx, 0, pcol(player));
 
     reset_coli3_state();
@@ -229,7 +229,7 @@ static void test_item_collision_preserves_bumper_behaviors(test_context *ctx) {
 
     reset_coli3_state();
     item->colino = 65;
-    player->actfree[6] = 90;
+    player_work_get(player)->damage_invulnerability_timer = 90;
     TEST_ASSERT_EQ_INT(ctx, -1, pcolitem(player, item));
 
     reset_coli3_state();
@@ -310,7 +310,7 @@ static void test_player_damage_and_death_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 0, jumpcolsub_count);
 
     reset_coli3_state();
-    player->actfree[6] = 1;
+    player_work_get(player)->damage_invulnerability_timer = 1;
     TEST_ASSERT_EQ_INT(ctx, -1, pcole(player, enemy));
     TEST_ASSERT_EQ_INT(ctx, 0, jumpcolsub_count);
 

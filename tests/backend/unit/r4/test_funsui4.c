@@ -147,7 +147,7 @@ static void test_funsui4_init_sets_palette_shape_and_waterline(
     TEST_ASSERT_TRUE(ctx, fountain->patbase == funsui4pat);
     TEST_ASSERT_EQ_INT(ctx, 32, fountain->sprhsize);
     TEST_ASSERT_EQ_INT(ctx, 60, fountain->sprvsize);
-    TEST_ASSERT_EQ_INT(ctx, 16, fountain->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 16, funsui4_work_get(fountain)->timer);
     TEST_ASSERT_EQ_INT(ctx, 272, fountain->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_TRUE(ctx, patchg_actor == fountain);
@@ -168,19 +168,19 @@ static void test_funsui4_move_spawns_splash_when_timer_wraps(
     waterposi = 300;
     fountain->xposi.w.h = 200;
     fountain->yposi.w.h = 260;
-    fountain->actfree[16] = 2;
-    fountain->actfree[17] = 240;
+    funsui4_work_get(fountain)->splash_index = 2;
+    funsui4_work_get(fountain)->timer = 240;
     queue_actwkchk(splash);
 
     funsui4_move(fountain);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, fountain->actfree[17]);
-    TEST_ASSERT_EQ_INT(ctx, 3, fountain->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 0, funsui4_work_get(fountain)->timer);
+    TEST_ASSERT_EQ_INT(ctx, 3, funsui4_work_get(fountain)->splash_index);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, fountain->actno, splash->actno);
     TEST_ASSERT_EQ_INT(ctx, -1, splash->userflag.b.h);
     TEST_ASSERT_EQ_INT(ctx, 5, splash->patno);
-    TEST_ASSERT_EQ_INT(ctx, 2, splash->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 2, funsui4_work_get(splash)->splash_index);
     TEST_ASSERT_EQ_INT(ctx, 240, splash->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 188, splash->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 64, splash->xspeed.w);
@@ -197,11 +197,11 @@ static void test_funsui4_move_timer_advances_without_spawning(
     reset_state();
     waterposi = 260;
     fountain->yposi.w.h = 100;
-    fountain->actfree[17] = 32;
+    funsui4_work_get(fountain)->timer = 32;
 
     funsui4_move(fountain);
 
-    TEST_ASSERT_EQ_INT(ctx, 48, fountain->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 48, funsui4_work_get(fountain)->timer);
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 212, fountain->yposi.w.h);
 }
@@ -226,7 +226,7 @@ static void test_sibuki_init_sets_shape_and_moves_once(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 16, splash->sprhsize);
     TEST_ASSERT_EQ_INT(ctx, 16, splash->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 1, splash->mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 2, splash->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 2, funsui4_work_get(splash)->timer);
     TEST_ASSERT_EQ_INT(ctx, 100, splash->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 199, splash->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, -56, splash->yspeed.w);
@@ -240,13 +240,13 @@ static void test_sibuki_move_frames_out_after_lifetime_wrap(test_context *ctx) {
 
     reset_state();
     splash->r_no0 = 2;
-    splash->actfree[17] = 254;
+    funsui4_work_get(splash)->timer = 254;
     splash->xposi.w.h = 100;
     splash->yposi.w.h = 200;
 
     sibuki(splash);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, splash->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 0, funsui4_work_get(splash)->timer);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
     TEST_ASSERT_TRUE(ctx, frameout_actor == splash);
     TEST_ASSERT_EQ_INT(ctx, 0, patchg_count);
@@ -267,7 +267,7 @@ static void test_non_splash_r_no4_uses_splash_move_table_entry(
 
     funsui4(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 2, funsui4_work_get(actor)->timer);
     TEST_ASSERT_EQ_INT(ctx, 10, actor->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 20, actor->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 16, actor->yspeed.w);

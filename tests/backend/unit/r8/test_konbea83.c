@@ -89,9 +89,23 @@ static void queue_actor(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
+static void set_konbea83_word(sprite_status *actor, int offset, Sint16 value) {
+    konbea83_work *work = konbea83_get_work(actor);
+
+    switch (offset) {
+    case 0:
+        work->parent_index = value;
+        break;
+    case 2:
+        work->segment_timer = value;
+        break;
+    case 4:
+        work->origin_x = value;
+        break;
+    case 6:
+        work->origin_y = value;
+        break;
+    }
 }
 
 static void reset_logs(void) {
@@ -196,7 +210,7 @@ static void test_konbea83_child_frames_out_when_parent_missing(
 
     reset_konbea83_state();
     child->userflag.b.l = -1;
-    set_actfree_word(child, 0, 3);
+    set_konbea83_word(child, 0, 3);
     actwk[3].actno = 0;
 
     konbea(child);
@@ -216,12 +230,12 @@ static void test_konbea83_child_frames_out_when_origin_mismatches(
     parent->actno = 42;
     parent->xposi.w.h = 100;
     parent->yposi.w.h = 200;
-    set_actfree_word(parent, 4, 100);
-    set_actfree_word(parent, 6, 200);
+    set_konbea83_word(parent, 4, 100);
+    set_konbea83_word(parent, 6, 200);
     child->userflag.b.l = -1;
-    set_actfree_word(child, 0, 3);
-    set_actfree_word(child, 4, 101);
-    set_actfree_word(child, 6, 200);
+    set_konbea83_word(child, 0, 3);
+    set_konbea83_word(child, 4, 101);
+    set_konbea83_word(child, 6, 200);
 
     konbea(child);
 
@@ -232,12 +246,12 @@ static void test_konbea83_child_frames_out_when_origin_mismatches(
     parent->actno = 42;
     parent->xposi.w.h = 100;
     parent->yposi.w.h = 200;
-    set_actfree_word(parent, 4, 100);
-    set_actfree_word(parent, 6, 200);
+    set_konbea83_word(parent, 4, 100);
+    set_konbea83_word(parent, 6, 200);
     child->userflag.b.l = -1;
-    set_actfree_word(child, 0, 3);
-    set_actfree_word(child, 4, 100);
-    set_actfree_word(child, 6, 201);
+    set_konbea83_word(child, 0, 3);
+    set_konbea83_word(child, 4, 100);
+    set_konbea83_word(child, 6, 201);
 
     konbea(child);
 
@@ -286,8 +300,8 @@ static void test_konbea83_stop_waits_and_clears_ride_on_expiry(
 
     reset_logs();
     actor->r_no0 = 4;
-    set_actfree_word(actor, 2, 1);
-    actor->actfree[20] = 255;
+    set_konbea83_word(actor, 2, 1);
+    konbea83_get_work(actor)->ride_pressed = 255;
     ridechk_result = 1;
 
     konbea(actor);
@@ -302,8 +316,8 @@ static void test_konbea83_stop_waits_and_clears_ride_on_expiry(
     reset_logs();
     actor->r_no0 = 4;
     actor->sprvsize = 5;
-    set_actfree_word(actor, 2, 2);
-    actor->actfree[20] = 255;
+    set_konbea83_word(actor, 2, 2);
+    konbea83_get_work(actor)->ride_pressed = 255;
     ridechk_result = 0;
 
     konbea(actor);
@@ -311,7 +325,7 @@ static void test_konbea83_stop_waits_and_clears_ride_on_expiry(
     TEST_ASSERT_EQ_INT(ctx, 1, ridechk_count);
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 5, actor->sprvsize);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[20]);
+    TEST_ASSERT_EQ_INT(ctx, 0, konbea83_get_work(actor)->ride_pressed);
     TEST_ASSERT_EQ_INT(ctx, 0, ride_on_clr_count);
 }
 

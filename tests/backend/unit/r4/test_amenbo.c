@@ -71,48 +71,6 @@ void soundset(Sint16 ReqNo) {
     soundset_last = ReqNo;
 }
 
-static size_t short_alias_offset(int short_index) {
-    return (size_t)short_index * sizeof(Sint16) -
-           offsetof(sprite_status, actfree);
-}
-
-static size_t long_alias_offset(int long_index) {
-    return (size_t)long_index * sizeof(Sint32) -
-           offsetof(sprite_status, actfree);
-}
-
-static void set_actor_short_alias(sprite_status *actor, int short_index,
-                                  Sint16 value) {
-    size_t offset = short_alias_offset(short_index);
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
-static Sint16 actor_short_alias(sprite_status *actor, int short_index) {
-    size_t offset = short_alias_offset(short_index);
-    return (Sint16)((Uint16)actor->actfree[offset] |
-                    ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
-static void set_actor_long_alias(sprite_status *actor, int long_index,
-                                 Sint32 value) {
-    size_t offset = long_alias_offset(long_index);
-    Uint32 raw = (Uint32)value;
-    actor->actfree[offset] = (Uint8)raw;
-    actor->actfree[offset + 1] = (Uint8)(raw >> 8);
-    actor->actfree[offset + 2] = (Uint8)(raw >> 16);
-    actor->actfree[offset + 3] = (Uint8)(raw >> 24);
-}
-
-static Sint32 actor_long_alias(sprite_status *actor, int long_index) {
-    size_t offset = long_alias_offset(long_index);
-    Uint32 raw = actor->actfree[offset] |
-                 ((Uint32)actor->actfree[offset + 1] << 8) |
-                 ((Uint32)actor->actfree[offset + 2] << 16) |
-                 ((Uint32)actor->actfree[offset + 3] << 24);
-    return (Sint32)raw;
-}
-
 static void queue_actor(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
@@ -158,8 +116,8 @@ static void test_projectile_branch_uses_parent_speed_and_palette(
     reset_amenbo_state();
     actor->userflag.b.h = -1;
     actor->xposi.l = 10 << 16;
-    set_actor_long_alias(actor, 12, 0x20000);
-    set_actor_long_alias(actor, 15, 0);
+    amenbo_get_work(actor)->velocity_x = 0x20000;
+    amenbo_get_work(actor)->palette_style = 0;
 
     amenbo(actor);
 
@@ -175,7 +133,7 @@ static void test_projectile_branch_uses_parent_speed_and_palette(
     reset_amenbo_state();
     actor = &actwk[4];
     actor->userflag.b.h = -1;
-    set_actor_long_alias(actor, 15, 1);
+    amenbo_get_work(actor)->palette_style = 1;
 
     amenbo(actor);
 
@@ -214,13 +172,13 @@ static void test_init_variants_and_regular_acceleration(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 20, actor->sprhsize);
     TEST_ASSERT_EQ_INT(ctx, 12, actor->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 49, actor->colino);
-    TEST_ASSERT_EQ_INT(ctx, 119, actor_short_alias(actor, 32));
-    TEST_ASSERT_EQ_INT(ctx, 200, actor_short_alias(actor, 33));
+    TEST_ASSERT_EQ_INT(ctx, 119, amenbo_get_work(actor)->shot_timer);
+    TEST_ASSERT_EQ_INT(ctx, 200, amenbo_get_work(actor)->origin_x);
     TEST_ASSERT_TRUE(ctx, actor->patbase == pat_amenbo_e);
-    TEST_ASSERT_EQ_INT(ctx, -1536, actor_long_alias(actor, 12));
-    TEST_ASSERT_EQ_INT(ctx, -1536, actor_long_alias(actor, 13));
-    TEST_ASSERT_EQ_INT(ctx, 256, actor_long_alias(actor, 14));
-    TEST_ASSERT_EQ_INT(ctx, 1, actor_long_alias(actor, 15));
+    TEST_ASSERT_EQ_INT(ctx, -1536, amenbo_get_work(actor)->velocity_x);
+    TEST_ASSERT_EQ_INT(ctx, -1536, amenbo_get_work(actor)->acceleration_x);
+    TEST_ASSERT_EQ_INT(ctx, 256, amenbo_get_work(actor)->deceleration_x);
+    TEST_ASSERT_EQ_INT(ctx, 1, amenbo_get_work(actor)->palette_style);
     TEST_ASSERT_EQ_INT(ctx, 88, actor->yposi.w.h);
     TEST_ASSERT_TRUE(ctx, patchg_table == pchg_e);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -235,10 +193,10 @@ static void test_init_variants_and_regular_acceleration(test_context *ctx) {
     amenbo(actor);
 
     TEST_ASSERT_TRUE(ctx, actor->patbase == pat_amenbo_b);
-    TEST_ASSERT_EQ_INT(ctx, -512, actor_long_alias(actor, 12));
-    TEST_ASSERT_EQ_INT(ctx, -512, actor_long_alias(actor, 13));
-    TEST_ASSERT_EQ_INT(ctx, 192, actor_long_alias(actor, 14));
-    TEST_ASSERT_EQ_INT(ctx, 0, actor_long_alias(actor, 15));
+    TEST_ASSERT_EQ_INT(ctx, -512, amenbo_get_work(actor)->velocity_x);
+    TEST_ASSERT_EQ_INT(ctx, -512, amenbo_get_work(actor)->acceleration_x);
+    TEST_ASSERT_EQ_INT(ctx, 192, amenbo_get_work(actor)->deceleration_x);
+    TEST_ASSERT_EQ_INT(ctx, 0, amenbo_get_work(actor)->palette_style);
     TEST_ASSERT_TRUE(ctx, patchg_table == pchg_b);
     TEST_ASSERT_EQ_INT(ctx, 56, actor->yposi.w.h);
 }
@@ -250,30 +208,30 @@ static void test_accel_clamps_at_negative_and_positive_limits(
     reset_amenbo_state();
     actor->r_no0 = 2;
     actor->userflag.b.h = 1;
-    set_actor_long_alias(actor, 12, -49000);
-    set_actor_long_alias(actor, 13, -512);
+    amenbo_get_work(actor)->velocity_x = -49000;
+    amenbo_get_work(actor)->acceleration_x = -512;
     waterposi = 24;
 
     amenbo(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, -49152, actor_long_alias(actor, 12));
-    TEST_ASSERT_EQ_INT(ctx, 512, actor_long_alias(actor, 13));
+    TEST_ASSERT_EQ_INT(ctx, -49152, amenbo_get_work(actor)->velocity_x);
+    TEST_ASSERT_EQ_INT(ctx, 512, amenbo_get_work(actor)->acceleration_x);
     TEST_ASSERT_TRUE(ctx, patchg_table == pchg_b);
 
     reset_amenbo_state();
     actor = &actwk[4];
     actor->r_no0 = 2;
     actor->userflag.b.h = 1;
-    set_actor_long_alias(actor, 12, 49000);
-    set_actor_long_alias(actor, 13, 512);
+    amenbo_get_work(actor)->velocity_x = 49000;
+    amenbo_get_work(actor)->acceleration_x = 512;
     waterposi = 24;
 
     amenbo(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 49152, actor_long_alias(actor, 12));
-    TEST_ASSERT_EQ_INT(ctx, -512, actor_long_alias(actor, 13));
+    TEST_ASSERT_EQ_INT(ctx, 49152, amenbo_get_work(actor)->velocity_x);
+    TEST_ASSERT_EQ_INT(ctx, -512, amenbo_get_work(actor)->acceleration_x);
 }
 
 static void test_decel_crosses_zero_and_continues_otherwise(test_context *ctx) {
@@ -281,44 +239,44 @@ static void test_decel_crosses_zero_and_continues_otherwise(test_context *ctx) {
 
     reset_amenbo_state();
     actor->r_no0 = 4;
-    set_actor_long_alias(actor, 12, -100);
-    set_actor_long_alias(actor, 14, 192);
+    amenbo_get_work(actor)->velocity_x = -100;
+    amenbo_get_work(actor)->deceleration_x = 192;
     waterposi = 50;
 
     amenbo(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor_long_alias(actor, 12));
-    TEST_ASSERT_EQ_INT(ctx, -192, actor_long_alias(actor, 14));
-    TEST_ASSERT_EQ_INT(ctx, 60, actor_short_alias(actor, 23));
+    TEST_ASSERT_EQ_INT(ctx, 0, amenbo_get_work(actor)->velocity_x);
+    TEST_ASSERT_EQ_INT(ctx, -192, amenbo_get_work(actor)->deceleration_x);
+    TEST_ASSERT_EQ_INT(ctx, 60, amenbo_get_work(actor)->stop_timer);
     TEST_ASSERT_EQ_INT(ctx, 42, actor->yposi.w.h);
 
     reset_amenbo_state();
     actor = &actwk[4];
     actor->r_no0 = 4;
     actor->userflag.b.h = 1;
-    set_actor_long_alias(actor, 12, -1000);
-    set_actor_long_alias(actor, 14, 192);
+    amenbo_get_work(actor)->velocity_x = -1000;
+    amenbo_get_work(actor)->deceleration_x = 192;
     waterposi = 50;
 
     amenbo(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, -808, actor_long_alias(actor, 12));
+    TEST_ASSERT_EQ_INT(ctx, -808, amenbo_get_work(actor)->velocity_x);
 
     reset_amenbo_state();
     actor = &actwk[4];
     actor->r_no0 = 4;
     actor->userflag.b.h = 1;
-    set_actor_long_alias(actor, 12, -100);
-    set_actor_long_alias(actor, 14, 192);
+    amenbo_get_work(actor)->velocity_x = -100;
+    amenbo_get_work(actor)->deceleration_x = 192;
     waterposi = 50;
 
     amenbo(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor_long_alias(actor, 12));
-    TEST_ASSERT_EQ_INT(ctx, 60, actor_short_alias(actor, 23));
+    TEST_ASSERT_EQ_INT(ctx, 0, amenbo_get_work(actor)->velocity_x);
+    TEST_ASSERT_EQ_INT(ctx, 60, amenbo_get_work(actor)->stop_timer);
 }
 
 static void test_stop_and_stop1_timers(test_context *ctx) {
@@ -328,7 +286,7 @@ static void test_stop_and_stop1_timers(test_context *ctx) {
     actor->r_no0 = 6;
     actor->actflg = 4;
     actor->cddat = 0;
-    set_actor_short_alias(actor, 23, 1);
+    amenbo_get_work(actor)->stop_timer = 1;
     waterposi = 70;
 
     amenbo(actor);
@@ -336,25 +294,25 @@ static void test_stop_and_stop1_timers(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 8, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 5, actor->actflg);
     TEST_ASSERT_EQ_INT(ctx, 1, actor->cddat);
-    TEST_ASSERT_EQ_INT(ctx, 60, actor_short_alias(actor, 23));
+    TEST_ASSERT_EQ_INT(ctx, 60, amenbo_get_work(actor)->stop_timer);
     TEST_ASSERT_EQ_INT(ctx, 62, actor->yposi.w.h);
 
     reset_amenbo_state();
     actor = &actwk[4];
     actor->r_no0 = 6;
     actor->userflag.b.h = 1;
-    set_actor_short_alias(actor, 23, 1);
+    amenbo_get_work(actor)->stop_timer = 1;
     waterposi = 70;
 
     amenbo(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 8, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 60, actor_short_alias(actor, 23));
+    TEST_ASSERT_EQ_INT(ctx, 60, amenbo_get_work(actor)->stop_timer);
 
     reset_amenbo_state();
     actor = &actwk[4];
     actor->r_no0 = 8;
-    set_actor_short_alias(actor, 23, 1);
+    amenbo_get_work(actor)->stop_timer = 1;
     waterposi = 70;
 
     amenbo(actor);
@@ -375,19 +333,19 @@ static void test_projectile_spawn_success_failure_and_sound(test_context *ctx) {
     actor->sprpri = 3;
     actor->sproffset = 9136;
     actor->patbase = pat_amenbo_e;
-    set_actor_short_alias(actor, 32, 1);
-    set_actor_long_alias(actor, 15, 1);
+    amenbo_get_work(actor)->shot_timer = 1;
+    amenbo_get_work(actor)->palette_style = 1;
     actwk[0].xposi.w.h = 90;
     actwk[0].yposi.w.h = 80;
     queue_actor(shot);
 
     act_tama(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 120, actor_short_alias(actor, 32));
+    TEST_ASSERT_EQ_INT(ctx, 120, amenbo_get_work(actor)->shot_timer);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 41, shot->actno);
     TEST_ASSERT_EQ_INT(ctx, -1, shot->userflag.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor_short_alias(shot, 44));
+    TEST_ASSERT_EQ_INT(ctx, 4, amenbo_get_projectile_legacy_slot(shot)->projectile_owner_index);
     TEST_ASSERT_EQ_INT(ctx, 100, shot->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 80, shot->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 128, shot->actflg);
@@ -398,15 +356,15 @@ static void test_projectile_spawn_success_failure_and_sound(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 4, shot->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 178, shot->colino);
     TEST_ASSERT_TRUE(ctx, shot->patbase == pat_amenbo_e);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor_long_alias(shot, 15));
+    TEST_ASSERT_EQ_INT(ctx, 1, amenbo_get_work(shot)->palette_style);
     TEST_ASSERT_EQ_INT(ctx, 1, shot->mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, -0x20000, actor_long_alias(shot, 12));
+    TEST_ASSERT_EQ_INT(ctx, -0x20000, amenbo_get_work(shot)->velocity_x);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 160, soundset_last);
 
     reset_amenbo_state();
     actor = &actwk[4];
-    set_actor_short_alias(actor, 32, 1);
+    amenbo_get_work(actor)->shot_timer = 1;
     actwk[0].xposi.w.h = 1000;
     actwk[0].yposi.w.h = 1000;
 
@@ -417,7 +375,7 @@ static void test_projectile_spawn_success_failure_and_sound(test_context *ctx) {
     reset_amenbo_state();
     actor = &actwk[4];
     actor->actflg = 1;
-    set_actor_short_alias(actor, 32, 1);
+    amenbo_get_work(actor)->shot_timer = 1;
     actwk[0].xposi.w.h = 10;
     actwk[0].yposi.w.h = 0;
     queue_actor(&actwk[5]);
@@ -425,13 +383,13 @@ static void test_projectile_spawn_success_failure_and_sound(test_context *ctx) {
     act_tama(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
-    TEST_ASSERT_EQ_INT(ctx, 0x20000, actor_long_alias(&actwk[5], 12));
+    TEST_ASSERT_EQ_INT(ctx, 0x20000, amenbo_get_work(&actwk[5])->velocity_x);
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
 
     reset_amenbo_state();
     actor = &actwk[4];
     actor->xposi.w.h = 100;
-    set_actor_short_alias(actor, 32, 1);
+    amenbo_get_work(actor)->shot_timer = 1;
     actwk[0].xposi.w.h = 90;
     actwk[0].yposi.w.h = 0;
 

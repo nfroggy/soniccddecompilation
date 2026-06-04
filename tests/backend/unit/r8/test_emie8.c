@@ -153,17 +153,17 @@ static void test_emie8_player_auto_control_sequence(test_context *ctx) {
     reset_emie8_state();
     player->xposi.w.h = 3984;
     emie8_snc_r(actor, player);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->actfree[3]);
+    TEST_ASSERT_EQ_INT(ctx, 2, emie8_get_work(actor)->scripted_control_state);
     TEST_ASSERT_EQ_INT(ctx, 1028, swdata.w);
 
     player->xposi.w.h = 3952;
     emie8_snc_l(actor, player);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->actfree[3]);
+    TEST_ASSERT_EQ_INT(ctx, 4, emie8_get_work(actor)->scripted_control_state);
     TEST_ASSERT_EQ_INT(ctx, 0, swdata.w);
 
     actor->r_no0 = 6;
     emie8_snc_w(actor, player);
-    TEST_ASSERT_EQ_INT(ctx, 6, actor->actfree[3]);
+    TEST_ASSERT_EQ_INT(ctx, 6, emie8_get_work(actor)->scripted_control_state);
     TEST_ASSERT_EQ_INT(ctx, 5, player->mstno.b.h);
 
     player->patcnt = 3;
@@ -214,8 +214,8 @@ static void test_emie8_final_walk_flashes_palette_then_finishes(
     actor->r_no0 = 14;
     actor->xposi.w.h = 3808;
     actor->xspeed.w = 320;
-    actor->actfree[0] = 7;
-    actor->actfree[1] = 0;
+    emie8_get_work(actor)->flash_timer = 7;
+    emie8_get_work(actor)->flash_count = 0;
     palette_work[0].peRed = 0;
     palette_work[0].peGreen = 224;
     palette_work[0].peBlue = 64;
@@ -236,13 +236,13 @@ static void test_emie8_final_walk_flashes_palette_then_finishes(
     TEST_ASSERT_EQ_INT(ctx, 224, palette_work[1].peRed);
     TEST_ASSERT_EQ_INT(ctx, 160, palette_work[1].peGreen);
     TEST_ASSERT_EQ_INT(ctx, 224, palette_work[1].peBlue);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 1, emie8_get_work(actor)->flash_count);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_TRUE(ctx, patchg_table == emie8_pchg);
 
     reset_logs();
-    actor->actfree[0] = 7;
-    actor->actfree[1] = 7;
+    emie8_get_work(actor)->flash_timer = 7;
+    emie8_get_work(actor)->flash_count = 7;
 
     emie8(actor);
 

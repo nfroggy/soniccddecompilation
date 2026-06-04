@@ -264,7 +264,7 @@ static void test_tobita_ride_states_reset_or_keep_oscillation(
     player->cddat = 2;
     tobita_ride_r(actor);
     TEST_ASSERT_EQ_INT(ctx, 10, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 64, actor->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 64, tobita1_get_work(actor)->wobble_timer);
 
     reset_sikake_state();
     actor->r_no0 = 8;
@@ -277,7 +277,7 @@ static void test_tobita_ride_states_reset_or_keep_oscillation(
     player->cddat = 2;
     tobita_ride_l(actor);
     TEST_ASSERT_EQ_INT(ctx, 12, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 64, actor->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 64, tobita1_get_work(actor)->wobble_timer);
 
     reset_sikake_state();
     place_overlapping(actor, player);
@@ -295,31 +295,31 @@ static void test_tobita_yure_states_bounce_and_reset_timer(test_context *ctx) {
     actor->r_no0 = 10;
     player->yspeed.w = 3000;
     player->cddat = 32;
-    player->actfree[14] = 5;
+    player_work_get(player)->jump_lock = 5;
     tobita_yure_r(actor);
     TEST_ASSERT_EQ_INT(ctx, 1, actor->mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 63, actor->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 63, tobita1_get_work(actor)->wobble_timer);
     TEST_ASSERT_EQ_INT(ctx, -2560, player->yspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 14, player->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 7, player->sprhs);
     TEST_ASSERT_EQ_INT(ctx, 105, player->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 0, player->cddat & 32);
     TEST_ASSERT_EQ_INT(ctx, 2, player->mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 0, player->actfree[14]);
+    TEST_ASSERT_EQ_INT(ctx, 0, player_work_get(player)->jump_lock);
 
     reset_sikake_state();
     place_overlapping(actor, player);
     actor->r_no0 = 12;
     player->yspeed.w = 8;
     player->cddat = 6;
-    player->actfree[18] = 9;
+    player_work_get(player)->jump_started = 9;
     tobita_yure_l(actor);
     TEST_ASSERT_EQ_INT(ctx, 2, actor->mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 63, actor->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 63, tobita1_get_work(actor)->wobble_timer);
     TEST_ASSERT_EQ_INT(ctx, -264, player->yspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 19, player->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 9, player->sprhs);
-    TEST_ASSERT_EQ_INT(ctx, 0, player->actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 0, player_work_get(player)->jump_started);
     TEST_ASSERT_EQ_INT(ctx, 16, player->cddat & 16);
 
     reset_sikake_state();
@@ -327,12 +327,12 @@ static void test_tobita_yure_states_bounce_and_reset_timer(test_context *ctx) {
     actor->r_no0 = 10;
     player->yspeed.w = 8;
     player->cddat = 6;
-    player->actfree[18] = 9;
+    player_work_get(player)->jump_started = 9;
     tobita_yure_r(actor);
     TEST_ASSERT_EQ_INT(ctx, -264, player->yspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 19, player->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 9, player->sprhs);
-    TEST_ASSERT_EQ_INT(ctx, 0, player->actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 0, player_work_get(player)->jump_started);
     TEST_ASSERT_EQ_INT(ctx, 16, player->cddat & 16);
 
     reset_sikake_state();
@@ -348,7 +348,7 @@ static void test_tobita_yure_states_bounce_and_reset_timer(test_context *ctx) {
     reset_sikake_state();
     actor->r_no0 = 10;
     actor->mstno.b.h = 1;
-    actor->actfree[0] = 1;
+    tobita1_get_work(actor)->wobble_timer = 1;
     actor->xposi.w.h = 100;
     actor->yposi.w.h = 100;
     player->xposi.w.h = 200;
@@ -358,12 +358,12 @@ static void test_tobita_yure_states_bounce_and_reset_timer(test_context *ctx) {
     tobita_yure_r(actor);
     TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 3, actor->mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 64, actor->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 64, tobita1_get_work(actor)->wobble_timer);
 
     reset_sikake_state();
     actor->r_no0 = 12;
     actor->mstno.b.h = 2;
-    actor->actfree[0] = 1;
+    tobita1_get_work(actor)->wobble_timer = 1;
     actor->xposi.w.h = 100;
     actor->yposi.w.h = 100;
     player->xposi.w.h = 200;
@@ -373,7 +373,7 @@ static void test_tobita_yure_states_bounce_and_reset_timer(test_context *ctx) {
     tobita_yure_l(actor);
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 4, actor->mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 64, actor->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 64, tobita1_get_work(actor)->wobble_timer);
 }
 
 static void test_tobita1_wrapper_dispatches_and_frames_out(test_context *ctx) {
@@ -387,7 +387,7 @@ static void test_tobita1_wrapper_dispatches_and_frames_out(test_context *ctx) {
 
     reset_sikake_state();
     actor->r_no0 = 12;
-    actor->actfree[0] = 1;
+    tobita1_get_work(actor)->wobble_timer = 1;
     actor->xposi.w.h = 100;
     actor->yposi.w.h = 100;
     actwk[0].xposi.w.h = 200;
@@ -480,7 +480,7 @@ static void test_hari_normal_damage_and_gate_paths(test_context *ctx) {
     actor->yposi.w.h = 100;
     actor->cddat = 8;
     player->yposi.w.h = 100;
-    player->actfree[6] = 1;
+    player_work_get(player)->damage_invulnerability_timer = 1;
     hitchk_result = 1;
     hari_normal(actor);
     TEST_ASSERT_EQ_INT(ctx, 0, playdamageset_count);

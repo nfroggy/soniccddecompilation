@@ -156,7 +156,7 @@ static void test_screw_existing_active_actor_animates_without_init(
 
     reset_screw_state();
     actor->r_no0 = 2;
-    actor->actfree[21] = 255;
+    screw_a_work_get(actor)->animation_enabled = 255;
 
     screw(actor);
 

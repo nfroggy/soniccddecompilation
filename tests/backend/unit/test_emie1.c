@@ -96,13 +96,6 @@ static void queue_emycol(Sint16 value) {
     emycol_results[emycol_result_count++] = value;
 }
 
-static void set_legacy_word(sprite_status *actor, int word_index,
-                            Sint16 value) {
-    int offset = (word_index - 23) * 2;
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
 static void reset_emie1_state(void) {
     memset(actwk, 0, sizeof(actwk));
     memset(&editmode, 0, sizeof(editmode));
@@ -252,7 +245,7 @@ static void test_emie1_waits_and_kyoro_jump_charge(test_context *ctx) {
 
     emie1(amy);
 
-    TEST_ASSERT_EQ_INT(ctx, 4, amy->actfree[20]);
+    TEST_ASSERT_EQ_INT(ctx, 4, emie1_get_work(amy)->flags);
     TEST_ASSERT_EQ_INT(ctx, 0, amy->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 55, amy->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, amy->mstno.b.h);
@@ -262,44 +255,44 @@ static void test_emie1_waits_and_kyoro_jump_charge(test_context *ctx) {
     amy->r_no0 = 2;
     amy->xposi.w.h = 100;
     amy->yposi.w.h = 50;
-    amy->actfree[20] = 4;
+    emie1_get_work(amy)->flags = 4;
     actwk[0].xposi.w.h = 120;
     queue_emycol(3);
 
     emie1(amy);
 
-    TEST_ASSERT_EQ_INT(ctx, 4, amy->actfree[20]);
+    TEST_ASSERT_EQ_INT(ctx, 4, emie1_get_work(amy)->flags);
     TEST_ASSERT_EQ_INT(ctx, 0, amy->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 53, amy->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, amy->mstno.b.h);
 
     reset_emie1_state();
     amy->r_no0 = 2;
-    amy->actfree[20] = 128;
-    amy->actfree[21] = 3;
-    amy->actfree[16] = 252;
+    emie1_get_work(amy)->flags = 128;
+    emie1_get_work(amy)->jump_count = 3;
+    emie1_get_work(amy)->phase = 252;
     actwk[0].xspeed.w = 1;
     queue_emycol(10);
 
     emie1(amy);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, amy->actfree[21]);
-    TEST_ASSERT_EQ_INT(ctx, 0, amy->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 0, emie1_get_work(amy)->jump_count);
+    TEST_ASSERT_EQ_INT(ctx, 0, emie1_get_work(amy)->phase);
     TEST_ASSERT_EQ_INT(ctx, 4, amy->mstno.b.h);
 
     reset_emie1_state();
     amy->r_no0 = 2;
-    amy->actfree[20] = 128;
-    amy->actfree[21] = 1;
+    emie1_get_work(amy)->flags = 128;
+    emie1_get_work(amy)->jump_count = 1;
     actwk[0].xspeed.w = 1;
     queue_emycol(10);
     queue_emycol(-1);
 
     emie1(amy);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, amy->actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 2, emie1_get_work(amy)->jump_count);
     TEST_ASSERT_EQ_INT(ctx, 0, amy->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 0, amy->actfree[20] & 64);
+    TEST_ASSERT_EQ_INT(ctx, 0, emie1_get_work(amy)->flags & 64);
 }
 
 static void test_emie1_chases_clamps_and_can_catch_player(test_context *ctx) {
@@ -309,7 +302,7 @@ static void test_emie1_chases_clamps_and_can_catch_player(test_context *ctx) {
     amy->r_no0 = 2;
     amy->xposi.w.h = 100;
     amy->yposi.w.h = 100;
-    set_legacy_word(amy, 29, 100);
+    emie1_get_work(amy)->origin_x = 100;
     actwk[0].xposi.w.h = 116;
     actwk[0].yposi.w.h = 92;
     queue_emycol(0);
@@ -317,7 +310,7 @@ static void test_emie1_chases_clamps_and_can_catch_player(test_context *ctx) {
     emie1(amy);
 
     TEST_ASSERT_EQ_INT(ctx, 4, amy->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 129, amy->actfree[20]);
+    TEST_ASSERT_EQ_INT(ctx, 129, emie1_get_work(amy)->flags);
     TEST_ASSERT_EQ_INT(ctx, 0, amy->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 0, amy->patno);
     TEST_ASSERT_EQ_INT(ctx, 1, sub_sync_count);
@@ -327,7 +320,7 @@ static void test_emie1_chases_clamps_and_can_catch_player(test_context *ctx) {
     amy->r_no0 = 2;
     amy->xposi.w.h = 100;
     amy->xspeed.w = -700;
-    set_legacy_word(amy, 29, 100);
+    emie1_get_work(amy)->origin_x = 100;
     actwk[0].xposi.w.h = 20;
     queue_emycol(0);
 
@@ -341,20 +334,20 @@ static void test_emie1_chases_clamps_and_can_catch_player(test_context *ctx) {
     amy->r_no0 = 2;
     amy->xposi.w.h = -210;
     amy->xspeed.w = -16;
-    amy->actfree[20] = 4;
-    set_legacy_word(amy, 29, 100);
+    emie1_get_work(amy)->flags = 4;
+    emie1_get_work(amy)->origin_x = 100;
     actwk[0].xposi.w.h = -260;
 
     emie1(amy);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, amy->actfree[20] & 4);
+    TEST_ASSERT_EQ_INT(ctx, 0, emie1_get_work(amy)->flags & 4);
     TEST_ASSERT_EQ_INT(ctx, 0, amy->xspeed.w);
 
     reset_emie1_state();
     amy->r_no0 = 2;
     amy->xposi.w.h = 100;
     amy->xspeed.w = 700;
-    set_legacy_word(amy, 29, 100);
+    emie1_get_work(amy)->origin_x = 100;
     actwk[0].xposi.w.h = 200;
     queue_emycol(0);
 
@@ -385,7 +378,7 @@ static void test_emie1_daki_paths_jump_and_time_release(test_context *ctx) {
 
     reset_emie1_state();
     amy->r_no0 = 4;
-    amy->actfree[20] = 1;
+    emie1_get_work(amy)->flags = 1;
     sonic->direc.b.h = 64;
     sonic->cddat = 4;
     swdata1.b.h = 112;
@@ -395,7 +388,7 @@ static void test_emie1_daki_paths_jump_and_time_release(test_context *ctx) {
     emie1(amy);
 
     TEST_ASSERT_EQ_INT(ctx, 6, amy->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, amy->actfree[20] & 1);
+    TEST_ASSERT_EQ_INT(ctx, 0, emie1_get_work(amy)->flags & 1);
     TEST_ASSERT_EQ_INT(ctx, 1, sinset_count);
     TEST_ASSERT_EQ_INT(ctx, 0, sinset_angle);
     TEST_ASSERT_EQ_INT(ctx, 19, sonic->sprvsize);
@@ -404,7 +397,7 @@ static void test_emie1_daki_paths_jump_and_time_release(test_context *ctx) {
 
     reset_emie1_state();
     amy->r_no0 = 4;
-    amy->actfree[20] = 1;
+    emie1_get_work(amy)->flags = 1;
     sonic->yposi.w.h = 100;
     pltime.l = 602624;
     sinset_cos_result = 256;
@@ -412,7 +405,7 @@ static void test_emie1_daki_paths_jump_and_time_release(test_context *ctx) {
     emie1(amy);
 
     TEST_ASSERT_EQ_INT(ctx, 2, amy->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, amy->actfree[20] & 1);
+    TEST_ASSERT_EQ_INT(ctx, 0, emie1_get_work(amy)->flags & 1);
     TEST_ASSERT_EQ_INT(ctx, 14, sonic->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 7, sonic->sprhs);
     TEST_ASSERT_EQ_INT(ctx, 105, sonic->yposi.w.h);
@@ -426,7 +419,7 @@ static void test_emie1_jump_arc_and_landing_return(test_context *ctx) {
     amy->r_no0 = 6;
     amy->xposi.w.h = 120;
     amy->cddat = 1;
-    set_legacy_word(amy, 29, 100);
+    emie1_get_work(amy)->origin_x = 100;
     queue_emycol(0);
 
     emie1(amy);
@@ -439,7 +432,7 @@ static void test_emie1_jump_arc_and_landing_return(test_context *ctx) {
     reset_emie1_state();
     amy->r_no0 = 6;
     amy->xposi.w.h = 300;
-    set_legacy_word(amy, 29, 100);
+    emie1_get_work(amy)->origin_x = 100;
     queue_emycol(0);
 
     emie1(amy);
@@ -449,7 +442,7 @@ static void test_emie1_jump_arc_and_landing_return(test_context *ctx) {
     reset_emie1_state();
     amy->r_no0 = 6;
     amy->xposi.w.h = 80;
-    set_legacy_word(amy, 29, 100);
+    emie1_get_work(amy)->origin_x = 100;
     queue_emycol(0);
 
     emie1(amy);
@@ -461,13 +454,13 @@ static void test_emie1_jump_arc_and_landing_return(test_context *ctx) {
     amy->xposi.w.h = 100;
     amy->yposi.w.h = 100;
     amy->yspeed.w = 0;
-    amy->actfree[16] = 240;
+    emie1_get_work(amy)->phase = 240;
     queue_emycol(-1);
 
     emie1(amy);
 
     TEST_ASSERT_EQ_INT(ctx, 2, amy->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, amy->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 0, emie1_get_work(amy)->phase);
     TEST_ASSERT_EQ_INT(ctx, 0, amy->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 0, amy->yspeed.w);
 
@@ -483,17 +476,17 @@ static void test_emie1_jump_arc_and_landing_return(test_context *ctx) {
 
     reset_emie1_state();
     amy->r_no0 = 8;
-    amy->actfree[16] = 0;
+    emie1_get_work(amy)->phase = 0;
     queue_emycol(-1);
 
     emie1(amy);
 
-    TEST_ASSERT_EQ_INT(ctx, 16, amy->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 16, emie1_get_work(amy)->phase);
     TEST_ASSERT_EQ_INT(ctx, 8, amy->r_no0);
 
     reset_emie1_state();
     amy->r_no0 = 2;
-    amy->actfree[20] = 128 | 64;
+    emie1_get_work(amy)->flags = 128 | 64;
     amy->yspeed.w = 0;
     queue_emycol(0);
 
@@ -509,8 +502,8 @@ static void test_emie1_heart_spawn_and_allocation_failure(test_context *ctx) {
     amy->xposi.w.h = 100;
     amy->yposi.w.h = 50;
     amy->cddat = 1;
-    amy->actfree[17] = 250;
-    amy->actfree[20] = 1;
+    emie1_get_work(amy)->heart_timer = 250;
+    emie1_get_work(amy)->flags = 1;
     actwkchk_actor = &actwk[20];
 
     heartset(amy);
@@ -521,7 +514,7 @@ static void test_emie1_heart_spawn_and_allocation_failure(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 38, actwk[20].yposi.w.h);
 
     reset_emie1_state();
-    amy->actfree[17] = 250;
+    emie1_get_work(amy)->heart_timer = 250;
     actwkchk_result = -1;
 
     heartset(amy);
@@ -532,7 +525,7 @@ static void test_emie1_heart_spawn_and_allocation_failure(test_context *ctx) {
     reset_emie1_state();
     amy->xposi.w.h = 100;
     amy->yposi.w.h = 50;
-    amy->actfree[17] = 250;
+    emie1_get_work(amy)->heart_timer = 250;
     actwkchk_actor = &actwk[20];
 
     heartset(amy);
@@ -558,14 +551,14 @@ static void test_heart1_initializes_moves_and_frames_out(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 8, heart->patno);
     TEST_ASSERT_EQ_INT(ctx, -96, heart->yspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 16, heart->xspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 1, heart->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 1, emie1_get_work(heart)->phase);
     TEST_ASSERT_EQ_INT(ctx, 1, sinset_count);
     TEST_ASSERT_EQ_INT(ctx, 0, sinset_angle);
     assert_entry_callbacks(ctx, heart);
 
     reset_emie1_state();
     heart->r_no0 = 2;
-    heart->actfree[16] = 19;
+    emie1_get_work(heart)->phase = 19;
     heart->patno = 8;
 
     heart1(heart);
@@ -574,7 +567,7 @@ static void test_heart1_initializes_moves_and_frames_out(test_context *ctx) {
 
     reset_emie1_state();
     heart->r_no0 = 2;
-    heart->actfree[16] = 109;
+    emie1_get_work(heart)->phase = 109;
     heart->patno = 8;
     heart->xspeed.w = 32;
     heart->yspeed.w = -16;
@@ -584,11 +577,11 @@ static void test_heart1_initializes_moves_and_frames_out(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 9, heart->patno);
     TEST_ASSERT_EQ_INT(ctx, 0, heart->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 0, heart->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 1, heart->actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 1, emie1_get_work(heart)->heart_done);
 
     reset_emie1_state();
     heart->r_no0 = 2;
-    heart->actfree[16] = 119;
+    emie1_get_work(heart)->phase = 119;
 
     heart1(heart);
 
@@ -642,21 +635,21 @@ static void test_dakicheck_documents_guard_paths(test_context *ctx) {
     reset_emie1_state();
     amy->xposi.w.h = 300;
     amy->xspeed.w = 1;
-    set_legacy_word(amy, 29, 100);
+    emie1_get_work(amy)->origin_x = 100;
     dakicheck(amy);
     TEST_ASSERT_EQ_INT(ctx, 0, amy->r_no0);
 
     reset_emie1_state();
     amy->xposi.w.h = -300;
     amy->xspeed.w = -1;
-    set_legacy_word(amy, 29, 100);
+    emie1_get_work(amy)->origin_x = 100;
     dakicheck(amy);
     TEST_ASSERT_EQ_INT(ctx, 0, amy->r_no0);
 
     reset_emie1_state();
     amy->xposi.w.h = 100;
     amy->xspeed.w = 1;
-    set_legacy_word(amy, 29, 100);
+    emie1_get_work(amy)->origin_x = 100;
     pltime.l = 602624;
     dakicheck(amy);
     TEST_ASSERT_EQ_INT(ctx, 0, amy->r_no0);
@@ -664,7 +657,7 @@ static void test_dakicheck_documents_guard_paths(test_context *ctx) {
     reset_emie1_state();
     amy->xposi.w.h = 100;
     amy->xspeed.w = 1;
-    set_legacy_word(amy, 29, 100);
+    emie1_get_work(amy)->origin_x = 100;
     editmode.b.h = 1;
     dakicheck(amy);
     TEST_ASSERT_EQ_INT(ctx, 0, amy->r_no0);
@@ -672,7 +665,7 @@ static void test_dakicheck_documents_guard_paths(test_context *ctx) {
     reset_emie1_state();
     amy->xposi.w.h = 100;
     amy->xspeed.w = 1;
-    set_legacy_word(amy, 29, 100);
+    emie1_get_work(amy)->origin_x = 100;
     sonic->xposi.w.h = 120;
     sonic->cddat = 1;
     dakicheck(amy);
@@ -682,7 +675,7 @@ static void test_dakicheck_documents_guard_paths(test_context *ctx) {
     amy->xposi.w.h = 100;
     amy->yposi.w.h = 100;
     amy->xspeed.w = 1;
-    set_legacy_word(amy, 29, 100);
+    emie1_get_work(amy)->origin_x = 100;
     sonic->xposi.w.h = 150;
     dakicheck(amy);
     TEST_ASSERT_EQ_INT(ctx, 0, amy->r_no0);
@@ -691,7 +684,7 @@ static void test_dakicheck_documents_guard_paths(test_context *ctx) {
     amy->xposi.w.h = 100;
     amy->yposi.w.h = 100;
     amy->xspeed.w = 1;
-    set_legacy_word(amy, 29, 100);
+    emie1_get_work(amy)->origin_x = 100;
     sonic->xposi.w.h = 116;
     sonic->yposi.w.h = 200;
     dakicheck(amy);
@@ -701,7 +694,7 @@ static void test_dakicheck_documents_guard_paths(test_context *ctx) {
     amy->xposi.w.h = 100;
     amy->yposi.w.h = 100;
     amy->xspeed.w = 1;
-    set_legacy_word(amy, 29, 100);
+    emie1_get_work(amy)->origin_x = 100;
     sonic->xposi.w.h = 116;
     sonic->yposi.w.h = 92;
     sonic->xspeed.w = -20;
@@ -712,7 +705,7 @@ static void test_dakicheck_documents_guard_paths(test_context *ctx) {
     amy->xposi.w.h = 100;
     amy->yposi.w.h = 100;
     amy->xspeed.w = 1;
-    set_legacy_word(amy, 29, 100);
+    emie1_get_work(amy)->origin_x = 100;
     sonic->xposi.w.h = 116;
     sonic->yposi.w.h = 92;
     sonic->cddat = 2;

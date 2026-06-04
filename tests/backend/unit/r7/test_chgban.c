@@ -140,16 +140,6 @@ static void queue_actwk2(sprite_status *actor) {
     actwkchk2_queue[actwkchk2_queue_count++] = actor;
 }
 
-static void link_actor(sprite_status *actor, int actfree_offset, int index) {
-    *(Sint32 *)&actor->actfree[actfree_offset] = index;
-}
-
-static void set_actor_word(sprite_status *actor, int index, Sint16 value) {
-    int offset = (index - 23) * 2;
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
 static void reset_chgban_state(void) {
     memset(actwk, 0, sizeof(actwk));
     prio_flag = 0;
@@ -238,7 +228,7 @@ static void test_chgban_priority_gate_paths(test_context *ctx) {
 
     reset_chgban_state();
     gate->r_no0 = 2;
-    gate->actfree[0] = 3;
+    chgban_get_work(gate)->timer = 3;
     chgban_move0(gate);
 
     reset_chgban_state();
@@ -303,7 +293,7 @@ static void test_spring_r_initialization_and_wrapper_paths(test_context *ctx) {
 
     reset_chgban_state();
     spring->r_no0 = 4;
-    spring->actfree[20] = 1;
+    chgban_get_work(spring)->frameout_requested = 1;
     spring_r(spring);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
 
@@ -315,15 +305,15 @@ static void test_spring_r_initialization_and_wrapper_paths(test_context *ctx) {
 
     reset_chgban_state();
     spring->r_no0 = 2;
-    link_actor(spring, 0, 10);
-    link_actor(spring, 12, 11);
-    link_actor(spring, 16, 12);
-    set_actor_word(spring, 28, 444);
+    chgban_get_work(spring)->master_index = 10;
+    chgban_get_work(spring)->side0_index = 11;
+    chgban_get_work(spring)->side1_index = 12;
+    chgban_get_work(spring)->frameout_x = 444;
     frameout_s00_result = 1;
     spring_r(spring);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[10].actfree[20]);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[11].actfree[20]);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[12].actfree[20]);
+    TEST_ASSERT_EQ_INT(ctx, 1, chgban_get_work(&actwk[10])->frameout_requested);
+    TEST_ASSERT_EQ_INT(ctx, 1, chgban_get_work(&actwk[11])->frameout_requested);
+    TEST_ASSERT_EQ_INT(ctx, 1, chgban_get_work(&actwk[12])->frameout_requested);
     TEST_ASSERT_EQ_INT(ctx, 444, frameout_s00_x);
 }
 
@@ -333,14 +323,14 @@ static void test_spring_piece_set_collision_and_release_paths(test_context *ctx)
     sprite_status *player = &actwk[0];
 
     reset_chgban_state();
-    link_actor(piece, 0, 2);
+    chgban_get_work(piece)->master_index = 2;
     master->xposi.w.h = 100;
     master->yposi.w.h = 100;
     master->patcnt = 4;
     spr_r_set(piece);
 
     reset_chgban_state();
-    link_actor(piece, 0, 2);
+    chgban_get_work(piece)->master_index = 2;
     master->r_no0 = 4;
     master->patcnt = 1;
     spr_r_move0(piece);
@@ -348,7 +338,7 @@ static void test_spring_piece_set_collision_and_release_paths(test_context *ctx)
     TEST_ASSERT_TRUE(ctx, patchg_table == spr_rchg);
 
     reset_chgban_state();
-    link_actor(piece, 0, 2);
+    chgban_get_work(piece)->master_index = 2;
     master->xposi.w.h = 100;
     master->yposi.w.h = 100;
     master->patcnt = 0;
@@ -364,37 +354,37 @@ static void test_spring_piece_set_collision_and_release_paths(test_context *ctx)
     spr_r_move1(piece);
 
     reset_chgban_state();
-    link_actor(piece, 0, 2);
+    chgban_get_work(piece)->master_index = 2;
     master->patcnt = 1;
     piece->r_no0 = 4;
-    piece->actfree[8] = 2;
-    link_actor(piece, 4, 0);
+    chgban_get_work(piece)->wait_timer = 2;
+    chgban_get_work(piece)->player_index = 0;
     spr_r_move2(piece);
     TEST_ASSERT_EQ_INT(ctx, 0, patchg_count);
 
     reset_chgban_state();
-    link_actor(piece, 0, 2);
+    chgban_get_work(piece)->master_index = 2;
     master->patcnt = 2;
     piece->r_no0 = 4;
-    piece->actfree[8] = 1;
-    link_actor(piece, 4, 0);
+    chgban_get_work(piece)->wait_timer = 1;
+    chgban_get_work(piece)->player_index = 0;
     spr_r_move2(piece);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 206, soundset_requests[0]);
 
     reset_chgban_state();
-    link_actor(piece, 0, 2);
+    chgban_get_work(piece)->master_index = 2;
     master->patcnt = 3;
     piece->r_no0 = 4;
-    piece->actfree[8] = 0;
-    link_actor(piece, 4, 0);
+    chgban_get_work(piece)->wait_timer = 0;
+    chgban_get_work(piece)->player_index = 0;
     spr_r_move2(piece);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
 
     reset_chgban_state();
-    link_actor(piece, 0, 2);
-    link_actor(master, 12, 11);
-    link_actor(master, 16, 12);
+    chgban_get_work(piece)->master_index = 2;
+    chgban_get_work(master)->side0_index = 11;
+    chgban_get_work(master)->side1_index = 12;
     piece->r_no0 = 6;
     piece->patcnt = 8;
     piece->patno = 9;
@@ -413,9 +403,9 @@ static void test_spring_gawa_movement_and_gun_launch(test_context *ctx) {
     sprite_status *player = &actwk[0];
 
     reset_chgban_state();
-    link_actor(gawa, 0, 5);
-    link_actor(piece, 0, 2);
-    link_actor(master, 4, 0);
+    chgban_get_work(gawa)->master_index = 5;
+    chgban_get_work(piece)->master_index = 2;
+    chgban_get_work(master)->player_index = 0;
     piece->xposi.w.h = 100;
     piece->yposi.w.h = 100;
     piece->patcnt = 1;
@@ -429,10 +419,10 @@ static void test_spring_gawa_movement_and_gun_launch(test_context *ctx) {
     spr_r_move4(gawa);
 
     reset_chgban_state();
-    link_actor(gawa, 0, 5);
-    link_actor(piece, 0, 2);
-    link_actor(piece, 12, 9);
-    link_actor(piece, 16, 10);
+    chgban_get_work(gawa)->master_index = 5;
+    chgban_get_work(piece)->master_index = 2;
+    chgban_get_work(piece)->side0_index = 9;
+    chgban_get_work(piece)->side1_index = 10;
     piece->xposi.w.h = 100;
     piece->yposi.w.h = 100;
     piece->patcnt = 0;
@@ -444,13 +434,13 @@ static void test_spring_gawa_movement_and_gun_launch(test_context *ctx) {
     player->sprvsize = 14;
     spr_r_move4(gawa);
     TEST_ASSERT_EQ_INT(ctx, 14, actwk[10].r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 26, actwk[10].actfree[8]);
+    TEST_ASSERT_EQ_INT(ctx, 26, chgban_get_work(&actwk[10])->wait_timer);
 
     reset_chgban_state();
-    link_actor(gawa, 0, 5);
-    link_actor(piece, 0, 2);
-    link_actor(piece, 12, 9);
-    link_actor(piece, 16, 10);
+    chgban_get_work(gawa)->master_index = 5;
+    chgban_get_work(piece)->master_index = 2;
+    chgban_get_work(piece)->side0_index = 9;
+    chgban_get_work(piece)->side1_index = 10;
     piece->xposi.w.h = 100;
     piece->yposi.w.h = 100;
     piece->patcnt = 0;
@@ -466,11 +456,11 @@ static void test_spring_gawa_movement_and_gun_launch(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, actwk[9].yspeed.w);
 
     reset_chgban_state();
-    link_actor(gawa, 0, 5);
-    link_actor(piece, 0, 2);
+    chgban_get_work(gawa)->master_index = 5;
+    chgban_get_work(piece)->master_index = 2;
     gawa->r_no0 = 14;
     gawa->r_no1 = 10;
-    gawa->actfree[8] = 1;
+    chgban_get_work(gawa)->wait_timer = 1;
     gawa->xspeed.w = 3;
     gawa->yspeed.w = -2;
     player->sproffset = 0;
@@ -521,14 +511,14 @@ static void test_gun7_paths_and_projectile_spawns(test_context *ctx) {
 
     reset_chgban_state();
     gun->r_no0 = 4;
-    gun->actfree[0] = 1;
+    chgban_get_work(gun)->timer = 1;
     gun->xspeed.w = 100;
     gun7_move1(gun);
 
     reset_chgban_state();
     gun->r_no0 = 4;
     gun->xposi.w.h = 50;
-    set_actor_word(gun, 24, 50);
+    chgban_get_work(gun)->gun_return_x = 50;
     gun7_move1(gun);
 
     reset_chgban_state();
@@ -601,7 +591,7 @@ static void test_remaining_spring_gate_guard_paths(test_context *ctx) {
     sprite_status *player = &actwk[0];
 
     reset_chgban_state();
-    link_actor(piece, 0, 2);
+    chgban_get_work(piece)->master_index = 2;
     master->xposi.w.h = 100;
     master->yposi.w.h = 100;
     master->patcnt = 1;
@@ -609,7 +599,7 @@ static void test_remaining_spring_gate_guard_paths(test_context *ctx) {
     spr_r_set(piece);
 
     reset_chgban_state();
-    link_actor(piece, 0, 2);
+    chgban_get_work(piece)->master_index = 2;
     master->xposi.w.h = 100;
     master->yposi.w.h = 100;
     master->patcnt = 2;
@@ -633,13 +623,13 @@ static void test_remaining_spring_gate_guard_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 0, coli0(piece, player, 32, 32));
 
     reset_chgban_state();
-    piece->actfree[0] = 2;
+    chgban_get_work(piece)->timer = 2;
     piece->xspeed.w = 4;
     gun7_move1(piece);
 
     reset_chgban_state();
-    link_actor(piece, 0, 2);
-    link_actor(piece, 4, 0);
+    chgban_get_work(piece)->master_index = 2;
+    chgban_get_work(piece)->player_index = 0;
     master->xposi.w.h = 100;
     master->yposi.w.h = 100;
     master->patcnt = 0;
@@ -649,8 +639,8 @@ static void test_remaining_spring_gate_guard_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
 
     reset_chgban_state();
-    link_actor(piece, 0, 2);
-    link_actor(piece, 4, 0);
+    chgban_get_work(piece)->master_index = 2;
+    chgban_get_work(piece)->player_index = 0;
     master->xposi.w.h = 100;
     master->yposi.w.h = 100;
     master->patcnt = 1;
@@ -660,8 +650,8 @@ static void test_remaining_spring_gate_guard_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 0, patchg_count);
 
     reset_chgban_state();
-    link_actor(piece, 0, 2);
-    link_actor(piece, 4, 0);
+    chgban_get_work(piece)->master_index = 2;
+    chgban_get_work(piece)->player_index = 0;
     master->xposi.w.h = 100;
     master->yposi.w.h = 100;
     master->patcnt = 2;
@@ -673,13 +663,13 @@ static void test_remaining_spring_gate_guard_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
 
     reset_chgban_state();
-    link_actor(gawa, 0, 5);
+    chgban_get_work(gawa)->master_index = 5;
     piece->xposi.w.h = 100;
     piece->yposi.w.h = 100;
     spr_r_move4(gawa);
 
     reset_chgban_state();
-    link_actor(gawa, 0, 5);
+    chgban_get_work(gawa)->master_index = 5;
     piece->xposi.w.h = 100;
     piece->yposi.w.h = 100;
     gawa->userflag.b.h = 1;
@@ -687,7 +677,7 @@ static void test_remaining_spring_gate_guard_paths(test_context *ctx) {
     spr_r_move4(gawa);
 
     reset_chgban_state();
-    link_actor(gawa, 0, 5);
+    chgban_get_work(gawa)->master_index = 5;
     piece->xposi.w.h = 100;
     piece->yposi.w.h = 100;
     gawa->userflag.b.h = 1;
@@ -695,8 +685,8 @@ static void test_remaining_spring_gate_guard_paths(test_context *ctx) {
     spr_r_move5(gawa);
 
     reset_chgban_state();
-    link_actor(gawa, 0, 5);
-    link_actor(piece, 0, 2);
+    chgban_get_work(gawa)->master_index = 5;
+    chgban_get_work(piece)->master_index = 2;
     piece->xposi.w.h = 100;
     piece->yposi.w.h = 100;
     gawa->userflag.b.h = 1;
@@ -708,10 +698,10 @@ static void test_remaining_spring_gate_guard_paths(test_context *ctx) {
     spr_r_move4(gawa);
 
     reset_chgban_state();
-    link_actor(gawa, 0, 5);
-    link_actor(piece, 0, 2);
-    link_actor(piece, 16, 10);
-    link_actor(&actwk[10], 0, 5);
+    chgban_get_work(gawa)->master_index = 5;
+    chgban_get_work(piece)->master_index = 2;
+    chgban_get_work(piece)->side1_index = 10;
+    chgban_get_work(&actwk[10])->master_index = 5;
     piece->xposi.w.h = 100;
     piece->yposi.w.h = 100;
     gawa->r_no0 = 10;

@@ -1,4 +1,3 @@
-#include <stddef.h>
 #include <string.h>
 
 #include "support/test_runner.h"
@@ -109,60 +108,6 @@ static void queue_actwkchk(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int offset) {
-    Uint16 bits = (Uint16)actor->actfree[offset] |
-                  ((Uint16)actor->actfree[offset + 1] << 8);
-    return (Sint16)bits;
-}
-
-static void set_actfree_long(sprite_status *actor, int offset, Sint32 value) {
-    Uint32 bits = (Uint32)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)((bits >> 8) & 255);
-    actor->actfree[offset + 2] = (Uint8)((bits >> 16) & 255);
-    actor->actfree[offset + 3] = (Uint8)(bits >> 24);
-}
-
-static Sint32 get_actfree_long(sprite_status *actor, int offset) {
-    Uint32 bits = (Uint32)actor->actfree[offset] |
-                  ((Uint32)actor->actfree[offset + 1] << 8) |
-                  ((Uint32)actor->actfree[offset + 2] << 16) |
-                  ((Uint32)actor->actfree[offset + 3] << 24);
-    return (Sint32)bits;
-}
-
-static int legacy_word_actfree_offset(int word_index) {
-    return (word_index * 2) - (int)offsetof(sprite_status, actfree);
-}
-
-static int legacy_long_actfree_offset(int long_index) {
-    return (long_index * 4) - (int)offsetof(sprite_status, actfree);
-}
-
-static void set_legacy_word(sprite_status *actor, int word_index,
-                            Sint16 value) {
-    set_actfree_word(actor, legacy_word_actfree_offset(word_index), value);
-}
-
-static Sint16 get_legacy_word(sprite_status *actor, int word_index) {
-    return get_actfree_word(actor, legacy_word_actfree_offset(word_index));
-}
-
-static void set_legacy_long(sprite_status *actor, int long_index,
-                            Sint32 value) {
-    set_actfree_long(actor, legacy_long_actfree_offset(long_index), value);
-}
-
-static Sint32 get_legacy_long(sprite_status *actor, int long_index) {
-    return get_actfree_long(actor, legacy_long_actfree_offset(long_index));
-}
-
 static void test_kuzure4_patterns_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, pat_kuzure_a[0] == &pat_kuzure_00);
     TEST_ASSERT_TRUE(ctx, pat_kuzure_a[8] == &pat_kuzure_08);
@@ -214,8 +159,8 @@ static void test_kuzure4_init_with_ride_enters_wait_state(test_context *ctx) {
 
     TEST_ASSERT_EQ_INT(ctx, 4, platform->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 0, platform->cdsts);
-    TEST_ASSERT_EQ_INT(ctx, 8, get_legacy_word(platform, 23));
-    TEST_ASSERT_EQ_INT(ctx, -8, get_legacy_word(platform, 24));
+    TEST_ASSERT_EQ_INT(ctx, 8, kuzure4_work_get(platform)->wait_timer);
+    TEST_ASSERT_EQ_INT(ctx, -8, kuzure4_work_get(platform)->break_step);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 163, soundset_request);
 
@@ -226,7 +171,7 @@ static void test_kuzure4_init_with_ride_enters_wait_state(test_context *ctx) {
 
     kuzure4(platform);
 
-    TEST_ASSERT_EQ_INT(ctx, 8, get_legacy_word(platform, 24));
+    TEST_ASSERT_EQ_INT(ctx, 8, kuzure4_work_get(platform)->break_step);
 }
 
 static void test_kuzure4_wait_counts_down_to_break_state(test_context *ctx) {
@@ -234,19 +179,19 @@ static void test_kuzure4_wait_counts_down_to_break_state(test_context *ctx) {
 
     reset_state();
     platform->r_no0 = 4;
-    set_legacy_word(platform, 23, 1);
+    kuzure4_work_get(platform)->wait_timer = 1;
 
     kuzure4(platform);
 
     TEST_ASSERT_EQ_INT(ctx, 4, platform->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, get_legacy_word(platform, 23));
+    TEST_ASSERT_EQ_INT(ctx, 0, kuzure4_work_get(platform)->wait_timer);
     TEST_ASSERT_EQ_INT(ctx, 1, ridechk_count);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 
     kuzure4(platform);
 
     TEST_ASSERT_EQ_INT(ctx, 6, platform->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, -1, get_legacy_word(platform, 23));
+    TEST_ASSERT_EQ_INT(ctx, -1, kuzure4_work_get(platform)->wait_timer);
 }
 
 static void test_kuzure4_break_spawns_parts_and_continues_platform(
@@ -267,7 +212,7 @@ static void test_kuzure4_break_spawns_parts_and_continues_platform(
     platform->patno = 2;
     platform->sprhs = 24;
     platform->sprhsize = 24;
-    set_legacy_word(platform, 24, 8);
+    kuzure4_work_get(platform)->break_step = 8;
     queue_actwkchk(upper);
     queue_actwkchk(lower);
     ridechk_result = 1;
@@ -282,7 +227,7 @@ static void test_kuzure4_break_spawns_parts_and_continues_platform(
     TEST_ASSERT_EQ_INT(ctx, -1, upper->userflag.b.l);
     TEST_ASSERT_EQ_INT(ctx, 84, upper->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 192, upper->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 4, get_legacy_word(upper, 23));
+    TEST_ASSERT_EQ_INT(ctx, 4, kuzure4_work_get(upper)->wait_timer);
     TEST_ASSERT_EQ_INT(ctx, 84, lower->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 208, lower->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, ride_on_clr_count);
@@ -293,7 +238,7 @@ static void test_kuzure4_break_spawns_parts_and_continues_platform(
     TEST_ASSERT_EQ_INT(ctx, 1, platform->patno);
     TEST_ASSERT_EQ_INT(ctx, 16, platform->sprhs);
     TEST_ASSERT_EQ_INT(ctx, 16, platform->sprhsize);
-    TEST_ASSERT_EQ_INT(ctx, 7, get_legacy_word(platform, 23));
+    TEST_ASSERT_EQ_INT(ctx, 7, kuzure4_work_get(platform)->wait_timer);
     TEST_ASSERT_EQ_INT(ctx, 108, platform->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 2, ridechk_count);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -305,7 +250,7 @@ static void test_kuzure4_break_last_segment_frames_out(test_context *ctx) {
     reset_state();
     platform->r_no0 = 6;
     platform->userflag.b.h = 1;
-    set_legacy_word(platform, 24, -8);
+    kuzure4_work_get(platform)->break_step = -8;
 
     kuzure4(platform);
 
@@ -331,11 +276,11 @@ static void test_kuzure4_parts_init_and_wait(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 8, part->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 
-    set_legacy_word(part, 23, 0);
+    kuzure4_work_get(part)->wait_timer = 0;
     kuzure4(part);
 
     TEST_ASSERT_EQ_INT(ctx, 4, part->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, -1, get_legacy_word(part, 23));
+    TEST_ASSERT_EQ_INT(ctx, -1, kuzure4_work_get(part)->wait_timer);
     TEST_ASSERT_EQ_INT(ctx, 2, actionsub_count);
 }
 
@@ -347,18 +292,18 @@ static void test_kuzure4_parts_fall_moves_or_frames_out(test_context *ctx) {
     part->r_no0 = 4;
     part->actflg = 128;
     part->yposi.l = 100 << 16;
-    set_legacy_long(part, 12, 0);
+    kuzure4_work_get(part)->y_velocity = 0;
 
     kuzure4(part);
 
-    TEST_ASSERT_EQ_INT(ctx, 16384, get_legacy_long(part, 12));
+    TEST_ASSERT_EQ_INT(ctx, 16384, kuzure4_work_get(part)->y_velocity);
     TEST_ASSERT_EQ_INT(ctx, 100, part->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 
-    set_legacy_long(part, 12, 1441792);
+    kuzure4_work_get(part)->y_velocity = 1441792;
     kuzure4(part);
 
-    TEST_ASSERT_EQ_INT(ctx, 1441792, get_legacy_long(part, 12));
+    TEST_ASSERT_EQ_INT(ctx, 1441792, kuzure4_work_get(part)->y_velocity);
 
     reset_state();
     part->userflag.b.l = -1;

@@ -1,4 +1,3 @@
-#include <stddef.h>
 #include <string.h>
 
 #include "support/test_runner.h"
@@ -88,64 +87,6 @@ Sint16 emycol_l(sprite_status *pActwk, Uint8 sprhs) {
     return emycol_l_result;
 }
 
-static size_t short_alias_offset(int short_index) {
-    return (size_t)short_index * sizeof(Sint16) -
-           offsetof(sprite_status, actfree);
-}
-
-static size_t long_alias_offset(int long_index) {
-    return (size_t)long_index * sizeof(Sint32) -
-           offsetof(sprite_status, actfree);
-}
-
-static void set_actor_short_alias(sprite_status *actor, int short_index,
-                                  Sint16 value) {
-    size_t offset = short_alias_offset(short_index);
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
-static Sint16 actor_short_alias(sprite_status *actor, int short_index) {
-    size_t offset = short_alias_offset(short_index);
-    return (Sint16)((Uint16)actor->actfree[offset] |
-                    ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
-static void set_actor_long_alias(sprite_status *actor, int long_index,
-                                 Sint32 value) {
-    size_t offset = long_alias_offset(long_index);
-    Uint32 raw = (Uint32)value;
-    actor->actfree[offset] = (Uint8)raw;
-    actor->actfree[offset + 1] = (Uint8)(raw >> 8);
-    actor->actfree[offset + 2] = (Uint8)(raw >> 16);
-    actor->actfree[offset + 3] = (Uint8)(raw >> 24);
-}
-
-static Sint32 actor_long_alias(sprite_status *actor, int long_index) {
-    size_t offset = long_alias_offset(long_index);
-    Uint32 raw = actor->actfree[offset] |
-                 ((Uint32)actor->actfree[offset + 1] << 8) |
-                 ((Uint32)actor->actfree[offset + 2] << 16) |
-                 ((Uint32)actor->actfree[offset + 3] << 24);
-    return (Sint32)raw;
-}
-
-static void set_actfree_long(sprite_status *actor, int offset, Sint32 value) {
-    Uint32 raw = (Uint32)value;
-    actor->actfree[offset] = (Uint8)raw;
-    actor->actfree[offset + 1] = (Uint8)(raw >> 8);
-    actor->actfree[offset + 2] = (Uint8)(raw >> 16);
-    actor->actfree[offset + 3] = (Uint8)(raw >> 24);
-}
-
-static Sint32 actfree_long(sprite_status *actor, int offset) {
-    Uint32 raw = actor->actfree[offset] |
-                 ((Uint32)actor->actfree[offset + 1] << 8) |
-                 ((Uint32)actor->actfree[offset + 2] << 16) |
-                 ((Uint32)actor->actfree[offset + 3] << 24);
-    return (Sint32)raw;
-}
-
 static void reset_yago_state(void) {
     memset(actwk, 0, sizeof(actwk));
     enemy_suicide_result = 0;
@@ -224,7 +165,7 @@ static void test_init_and_fall_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 12, actor->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 9200, actor->sproffset);
     TEST_ASSERT_TRUE(ctx, actor->patbase == pat_yago_e);
-    TEST_ASSERT_EQ_INT(ctx, 120, actor_short_alias(actor, 33));
+    TEST_ASSERT_EQ_INT(ctx, 120, yago_get_work(actor)->origin_x);
     TEST_ASSERT_EQ_INT(ctx, 81, actor->yposi.w.h);
     assert_displayed(ctx, actor);
 
@@ -239,8 +180,8 @@ static void test_init_and_fall_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
     TEST_ASSERT_TRUE(ctx, actor->patbase == pat_yago_b);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 5242880, actfree_long(actor, 0));
-    TEST_ASSERT_EQ_INT(ctx, -16384, actfree_long(actor, 4));
+    TEST_ASSERT_EQ_INT(ctx, 5242880, yago_get_work(actor)->move_distance);
+    TEST_ASSERT_EQ_INT(ctx, -16384, yago_get_work(actor)->ground_x_speed);
 
     reset_yago_state();
     actor = &actwk[4];
@@ -262,8 +203,8 @@ static void test_init_and_fall_paths(test_context *ctx) {
     yago(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 5242880, actfree_long(actor, 0));
-    TEST_ASSERT_EQ_INT(ctx, -16384, actfree_long(actor, 4));
+    TEST_ASSERT_EQ_INT(ctx, 5242880, yago_get_work(actor)->move_distance);
+    TEST_ASSERT_EQ_INT(ctx, -16384, yago_get_work(actor)->ground_x_speed);
 }
 
 static void test_lr_branches_and_collision_sides(test_context *ctx) {
@@ -274,8 +215,8 @@ static void test_lr_branches_and_collision_sides(test_context *ctx) {
     actor->sprhs = 24;
     actor->xposi.w.h = 200;
     actwk[0].xposi.w.h = 0;
-    set_actfree_long(actor, 0, 5242880);
-    set_actfree_long(actor, 4, -16384);
+    yago_get_work(actor)->move_distance = 5242880;
+    yago_get_work(actor)->ground_x_speed = -16384;
     emycol_d_result = 5;
     emycol_l_result = 5;
 
@@ -293,39 +234,39 @@ static void test_lr_branches_and_collision_sides(test_context *ctx) {
     actor->actflg = 1;
     actor->xposi.w.h = 100;
     actwk[0].xposi.w.h = 100;
-    set_actfree_long(actor, 0, 5242880);
-    set_actfree_long(actor, 4, -16384);
+    yago_get_work(actor)->move_distance = 5242880;
+    yago_get_work(actor)->ground_x_speed = -16384;
     emycol_d_result = 5;
     emycol_r_result = 5;
 
     yago(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 10, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 7, actor_short_alias(actor, 27));
+    TEST_ASSERT_EQ_INT(ctx, 7, yago_get_work(actor)->timer);
     TEST_ASSERT_EQ_INT(ctx, 1, emycol_r_count);
     TEST_ASSERT_EQ_INT(ctx, 24, emycol_r_sprhs);
 
     reset_yago_state();
     actor = &actwk[4];
     actor->r_no0 = 4;
-    set_actfree_long(actor, 0, 0);
+    yago_get_work(actor)->move_distance = 0;
     emycol_d_result = 5;
     emycol_l_result = 4;
 
     yago(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 31, actor_short_alias(actor, 27));
+    TEST_ASSERT_EQ_INT(ctx, 31, yago_get_work(actor)->timer);
 
     reset_yago_state();
     actor = &actwk[4];
     actor->r_no0 = 4;
-    set_actfree_long(actor, 0, -1);
+    yago_get_work(actor)->move_distance = -1;
 
     yago(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 31, actor_short_alias(actor, 27));
+    TEST_ASSERT_EQ_INT(ctx, 31, yago_get_work(actor)->timer);
 }
 
 static void test_rev_and_jet_countdowns(test_context *ctx) {
@@ -333,54 +274,54 @@ static void test_rev_and_jet_countdowns(test_context *ctx) {
 
     reset_yago_state();
     actor->r_no0 = 6;
-    set_actor_short_alias(actor, 27, 2);
+    yago_get_work(actor)->timer = 2;
     yago(actor);
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor_short_alias(actor, 27));
+    TEST_ASSERT_EQ_INT(ctx, 1, yago_get_work(actor)->timer);
 
     reset_yago_state();
     actor = &actwk[4];
     actor->r_no0 = 6;
     actor->actflg = 4;
     actor->cddat = 0;
-    set_actor_short_alias(actor, 27, 1);
-    set_actfree_long(actor, 4, -16384);
+    yago_get_work(actor)->timer = 1;
+    yago_get_work(actor)->ground_x_speed = -16384;
     yago(actor);
     TEST_ASSERT_EQ_INT(ctx, 8, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 31, actor_short_alias(actor, 27));
-    TEST_ASSERT_EQ_INT(ctx, 5242880, actfree_long(actor, 0));
-    TEST_ASSERT_EQ_INT(ctx, 16384, actfree_long(actor, 4));
+    TEST_ASSERT_EQ_INT(ctx, 31, yago_get_work(actor)->timer);
+    TEST_ASSERT_EQ_INT(ctx, 5242880, yago_get_work(actor)->move_distance);
+    TEST_ASSERT_EQ_INT(ctx, 16384, yago_get_work(actor)->ground_x_speed);
     TEST_ASSERT_EQ_INT(ctx, 5, actor->actflg);
     TEST_ASSERT_EQ_INT(ctx, 1, actor->cddat);
 
     reset_yago_state();
     actor = &actwk[4];
     actor->r_no0 = 8;
-    set_actor_short_alias(actor, 27, 2);
+    yago_get_work(actor)->timer = 2;
     yago(actor);
     TEST_ASSERT_EQ_INT(ctx, 8, actor->r_no0);
 
     reset_yago_state();
     actor = &actwk[4];
     actor->r_no0 = 8;
-    set_actor_short_alias(actor, 27, 1);
+    yago_get_work(actor)->timer = 1;
     yago(actor);
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
 
     reset_yago_state();
     actor = &actwk[4];
     actor->r_no0 = 10;
-    set_actor_short_alias(actor, 27, 2);
+    yago_get_work(actor)->timer = 2;
     yago(actor);
     TEST_ASSERT_EQ_INT(ctx, 10, actor->r_no0);
 
     reset_yago_state();
     actor = &actwk[4];
     actor->r_no0 = 10;
-    set_actor_short_alias(actor, 27, 1);
+    yago_get_work(actor)->timer = 1;
     yago(actor);
     TEST_ASSERT_EQ_INT(ctx, 12, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 31, actor_short_alias(actor, 27));
+    TEST_ASSERT_EQ_INT(ctx, 31, yago_get_work(actor)->timer);
 }
 
 static void test_e_jet_and_fall_recovery(test_context *ctx) {
@@ -388,39 +329,39 @@ static void test_e_jet_and_fall_recovery(test_context *ctx) {
 
     reset_yago_state();
     actor->r_no0 = 12;
-    set_actor_short_alias(actor, 27, 2);
+    yago_get_work(actor)->timer = 2;
     yago(actor);
     TEST_ASSERT_EQ_INT(ctx, 12, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor_short_alias(actor, 27));
+    TEST_ASSERT_EQ_INT(ctx, 1, yago_get_work(actor)->timer);
 
     reset_yago_state();
     actor = &actwk[4];
     actor->r_no0 = 12;
-    set_actor_short_alias(actor, 27, 1);
+    yago_get_work(actor)->timer = 1;
     yago(actor);
     TEST_ASSERT_EQ_INT(ctx, 14, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, -294912, actor_long_alias(actor, 15));
-    TEST_ASSERT_EQ_INT(ctx, -98304, actor_long_alias(actor, 14));
+    TEST_ASSERT_EQ_INT(ctx, -294912, yago_get_work(actor)->jet_x_speed);
+    TEST_ASSERT_EQ_INT(ctx, -98304, yago_get_work(actor)->jet_y_speed);
 
     reset_yago_state();
     actor = &actwk[4];
     actor->r_no0 = 12;
     actor->actflg = 1;
-    set_actor_short_alias(actor, 27, 1);
+    yago_get_work(actor)->timer = 1;
     yago(actor);
-    TEST_ASSERT_EQ_INT(ctx, 294912, actor_long_alias(actor, 15));
+    TEST_ASSERT_EQ_INT(ctx, 294912, yago_get_work(actor)->jet_x_speed);
 
     reset_yago_state();
     actor = &actwk[4];
     actor->r_no0 = 14;
     actor->sprhs = 24;
-    set_actor_long_alias(actor, 15, 0x10000);
-    set_actor_long_alias(actor, 14, -98304);
+    yago_get_work(actor)->jet_x_speed = 0x10000;
+    yago_get_work(actor)->jet_y_speed = -98304;
     emycol_l_result = 5;
     yago(actor);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s_count);
     TEST_ASSERT_TRUE(ctx, frameout_s_actor == actor);
-    TEST_ASSERT_EQ_INT(ctx, -90112, actor_long_alias(actor, 14));
+    TEST_ASSERT_EQ_INT(ctx, -90112, yago_get_work(actor)->jet_y_speed);
 
     reset_yago_state();
     actor = &actwk[4];
@@ -430,7 +371,7 @@ static void test_e_jet_and_fall_recovery(test_context *ctx) {
     emycol_r_result = 4;
     yago(actor);
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 31, actor_short_alias(actor, 27));
+    TEST_ASSERT_EQ_INT(ctx, 31, yago_get_work(actor)->timer);
 
     reset_yago_state();
     actor = &actwk[4];
@@ -447,7 +388,7 @@ static void test_e_jet_and_fall_recovery(test_context *ctx) {
     yago(actor);
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 10, actor->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 31, actor_short_alias(actor, 27));
+    TEST_ASSERT_EQ_INT(ctx, 31, yago_get_work(actor)->timer);
 }
 
 static void test_b_variant_jet_paths(test_context *ctx) {
@@ -456,7 +397,7 @@ static void test_b_variant_jet_paths(test_context *ctx) {
     reset_yago_state();
     actor->userflag.b.h = 1;
     actor->r_no0 = 12;
-    set_actor_short_alias(actor, 27, 2);
+    yago_get_work(actor)->timer = 2;
     yago(actor);
     TEST_ASSERT_EQ_INT(ctx, 12, actor->r_no0);
 
@@ -464,35 +405,35 @@ static void test_b_variant_jet_paths(test_context *ctx) {
     actor = &actwk[4];
     actor->userflag.b.h = 1;
     actor->r_no0 = 12;
-    set_actor_short_alias(actor, 27, 1);
+    yago_get_work(actor)->timer = 1;
     yago(actor);
     TEST_ASSERT_EQ_INT(ctx, 14, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, -65536, actor_long_alias(actor, 15));
-    TEST_ASSERT_EQ_INT(ctx, -98304, actor_long_alias(actor, 14));
+    TEST_ASSERT_EQ_INT(ctx, -65536, yago_get_work(actor)->jet_x_speed);
+    TEST_ASSERT_EQ_INT(ctx, -98304, yago_get_work(actor)->jet_y_speed);
 
     reset_yago_state();
     actor = &actwk[4];
     actor->userflag.b.h = 1;
     actor->r_no0 = 12;
     actor->actflg = 1;
-    set_actor_short_alias(actor, 27, 1);
+    yago_get_work(actor)->timer = 1;
     yago(actor);
-    TEST_ASSERT_EQ_INT(ctx, 65536, actor_long_alias(actor, 15));
+    TEST_ASSERT_EQ_INT(ctx, 65536, yago_get_work(actor)->jet_x_speed);
 
     reset_yago_state();
     actor = &actwk[4];
     actor->userflag.b.h = 1;
     actor->r_no0 = 14;
-    set_actor_long_alias(actor, 14, -8192);
+    yago_get_work(actor)->jet_y_speed = -8192;
     emycol_l_result = 0;
     yago(actor);
-    TEST_ASSERT_EQ_INT(ctx, -4096, actor_long_alias(actor, 14));
+    TEST_ASSERT_EQ_INT(ctx, -4096, yago_get_work(actor)->jet_y_speed);
 
     reset_yago_state();
     actor = &actwk[4];
     actor->userflag.b.h = 1;
     actor->r_no0 = 14;
-    set_actor_long_alias(actor, 14, -4096);
+    yago_get_work(actor)->jet_y_speed = -4096;
     emycol_l_result = 0;
     emycol_d_result = 4;
     yago(actor);
@@ -502,7 +443,7 @@ static void test_b_variant_jet_paths(test_context *ctx) {
     actor = &actwk[4];
     actor->userflag.b.h = 1;
     actor->r_no0 = 14;
-    set_actor_long_alias(actor, 14, -4096);
+    yago_get_work(actor)->jet_y_speed = -4096;
     emycol_l_result = 0;
     emycol_d_result = 5;
     yago(actor);
@@ -516,7 +457,7 @@ static void test_b_variant_jet_paths(test_context *ctx) {
     emycol_r_result = -1;
     yago(actor);
     TEST_ASSERT_EQ_INT(ctx, 16, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 31, actor_short_alias(actor, 27));
+    TEST_ASSERT_EQ_INT(ctx, 31, yago_get_work(actor)->timer);
 }
 
 TEST_MAIN_BEGIN;

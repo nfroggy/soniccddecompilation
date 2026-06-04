@@ -108,18 +108,6 @@ static void queue_actor(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
-static void set_actor_word(sprite_status *actor, int index, Sint16 value) {
-    int offset = (index - 23) * 2;
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
-static Sint16 get_actor_word(sprite_status *actor, int index) {
-    int offset = (index - 23) * 2;
-    return (Sint16)(actor->actfree[offset] |
-                    ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
 static void reset_hari73_state(void) {
     memset(actwk, 0, sizeof(actwk));
     plpower_m = 0;
@@ -170,7 +158,7 @@ static void test_hari73_init_search_and_frameout_paths(test_context *ctx) {
     actwk[9].xposi.w.h = 100;
     actwk[9].sprhsize = 16;
     hari73(spike);
-    TEST_ASSERT_EQ_INT(ctx, 9, get_actor_word(spike, 23));
+    TEST_ASSERT_EQ_INT(ctx, 9, hari73_get_work(spike)->linked_actor_index);
     TEST_ASSERT_EQ_INT(ctx, 1, hitchk_count);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s_count);
@@ -206,7 +194,7 @@ static void test_hari73_move_collision_damage_guards(test_context *ctx) {
     hitchk_result = 1;
     player->colino = 99;
     player->cddat = 0;
-    spike->actfree[11] = 7;
+    hari73_get_work(spike)->player_was_riding = 7;
     hari73_move(spike);
     TEST_ASSERT_EQ_INT(ctx, 0, playdamageset_count);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -216,7 +204,7 @@ static void test_hari73_move_collision_damage_guards(test_context *ctx) {
     hitchk_result = 1;
     player->cddat = 8;
     player->r_no0 = 2;
-    player->actfree[6] = 0;
+    player_work_get(player)->damage_invulnerability_timer = 0;
     player->yposi.l = 100 << 16;
     player->yspeed.w = 8;
     hari73_move(spike);
@@ -244,7 +232,7 @@ static void test_hari73_move_collision_damage_guards(test_context *ctx) {
     hitchk_result = 1;
     player->cddat = 8;
     player->r_no0 = 2;
-    player->actfree[6] = 1;
+    player_work_get(player)->damage_invulnerability_timer = 1;
     hari73_move(spike);
     TEST_ASSERT_EQ_INT(ctx, 0, playdamageset_count);
 }
@@ -256,9 +244,9 @@ static void test_hari73_msnc_hit_spawns_fragments(test_context *ctx) {
     spike->xposi.w.h = 200;
     spike->yposi.w.h = 96;
     spike->sprhsize = 16;
-    spike->actfree[11] = 1;
+    hari73_get_work(spike)->player_was_riding = 1;
     actwk[9].xposi.w.h = 208;
-    set_actor_word(spike, 23, 9);
+    hari73_get_work(spike)->linked_actor_index = 9;
     queue_actor(&actwk[20]);
     queue_actor(&actwk[21]);
     queue_actor(&actwk[22]);
@@ -276,12 +264,12 @@ static void test_hari73_msnc_hit_spawns_fragments(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 96, actwk[20].yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 576, actwk[20].xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, -512, actwk[20].yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 6, get_actor_word(&actwk[20], 26));
-    TEST_ASSERT_EQ_INT(ctx, 16, get_actor_word(&actwk[20], 27));
+    TEST_ASSERT_EQ_INT(ctx, 6, hari73_get_work(&actwk[20])->x_speed_delta);
+    TEST_ASSERT_EQ_INT(ctx, 16, hari73_get_work(&actwk[20])->y_speed_delta);
     TEST_ASSERT_EQ_INT(ctx, 212, actwk[23].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 480, actwk[23].xspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 10, get_actor_word(&actwk[23], 26));
-    TEST_ASSERT_EQ_INT(ctx, 16, get_actor_word(&actwk[23], 27));
+    TEST_ASSERT_EQ_INT(ctx, 10, hari73_get_work(&actwk[23])->x_speed_delta);
+    TEST_ASSERT_EQ_INT(ctx, 16, hari73_get_work(&actwk[23])->y_speed_delta);
     TEST_ASSERT_EQ_INT(ctx, 1, ride_on_clr_count);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
 
@@ -298,7 +286,7 @@ static void test_hari73_tobi_animation_gate(test_context *ctx) {
     piece->r_no0 = 4;
     piece->xspeed.w = 3;
     piece->yspeed.w = -2;
-    piece->actfree[10] = 0;
+    hari73_get_work(piece)->blink_counter = 0;
     hari73(piece);
     TEST_ASSERT_EQ_INT(ctx, 1, hari_spdadd_count);
     TEST_ASSERT_TRUE(ctx, hari_spdadd_actor == piece);
@@ -307,7 +295,7 @@ static void test_hari73_tobi_animation_gate(test_context *ctx) {
 
     reset_hari73_state();
     piece->r_no0 = 4;
-    piece->actfree[10] = 1;
+    hari73_get_work(piece)->blink_counter = 1;
     hari73_tobi(piece);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_TRUE(ctx, actionsub_actor == piece);

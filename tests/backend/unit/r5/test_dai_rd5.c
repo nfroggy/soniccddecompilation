@@ -164,17 +164,6 @@ static void queue_actor(sprite_status *actor) {
     actwkchk2_queue[actwkchk2_queue_count++] = actor;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int offset) {
-    return (Sint16)((Uint16)actor->actfree[offset] |
-                    ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
 static void assert_tail_callbacks(test_context *ctx, sprite_status *actor,
                                   Sint16 origin_x) {
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -247,21 +236,21 @@ static void test_move_types_update_visible_motion(test_context *ctx) {
 
     reset_dair5_state();
     type01(platform);
-    TEST_ASSERT_EQ_INT(ctx, 128, platform->actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 128, dai_rd5_work_get(platform)->flags);
 
     reset_dair5_state();
     platform->r_no0 = 2;
     platform->userflag.b.h = 1;
     platform->xposi.l = 100 << 16;
     platform->yposi.l = 200 << 16;
-    set_actfree_word(platform, 6, 4);
-    set_actfree_word(platform, 8, 4);
+    dai_rd5_work_get(platform)->motion_delta = 4;
+    dai_rd5_work_get(platform)->origin_y = 4;
 
     dair5(platform);
 
     TEST_ASSERT_EQ_INT(ctx, 4, platform->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, (100 << 16) + (4 << 8), platform->xposi.l);
-    TEST_ASSERT_EQ_INT(ctx, 128, platform->actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 128, dai_rd5_work_get(platform)->flags);
     assert_tail_callbacks(ctx, platform, 0);
 
     reset_dair5_state();
@@ -278,8 +267,8 @@ static void test_move_types_update_visible_motion(test_context *ctx) {
     platform->userflag.b.h = 131;
     platform->xposi.l = 100 << 16;
     platform->yposi.l = 200 << 16;
-    set_actfree_word(platform, 6, 4);
-    set_actfree_word(platform, 8, 4);
+    dai_rd5_work_get(platform)->motion_delta = 4;
+    dai_rd5_work_get(platform)->origin_y = 4;
 
     dair5(platform);
 
@@ -290,8 +279,8 @@ static void test_move_types_update_visible_motion(test_context *ctx) {
     platform->r_no0 = 2;
     platform->userflag.b.h = 8;
     platform->xposi.l = 100 << 16;
-    set_actfree_word(platform, 6, 4);
-    set_actfree_word(platform, 8, 4);
+    dai_rd5_work_get(platform)->motion_delta = 4;
+    dai_rd5_work_get(platform)->origin_y = 4;
 
     dair5(platform);
 
@@ -318,34 +307,34 @@ static void test_drop_type_arms_waits_accelerates_and_frames_out(
 
     dair5(platform);
 
-    TEST_ASSERT_EQ_INT(ctx, 30, platform->actfree[17]);
-    TEST_ASSERT_EQ_INT(ctx, 1, platform->actfree[19]);
-    TEST_ASSERT_EQ_INT(ctx, 128, platform->actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 30, dai_rd5_work_get(platform)->wait_timer);
+    TEST_ASSERT_EQ_INT(ctx, 1, dai_rd5_work_get(platform)->state);
+    TEST_ASSERT_EQ_INT(ctx, 128, dai_rd5_work_get(platform)->flags);
 
     reset_dair5_state();
     platform->r_no0 = 2;
     platform->userflag.b.h = 6;
-    platform->actfree[19] = 1;
-    platform->actfree[17] = 2;
-    platform->actfree[21] = 128;
+    dai_rd5_work_get(platform)->state = 1;
+    dai_rd5_work_get(platform)->wait_timer = 2;
+    dai_rd5_work_get(platform)->flags = 128;
 
     dair5(platform);
 
-    TEST_ASSERT_EQ_INT(ctx, 1, platform->actfree[17]);
-    TEST_ASSERT_EQ_INT(ctx, 128, platform->actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 1, dai_rd5_work_get(platform)->wait_timer);
+    TEST_ASSERT_EQ_INT(ctx, 128, dai_rd5_work_get(platform)->flags);
 
     reset_dair5_state();
     platform->r_no0 = 2;
     platform->userflag.b.h = 6;
-    platform->actfree[19] = 1;
-    platform->actfree[17] = 1;
+    dai_rd5_work_get(platform)->state = 1;
+    dai_rd5_work_get(platform)->wait_timer = 1;
     platform->yspeed.w = 512;
     platform->yposi.l = 100 << 16;
     scra_v_posit.w.h = 50;
 
     dair5(platform);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, platform->actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 0, dai_rd5_work_get(platform)->flags);
     TEST_ASSERT_EQ_INT(ctx, 18, platform->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 544, platform->yspeed.w);
     TEST_ASSERT_EQ_INT(ctx, (100 << 16) + (544 << 8), platform->yposi.l);
@@ -353,7 +342,7 @@ static void test_drop_type_arms_waits_accelerates_and_frames_out(
     reset_dair5_state();
     platform->r_no0 = 2;
     platform->userflag.b.h = 6;
-    platform->actfree[19] = 1;
+    dai_rd5_work_get(platform)->state = 1;
     platform->yspeed.w = 1024;
     platform->yposi.w.h = 400;
     scra_v_posit.w.h = 100;
@@ -377,24 +366,24 @@ static void test_rising_type_state_machine(test_context *ctx) {
 
     dair5(platform);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, platform->actfree[19]);
-    TEST_ASSERT_EQ_INT(ctx, 29, platform->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 2, dai_rd5_work_get(platform)->state);
+    TEST_ASSERT_EQ_INT(ctx, 29, dai_rd5_work_get(platform)->wait_timer);
 
     reset_dair5_state();
     platform->r_no0 = 2;
     platform->userflag.b.h = 5;
-    platform->actfree[19] = 2;
-    platform->actfree[17] = 1;
+    dai_rd5_work_get(platform)->state = 2;
+    dai_rd5_work_get(platform)->wait_timer = 1;
     platform->yspeed.w = -800;
     platform->yposi.l = 100 << 16;
     emycol_u_result = -4;
 
     dair5(platform);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, platform->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 0, dai_rd5_work_get(platform)->wait_timer);
     TEST_ASSERT_EQ_INT(ctx, 16, platform->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 0, platform->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 4, platform->actfree[19]);
+    TEST_ASSERT_EQ_INT(ctx, 4, dai_rd5_work_get(platform)->state);
     TEST_ASSERT_EQ_INT(ctx, 1, speedset2_count);
     TEST_ASSERT_TRUE(ctx, speedset2_actor == platform);
     TEST_ASSERT_EQ_INT(ctx, 1, emycol_u_count);
@@ -402,11 +391,11 @@ static void test_rising_type_state_machine(test_context *ctx) {
     reset_dair5_state();
     platform->r_no0 = 2;
     platform->userflag.b.h = 5;
-    platform->actfree[19] = 4;
+    dai_rd5_work_get(platform)->state = 4;
 
     dair5(platform);
 
-    TEST_ASSERT_EQ_INT(ctx, 4, platform->actfree[19]);
+    TEST_ASSERT_EQ_INT(ctx, 4, dai_rd5_work_get(platform)->state);
 }
 
 static void test_belt_task_moves_riding_player_by_time_and_direction(
@@ -415,11 +404,11 @@ static void test_belt_task_moves_riding_player_by_time_and_direction(
     sprite_status *player = &actwk[0];
 
     reset_dair5_state();
-    platform->actfree[21] = 1;
+    dai_rd5_work_get(platform)->flags = 1;
     platform->cddat = 8;
     player->actno = 1;
     player->cddat = 8;
-    player->actfree[19] = 8;
+    player_work_get(player)->ride_actor_index = 8;
     player->xposi.l = 100 << 16;
 
     belttask(platform);
@@ -427,11 +416,11 @@ static void test_belt_task_moves_riding_player_by_time_and_direction(
     TEST_ASSERT_EQ_INT(ctx, (100 << 16) + 32768, player->xposi.l);
 
     reset_dair5_state();
-    platform->actfree[21] = 1;
+    dai_rd5_work_get(platform)->flags = 1;
     platform->cddat = 8;
     player->actno = 1;
     player->cddat = 8;
-    player->actfree[19] = 8;
+    player_work_get(player)->ride_actor_index = 8;
     player->xposi.l = 100 << 16;
     time_flag = 2;
     colrevflag = 1;
@@ -458,18 +447,17 @@ static void test_init_single_spring_dodai_and_wave_helpers(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 40, actwk[24].yposi.w.h);
 
     reset_dair5_state();
-    platform->actfree[3] = 48;
+    dai_rd5_work_get(platform)->motion_high = 48;
     dodai_sub(platform, 48);
-    TEST_ASSERT_EQ_INT(ctx, 255, platform->actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 255, dai_rd5_work_get(platform)->moving_backward);
 
-    platform->actfree[3] = 47;
+    dai_rd5_work_get(platform)->motion_high = 47;
     dodai_sub(platform, 48);
-    TEST_ASSERT_EQ_INT(ctx, 0, platform->actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 0, dai_rd5_work_get(platform)->moving_backward);
 
     reset_dair5_state();
-    platform->actfree[21] = 128;
-    platform->actfree[20] = 8;
-    set_actfree_word(platform, 10, 200);
+    dai_rd5_work_get(platform)->flags = 128;
+    dai_rd5_work_get(platform)->bob_angle = 8;
     sinset_sin = 64;
     dai5sub(platform);
     TEST_ASSERT_EQ_INT(ctx, 1, sinset_count);
@@ -477,9 +465,9 @@ static void test_init_single_spring_dodai_and_wave_helpers(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, platform->yposi.w.h);
 
     reset_dair5_state();
-    platform->actfree[21] = 128;
+    dai_rd5_work_get(platform)->flags = 128;
     platform->cddat = 8;
-    platform->actfree[20] = 64;
+    dai_rd5_work_get(platform)->bob_angle = 64;
     dai5sub(platform);
     TEST_ASSERT_EQ_INT(ctx, 0, sinset_count);
 }
@@ -493,7 +481,7 @@ static void test_belt_task_early_returns(test_context *ctx) {
     belttask(platform);
     TEST_ASSERT_EQ_INT(ctx, 100 << 16, player->xposi.l);
 
-    platform->actfree[21] = 1;
+    dai_rd5_work_get(platform)->flags = 1;
     belttask(platform);
     TEST_ASSERT_EQ_INT(ctx, 100 << 16, player->xposi.l);
 
@@ -506,7 +494,7 @@ static void test_belt_task_early_returns(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 100 << 16, player->xposi.l);
 
     player->cddat = 8;
-    player->actfree[19] = 7;
+    player_work_get(player)->ride_actor_index = 7;
     belttask(platform);
     TEST_ASSERT_EQ_INT(ctx, 100 << 16, player->xposi.l);
 }

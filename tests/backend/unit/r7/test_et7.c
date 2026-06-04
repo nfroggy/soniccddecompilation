@@ -335,7 +335,7 @@ static void test_et7_recovery_waits_then_restores_original_height(
     time_flag = 1;
     et(actor);
     actor->r_no0 = 6;
-    actor->actfree[0] = 2;
+    et7_work_get(actor)->delay_timer = 2;
     actor->yposi.w.h = 184;
     reset_logs();
 

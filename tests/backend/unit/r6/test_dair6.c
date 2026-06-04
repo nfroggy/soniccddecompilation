@@ -100,7 +100,7 @@ static void test_dair6_sub2_uses_timer_low_byte_and_scaled_sine(
 
     TEST_ASSERT_EQ_INT(ctx, 0x34, sinset_angle);
     TEST_ASSERT_EQ_INT(ctx, 20, offset);
-    TEST_ASSERT_EQ_INT(ctx, 1, platform->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 1, dair6_get_work(platform)->phase_counter);
 }
 
 static void test_dair6_moves_right_and_left_with_visible_x_speed(

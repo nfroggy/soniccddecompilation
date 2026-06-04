@@ -347,7 +347,7 @@ typedef struct {
     int_union sy_speed;
     Uint8 colliflg;
     Uint8 dummy[3];
-    Uint8 actfree[48];
+    Uint8 actfree[128];
 } sprite_status_sp;
 
 typedef struct {

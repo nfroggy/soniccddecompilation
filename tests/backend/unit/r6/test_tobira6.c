@@ -70,8 +70,8 @@ static void test_tobira6_init_captures_normal_stage_layout(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 32, door->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 8, door->sprhsize);
     TEST_ASSERT_EQ_INT(ctx, 0, door->patno);
-    TEST_ASSERT_EQ_INT(ctx, 3, door->actfree[6]);
-    TEST_ASSERT_EQ_INT(ctx, 0, door->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 3, tobira6_get_work(door)->switch_index);
+    TEST_ASSERT_EQ_INT(ctx, 0, tobira6_get_work(door)->open_amount);
     TEST_ASSERT_EQ_INT(ctx, 200, door->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, ride_on_chk_count);
     TEST_ASSERT_TRUE(ctx, ride_on_chk_actor == door);
@@ -91,7 +91,7 @@ static void test_tobira6_init_uses_stage_two_wide_layout(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 816, door->sproffset);
     TEST_ASSERT_EQ_INT(ctx, 32, door->sprhsize);
     TEST_ASSERT_EQ_INT(ctx, 1, door->patno);
-    TEST_ASSERT_EQ_INT(ctx, 15, door->actfree[6]);
+    TEST_ASSERT_EQ_INT(ctx, 15, tobira6_get_work(door)->switch_index);
     TEST_ASSERT_EQ_INT(ctx, 300, door->yposi.w.h);
 }
 
@@ -101,15 +101,15 @@ static void test_tobira6_move_opens_until_transition(test_context *ctx) {
     reset_tobira6_state();
     door->yposi.w.h = 100;
     tobira6_init(door);
-    door->actfree[16] = 60;
-    door->actfree[18] = 0;
+    tobira6_get_work(door)->open_amount = 60;
+    tobira6_get_work(door)->close_flag = 0;
     door->r_no0 = 2;
     actwk[0].xposi.w.h = 140;
     actwk[0].yposi.w.h = 220;
 
     tobira6_move(door);
 
-    TEST_ASSERT_EQ_INT(ctx, 64, door->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 64, tobira6_get_work(door)->open_amount);
     TEST_ASSERT_EQ_INT(ctx, 4, door->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 36, door->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 2, ride_on_chk_count);
@@ -122,13 +122,13 @@ static void test_tobira6_move_respects_open_switch_flag(test_context *ctx) {
     door->yposi.w.h = 100;
     door->userflag.b.h = 4;
     tobira6_init(door);
-    door->actfree[18] = 255;
+    tobira6_get_work(door)->close_flag = 255;
     switchflag[4] = 128;
 
     tobira6_move(door);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, door->actfree[18]);
-    TEST_ASSERT_EQ_INT(ctx, 4, door->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 0, tobira6_get_work(door)->close_flag);
+    TEST_ASSERT_EQ_INT(ctx, 4, tobira6_get_work(door)->open_amount);
     TEST_ASSERT_EQ_INT(ctx, 96, door->yposi.w.h);
 }
 
@@ -216,17 +216,17 @@ static void test_tobira6_close_counts_down_and_returns_to_move(
     door->yposi.w.h = 100;
     tobira6_init(door);
     door->r_no0 = 6;
-    door->actfree[16] = 8;
+    tobira6_get_work(door)->open_amount = 8;
 
     tobira6_clse(door);
 
-    TEST_ASSERT_EQ_INT(ctx, 4, door->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 4, tobira6_get_work(door)->open_amount);
     TEST_ASSERT_EQ_INT(ctx, 6, door->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 96, door->yposi.w.h);
 
     tobira6_clse(door);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, door->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 0, tobira6_get_work(door)->open_amount);
     TEST_ASSERT_EQ_INT(ctx, 2, door->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 100, door->yposi.w.h);
 }

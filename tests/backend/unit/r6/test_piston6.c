@@ -169,7 +169,7 @@ static void test_piston6_move_extends_and_uses_ride_check(test_context *ctx) {
 
     piston6_move(piston);
 
-    TEST_ASSERT_EQ_INT(ctx, 8, piston->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 8, piston6_get_work(piston)->extension);
     TEST_ASSERT_EQ_INT(ctx, 192, piston->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, ridechk_count);
     TEST_ASSERT_TRUE(ctx, ridechk_actor == piston);
@@ -182,11 +182,11 @@ static void test_piston6_move_clears_ride_when_extended(test_context *ctx) {
     reset_piston6_state();
     piston->yposi.w.h = 200;
     piston6_init(piston);
-    piston->actfree[17] = 40;
+    piston6_get_work(piston)->extension = 40;
 
     piston6_move(piston);
 
-    TEST_ASSERT_EQ_INT(ctx, 48, piston->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 48, piston6_get_work(piston)->extension);
     TEST_ASSERT_EQ_INT(ctx, 152, piston->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, ride_on_clr_count);
     TEST_ASSERT_TRUE(ctx, ride_on_clr_actor == piston);
@@ -201,13 +201,13 @@ static void test_piston6_move_retracting_uses_ride_check_at_end(
     reset_piston6_state();
     piston->yposi.w.h = 200;
     piston6_init(piston);
-    piston->actfree[16] = 1;
-    piston->actfree[17] = 10;
-    piston->actfree[18] = 1;
+    piston6_get_work(piston)->wait_timer = 1;
+    piston6_get_work(piston)->extension = 10;
+    piston6_get_work(piston)->retracting = 1;
 
     piston6_move(piston);
 
-    TEST_ASSERT_EQ_INT(ctx, 9, piston->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 9, piston6_get_work(piston)->extension);
     TEST_ASSERT_EQ_INT(ctx, 191, piston->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, ridechk_count);
 }
@@ -217,31 +217,31 @@ static void test_piston6_sub_caps_and_restarts_motion_phases(
     sprite_status *piston = &actwk[5];
 
     reset_piston6_state();
-    piston->actfree[17] = 72;
+    piston6_get_work(piston)->extension = 72;
 
     piston6_sub(piston);
 
-    TEST_ASSERT_EQ_INT(ctx, 80, piston->actfree[17]);
-    TEST_ASSERT_EQ_INT(ctx, 1, piston->actfree[18]);
-    TEST_ASSERT_EQ_INT(ctx, 60, piston->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 80, piston6_get_work(piston)->extension);
+    TEST_ASSERT_EQ_INT(ctx, 1, piston6_get_work(piston)->retracting);
+    TEST_ASSERT_EQ_INT(ctx, 60, piston6_get_work(piston)->wait_timer);
 
-    piston->actfree[16] = 0;
-    piston->actfree[17] = 1;
-    piston->actfree[18] = 1;
-
-    piston6_sub(piston);
-
-    TEST_ASSERT_EQ_INT(ctx, 0, piston->actfree[17]);
-    TEST_ASSERT_EQ_INT(ctx, 0, piston->actfree[18]);
-    TEST_ASSERT_EQ_INT(ctx, 60, piston->actfree[16]);
-
-    piston->actfree[16] = 2;
-    piston->actfree[17] = 12;
+    piston6_get_work(piston)->wait_timer = 0;
+    piston6_get_work(piston)->extension = 1;
+    piston6_get_work(piston)->retracting = 1;
 
     piston6_sub(piston);
 
-    TEST_ASSERT_EQ_INT(ctx, 1, piston->actfree[16]);
-    TEST_ASSERT_EQ_INT(ctx, 12, piston->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 0, piston6_get_work(piston)->extension);
+    TEST_ASSERT_EQ_INT(ctx, 0, piston6_get_work(piston)->retracting);
+    TEST_ASSERT_EQ_INT(ctx, 60, piston6_get_work(piston)->wait_timer);
+
+    piston6_get_work(piston)->wait_timer = 2;
+    piston6_get_work(piston)->extension = 12;
+
+    piston6_sub(piston);
+
+    TEST_ASSERT_EQ_INT(ctx, 1, piston6_get_work(piston)->wait_timer);
+    TEST_ASSERT_EQ_INT(ctx, 12, piston6_get_work(piston)->extension);
 }
 
 static void test_piston6_side_tracks_live_parent(test_context *ctx) {

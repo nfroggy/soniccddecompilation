@@ -174,8 +174,8 @@ static void test_legmeca8_master_init_spawns_chain_and_frames_master(
     initialize_legmeca(master, children);
 
     TEST_ASSERT_EQ_INT(ctx, 8, actwkchk_count);
-    TEST_ASSERT_EQ_INT(ctx, 2, master->actfree[0]);
-    TEST_ASSERT_EQ_INT(ctx, 12, master->actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 2, legmeca8_get_work(master)->routine);
+    TEST_ASSERT_EQ_INT(ctx, 12, legmeca8_get_work(master)->roll_start_timer);
     assert_leg_sprite_fields(ctx, master);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s_count);
     TEST_ASSERT_TRUE(ctx, frameout_s_actor == master);
@@ -252,7 +252,7 @@ static void test_legmeca8_ride_starts_roll_on_master_and_outer_leg(
 
     legmeca(master);
 
-    TEST_ASSERT_EQ_INT(ctx, 11, master->actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 11, legmeca8_get_work(master)->roll_start_timer);
     TEST_ASSERT_EQ_INT(ctx, 2, master->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 2, children[7]->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s_count);
@@ -292,7 +292,7 @@ static void test_legmeca8_center_roll_updates_chain_with_sine_step(
     children[7]->r_no0 = 2;
     legmeca(master);
     reset_logs();
-    master->actfree[3] = 64;
+    legmeca8_get_work(master)->rotation = 0x4000;
 
     legmeca(master);
 
@@ -315,20 +315,20 @@ static void test_legmeca8_master_reset_modes_switch_motion_sets(
     reset_legmeca8_state();
     initialize_legmeca(master, children);
     reset_logs();
-    master->actfree[0] = 4;
+    legmeca8_get_work(master)->routine = 4;
 
     legmeca(master);
 
-    TEST_ASSERT_EQ_INT(ctx, 6, master->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 6, legmeca8_get_work(master)->routine);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s_count);
     TEST_ASSERT_EQ_INT(ctx, 9, actionsub_count);
 
     reset_logs();
-    master->actfree[0] = 8;
+    legmeca8_get_work(master)->routine = 8;
 
     legmeca(master);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, master->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 2, legmeca8_get_work(master)->routine);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s_count);
     TEST_ASSERT_EQ_INT(ctx, 9, actionsub_count);
 }
@@ -355,7 +355,7 @@ static void test_legmeca8_radius_roll_lands_and_resets_legs(
         legmeca(master);
     }
 
-    TEST_ASSERT_EQ_INT(ctx, 4, master->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 4, legmeca8_get_work(master)->routine);
     TEST_ASSERT_EQ_INT(ctx, 0, master->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 0, children[7]->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 0, master->xspeed.w);

@@ -98,11 +98,6 @@ static void reset_togebl3b_logs(void) {
     sinset_angle = 0;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
 static void test_togebl3b_tables_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, pat_chg[0] == &spat_chg0);
     TEST_ASSERT_TRUE(ctx, togeball_pat[0] == &spat_chg1);
@@ -225,9 +220,9 @@ static void test_togebl3b_option_initializes_and_moves_existing_position(
     reset_togebl3b_state();
     parent->actno = 44;
     opt->userflag.b.h = -1;
-    set_actfree_word(opt, 20, 2);
-    set_actfree_word(opt, 2, 12);
-    set_actfree_word(opt, 6, 34);
+    togeball3b_get_work(opt)->parent_index = 2;
+    togeball3b_get_work(opt)->target_x = 12 << 16;
+    togeball3b_get_work(opt)->target_y = 34 << 16;
 
     togeball(opt);
 
@@ -242,7 +237,7 @@ static void test_togebl3b_option_frameouts_when_parent_is_gone(
     reset_togebl3b_state();
     opt->userflag.b.h = -1;
     opt->r_no0 = 2;
-    set_actfree_word(opt, 20, 2);
+    togeball3b_get_work(opt)->parent_index = 2;
 
     togeball(opt);
 

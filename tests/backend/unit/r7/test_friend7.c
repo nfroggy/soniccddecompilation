@@ -131,11 +131,6 @@ static void reset_friend7_logs(void) {
     emycol_d_actor = 0;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
 static void init_flicky(sprite_status *actor, Sint16 x, Sint16 y,
                         Sint8 userflag_h) {
     reset_friend7_state();
@@ -256,9 +251,9 @@ static void test_flicky_movie_variant_initializes_and_uses_parent(
     init_flicky(actor, 120, 220, -128);
 
 
-    set_actfree_word(actor, 20, 2);
+    friend7_get_work(actor)->movie_parent_index = 2;
     parent->actno = 39;
-    actor->actfree[4] = 8;
+    friend7_get_work(actor)->angle = 8;
 
     friend(actor);
 
@@ -274,9 +269,9 @@ static void test_flicky_movie_wrap_reverses_without_drawing(test_context *ctx) {
     sprite_status *parent = &actwk[2];
 
     init_flicky(actor, 120, 220, -128);
-    set_actfree_word(actor, 20, 2);
+    friend7_get_work(actor)->movie_parent_index = 2;
     parent->actno = 39;
-    actor->actfree[4] = 124;
+    friend7_get_work(actor)->angle = 124;
 
     friend(actor);
 
@@ -291,7 +286,7 @@ static void test_flicky_movie_frameouts_when_parent_invalid(test_context *ctx) {
     reset_friend7_state();
     actor->r_no0 = 4;
     actor->userflag.b.h = -128;
-    set_actfree_word(actor, 20, 2);
+    friend7_get_work(actor)->movie_parent_index = 2;
 
     friend(actor);
 
@@ -303,9 +298,9 @@ static void test_flicky_movie_frameouts_when_parent_invalid(test_context *ctx) {
     parent = &actwk[2];
     actor->r_no0 = 4;
     actor->userflag.b.h = -128;
-    set_actfree_word(actor, 20, 2);
+    friend7_get_work(actor)->movie_parent_index = 2;
     parent->actno = 39;
-    parent->actfree[21] = 255;
+    friend7_get_work(parent)->movie_done = 255;
 
     friend(actor);
 
@@ -373,7 +368,7 @@ static void test_ricky_movie_variant_initializes_and_moves(test_context *ctx) {
     init_ricky(actor, 300, 400, -127);
 
 
-    set_actfree_word(actor, 20, 2);
+    friend7_get_work(actor)->movie_parent_index = 2;
     parent->actno = 39;
 
     friend(actor);
@@ -392,7 +387,7 @@ static void test_ricky_movie_frameouts_when_parent_invalid(test_context *ctx) {
     reset_friend7_state();
     actor->userflag.b.h = -127;
     actor->r_no0 = 8;
-    set_actfree_word(actor, 20, 2);
+    friend7_get_work(actor)->movie_parent_index = 2;
 
     friend(actor);
 
@@ -404,9 +399,9 @@ static void test_ricky_movie_frameouts_when_parent_invalid(test_context *ctx) {
     parent = &actwk[2];
     actor->userflag.b.h = -127;
     actor->r_no0 = 8;
-    set_actfree_word(actor, 20, 2);
+    friend7_get_work(actor)->movie_parent_index = 2;
     parent->actno = 39;
-    parent->actfree[21] = 255;
+    friend7_get_work(parent)->movie_done = 255;
 
     friend(actor);
 

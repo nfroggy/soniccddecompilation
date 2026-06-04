@@ -1,4 +1,3 @@
-#include <stddef.h>
 #include <string.h>
 
 #include "support/test_runner.h"
@@ -74,65 +73,6 @@ void patchg(sprite_status *patchgwk, Uint8 **pat_dat) {
 void soundset(Sint16 ReqNo) {
     ++soundset_count;
     soundset_no = ReqNo;
-}
-
-static size_t short_alias_offset(int short_index) {
-    return (size_t)short_index * sizeof(Sint16) -
-           offsetof(sprite_status, actfree);
-}
-
-static size_t long_alias_offset(int long_index) {
-    return (size_t)long_index * sizeof(Sint32) -
-           offsetof(sprite_status, actfree);
-}
-
-static void set_actor_short_alias(sprite_status *actor, int short_index,
-                                  Sint16 value) {
-    size_t offset = short_alias_offset(short_index);
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)bits;
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 actor_short_alias(sprite_status *actor, int short_index) {
-    size_t offset = short_alias_offset(short_index);
-    return (Sint16)((Uint16)actor->actfree[offset] |
-                    ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
-static void set_actor_long_alias(sprite_status *actor, int long_index,
-                                 Sint32 value) {
-    size_t offset = long_alias_offset(long_index);
-    Uint32 bits = (Uint32)value;
-    actor->actfree[offset] = (Uint8)bits;
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-    actor->actfree[offset + 2] = (Uint8)(bits >> 16);
-    actor->actfree[offset + 3] = (Uint8)(bits >> 24);
-}
-
-static Sint32 actor_long_alias(sprite_status *actor, int long_index) {
-    size_t offset = long_alias_offset(long_index);
-    Uint32 bits = actor->actfree[offset] |
-                  ((Uint32)actor->actfree[offset + 1] << 8) |
-                  ((Uint32)actor->actfree[offset + 2] << 16) |
-                  ((Uint32)actor->actfree[offset + 3] << 24);
-    return (Sint32)bits;
-}
-
-static void set_actfree_long(sprite_status *actor, int offset, Sint32 value) {
-    Uint32 bits = (Uint32)value;
-    actor->actfree[offset] = (Uint8)bits;
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-    actor->actfree[offset + 2] = (Uint8)(bits >> 16);
-    actor->actfree[offset + 3] = (Uint8)(bits >> 24);
-}
-
-static Sint32 actfree_long(sprite_status *actor, int offset) {
-    Uint32 bits = actor->actfree[offset] |
-                  ((Uint32)actor->actfree[offset + 1] << 8) |
-                  ((Uint32)actor->actfree[offset + 2] << 16) |
-                  ((Uint32)actor->actfree[offset + 3] << 24);
-    return (Sint32)bits;
 }
 
 static void reset_logs(void) {
@@ -212,17 +152,19 @@ static void test_master_init_variants(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 8, actor->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 45, actor->colino);
     TEST_ASSERT_TRUE(ctx, actor->patbase == pat_tagameb_e);
-    TEST_ASSERT_EQ_INT(ctx, -65536, actor_long_alias(actor, 12));
-    TEST_ASSERT_EQ_INT(ctx, 200, actor_short_alias(actor, 29));
-    TEST_ASSERT_EQ_INT(ctx, 100, actor_short_alias(actor, 30));
+    TEST_ASSERT_EQ_INT(ctx, -65536, tagameb4_get_work(actor)->master.move_speed);
+    TEST_ASSERT_EQ_INT(ctx, 200, tagameb4_get_work(actor)->master.timer_reset);
+    TEST_ASSERT_EQ_INT(ctx, 100, tagameb4_get_work(actor)->master.origin_x);
     TEST_ASSERT_EQ_INT(ctx, 3, actwkchk_count);
-    TEST_ASSERT_EQ_INT(ctx, 20, actor_short_alias(actor, 26));
-    TEST_ASSERT_EQ_INT(ctx, 21, actor_short_alias(actor, 27));
-    TEST_ASSERT_EQ_INT(ctx, 22, actor_short_alias(actor, 28));
+    TEST_ASSERT_EQ_INT(ctx, 20, tagameb4_get_work(actor)->master.spike_indices[0]);
+    TEST_ASSERT_EQ_INT(ctx, 21, tagameb4_get_work(actor)->master.spike_indices[1]);
+    TEST_ASSERT_EQ_INT(ctx, 22, tagameb4_get_work(actor)->master.spike_indices[2]);
     TEST_ASSERT_EQ_INT(ctx, 45, actwk[20].actno);
     TEST_ASSERT_EQ_INT(ctx, -1, actwk[20].userflag.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 9, actwk[20].actfree[19]);
-    TEST_ASSERT_EQ_INT(ctx, 3, actor_short_alias(&actwk[20], 33));
+    TEST_ASSERT_EQ_INT(ctx, 9,
+                       tagameb4_get_work(&actwk[20])->projectile.saved_cdsts);
+    TEST_ASSERT_EQ_INT(ctx, 3,
+                       tagameb4_get_work(&actwk[20])->projectile.parent_index);
     TEST_ASSERT_EQ_INT(ctx, 102, actwk[20].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 190, actwk[20].yposi.w.h);
     assert_displayed(ctx, actor);
@@ -237,8 +179,9 @@ static void test_master_init_variants(test_context *ctx) {
     tagameb(actor);
 
     TEST_ASSERT_TRUE(ctx, actor->patbase == pat_tagameb_b);
-    TEST_ASSERT_EQ_INT(ctx, -32768, actor_long_alias(actor, 12));
-    TEST_ASSERT_EQ_INT(ctx, 400, actor_short_alias(actor, 29));
+    TEST_ASSERT_EQ_INT(ctx, -32768,
+                       tagameb4_get_work(actor)->master.move_speed);
+    TEST_ASSERT_EQ_INT(ctx, 400, tagameb4_get_work(actor)->master.timer_reset);
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
     assert_displayed(ctx, actor);
 }
@@ -275,7 +218,7 @@ static void test_master_move_check_reverse_and_patch(test_context *ctx) {
     tagameb(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 60, actor_short_alias(actor, 23));
+    TEST_ASSERT_EQ_INT(ctx, 60, tagameb4_get_work(actor)->master.timer);
     TEST_ASSERT_EQ_INT(ctx, 0, patchg_count);
     assert_displayed(ctx, actor);
 
@@ -285,15 +228,16 @@ static void test_master_move_check_reverse_and_patch(test_context *ctx) {
     actor->actflg = 4;
     actor->r_no0 = 2;
     actor->xposi.l = 100 << 16;
-    set_actor_long_alias(actor, 12, -32768);
-    set_actor_short_alias(actor, 23, 1);
-    set_actor_short_alias(actor, 29, 400);
+    tagameb4_get_work(actor)->master.move_speed = -32768;
+    tagameb4_get_work(actor)->master.timer = 1;
+    tagameb4_get_work(actor)->master.timer_reset = 400;
 
     tagameb(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 99, actor->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, -32768, actor_long_alias(actor, 12));
-    TEST_ASSERT_EQ_INT(ctx, 0, actor_short_alias(actor, 23));
+    TEST_ASSERT_EQ_INT(ctx, -32768,
+                       tagameb4_get_work(actor)->master.move_speed);
+    TEST_ASSERT_EQ_INT(ctx, 0, tagameb4_get_work(actor)->master.timer);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_TRUE(ctx, patchg_actor == actor);
     TEST_ASSERT_TRUE(ctx, patchg_table == pchg);
@@ -303,14 +247,14 @@ static void test_master_move_check_reverse_and_patch(test_context *ctx) {
     actor->userflag.b.h = 1;
     actor->actflg = 4;
     actor->r_no0 = 2;
-    set_actor_long_alias(actor, 12, -32768);
-    set_actor_short_alias(actor, 23, -1);
-    set_actor_short_alias(actor, 29, 400);
+    tagameb4_get_work(actor)->master.move_speed = -32768;
+    tagameb4_get_work(actor)->master.timer = -1;
+    tagameb4_get_work(actor)->master.timer_reset = 400;
 
     tagameb(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 400, actor_short_alias(actor, 23));
-    TEST_ASSERT_EQ_INT(ctx, 32768, actor_long_alias(actor, 12));
+    TEST_ASSERT_EQ_INT(ctx, 400, tagameb4_get_work(actor)->master.timer);
+    TEST_ASSERT_EQ_INT(ctx, 32768, tagameb4_get_work(actor)->master.move_speed);
     TEST_ASSERT_EQ_INT(ctx, 5, actor->actflg);
     TEST_ASSERT_EQ_INT(ctx, 1, actor->cddat);
 
@@ -320,11 +264,11 @@ static void test_master_move_check_reverse_and_patch(test_context *ctx) {
     actor->xposi.l = 100 << 16;
     actor->yposi.w.h = 200;
     actor->actflg = 4;
-    set_actor_short_alias(actor, 23, 1);
-    set_actor_short_alias(actor, 26, 20);
-    set_actor_short_alias(actor, 27, 21);
-    set_actor_short_alias(actor, 28, 22);
-    set_actor_long_alias(actor, 12, -65536);
+    tagameb4_get_work(actor)->master.timer = 1;
+    tagameb4_get_work(actor)->master.spike_indices[0] = 20;
+    tagameb4_get_work(actor)->master.spike_indices[1] = 21;
+    tagameb4_get_work(actor)->master.spike_indices[2] = 22;
+    tagameb4_get_work(actor)->master.move_speed = -65536;
     actwk[20].xposi.l = 10 << 16;
     actwk[21].xposi.l = 20 << 16;
     actwk[22].xposi.l = 30 << 16;
@@ -337,7 +281,7 @@ static void test_master_move_check_reverse_and_patch(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 9, actwk[20].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 19, actwk[21].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 29, actwk[22].xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor_short_alias(actor, 23));
+    TEST_ASSERT_EQ_INT(ctx, 0, tagameb4_get_work(actor)->master.timer);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
 
     reset_tagameb_state();
@@ -345,18 +289,18 @@ static void test_master_move_check_reverse_and_patch(test_context *ctx) {
     actor->r_no0 = 2;
     actor->xposi.l = 100 << 16;
     actor->actflg = 4;
-    set_actor_short_alias(actor, 23, -1);
-    set_actor_short_alias(actor, 26, 20);
-    set_actor_short_alias(actor, 27, 21);
-    set_actor_short_alias(actor, 28, 22);
-    set_actor_short_alias(actor, 29, 200);
-    set_actor_long_alias(actor, 12, -65536);
+    tagameb4_get_work(actor)->master.timer = -1;
+    tagameb4_get_work(actor)->master.spike_indices[0] = 20;
+    tagameb4_get_work(actor)->master.spike_indices[1] = 21;
+    tagameb4_get_work(actor)->master.spike_indices[2] = 22;
+    tagameb4_get_work(actor)->master.timer_reset = 200;
+    tagameb4_get_work(actor)->master.move_speed = -65536;
     actwk[0].xposi.w.h = 300;
     actwk[0].yposi.w.h = 100;
 
     tagameb(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 200, actor_short_alias(actor, 23));
+    TEST_ASSERT_EQ_INT(ctx, 200, tagameb4_get_work(actor)->master.timer);
     TEST_ASSERT_EQ_INT(ctx, 5, actor->actflg);
     TEST_ASSERT_EQ_INT(ctx, 98, actwk[20].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 93, actwk[21].xposi.w.h);
@@ -367,18 +311,18 @@ static void test_master_move_check_reverse_and_patch(test_context *ctx) {
     actor->r_no0 = 2;
     actor->xposi.l = 100 << 16;
     actor->actflg = 5;
-    set_actor_short_alias(actor, 23, -1);
-    set_actor_short_alias(actor, 26, 20);
-    set_actor_short_alias(actor, 27, 21);
-    set_actor_short_alias(actor, 28, 22);
-    set_actor_short_alias(actor, 29, 200);
-    set_actor_long_alias(actor, 12, -65536);
+    tagameb4_get_work(actor)->master.timer = -1;
+    tagameb4_get_work(actor)->master.spike_indices[0] = 20;
+    tagameb4_get_work(actor)->master.spike_indices[1] = 21;
+    tagameb4_get_work(actor)->master.spike_indices[2] = 22;
+    tagameb4_get_work(actor)->master.timer_reset = 200;
+    tagameb4_get_work(actor)->master.move_speed = -65536;
     actwk[0].xposi.w.h = 300;
     actwk[0].yposi.w.h = 100;
 
     tagameb(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 200, actor_short_alias(actor, 23));
+    TEST_ASSERT_EQ_INT(ctx, 200, tagameb4_get_work(actor)->master.timer);
     TEST_ASSERT_EQ_INT(ctx, 4, actor->actflg);
     TEST_ASSERT_EQ_INT(ctx, 97, actwk[20].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 102, actwk[21].xposi.w.h);
@@ -392,63 +336,69 @@ static void test_stop_stop1_and_dash_paths(test_context *ctx) {
     actor->userflag.b.h = 1;
     actor->r_no0 = 4;
     actor->actflg = 128;
-    set_actor_short_alias(actor, 23, -1);
+    tagameb4_get_work(actor)->master.timer = -1;
 
     tagameb(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 60, actor_short_alias(actor, 23));
+    TEST_ASSERT_EQ_INT(ctx, 60, tagameb4_get_work(actor)->master.timer);
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
     assert_displayed(ctx, actor);
 
     reset_tagameb_state();
     actor = &actwk[3];
     actor->r_no0 = 4;
-    set_actor_short_alias(actor, 23, -1);
-    set_actor_short_alias(actor, 26, 20);
-    set_actor_short_alias(actor, 27, 21);
-    set_actor_short_alias(actor, 28, 22);
+    tagameb4_get_work(actor)->master.timer = -1;
+    tagameb4_get_work(actor)->master.spike_indices[0] = 20;
+    tagameb4_get_work(actor)->master.spike_indices[1] = 21;
+    tagameb4_get_work(actor)->master.spike_indices[2] = 22;
 
     tagameb(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, -0x20000, actfree_long(&actwk[20], 0));
-    TEST_ASSERT_EQ_INT(ctx, -196608, actfree_long(&actwk[20], 4));
-    TEST_ASSERT_EQ_INT(ctx, 0, actfree_long(&actwk[20], 8));
-    TEST_ASSERT_EQ_INT(ctx, 8192, actfree_long(&actwk[20], 12));
+    TEST_ASSERT_EQ_INT(ctx, -0x20000,
+                       tagameb4_get_work(&actwk[20])->projectile.x_speed);
+    TEST_ASSERT_EQ_INT(ctx, -196608,
+                       tagameb4_get_work(&actwk[20])->projectile.y_speed);
+    TEST_ASSERT_EQ_INT(ctx, 0,
+                       tagameb4_get_work(&actwk[20])->projectile.x_accel);
+    TEST_ASSERT_EQ_INT(ctx, 8192,
+                       tagameb4_get_work(&actwk[20])->projectile.y_accel);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[20].r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 65536, actfree_long(&actwk[21], 0));
-    TEST_ASSERT_EQ_INT(ctx, 0x20000, actfree_long(&actwk[22], 0));
+    TEST_ASSERT_EQ_INT(ctx, 65536,
+                       tagameb4_get_work(&actwk[21])->projectile.x_speed);
+    TEST_ASSERT_EQ_INT(ctx, 0x20000,
+                       tagameb4_get_work(&actwk[22])->projectile.x_speed);
 
     reset_tagameb_state();
     actor = &actwk[3];
     actor->userflag.b.h = 1;
     actor->r_no0 = 6;
     actor->actflg = 0;
-    set_actor_short_alias(actor, 23, -1);
+    tagameb4_get_work(actor)->master.timer = -1;
 
     tagameb(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 8, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, -98304, actor_long_alias(actor, 12));
+    TEST_ASSERT_EQ_INT(ctx, -98304, tagameb4_get_work(actor)->master.move_speed);
 
     reset_tagameb_state();
     actor = &actwk[3];
     actor->userflag.b.h = 0;
     actor->r_no0 = 6;
     actor->actflg = 1;
-    set_actor_short_alias(actor, 23, -1);
+    tagameb4_get_work(actor)->master.timer = -1;
 
     tagameb(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 8, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 262144, actor_long_alias(actor, 12));
+    TEST_ASSERT_EQ_INT(ctx, 262144, tagameb4_get_work(actor)->master.move_speed);
 
     reset_tagameb_state();
     actor = &actwk[3];
     actor->r_no0 = 8;
     actor->xposi.l = 50 << 16;
-    set_actor_long_alias(actor, 12, 0x40000);
+    tagameb4_get_work(actor)->master.move_speed = 0x40000;
 
     tagameb(actor);
 
@@ -463,7 +413,7 @@ static void test_child_follow_move_and_frameout_paths(test_context *ctx) {
     reset_tagameb_state();
     parent->actno = 0;
     child->userflag.b.h = -1;
-    set_actor_short_alias(child, 33, 3);
+    tagameb4_get_work(child)->projectile.parent_index = 3;
 
     tagameb(child);
 
@@ -476,8 +426,8 @@ static void test_child_follow_move_and_frameout_paths(test_context *ctx) {
     parent->actno = 45;
     parent->cdsts = 7;
     child->userflag.b.h = -1;
-    child->actfree[19] = 8;
-    set_actor_short_alias(child, 33, 3);
+    tagameb4_get_work(child)->projectile.saved_cdsts = 8;
+    tagameb4_get_work(child)->projectile.parent_index = 3;
 
     tagameb(child);
 
@@ -490,8 +440,8 @@ static void test_child_follow_move_and_frameout_paths(test_context *ctx) {
     parent->actno = 45;
     parent->cdsts = 7;
     child->userflag.b.h = -1;
-    child->actfree[19] = 7;
-    set_actor_short_alias(child, 33, 3);
+    tagameb4_get_work(child)->projectile.saved_cdsts = 7;
+    tagameb4_get_work(child)->projectile.parent_index = 3;
 
     tagameb(child);
 
@@ -504,18 +454,18 @@ static void test_child_follow_move_and_frameout_paths(test_context *ctx) {
     child->r_no0 = 4;
     child->xposi.l = 10 << 16;
     child->yposi.l = 20 << 16;
-    set_actfree_long(child, 0, 65536);
-    set_actfree_long(child, 4, 131072);
-    set_actfree_long(child, 8, 4096);
-    set_actfree_long(child, 12, 8192);
+    tagameb4_get_work(child)->projectile.x_speed = 65536;
+    tagameb4_get_work(child)->projectile.y_speed = 131072;
+    tagameb4_get_work(child)->projectile.x_accel = 4096;
+    tagameb4_get_work(child)->projectile.y_accel = 8192;
     actwk[0].yposi.w.h = 0;
 
     tagameb(child);
 
     TEST_ASSERT_EQ_INT(ctx, 11, child->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 22, child->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 69632, actfree_long(child, 0));
-    TEST_ASSERT_EQ_INT(ctx, 139264, actfree_long(child, 4));
+    TEST_ASSERT_EQ_INT(ctx, 69632, tagameb4_get_work(child)->projectile.x_speed);
+    TEST_ASSERT_EQ_INT(ctx, 139264, tagameb4_get_work(child)->projectile.y_speed);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 
     reset_logs();

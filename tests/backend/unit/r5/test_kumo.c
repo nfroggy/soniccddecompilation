@@ -129,33 +129,6 @@ static void queue_actwkchk(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int offset) {
-    return (Sint16)((Uint16)actor->actfree[offset] |
-                    ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
-static void set_actfree_long(sprite_status *actor, int offset, Sint32 value) {
-    Uint32 bits = (Uint32)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)((bits >> 8) & 255);
-    actor->actfree[offset + 2] = (Uint8)((bits >> 16) & 255);
-    actor->actfree[offset + 3] = (Uint8)(bits >> 24);
-}
-
-static Sint32 get_actfree_long(sprite_status *actor, int offset) {
-    Uint32 bits = (Uint32)actor->actfree[offset] |
-                  ((Uint32)actor->actfree[offset + 1] << 8) |
-                  ((Uint32)actor->actfree[offset + 2] << 16) |
-                  ((Uint32)actor->actfree[offset + 3] << 24);
-    return (Sint32)bits;
-}
-
 static void assert_visible_callbacks(test_context *ctx,
                                      sprite_status *actor) {
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -226,8 +199,8 @@ static void test_init_normal_and_black_variants(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 24, actor->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 53, actor->colino);
     TEST_ASSERT_TRUE(ctx, actor->patbase == pat_kumo_e);
-    TEST_ASSERT_EQ_INT(ctx, -524288, get_actfree_long(actor, 6));
-    TEST_ASSERT_EQ_INT(ctx, 16384, get_actfree_long(actor, 10));
+    TEST_ASSERT_EQ_INT(ctx, -524288, kumo_get_work(actor)->initial_y_speed);
+    TEST_ASSERT_EQ_INT(ctx, 16384, kumo_get_work(actor)->velocity);
     TEST_ASSERT_EQ_INT(ctx, 50, actor->yposi.w.h);
     assert_visible_callbacks(ctx, actor);
 
@@ -243,7 +216,7 @@ static void test_init_normal_and_black_variants(test_context *ctx) {
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
     TEST_ASSERT_TRUE(ctx, actor->patbase == pat_kumo_b);
-    TEST_ASSERT_EQ_INT(ctx, -327680, get_actfree_long(actor, 6));
+    TEST_ASSERT_EQ_INT(ctx, -327680, kumo_get_work(actor)->initial_y_speed);
     TEST_ASSERT_EQ_INT(ctx, 5, actor->actflg);
     TEST_ASSERT_EQ_INT(ctx, 1, actor->cddat);
     TEST_ASSERT_EQ_INT(ctx, 1, actor->patno);
@@ -258,7 +231,7 @@ static void test_jump_uses_stored_speed_and_lands(test_context *ctx) {
     actor->r_no0 = 2;
     actor->patno = 2;
     actor->yposi.w.h = 100;
-    set_actfree_long(actor, 6, -524288);
+    kumo_get_work(actor)->initial_y_speed = -524288;
     queue_emycol(0);
 
     kumo(actor);
@@ -266,14 +239,14 @@ static void test_jump_uses_stored_speed_and_lands(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->patno);
     TEST_ASSERT_EQ_INT(ctx, 84, actor->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, -507904, get_actfree_long(actor, 10));
+    TEST_ASSERT_EQ_INT(ctx, -507904, kumo_get_work(actor)->velocity);
 
     reset_kumo_state();
     actor = &actwk[4];
     actor->actno = 35;
     actor->r_no0 = 4;
     actor->yposi.w.h = 100;
-    set_actfree_long(actor, 10, -16384);
+    kumo_get_work(actor)->velocity = -16384;
     queue_emycol(-4);
 
     kumo(actor);
@@ -295,13 +268,13 @@ static void test_move_timer_patches_and_cycles_back_to_jump(
 
     TEST_ASSERT_EQ_INT(ctx, 8, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 54, actor->colino);
-    TEST_ASSERT_EQ_INT(ctx, 179, get_actfree_word(actor, 0));
+    TEST_ASSERT_EQ_INT(ctx, 179, kumo_get_work(actor)->timer);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_TRUE(ctx, patchg_actor == actor);
     TEST_ASSERT_TRUE(ctx, patchg_table == pchg_e);
 
     reset_logs();
-    set_actfree_word(actor, 0, 1);
+    kumo_get_work(actor)->timer = 1;
     actwk[0].yposi.w.h = 400;
 
     kumo(actor);
@@ -316,7 +289,7 @@ static void test_player_check_flips_direction_and_enters_fire_wait(
 
     init_kumo_for_move(actor);
     actor->r_no0 = 8;
-    set_actfree_word(actor, 0, 180);
+    kumo_get_work(actor)->timer = 180;
     actwk[0].xposi.w.h = 90;
     actwk[0].yposi.w.h = 100;
 
@@ -324,7 +297,7 @@ static void test_player_check_flips_direction_and_enters_fire_wait(
 
     TEST_ASSERT_EQ_INT(ctx, 10, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, actor->patno);
-    TEST_ASSERT_EQ_INT(ctx, 60, get_actfree_word(actor, 0));
+    TEST_ASSERT_EQ_INT(ctx, 60, kumo_get_work(actor)->timer);
     TEST_ASSERT_EQ_INT(ctx, 5, actor->actflg);
     TEST_ASSERT_EQ_INT(ctx, 1, actor->cddat);
     TEST_ASSERT_EQ_INT(ctx, 0, patchg_count);
@@ -333,7 +306,7 @@ static void test_player_check_flips_direction_and_enters_fire_wait(
     actor->r_no0 = 8;
     actor->actflg |= 1;
     actor->cddat |= 1;
-    set_actfree_word(actor, 0, 180);
+    kumo_get_work(actor)->timer = 180;
     actwk[0].xposi.w.h = 110;
     actwk[0].yposi.w.h = 100;
 
@@ -353,12 +326,12 @@ static void test_black_variant_skips_player_check(test_context *ctx) {
     actor->r_no0 = 8;
     actwk[0].xposi.w.h = 90;
     actwk[0].yposi.w.h = 100;
-    set_actfree_word(actor, 0, 2);
+    kumo_get_work(actor)->timer = 2;
 
     kumo(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 8, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 1, get_actfree_word(actor, 0));
+    TEST_ASSERT_EQ_INT(ctx, 1, kumo_get_work(actor)->timer);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_TRUE(ctx, patchg_actor == actor);
 }
@@ -370,15 +343,15 @@ static void test_fire_wait_and_projectile_spawn(test_context *ctx) {
     reset_kumo_state();
     actor->actno = 35;
     actor->r_no0 = 10;
-    set_actfree_word(actor, 0, 2);
+    kumo_get_work(actor)->timer = 2;
 
     kumo(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 10, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 1, get_actfree_word(actor, 0));
+    TEST_ASSERT_EQ_INT(ctx, 1, kumo_get_work(actor)->timer);
 
     reset_logs();
-    set_actfree_word(actor, 0, 1);
+    kumo_get_work(actor)->timer = 1;
 
     kumo(actor);
 
@@ -408,7 +381,7 @@ static void test_fire_wait_and_projectile_spawn(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 8, shot->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 247, shot->colino);
     TEST_ASSERT_TRUE(ctx, shot->patbase == pat_tama);
-    TEST_ASSERT_EQ_INT(ctx, 196608, get_actfree_long(shot, 10));
+    TEST_ASSERT_EQ_INT(ctx, 196608, kumo_get_work(shot)->velocity);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 160, soundset_requests[0]);
 
@@ -424,7 +397,7 @@ static void test_fire_wait_and_projectile_spawn(test_context *ctx) {
     kumo(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 76, shot->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, -196608, get_actfree_long(shot, 10));
+    TEST_ASSERT_EQ_INT(ctx, -196608, kumo_get_work(shot)->velocity);
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
 
     reset_kumo_state();
@@ -443,7 +416,7 @@ static void test_projectile_moves_or_grabs_player(test_context *ctx) {
     reset_kumo_state();
     shot->userflag.b.h = -1;
     shot->xposi.l = 100 << 16;
-    set_actfree_long(shot, 10, 196608);
+    kumo_get_work(shot)->velocity = 196608;
 
     kumo(shot);
 
@@ -466,7 +439,7 @@ static void test_projectile_moves_or_grabs_player(test_context *ctx) {
     kumo(shot);
 
     TEST_ASSERT_EQ_INT(ctx, 0, shot->colicnt);
-    TEST_ASSERT_EQ_INT(ctx, 119, get_actfree_word(shot, 0));
+    TEST_ASSERT_EQ_INT(ctx, 119, kumo_get_work(shot)->timer);
     TEST_ASSERT_EQ_INT(ctx, 300, shot->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 160, shot->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].xspeed.w);
@@ -474,7 +447,7 @@ static void test_projectile_moves_or_grabs_player(test_context *ctx) {
     assert_visible_callbacks(ctx, shot);
 
     reset_logs();
-    set_actfree_word(shot, 0, 1);
+    kumo_get_work(shot)->timer = 1;
 
     kumo(shot);
 
@@ -492,11 +465,11 @@ static void test_projectile_collision_skips_grab_for_player_states(
     shot->colicnt = 1;
     shot->xposi.l = 100 << 16;
     actwk[0].r_no0 = 4;
-    set_actfree_long(shot, 10, 196608);
+    kumo_get_work(shot)->velocity = 196608;
 
     kumo(shot);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, get_actfree_word(shot, 0));
+    TEST_ASSERT_EQ_INT(ctx, 0, kumo_get_work(shot)->timer);
     TEST_ASSERT_EQ_INT(ctx, 103, shot->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
 
@@ -506,12 +479,12 @@ static void test_projectile_collision_skips_grab_for_player_states(
     shot->colicnt = 1;
     shot->xposi.l = 100 << 16;
     actwk[0].r_no0 = 0;
-    set_actfree_word(&actwk[0], 6, 1);
-    set_actfree_long(shot, 10, 196608);
+    player_work_get(&actwk[0])->damage_invulnerability_timer = 1;
+    kumo_get_work(shot)->velocity = 196608;
 
     kumo(shot);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, get_actfree_word(shot, 0));
+    TEST_ASSERT_EQ_INT(ctx, 0, kumo_get_work(shot)->timer);
     TEST_ASSERT_EQ_INT(ctx, 103, shot->xposi.w.h);
 }
 

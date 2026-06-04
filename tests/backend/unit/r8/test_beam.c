@@ -195,7 +195,7 @@ static void test_beam_master_waits_when_timer_remains(test_context *ctx) {
 
     reset_beam_state();
     master->r_no0 = 2;
-    master->actfree[0] = 2;
+    beam_work_get(master)->delay_or_release = 2;
 
     beam(master);
 
@@ -212,7 +212,7 @@ static void test_beam_master_falls_back_to_actwkchk_after_actwkchk2_failure(
 
     reset_beam_state();
     master->r_no0 = 2;
-    master->actfree[0] = 1;
+    beam_work_get(master)->delay_or_release = 1;
     master->xposi.w.h = 77;
     master->yposi.w.h = 31;
     actwkchk2_result = -1;
@@ -230,7 +230,7 @@ static void test_beam_master_stops_when_both_allocators_fail(test_context *ctx) 
 
     reset_beam_state();
     master->r_no0 = 2;
-    master->actfree[0] = 1;
+    beam_work_get(master)->delay_or_release = 1;
     actwkchk2_result = -1;
     actwkchk_result = -1;
 
@@ -329,7 +329,7 @@ static void test_beam_move1_finishes_and_releases_endcap(test_context *ctx) {
     segment->r_no0 = 6;
     segment->mstno.b.h = 0;
     segment->yposi.w.h = 12;
-    segment->actfree[21] = 0;
+    beam_work_get(segment)->endcap_missing = 0;
 
     beam(segment);
 
@@ -347,7 +347,7 @@ static void test_beam_move1_finishes_without_endcap_when_marked_missing(
     segment->r_no0 = 6;
     segment->mstno.b.h = 0;
     segment->yposi.w.h = 12;
-    segment->actfree[21] = 255;
+    beam_work_get(segment)->endcap_missing = 255;
 
     beam(segment);
 
@@ -361,7 +361,7 @@ static void test_beam_move2_frames_out_when_released(test_context *ctx) {
 
     reset_beam_state();
     endcap->r_no0 = 8;
-    endcap->actfree[0] = 1;
+    beam_work_get(endcap)->delay_or_release = 1;
 
     beam(endcap);
 
@@ -376,7 +376,7 @@ static void test_beam_move2_animates_while_attached(test_context *ctx) {
 
     reset_beam_state();
     endcap->r_no0 = 8;
-    endcap->actfree[0] = 0;
+    beam_work_get(endcap)->delay_or_release = 0;
 
     beam(endcap);
 

@@ -1,4 +1,3 @@
-#include <stddef.h>
 #include <string.h>
 
 #include "support/test_runner.h"
@@ -135,34 +134,6 @@ void sinset(Uint8 kakudo, Sint16 *sin, Sint16 *cos) {
 
 void divdevset(void) { ++divdevset_count; }
 
-static size_t short_alias_offset(int short_index) {
-    return (size_t)short_index * sizeof(Sint16) -
-           offsetof(sprite_status, actfree);
-}
-
-static void set_actor_short_alias(sprite_status *actor, int short_index,
-                                  Sint16 value) {
-    size_t offset = short_alias_offset(short_index);
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)bits;
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 actor_short_alias(sprite_status *actor, int short_index) {
-    size_t offset = short_alias_offset(short_index);
-    return (Sint16)((Uint16)actor->actfree[offset] |
-                    ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
-static void set_actor_actfree_long(sprite_status *actor, size_t offset,
-                                   Sint32 value) {
-    Uint32 bits = (Uint32)value;
-    actor->actfree[offset] = (Uint8)bits;
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-    actor->actfree[offset + 2] = (Uint8)(bits >> 16);
-    actor->actfree[offset + 3] = (Uint8)(bits >> 24);
-}
-
 static void reset_boss5_state(void) {
     memset(actwk, 0, sizeof(actwk));
     bossflag = 0;
@@ -223,7 +194,7 @@ static void test_egg5_setup_wait_and_escape_paths(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, actor->patbase == egg5_pat);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 55, actwk[20].actno);
-    TEST_ASSERT_EQ_INT(ctx, 5, actor_short_alias(&actwk[20], 25));
+    TEST_ASSERT_EQ_INT(ctx, 5, egg5_get_work(&actwk[20])->parent_index);
     TEST_ASSERT_EQ_INT(ctx, 3472, actwk[20].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 572, actwk[20].yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -231,7 +202,7 @@ static void test_egg5_setup_wait_and_escape_paths(test_context *ctx) {
 
     reset_boss5_state();
     actor = &actwk[5];
-    set_actor_short_alias(actor, 25, 7);
+    egg5_get_work(actor)->parent_index = 7;
     actor->r_no0 = 2;
     actwk[7].patno = 4;
     actwk[7].yposi.w.h = 616;
@@ -239,16 +210,16 @@ static void test_egg5_setup_wait_and_escape_paths(test_context *ctx) {
     egg5(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 2, actor->mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 68, actor->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 68, egg5_get_work(actor)->timer);
     TEST_ASSERT_EQ_INT(ctx, 616, actor->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_TRUE(ctx, patchg_table == egg5_pchg);
 
     reset_boss5_state();
     actor = &actwk[5];
-    set_actor_short_alias(actor, 25, 7);
+    egg5_get_work(actor)->parent_index = 7;
     actor->r_no0 = 2;
-    actor->actfree[2] = 4;
+    egg5_get_work(actor)->flags = 4;
     actor->xposi.w.h = 3615;
     actor->yposi.w.h = 600;
 
@@ -286,8 +257,8 @@ static void test_meca1_setup_scroll_and_normal_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 6, colorset2_value);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 52, actwk[20].actno);
-    TEST_ASSERT_EQ_INT(ctx, 6, actor_short_alias(&actwk[20], 25));
-    TEST_ASSERT_EQ_INT(ctx, 20, actor_short_alias(actor, 26));
+    TEST_ASSERT_EQ_INT(ctx, 6, egg5_get_work(&actwk[20])->parent_index);
+    TEST_ASSERT_EQ_INT(ctx, 20, egg5_get_work(actor)->child_index);
     TEST_ASSERT_EQ_INT(ctx, 640, actwk[20].yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 202, scra_vline);
     TEST_ASSERT_EQ_INT(ctx, 3140, scralim_left);
@@ -297,7 +268,7 @@ static void test_meca1_setup_scroll_and_normal_paths(test_context *ctx) {
     reset_boss5_state();
     actor = &actwk[6];
     actor->r_no0 = 2;
-    actor->actfree[2] = 2;
+    egg5_get_work(actor)->flags = 2;
     actwk[0].xposi.w.h = 3424;
     scralim_left = 3000;
 
@@ -327,15 +298,15 @@ static void test_meca1_setup_scroll_and_normal_paths(test_context *ctx) {
     reset_boss5_state();
     actor = &actwk[6];
     actor->r_no0 = 6;
-    set_actor_short_alias(actor, 26, 8);
-    actwk[8].actfree[2] = 128;
+    egg5_get_work(actor)->child_index = 8;
+    egg5_get_work(&actwk[8])->flags = 128;
     scralim_down = 100;
     scralim_n_down = 100;
 
     egg5meca1(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 7, actor->actfree[20]);
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[8].actfree[2] & 128);
+    TEST_ASSERT_EQ_INT(ctx, 7, egg5_get_work(actor)->palette_index);
+    TEST_ASSERT_EQ_INT(ctx, 0, egg5_get_work(&actwk[8])->flags & 128);
     TEST_ASSERT_EQ_INT(ctx, 98, scralim_down);
     TEST_ASSERT_EQ_INT(ctx, 98, scralim_n_down);
 }
@@ -380,20 +351,20 @@ static void test_meca2_setup_hit_and_down_cycle(test_context *ctx) {
     reset_boss5_state();
     actor = &actwk[9];
     actor->r_no0 = 4;
-    actor->actfree[0] = 59;
+    egg5_get_work(actor)->timer = 59;
     actor->yposi.w.h = 648;
-    set_actor_short_alias(actor, 26, 8);
+    egg5_get_work(actor)->child_index = 8;
 
     egg5meca2(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[3]);
-    TEST_ASSERT_EQ_INT(ctx, 128, actor->actfree[2] & 128);
+    TEST_ASSERT_EQ_INT(ctx, 1, egg5_get_work(actor)->phase);
+    TEST_ASSERT_EQ_INT(ctx, 128, egg5_get_work(actor)->flags & 128);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 180, soundset_requests[0]);
     TEST_ASSERT_EQ_INT(ctx, 8, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 32, actwk[20].actno);
-    TEST_ASSERT_EQ_INT(ctx, 9, actor_short_alias(&actwk[20], 25));
+    TEST_ASSERT_EQ_INT(ctx, 9, egg5_get_work(&actwk[20])->parent_index);
     TEST_ASSERT_EQ_INT(ctx, 1, actwk[8].mstno.b.h);
 }
 
@@ -402,7 +373,7 @@ static void test_meca2_motion_kezu_escape_and_end_paths(test_context *ctx) {
 
     reset_boss5_state();
     actor->r_no0 = 4;
-    actor->actfree[0] = 1;
+    egg5_get_work(actor)->timer = 1;
     actor->yposi.w.h = 700;
 
     egg5meca2(actor);
@@ -414,7 +385,7 @@ static void test_meca2_motion_kezu_escape_and_end_paths(test_context *ctx) {
     reset_boss5_state();
     actor = &actwk[9];
     actor->r_no0 = 4;
-    actor->actfree[0] = 3;
+    egg5_get_work(actor)->timer = 3;
     actor->yposi.w.h = 700;
 
     egg5meca2(actor);
@@ -425,41 +396,41 @@ static void test_meca2_motion_kezu_escape_and_end_paths(test_context *ctx) {
     reset_boss5_state();
     actor = &actwk[9];
     actor->r_no0 = 6;
-    actor->actfree[3] = 1;
+    egg5_get_work(actor)->phase = 1;
     actor->yposi.w.h = 639;
-    set_actor_short_alias(actor, 29, 640);
+    egg5_get_work(actor)->target_y_inner = 640;
 
     egg5meca2(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->actfree[3]);
+    TEST_ASSERT_EQ_INT(ctx, 2, egg5_get_work(actor)->phase);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 180, soundset_requests[0]);
 
     reset_boss5_state();
     actor = &actwk[9];
     actor->r_no0 = 6;
-    actor->actfree[3] = 1;
+    egg5_get_work(actor)->phase = 1;
     actor->yposi.w.h = 640;
-    set_actor_short_alias(actor, 29, 640);
+    egg5_get_work(actor)->target_y_inner = 640;
 
     egg5meca2(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 639, actor->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[3]);
+    TEST_ASSERT_EQ_INT(ctx, 1, egg5_get_work(actor)->phase);
 
     reset_boss5_state();
     actor = &actwk[9];
     actor->r_no0 = 6;
-    actor->actfree[3] = 2;
+    egg5_get_work(actor)->phase = 2;
     actor->patno = 0;
     actor->yposi.w.h = 648;
-    set_actor_short_alias(actor, 26, 8);
-    set_actor_short_alias(actor, 30, 648);
+    egg5_get_work(actor)->child_index = 8;
+    egg5_get_work(actor)->target_y_outer = 648;
 
     egg5meca2(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 8, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[3]);
+    TEST_ASSERT_EQ_INT(ctx, 0, egg5_get_work(actor)->phase);
     TEST_ASSERT_EQ_INT(ctx, 1, actor->patno);
     TEST_ASSERT_EQ_INT(ctx, 2, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 180, soundset_requests[0]);
@@ -474,13 +445,13 @@ static void test_meca2_motion_kezu_escape_and_end_paths(test_context *ctx) {
     egg5meca2(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 10, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->actfree[2] & 4);
+    TEST_ASSERT_EQ_INT(ctx, 4, egg5_get_work(actor)->flags & 4);
     TEST_ASSERT_EQ_INT(ctx, 1, ride_on_chk_count);
 
     reset_boss5_state();
     actor = &actwk[9];
     actor->r_no0 = 10;
-    actor->actfree[0] = 17;
+    egg5_get_work(actor)->timer = 17;
     actor->xposi.w.h = 3900;
     actor->yposi.w.h = 600;
     actor->patno = 2;
@@ -490,30 +461,30 @@ static void test_meca2_motion_kezu_escape_and_end_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 10, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 8, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 32, actwk[20].actno);
-    TEST_ASSERT_EQ_INT(ctx, 9, actor_short_alias(&actwk[20], 25));
+    TEST_ASSERT_EQ_INT(ctx, 9, egg5_get_work(&actwk[20])->parent_index);
 
     reset_boss5_state();
     actor = &actwk[9];
     actor->r_no0 = 10;
-    actor->actfree[0] = 59;
+    egg5_get_work(actor)->timer = 59;
 
     egg5meca2(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 12, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[0]);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 0, egg5_get_work(actor)->timer);
+    TEST_ASSERT_EQ_INT(ctx, 1, egg5_get_work(actor)->anim_timer);
 
     reset_boss5_state();
     actor = &actwk[9];
     actor->r_no0 = 12;
-    actor->actfree[0] = 3;
+    egg5_get_work(actor)->timer = 3;
     actor->xposi.w.h = 3000;
     actor->yposi.w.h = 620;
 
     egg5meca2(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->actfree[0]);
-    TEST_ASSERT_EQ_INT(ctx, 8, actor->actfree[2] & 8);
+    TEST_ASSERT_EQ_INT(ctx, 4, egg5_get_work(actor)->timer);
+    TEST_ASSERT_EQ_INT(ctx, 8, egg5_get_work(actor)->flags & 8);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 35, actwk[20].actno);
     TEST_ASSERT_EQ_INT(ctx, 2968, actwk[20].xposi.w.h);
@@ -524,13 +495,13 @@ static void test_meca2_motion_kezu_escape_and_end_paths(test_context *ctx) {
     reset_boss5_state();
     actor = &actwk[9];
     actor->r_no0 = 12;
-    actor->actfree[0] = 1;
-    actor->actfree[2] = 8;
+    egg5_get_work(actor)->timer = 1;
+    egg5_get_work(actor)->flags = 8;
 
     egg5meca2(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->actfree[0]);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[2] & 8);
+    TEST_ASSERT_EQ_INT(ctx, 2, egg5_get_work(actor)->timer);
+    TEST_ASSERT_EQ_INT(ctx, 0, egg5_get_work(actor)->flags & 8);
 }
 
 static void test_bomb_launch_hit_and_bomb2_motion(test_context *ctx) {
@@ -539,7 +510,7 @@ static void test_bomb_launch_hit_and_bomb2_motion(test_context *ctx) {
 
     reset_boss5_state();
     parent->xposi.w.h = 3500;
-    set_actor_short_alias(actor, 25, 8);
+    egg5_get_work(actor)->parent_index = 8;
     actor->xposi.w.h = 3450;
     actor->yposi.w.h = 650;
 
@@ -560,17 +531,17 @@ static void test_bomb_launch_hit_and_bomb2_motion(test_context *ctx) {
     reset_boss5_state();
     parent = &actwk[8];
     actor = &actwk[10];
-    set_actor_short_alias(actor, 25, 8);
+    egg5_get_work(actor)->parent_index = 8;
     parent->xposi.w.h = 3500;
     parent->r_no0 = 10;
     actor->r_no0 = 2;
     actor->yposi.w.h = 696;
-    parent->actfree[2] = 64;
+    egg5_get_work(parent)->flags = 64;
 
     egg5bomb(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, parent->actfree[2] & 64);
+    TEST_ASSERT_EQ_INT(ctx, 0, egg5_get_work(parent)->flags & 64);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 180, soundset_requests[0]);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -578,7 +549,7 @@ static void test_bomb_launch_hit_and_bomb2_motion(test_context *ctx) {
     reset_boss5_state();
     parent = &actwk[8];
     actor = &actwk[10];
-    set_actor_short_alias(actor, 25, 8);
+    egg5_get_work(actor)->parent_index = 8;
     actor->r_no0 = 6;
     actor->colicnt = 3;
     actor->xposi.w.h = 3510;
@@ -598,7 +569,7 @@ static void test_bomb_launch_hit_and_bomb2_motion(test_context *ctx) {
     reset_boss5_state();
     parent = &actwk[8];
     actor = &actwk[10];
-    set_actor_short_alias(actor, 25, 8);
+    egg5_get_work(actor)->parent_index = 8;
     actor->userflag.b.h = 1;
     actor->xposi.w.h = 3500;
     actor->yposi.w.h = 650;
@@ -615,13 +586,13 @@ static void test_bomb_launch_hit_and_bomb2_motion(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 2, actor->colicnt);
     TEST_ASSERT_EQ_INT(ctx, 3504, actor->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 642, actor->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 1, egg5_get_work(actor)->timer);
 
-    actor->actfree[0] = 3;
+    egg5_get_work(actor)->timer = 3;
     egg5bomb2(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 0, egg5_get_work(actor)->timer);
     TEST_ASSERT_EQ_INT(ctx, 2, actionsub_count);
 }
 
@@ -630,7 +601,7 @@ static void test_bomb2_terminal_paths(test_context *ctx) {
     sprite_status *actor = &actwk[10];
 
     reset_boss5_state();
-    set_actor_short_alias(actor, 25, 8);
+    egg5_get_work(actor)->parent_index = 8;
     actor->r_no0 = 4;
     actor->colicnt = 3;
     actor->xposi.w.h = 3400;
@@ -648,8 +619,8 @@ static void test_bomb2_terminal_paths(test_context *ctx) {
     reset_boss5_state();
     parent = &actwk[8];
     actor = &actwk[10];
-    set_actor_short_alias(actor, 25, 8);
-    parent->actfree[2] = 4;
+    egg5_get_work(actor)->parent_index = 8;
+    egg5_get_work(parent)->flags = 4;
     actor->r_no0 = 4;
 
     egg5bomb2(actor);
@@ -659,7 +630,7 @@ static void test_bomb2_terminal_paths(test_context *ctx) {
 
     reset_boss5_state();
     actor = &actwk[10];
-    set_actor_short_alias(actor, 25, 8);
+    egg5_get_work(actor)->parent_index = 8;
     actor->r_no0 = 4;
     actor->colino = 0;
 
@@ -670,11 +641,11 @@ static void test_bomb2_terminal_paths(test_context *ctx) {
 
     reset_boss5_state();
     actor = &actwk[10];
-    set_actor_short_alias(actor, 25, 8);
+    egg5_get_work(actor)->parent_index = 8;
     actor->r_no0 = 4;
     actor->colino = 253;
     actor->yposi.w.h = 711;
-    set_actor_actfree_long(actor, 16, 65536);
+    egg5_get_work(actor)->velocity = 65536;
     actor->yspeed.w = 1;
 
     egg5bomb2(actor);
@@ -689,8 +660,8 @@ static void test_catch_wait_go_and_fire_paths(test_context *ctx) {
     sprite_status *actor = &actwk[9];
 
     reset_boss5_state();
-    set_actor_short_alias(parent, 25, 7);
-    set_actor_short_alias(actor, 25, 8);
+    egg5_get_work(parent)->parent_index = 7;
+    egg5_get_work(actor)->parent_index = 8;
     actor->r_no0 = 6;
 
     egg5catch(actor);
@@ -703,21 +674,21 @@ static void test_catch_wait_go_and_fire_paths(test_context *ctx) {
     parent = &actwk[8];
     actor = &actwk[9];
     egg5meca2(core);
-    set_actor_short_alias(parent, 25, 7);
-    set_actor_short_alias(actor, 25, 8);
+    egg5_get_work(parent)->parent_index = 7;
+    egg5_get_work(actor)->parent_index = 8;
     actor->r_no0 = 6;
-    actor->actfree[0] = 179;
+    egg5_get_work(actor)->timer = 179;
     actor->xposi.w.h = 3520;
     actor->yposi.w.h = 600;
 
     egg5catch(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 8, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 0, egg5_get_work(actor)->timer);
     TEST_ASSERT_EQ_INT(ctx, 1, parent->patno);
     TEST_ASSERT_EQ_INT(ctx, 0, parent->mstno.b.h);
     TEST_ASSERT_EQ_INT(ctx, 56, actwk[24].actno);
-    TEST_ASSERT_EQ_INT(ctx, 9, actor_short_alias(&actwk[24], 25));
+    TEST_ASSERT_EQ_INT(ctx, 9, egg5_get_work(&actwk[24])->parent_index);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 203, soundset_requests[0]);
 
@@ -746,15 +717,15 @@ static void test_catch_wait_go_and_fire_paths(test_context *ctx) {
     reset_boss5_state();
     parent = &actwk[8];
     actor = &actwk[9];
-    set_actor_short_alias(actor, 25, 8);
+    egg5_get_work(actor)->parent_index = 8;
     actor->r_no0 = 12;
-    actor->actfree[0] = 119;
+    egg5_get_work(actor)->timer = 119;
     parent->patno = 1;
 
     egg5catch(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 0, egg5_get_work(actor)->timer);
     TEST_ASSERT_EQ_INT(ctx, 0, parent->patno);
 }
 
@@ -763,7 +734,7 @@ static void test_belt_setup_speed_sync_and_palette_paths(test_context *ctx) {
     sprite_status *actor = &actwk[11];
 
     reset_boss5_state();
-    set_actor_short_alias(actor, 25, 8);
+    egg5_get_work(actor)->parent_index = 8;
 
     egg5belt(actor);
 
@@ -779,7 +750,7 @@ static void test_belt_setup_speed_sync_and_palette_paths(test_context *ctx) {
     reset_boss5_state();
     parent = &actwk[8];
     actor = &actwk[11];
-    set_actor_short_alias(actor, 25, 8);
+    egg5_get_work(actor)->parent_index = 8;
     actor->r_no0 = 2;
     parent->r_no0 = 4;
     actwk[0].xposi.w.h = 3468;
@@ -795,11 +766,11 @@ static void test_belt_setup_speed_sync_and_palette_paths(test_context *ctx) {
     reset_boss5_state();
     parent = &actwk[8];
     actor = &actwk[11];
-    set_actor_short_alias(actor, 25, 8);
+    egg5_get_work(actor)->parent_index = 8;
     actor->r_no0 = 6;
-    actor->actfree[1] = 1;
-    set_actor_short_alias(actor, 27, 512);
-    set_actor_short_alias(actor, 28, 1400);
+    egg5_get_work(actor)->anim_timer = 1;
+    egg5_get_work(actor)->belt_speed = 512;
+    egg5_get_work(actor)->progress = 1400;
     actwk[0].cddat = 2;
     actwk[0].xspeed.w = 300;
     actwk[0].yspeed.w = 20;
@@ -807,18 +778,18 @@ static void test_belt_setup_speed_sync_and_palette_paths(test_context *ctx) {
     egg5belt(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 16, actor->actfree[2] & 16);
+    TEST_ASSERT_EQ_INT(ctx, 16, egg5_get_work(actor)->flags & 16);
     TEST_ASSERT_EQ_INT(ctx, 300, actwk[0].xspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 511, actor_short_alias(actor, 27));
+    TEST_ASSERT_EQ_INT(ctx, 511, egg5_get_work(actor)->belt_speed);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 
     reset_boss5_state();
     parent = &actwk[8];
     actor = &actwk[11];
-    set_actor_short_alias(actor, 25, 8);
+    egg5_get_work(actor)->parent_index = 8;
     actor->r_no0 = 6;
-    parent->actfree[2] = 4;
-    set_actor_short_alias(actor, 27, 16);
+    egg5_get_work(parent)->flags = 4;
+    egg5_get_work(actor)->belt_speed = 16;
 
     egg5belt(actor);
 
@@ -828,12 +799,12 @@ static void test_belt_setup_speed_sync_and_palette_paths(test_context *ctx) {
     reset_boss5_state();
     actor = &actwk[11];
     generate_flag = 1;
-    set_actor_short_alias(actor, 27, 600);
-    actor->actfree[0] = 3;
+    egg5_get_work(actor)->belt_speed = 600;
+    egg5_get_work(actor)->timer = 3;
 
     belt_anime(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 0, egg5_get_work(actor)->timer);
     TEST_ASSERT_EQ_INT(ctx, 0, colorwk[42].peRed);
     TEST_ASSERT_EQ_INT(ctx, 128, colorwk[42].peGreen);
 }
@@ -844,18 +815,18 @@ static void test_remaining_boss5_boundary_branches(test_context *ctx) {
 
     reset_boss5_state();
     actor->r_no0 = 2;
-    set_actor_short_alias(actor, 25, 7);
-    actor->actfree[0] = 21;
+    egg5_get_work(actor)->parent_index = 7;
+    egg5_get_work(actor)->timer = 21;
     actwk[7].patno = 4;
 
     egg5(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 20, actor->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 20, egg5_get_work(actor)->timer);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->mstno.b.h);
 
     reset_boss5_state();
     actor = &actwk[9];
-    set_actor_short_alias(actor, 25, 8);
+    egg5_get_work(actor)->parent_index = 8;
     actor->r_no0 = 4;
     actor->xposi.w.h = 3520;
 
@@ -868,51 +839,51 @@ static void test_remaining_boss5_boundary_branches(test_context *ctx) {
     actor = &actwk[9];
     actor->r_no0 = 2;
     actor->colino = 62;
-    actor->actfree[1] = 1;
-    set_actor_short_alias(actor, 27, 12);
-    set_actor_short_alias(&actwk[12], 27, 1300);
+    egg5_get_work(actor)->anim_timer = 1;
+    egg5_get_work(actor)->belt_actor_index = 12;
+    egg5_get_work(&actwk[12])->belt_actor_index = 1300;
 
     egg5meca2(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 3537, actor->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[10] & 1);
+    TEST_ASSERT_EQ_INT(ctx, 1, egg5_get_work(actor)->toggle & 1);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 
     reset_boss5_state();
     actor = &actwk[9];
     actor->r_no0 = 2;
     actor->colino = 62;
-    actor->actfree[1] = 1;
-    actor->actfree[10] = 1;
-    set_actor_short_alias(actor, 27, 12);
-    set_actor_short_alias(&actwk[12], 27, 1300);
+    egg5_get_work(actor)->anim_timer = 1;
+    egg5_get_work(actor)->toggle = 1;
+    egg5_get_work(actor)->belt_actor_index = 12;
+    egg5_get_work(&actwk[12])->belt_actor_index = 1300;
 
     egg5meca2(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 3535, actor->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[10] & 1);
+    TEST_ASSERT_EQ_INT(ctx, 0, egg5_get_work(actor)->toggle & 1);
 
     reset_boss5_state();
     actor = &actwk[9];
     actor->r_no0 = 2;
     actor->colino = 62;
-    actor->actfree[1] = 1;
-    actor->actfree[10] = 1;
-    set_actor_short_alias(actor, 27, 12);
-    set_actor_short_alias(&actwk[12], 27, 1100);
+    egg5_get_work(actor)->anim_timer = 1;
+    egg5_get_work(actor)->toggle = 1;
+    egg5_get_work(actor)->belt_actor_index = 12;
+    egg5_get_work(&actwk[12])->belt_actor_index = 1100;
 
     egg5meca2(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 3535, actor->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[10] & 1);
+    TEST_ASSERT_EQ_INT(ctx, 0, egg5_get_work(actor)->toggle & 1);
 
     reset_boss5_state();
     actor = &actwk[9];
     actor->xposi.w.h = 3536;
     actor->yposi.w.h = 584;
     egg5meca2(actor);
-    set_actor_short_alias(&actwk[23], 27, 1488);
-    set_actor_short_alias(&actwk[23], 28, 1488);
+    egg5_get_work(&actwk[23])->belt_actor_index = 1488;
+    egg5_get_work(&actwk[23])->progress = 1488;
     for (i = 0; i < 600; ++i) {
         belt_hitpnt(9, &actwk[23]);
     }
@@ -929,21 +900,21 @@ static void test_remaining_boss5_boundary_branches(test_context *ctx) {
     reset_boss5_state();
     actor = &actwk[9];
     actor->r_no0 = 12;
-    actor->actfree[0] = 120;
+    egg5_get_work(actor)->timer = 120;
 
     egg5meca2(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 8, actor->actfree[2] & 8);
+    TEST_ASSERT_EQ_INT(ctx, 8, egg5_get_work(actor)->flags & 8);
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
 
     reset_boss5_state();
     actor = &actwk[10];
-    set_actor_short_alias(actor, 25, 8);
+    egg5_get_work(actor)->parent_index = 8;
     actor->r_no0 = 4;
     actor->xposi.w.h = 3500;
     actor->yposi.w.h = 650;
-    actor->actfree[9] = 33;
-    set_actor_short_alias(actor, 30, -3);
+    egg5_get_work(actor)->angle_high = 33;
+    egg5_get_work(actor)->y_offset = -3;
     sinset_sin = 512;
 
     egg5bomb(actor);
@@ -952,13 +923,13 @@ static void test_remaining_boss5_boundary_branches(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 659, actor->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 37, sinset_angle);
     TEST_ASSERT_EQ_INT(ctx, 1, sinset_count);
-    TEST_ASSERT_EQ_INT(ctx, 6, actor_short_alias(actor, 30));
+    TEST_ASSERT_EQ_INT(ctx, 6, egg5_get_work(actor)->y_offset);
 
     reset_boss5_state();
     actor = &actwk[10];
-    set_actor_short_alias(actor, 25, 8);
+    egg5_get_work(actor)->parent_index = 8;
     actor->r_no0 = 6;
-    actwk[8].actfree[2] = 4;
+    egg5_get_work(&actwk[8])->flags = 4;
 
     egg5bomb(actor);
 
@@ -967,9 +938,9 @@ static void test_remaining_boss5_boundary_branches(test_context *ctx) {
 
     reset_boss5_state();
     actor = &actwk[10];
-    set_actor_short_alias(actor, 25, 8);
+    egg5_get_work(actor)->parent_index = 8;
     actor->r_no0 = 8;
-    actor->actfree[0] = 7;
+    egg5_get_work(actor)->timer = 7;
 
     egg5bomb(actor);
 
@@ -993,40 +964,40 @@ static void test_belt_helper_boundaries(test_context *ctx) {
     reset_boss5_state();
     actwk[0].cddat = 0;
     actwk[0].xspeed.w = 100;
-    set_actor_short_alias(actor, 27, 300);
+    egg5_get_work(actor)->belt_speed = 300;
     TEST_ASSERT_EQ_INT(ctx, 0, belt_spdset(actor));
-    TEST_ASSERT_EQ_INT(ctx, 293, actor_short_alias(actor, 27));
+    TEST_ASSERT_EQ_INT(ctx, 293, egg5_get_work(actor)->belt_speed);
 
     reset_boss5_state();
     actwk[0].cddat = 0;
     actwk[0].xspeed.w = 400;
-    set_actor_short_alias(actor, 27, 300);
+    egg5_get_work(actor)->belt_speed = 300;
     TEST_ASSERT_EQ_INT(ctx, 0, belt_spdset(actor));
-    TEST_ASSERT_EQ_INT(ctx, 308, actor_short_alias(actor, 27));
+    TEST_ASSERT_EQ_INT(ctx, 308, egg5_get_work(actor)->belt_speed);
 
     reset_boss5_state();
     actwk[0].mstno.b.h = 24;
-    set_actor_short_alias(actor, 27, 500);
+    egg5_get_work(actor)->belt_speed = 500;
     TEST_ASSERT_EQ_INT(ctx, -1, belt_spdset(actor));
-    TEST_ASSERT_EQ_INT(ctx, 192, actor_short_alias(actor, 27));
+    TEST_ASSERT_EQ_INT(ctx, 192, egg5_get_work(actor)->belt_speed);
     TEST_ASSERT_EQ_INT(ctx, -1, chk_belt_on());
 
     reset_boss5_state();
     actwk[0].cddat = 0;
-    set_actor_short_alias(actor, 27, 100);
+    egg5_get_work(actor)->belt_speed = 100;
     TEST_ASSERT_EQ_INT(ctx, 0, belt_spdset(actor));
-    TEST_ASSERT_EQ_INT(ctx, 192, actor_short_alias(actor, 27));
+    TEST_ASSERT_EQ_INT(ctx, 192, egg5_get_work(actor)->belt_speed);
     TEST_ASSERT_EQ_INT(ctx, 0, chk_belt_on());
 
     reset_boss5_state();
     actwk[0].cddat = 2;
-    set_actor_short_alias(actor, 27, 1500);
+    egg5_get_work(actor)->belt_speed = 1500;
     TEST_ASSERT_EQ_INT(ctx, 1, belt_spdset(actor));
-    TEST_ASSERT_EQ_INT(ctx, 1488, actor_short_alias(actor, 27));
+    TEST_ASSERT_EQ_INT(ctx, 1488, egg5_get_work(actor)->belt_speed);
 
     reset_boss5_state();
     actwk[0].xposi.w.h = 3500;
-    set_actor_short_alias(actor, 27, 1000);
+    egg5_get_work(actor)->belt_speed = 1000;
     belt_sncspd(0, actor);
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 3497, actwk[0].xposi.w.h);
@@ -1034,27 +1005,27 @@ static void test_belt_helper_boundaries(test_context *ctx) {
     reset_boss5_state();
     actwk[0].xposi.w.h = 3500;
     actwk[0].xspeed.w = 100;
-    set_actor_short_alias(actor, 27, 200);
+    egg5_get_work(actor)->belt_speed = 200;
     belt_sncspd(0, actor);
     TEST_ASSERT_EQ_INT(ctx, 3499, actwk[0].xposi.w.h);
 
     reset_boss5_state();
     actwk[0].xposi.w.h = 3500;
-    actwk[8].actfree[2] = 0;
+    egg5_get_work(&actwk[8])->flags = 0;
     belt_sncxmax(8);
     TEST_ASSERT_EQ_INT(ctx, 3464, actwk[0].xposi.w.h);
 
     reset_boss5_state();
-    set_actor_short_alias(actor, 27, 1200);
-    actor->actfree[0] = 0;
+    egg5_get_work(actor)->belt_speed = 1200;
+    egg5_get_work(actor)->timer = 0;
     belt_anime(actor);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 0, egg5_get_work(actor)->timer);
 
     reset_boss5_state();
-    set_actor_short_alias(actor, 27, 900);
-    actor->actfree[0] = 0;
+    egg5_get_work(actor)->belt_speed = 900;
+    egg5_get_work(actor)->timer = 0;
     belt_anime(actor);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 0, egg5_get_work(actor)->timer);
 
     reset_boss5_state();
     actor = &actwk[11];
@@ -1065,13 +1036,13 @@ static void test_belt_helper_boundaries(test_context *ctx) {
 
     reset_boss5_state();
     actor = &actwk[9];
-    actor->actfree[0] = 1;
+    egg5_get_work(actor)->timer = 1;
     bom_set(actor);
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
 
     reset_boss5_state();
     actor = &actwk[9];
-    actor->actfree[0] = 16;
+    egg5_get_work(actor)->timer = 16;
     actor->xposi.w.h = 3000;
     actor->yposi.w.h = 620;
     bom_set(actor);
@@ -1090,7 +1061,7 @@ static void test_final_reachable_boss5_edges(test_context *ctx) {
     egg5meca1(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 5, bossflag);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->actfree[2] & 2);
+    TEST_ASSERT_EQ_INT(ctx, 2, egg5_get_work(actor)->flags & 2);
     TEST_ASSERT_EQ_INT(ctx, 207, scra_vline);
 
     reset_boss5_state();
@@ -1109,7 +1080,7 @@ static void test_final_reachable_boss5_edges(test_context *ctx) {
     actor = &actwk[9];
     actor->r_no0 = 6;
     actor->yposi.w.h = 640;
-    set_actor_short_alias(actor, 30, 648);
+    egg5_get_work(actor)->target_y_outer = 648;
 
     egg5meca2(actor);
 
@@ -1120,15 +1091,15 @@ static void test_final_reachable_boss5_edges(test_context *ctx) {
     actor->xposi.w.h = 3536;
     actor->yposi.w.h = 584;
     egg5meca2(actor);
-    set_actor_short_alias(&actwk[23], 27, 1488);
-    set_actor_short_alias(&actwk[23], 28, 1488);
+    egg5_get_work(&actwk[23])->belt_actor_index = 1488;
+    egg5_get_work(&actwk[23])->progress = 1488;
     belt_hitpnt(9, &actwk[23]);
     actor->r_no0 = 8;
-    actor->actfree[2] = 2;
+    egg5_get_work(actor)->flags = 2;
 
     egg5meca2(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[2] & 2);
+    TEST_ASSERT_EQ_INT(ctx, 0, egg5_get_work(actor)->flags & 2);
     TEST_ASSERT_EQ_INT(ctx, 8, actor->r_no0);
 
     reset_boss5_state();
@@ -1166,7 +1137,7 @@ static void test_final_reachable_boss5_edges(test_context *ctx) {
 
     reset_boss5_state();
     actor = &actwk[10];
-    set_actor_short_alias(actor, 25, 8);
+    egg5_get_work(actor)->parent_index = 8;
     actor->r_no0 = 8;
     actor->colicnt = 3;
 
@@ -1178,9 +1149,9 @@ static void test_final_reachable_boss5_edges(test_context *ctx) {
 
     reset_boss5_state();
     actor = &actwk[10];
-    set_actor_short_alias(actor, 25, 8);
+    egg5_get_work(actor)->parent_index = 8;
     actor->r_no0 = 8;
-    actwk[8].actfree[2] = 4;
+    egg5_get_work(&actwk[8])->flags = 4;
 
     egg5bomb(actor);
 
@@ -1189,21 +1160,21 @@ static void test_final_reachable_boss5_edges(test_context *ctx) {
 
     reset_boss5_state();
     actor = &actwk[11];
-    set_actor_short_alias(actor, 25, 8);
+    egg5_get_work(actor)->parent_index = 8;
     actor->r_no0 = 4;
     actwk[0].xposi.w.h = 3464;
 
     egg5belt(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 192, actor_short_alias(actor, 27));
+    TEST_ASSERT_EQ_INT(ctx, 192, egg5_get_work(actor)->belt_speed);
 
     reset_boss5_state();
     actor = &actwk[11];
-    set_actor_short_alias(actor, 25, 8);
+    egg5_get_work(actor)->parent_index = 8;
     actor->r_no0 = 6;
-    actor->actfree[1] = 0;
-    set_actor_short_alias(actor, 27, 512);
+    egg5_get_work(actor)->anim_timer = 0;
+    egg5_get_work(actor)->belt_speed = 512;
 
     egg5belt(actor);
 
@@ -1251,7 +1222,7 @@ static void test_hibana_variant_uses_gravity_and_frameout(test_context *ctx) {
     reset_boss5_state();
     actor->xposi.w.h = 3449;
     actor->yposi.w.h = 700;
-    actor->actfree[3] = 1;
+    egg5_get_work(actor)->phase = 1;
 
     egg5hibana(actor);
 
@@ -1301,7 +1272,7 @@ static void test_meca3_and_pipe_follow_parent(test_context *ctx) {
     reset_boss5_state();
     parent->xposi.w.h = 3500;
     parent->yposi.w.h = 640;
-    set_actor_short_alias(actor, 25, 7);
+    egg5_get_work(actor)->parent_index = 7;
 
     egg5meca3(actor);
 
@@ -1320,7 +1291,7 @@ static void test_meca3_and_pipe_follow_parent(test_context *ctx) {
     actor = &actwk[8];
     parent->yposi.w.h = 704;
     actor->yposi.w.h = 640;
-    set_actor_short_alias(actor, 25, 7);
+    egg5_get_work(actor)->parent_index = 7;
 
     egg5pipe(actor);
 
@@ -1333,7 +1304,7 @@ static void test_meca3_and_pipe_follow_parent(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 2, actor->patno);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 
-    parent->actfree[2] = 8;
+    egg5_get_work(parent)->flags = 8;
     egg5pipe(actor);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 }
@@ -1344,8 +1315,8 @@ static void test_catch_return_and_fire_cycle(test_context *ctx) {
     sprite_status *actor = &actwk[9];
 
     reset_boss5_state();
-    set_actor_short_alias(parent, 25, 7);
-    set_actor_short_alias(actor, 25, 8);
+    egg5_get_work(parent)->parent_index = 7;
+    egg5_get_work(actor)->parent_index = 8;
     actor->xposi.w.h = 3400;
     core->r_no0 = 0;
 
@@ -1365,15 +1336,15 @@ static void test_catch_return_and_fire_cycle(test_context *ctx) {
     reset_boss5_state();
     parent = &actwk[8];
     actor = &actwk[9];
-    set_actor_short_alias(actor, 25, 8);
+    egg5_get_work(actor)->parent_index = 8;
     actor->r_no0 = 12;
-    actor->actfree[0] = 29;
+    egg5_get_work(actor)->timer = 29;
 
     egg5catch(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 12, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 30, actor->actfree[0]);
-    TEST_ASSERT_EQ_INT(ctx, 64, actor->actfree[2] & 64);
+    TEST_ASSERT_EQ_INT(ctx, 30, egg5_get_work(actor)->timer);
+    TEST_ASSERT_EQ_INT(ctx, 64, egg5_get_work(actor)->flags & 64);
     TEST_ASSERT_EQ_INT(ctx, 0, parent->mstno.b.h);
     TEST_ASSERT_EQ_INT(ctx, 1, parent->patno);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -1398,8 +1369,8 @@ static void test_make_hibana_helpers_spawn_exact_positions(test_context *ctx) {
 
     TEST_ASSERT_EQ_INT(ctx, 8, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 32, actwk[20].actno);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[20].actfree[3]);
-    TEST_ASSERT_EQ_INT(ctx, 5, actor_short_alias(&actwk[20], 25));
+    TEST_ASSERT_EQ_INT(ctx, 1, egg5_get_work(&actwk[20])->phase);
+    TEST_ASSERT_EQ_INT(ctx, 5, egg5_get_work(&actwk[20])->parent_index);
     TEST_ASSERT_EQ_INT(ctx, 3976, actwk[20].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 644, actwk[20].yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 4024, actwk[23].xposi.w.h);

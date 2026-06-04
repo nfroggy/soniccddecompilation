@@ -241,7 +241,7 @@ static void test_gene_collision_and_init_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 4, actwk[1].actflg);
     TEST_ASSERT_EQ_INT(ctx, 4, actwk[1].r_no0);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[1].patno);
-    TEST_ASSERT_EQ_INT(ctx, 120, actwk[1].actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 120, goal_work_get(&actwk[1])->timer);
     TEST_ASSERT_EQ_INT(ctx, -100, actwk[0].yspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 0, pltime_f);
     TEST_ASSERT_TRUE(ctx, patchg_table == genechg);
@@ -295,10 +295,10 @@ static void test_gene_move1_spawns_particles_and_kira_set(test_context *ctx) {
     reset_goal_state();
     actwk[1].xposi.w.h = 100;
     actwk[1].yposi.w.h = 200;
-    actwk[1].actfree[0] = 5;
+    goal_work_get(&actwk[1])->timer = 5;
     queue_actor(&actwk[40]);
     gene_move1(&actwk[1]);
-    TEST_ASSERT_EQ_INT(ctx, 4, actwk[1].actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 4, goal_work_get(&actwk[1])->timer);
     TEST_ASSERT_EQ_INT(ctx, 24, actwk[40].actno);
     TEST_ASSERT_EQ_INT(ctx, 1, actwk[40].r_no1);
     TEST_ASSERT_EQ_INT(ctx, 132, actwk[40].xposi.w.h);
@@ -307,15 +307,15 @@ static void test_gene_move1_spawns_particles_and_kira_set(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 158, soundset_requests[0]);
 
     reset_goal_state();
-    actwk[1].actfree[0] = 6;
+    goal_work_get(&actwk[1])->timer = 6;
     gene_move1(&actwk[1]);
-    TEST_ASSERT_EQ_INT(ctx, 5, actwk[1].actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 5, goal_work_get(&actwk[1])->timer);
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
 
     reset_goal_state();
-    actwk[1].actfree[0] = 5;
+    goal_work_get(&actwk[1])->timer = 5;
     gene_move1(&actwk[1]);
-    TEST_ASSERT_EQ_INT(ctx, 4, actwk[1].actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 4, goal_work_get(&actwk[1])->timer);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
 
@@ -327,10 +327,10 @@ static void test_gene_move1_spawns_particles_and_kira_set(test_context *ctx) {
         queue_actor(&actwk[40 + i]);
     }
     actwk[1].r_no0 = 4;
-    actwk[1].actfree[0] = 0;
+    goal_work_get(&actwk[1])->timer = 0;
     gene_move1(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 6, actwk[1].r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 60, actwk[1].actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 60, goal_work_get(&actwk[1])->timer);
     TEST_ASSERT_EQ_INT(ctx, 1, colorset2_count);
     TEST_ASSERT_EQ_INT(ctx, 9, colorset2_values[0]);
     TEST_ASSERT_EQ_INT(ctx, 21, actwk[40].actno);
@@ -623,31 +623,31 @@ static void test_goal_state_machine_and_bonus(test_context *ctx) {
 
     reset_goal_state();
     actwk[1].r_no0 = 4;
-    actwk[1].actfree[0] = 2;
+    goal_work_get(&actwk[1])->timer = 2;
     goal_move1(&actwk[1]);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[1].actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 1, goal_work_get(&actwk[1])->timer);
     TEST_ASSERT_EQ_INT(ctx, 4, actwk[1].r_no0);
     goal_move1(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 6, actwk[1].r_no0);
     TEST_ASSERT_EQ_INT(ctx, 3, actwk[1].patno);
-    TEST_ASSERT_EQ_INT(ctx, 60, actwk[1].actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 60, goal_work_get(&actwk[1])->timer);
 
     reset_goal_state();
     actwk[1].r_no0 = 6;
-    actwk[1].actfree[0] = 2;
+    goal_work_get(&actwk[1])->timer = 2;
     goal_move2(&actwk[1]);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[1].actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 1, goal_work_get(&actwk[1])->timer);
     TEST_ASSERT_EQ_INT(ctx, 6, actwk[1].r_no0);
 
     reset_goal_state();
     actwk[1].r_no0 = 6;
-    actwk[1].actfree[0] = 1;
+    goal_work_get(&actwk[1])->timer = 1;
     pltime.b.b3 = 1;
     pltime.b.b2 = 4;
     plring = 3;
     queue_actor(&actwk[40]);
     goal_move2(&actwk[1]);
-    TEST_ASSERT_EQ_INT(ctx, 180, actwk[1].actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 180, goal_work_get(&actwk[1])->timer);
     TEST_ASSERT_EQ_INT(ctx, 8, actwk[1].r_no0);
     TEST_ASSERT_EQ_INT(ctx, 2, sub_sync_count);
     TEST_ASSERT_EQ_INT(ctx, 130, sub_sync_requests[0]);
@@ -662,7 +662,7 @@ static void test_goal_state_machine_and_bonus(test_context *ctx) {
     reset_goal_state();
     stageno.w = 1282;
     time_flag = 1;
-    actwk[1].actfree[0] = 1;
+    goal_work_get(&actwk[1])->timer = 1;
     pltime.b.b3 = 59;
     pltime.b.b2 = 10;
     goal_move2(&actwk[1]);

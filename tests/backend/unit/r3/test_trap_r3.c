@@ -153,21 +153,6 @@ void sinset(Uint8 kakudo, Sint16 *sin, Sint16 *cos) {
     *cos = sinset_cos;
 }
 
-static size_t alias_offset(int short_index) {
-    return (size_t)(short_index - 23) * sizeof(Sint16);
-}
-
-static void set_actor_alias(sprite_status *actor, int short_index,
-                            Sint16 value) {
-    memcpy(actor->actfree + alias_offset(short_index), &value, sizeof(value));
-}
-
-static Sint16 actor_alias(const sprite_status *actor, int short_index) {
-    Sint16 value;
-    memcpy(&value, actor->actfree + alias_offset(short_index), sizeof(value));
-    return value;
-}
-
 static void reset_state(void) {
     memset(actwk, 0, sizeof(actwk));
     memset(flagwork, 0, sizeof(flagwork));
@@ -230,8 +215,8 @@ static void test_harir3_initializes_damages_and_follows_parent(test_context *ctx
     TEST_ASSERT_EQ_INT(ctx, 2, hari->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 4, hari->actflg);
     TEST_ASSERT_TRUE(ctx, hari->patbase == harir3pat);
-    TEST_ASSERT_EQ_INT(ctx, 300, actor_alias(hari, 29));
-    TEST_ASSERT_EQ_INT(ctx, 120, actor_alias(hari, 27));
+    TEST_ASSERT_EQ_INT(ctx, 300, trap3_get_work(hari)->origin_x);
+    TEST_ASSERT_EQ_INT(ctx, 120, trap3_get_work(hari)->base_x);
     TEST_ASSERT_EQ_INT(ctx, 1, playdamageset_count);
     TEST_ASSERT_TRUE(ctx, playdamageset_player == player);
     TEST_ASSERT_TRUE(ctx, playdamageset_actor == hari);
@@ -255,10 +240,10 @@ static void test_harir3_initializes_damages_and_follows_parent(test_context *ctx
     reset_state();
     hari = &actwk[5];
     hari->r_no0 = 2;
-    hari->actfree[14] = 3;
-    hari->actfree[15] = 4;
-    set_actor_alias(hari, 28, 9);
-    set_actor_alias(hari, 29, 320);
+    trap3_get_work(hari)->wait_timer = 3;
+    trap3_get_work(hari)->phase = 4;
+    trap3_get_work(hari)->linked_actor_index = 9;
+    trap3_get_work(hari)->origin_x = 320;
     actwk[9].xposi.w.h = 1000;
     actwk[9].yposi.w.h = 2000;
     harir3(hari);
@@ -266,7 +251,7 @@ static void test_harir3_initializes_damages_and_follows_parent(test_context *ctx
     TEST_ASSERT_EQ_INT(ctx, 2004, hari->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_count);
 
-    set_actor_alias(hari, 29, 2048);
+    trap3_get_work(hari)->origin_x = 2048;
     harir3(hari);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
     TEST_ASSERT_TRUE(ctx, frameout_actor == hari);
@@ -276,25 +261,25 @@ static void test_harir3_motion_and_guard_branches(test_context *ctx) {
     sprite_status *hari = &actwk[2];
 
     reset_state();
-    set_actor_alias(hari, 27, 100);
-    set_actor_alias(hari, 29, 200);
+    trap3_get_work(hari)->base_x = 100;
+    trap3_get_work(hari)->origin_x = 200;
     hari->userflag.b.h = 4;
     harir3_kind(hari);
-    TEST_ASSERT_EQ_INT(ctx, 8, hari->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 8, trap3_get_work(hari)->travel);
     TEST_ASSERT_EQ_INT(ctx, 108, hari->yposi.w.h);
 
-    hari->actfree[16] = 1;
+    trap3_get_work(hari)->timer = 1;
     hari->actflg = 128;
     harir3_sub(hari);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 183, soundset_request);
 
-    hari->actfree[17] = 4;
-    hari->actfree[18] = 1;
+    trap3_get_work(hari)->travel = 4;
+    trap3_get_work(hari)->reverse_flag = 1;
     harir3_sub(hari);
-    TEST_ASSERT_EQ_INT(ctx, 0, hari->actfree[17]);
-    TEST_ASSERT_EQ_INT(ctx, 0, hari->actfree[18]);
-    TEST_ASSERT_EQ_INT(ctx, 60, hari->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 0, trap3_get_work(hari)->travel);
+    TEST_ASSERT_EQ_INT(ctx, 0, trap3_get_work(hari)->reverse_flag);
+    TEST_ASSERT_EQ_INT(ctx, 60, trap3_get_work(hari)->timer);
 
     reset_state();
     hari = &actwk[2];
@@ -312,7 +297,7 @@ static void test_harir3_motion_and_guard_branches(test_context *ctx) {
     harir3_move(hari);
     TEST_ASSERT_EQ_INT(ctx, 0, playdamageset_count);
     actwk[0].r_no0 = 0;
-    set_actor_alias(&actwk[0], 26, 1);
+    player_work_get(&actwk[0])->damage_invulnerability_timer = 1;
     harir3_move(hari);
     TEST_ASSERT_EQ_INT(ctx, 0, playdamageset_count);
 }
@@ -331,8 +316,8 @@ static void test_frdr3_spawns_linked_actor_and_moves(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 10, child->actno);
     TEST_ASSERT_EQ_INT(ctx, 400, child->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 96, child->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 234, child->actfree[15]);
-    TEST_ASSERT_EQ_INT(ctx, 3, actor_alias(child, 28));
+    TEST_ASSERT_EQ_INT(ctx, 234, trap3_get_work(child)->phase);
+    TEST_ASSERT_EQ_INT(ctx, 3, trap3_get_work(child)->linked_actor_index);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk2_count);
 
     reset_state();
@@ -346,21 +331,21 @@ static void test_frdr3_spawns_linked_actor_and_moves(test_context *ctx) {
     reset_state();
     floor = &actwk[3];
     floor->userflag.b.h = 0;
-    floor->actfree[16] = 0;
+    trap3_get_work(floor)->timer = 0;
     frdr3_move(floor);
-    TEST_ASSERT_EQ_INT(ctx, 64, floor->actfree[16]);
-    TEST_ASSERT_EQ_INT(ctx, -8, actor_alias(floor, 30));
-    TEST_ASSERT_EQ_INT(ctx, 512, actor_alias(floor, 29));
+    TEST_ASSERT_EQ_INT(ctx, 64, trap3_get_work(floor)->timer);
+    TEST_ASSERT_EQ_INT(ctx, -8, trap3_get_work(floor)->delta);
+    TEST_ASSERT_EQ_INT(ctx, 512, trap3_get_work(floor)->origin_x);
 
     floor->xposi.l = 0;
-    floor->actfree[16] = 2;
-    floor->actfree[17] = 0;
-    set_actor_alias(floor, 29, 512);
-    set_actor_alias(floor, 30, -8);
+    trap3_get_work(floor)->timer = 2;
+    trap3_get_work(floor)->travel = 0;
+    trap3_get_work(floor)->origin_x = 512;
+    trap3_get_work(floor)->delta = -8;
     frdr3_move(floor);
     TEST_ASSERT_EQ_INT(ctx, 504, floor->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 504 << 8, floor->xposi.l);
-    TEST_ASSERT_EQ_INT(ctx, 1, floor->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 1, trap3_get_work(floor)->timer);
 
     time_flag = 0;
     floor->xposi.l = 0;
@@ -377,9 +362,9 @@ static void test_trapdr3_children_and_vertical_response(test_context *ctx) {
     floor->userflag.b.h = 1;
     trapdr3_init(floor);
     TEST_ASSERT_EQ_INT(ctx, 32, actwk[10].actno);
-    TEST_ASSERT_EQ_INT(ctx, 32, actwk[10].actfree[14]);
+    TEST_ASSERT_EQ_INT(ctx, 32, trap3_get_work(&actwk[10])->wait_timer);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[10].userflag.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor_alias(&actwk[10], 28));
+    TEST_ASSERT_EQ_INT(ctx, 4, trap3_get_work(&actwk[10])->linked_actor_index);
 
     reset_state();
     floor = &actwk[4];
@@ -388,21 +373,21 @@ static void test_trapdr3_children_and_vertical_response(test_context *ctx) {
     floor->userflag.b.h = 2;
     trapdr3_init(floor);
     TEST_ASSERT_EQ_INT(ctx, 10, actwk[10].actno);
-    TEST_ASSERT_EQ_INT(ctx, 24, actwk[10].actfree[14]);
+    TEST_ASSERT_EQ_INT(ctx, 24, trap3_get_work(&actwk[10])->wait_timer);
     TEST_ASSERT_EQ_INT(ctx, 4, actwk[10].userflag.b.h);
 
     reset_state();
     floor = &actwk[4];
     floor->xposi.w.h = 100;
     floor->sprhsize = 16;
-    set_actor_alias(floor, 27, 70);
+    trap3_get_work(floor)->base_x = 70;
     actwk[0].xposi.w.h = 50;
     trapdr3_kind(floor);
-    TEST_ASSERT_EQ_INT(ctx, 8, floor->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 8, trap3_get_work(floor)->travel);
     TEST_ASSERT_EQ_INT(ctx, 78, floor->yposi.w.h);
     actwk[0].xposi.w.h = 200;
     trapdr3_kind(floor);
-    TEST_ASSERT_EQ_INT(ctx, 0, floor->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 0, trap3_get_work(floor)->travel);
 
     floor->userflag.b.h = 4;
     actwk[0].xposi.w.h = 50;
@@ -419,14 +404,14 @@ static void test_for3_motion_modes_and_swing(test_context *ctx) {
     for3_init(floor);
     TEST_ASSERT_EQ_INT(ctx, 2, floor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 32, floor->sprhsize);
-    TEST_ASSERT_EQ_INT(ctx, 1, floor->actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 1, trap3_get_work(floor)->bob_enabled);
     TEST_ASSERT_EQ_INT(ctx, 1, ridechk_count);
 
     floor->cddat = 8;
-    floor->actfree[20] = 0;
+    trap3_get_work(floor)->bob_angle = 0;
     sinset_sin = 128;
     dai3sub(floor);
-    TEST_ASSERT_EQ_INT(ctx, 8, floor->actfree[20]);
+    TEST_ASSERT_EQ_INT(ctx, 8, trap3_get_work(floor)->bob_angle);
     TEST_ASSERT_EQ_INT(ctx, 8, sinset_angle);
     TEST_ASSERT_EQ_INT(ctx, 122, floor->yposi.w.h);
 
@@ -434,26 +419,26 @@ static void test_for3_motion_modes_and_swing(test_context *ctx) {
     floor = &actwk[6];
     floor->userflag.b.h = 1;
     for3_rmv(floor);
-    TEST_ASSERT_EQ_INT(ctx, 28, floor->actfree[14]);
-    TEST_ASSERT_EQ_INT(ctx, 768, actor_alias(floor, 28));
+    TEST_ASSERT_EQ_INT(ctx, 28, trap3_get_work(floor)->wait_timer);
+    TEST_ASSERT_EQ_INT(ctx, 768, trap3_get_work(floor)->velocity);
     floor->xposi.l = 0;
-    floor->actfree[14] = 1;
-    set_actor_alias(floor, 28, 768);
-    set_actor_alias(floor, 29, 0);
+    trap3_get_work(floor)->wait_timer = 1;
+    trap3_get_work(floor)->velocity = 768;
+    trap3_get_work(floor)->acceleration = 0;
     for3_rmv(floor);
     TEST_ASSERT_EQ_INT(ctx, 768 << 8, floor->xposi.l);
-    TEST_ASSERT_EQ_INT(ctx, 1, floor->actfree[15]);
+    TEST_ASSERT_EQ_INT(ctx, 1, trap3_get_work(floor)->phase);
 
     reset_state();
     floor = &actwk[6];
     floor->userflag.b.h = 3;
     for3_dmv(floor);
-    TEST_ASSERT_EQ_INT(ctx, 35, floor->actfree[14]);
-    TEST_ASSERT_EQ_INT(ctx, -512, actor_alias(floor, 28));
+    TEST_ASSERT_EQ_INT(ctx, 35, trap3_get_work(floor)->wait_timer);
+    TEST_ASSERT_EQ_INT(ctx, -512, trap3_get_work(floor)->velocity);
     floor->yposi.l = 0;
-    floor->actfree[14] = 1;
-    set_actor_alias(floor, 28, -512);
-    set_actor_alias(floor, 29, 0);
+    trap3_get_work(floor)->wait_timer = 1;
+    trap3_get_work(floor)->velocity = -512;
+    trap3_get_work(floor)->acceleration = 0;
     for3_dmv(floor);
     TEST_ASSERT_EQ_INT(ctx, -512 << 8, floor->yposi.l);
     TEST_ASSERT_EQ_INT(ctx, -512, floor->yspeed.w);
@@ -463,14 +448,14 @@ static void test_for3_motion_modes_and_swing(test_context *ctx) {
     floor->userflag.b.h = 5;
     ridechk_result = 1;
     for3_rup1(floor);
-    TEST_ASSERT_EQ_INT(ctx, 30, floor->actfree[14]);
-    floor->actfree[14] = 1;
+    TEST_ASSERT_EQ_INT(ctx, 30, trap3_get_work(floor)->wait_timer);
+    trap3_get_work(floor)->wait_timer = 1;
     for3_rup1(floor);
-    TEST_ASSERT_EQ_INT(ctx, 2, floor->actfree[16]);
-    floor->actfree[14] = 0;
+    TEST_ASSERT_EQ_INT(ctx, 2, trap3_get_work(floor)->timer);
+    trap3_get_work(floor)->wait_timer = 0;
     for3_rup2(floor);
-    TEST_ASSERT_EQ_INT(ctx, 16, floor->actfree[14]);
-    TEST_ASSERT_EQ_INT(ctx, -16, actor_alias(floor, 29));
+    TEST_ASSERT_EQ_INT(ctx, 16, trap3_get_work(floor)->wait_timer);
+    TEST_ASSERT_EQ_INT(ctx, -16, trap3_get_work(floor)->origin_x);
 }
 
 static void test_getdair3_extends_retracts_and_frames_out(test_context *ctx) {
@@ -483,50 +468,50 @@ static void test_getdair3_extends_retracts_and_frames_out(test_context *ctx) {
     actwk[0].yposi.w.h = 200;
     getdair3_init(floor);
     TEST_ASSERT_EQ_INT(ctx, 2, floor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 30, floor->actfree[16]);
-    TEST_ASSERT_EQ_INT(ctx, 16, floor->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 30, trap3_get_work(floor)->timer);
+    TEST_ASSERT_EQ_INT(ctx, 16, trap3_get_work(floor)->travel);
     TEST_ASSERT_EQ_INT(ctx, 484, floor->xposi.w.h);
 
     reset_state();
     floor = &actwk[7];
     floor->xposi.w.h = 500;
     floor->yposi.w.h = 150;
-    set_actor_alias(floor, 29, 500);
+    trap3_get_work(floor)->origin_x = 500;
     floor->userflag.b.h = -1;
     actwk[0].yposi.w.h = 200;
     getdair3_move(floor);
     TEST_ASSERT_EQ_INT(ctx, 516, floor->xposi.w.h);
 
     floor->userflag.b.h = 0;
-    floor->actfree[17] = 8;
-    floor->actfree[18] = 0;
+    trap3_get_work(floor)->travel = 8;
+    trap3_get_work(floor)->reverse_flag = 0;
     actwk[0].yposi.w.h = 100;
     getdair3_move_sub(floor);
-    TEST_ASSERT_EQ_INT(ctx, 0, floor->actfree[17]);
-    TEST_ASSERT_EQ_INT(ctx, 60, floor->actfree[16]);
-    TEST_ASSERT_EQ_INT(ctx, 255, floor->actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 0, trap3_get_work(floor)->travel);
+    TEST_ASSERT_EQ_INT(ctx, 60, trap3_get_work(floor)->timer);
+    TEST_ASSERT_EQ_INT(ctx, 255, trap3_get_work(floor)->reverse_flag);
 
-    floor->actfree[17] = 32;
+    trap3_get_work(floor)->travel = 32;
     actwk[0].yposi.w.h = 100;
     getdair3_move_sub(floor);
-    TEST_ASSERT_EQ_INT(ctx, 16, floor->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 16, trap3_get_work(floor)->travel);
     floor->userflag.b.h = 1;
-    floor->actfree[17] = 8;
+    trap3_get_work(floor)->travel = 8;
     getdair3_move_sub(floor);
-    TEST_ASSERT_EQ_INT(ctx, 0, floor->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 0, trap3_get_work(floor)->travel);
     floor->userflag.b.h = 0;
-    floor->actfree[17] = 8;
-    floor->actfree[18] = 7;
+    trap3_get_work(floor)->travel = 8;
+    trap3_get_work(floor)->reverse_flag = 7;
     getdair3_move_sub(floor);
-    TEST_ASSERT_EQ_INT(ctx, 7, floor->actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 7, trap3_get_work(floor)->reverse_flag);
     floor->userflag.b.h = 0;
-    floor->actfree[17] = 60;
+    trap3_get_work(floor)->travel = 60;
     actwk[0].yposi.w.h = 200;
     getdair3_move_sub(floor);
-    TEST_ASSERT_EQ_INT(ctx, 64, floor->actfree[17]);
-    TEST_ASSERT_EQ_INT(ctx, 8, floor->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 64, trap3_get_work(floor)->travel);
+    TEST_ASSERT_EQ_INT(ctx, 8, trap3_get_work(floor)->timer);
 
-    set_actor_alias(floor, 29, 2048);
+    trap3_get_work(floor)->origin_x = 2048;
     floor->r_no0 = 2;
     getdair3(floor);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
@@ -555,9 +540,9 @@ static void test_gandair3_core_bullets_and_ride_effect(test_context *ctx) {
     gandair3_core(core);
     TEST_ASSERT_EQ_INT(ctx, 2, core->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, core->patno);
-    set_actor_alias(core, 27, 100);
+    trap3_get_work(core)->base_x = 100;
     core->r_no0 = 2;
-    core->actfree[16] = 1;
+    trap3_get_work(core)->timer = 1;
     gandair3_core(core);
     TEST_ASSERT_EQ_INT(ctx, 4, core->r_no0);
 
@@ -566,24 +551,24 @@ static void test_gandair3_core_bullets_and_ride_effect(test_context *ctx) {
     core->xposi.w.h = 300;
     core->yposi.w.h = 100;
     core->r_no0 = 4;
-    core->actfree[17] = 24;
-    set_actor_alias(core, 27, 100);
+    trap3_get_work(core)->travel = 24;
+    trap3_get_work(core)->base_x = 100;
     ride_on_chk_result = 0;
     gandair3_fire(core);
-    TEST_ASSERT_EQ_INT(ctx, 32, core->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 32, trap3_get_work(core)->travel);
     TEST_ASSERT_EQ_INT(ctx, 68, core->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 2, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 39, actwk[10].actno);
     TEST_ASSERT_EQ_INT(ctx, 39, actwk[11].actno);
     TEST_ASSERT_EQ_INT(ctx, 6, core->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 8, core->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 8, trap3_get_work(core)->timer);
 
     reset_state();
     core = &actwk[9];
     core->xposi.w.h = 300;
     core->yposi.w.h = 100;
-    core->actfree[17] = 24;
-    set_actor_alias(core, 27, 100);
+    trap3_get_work(core)->travel = 24;
+    trap3_get_work(core)->base_x = 100;
     ride_on_chk_result = 1;
     gandair3_fire(core);
     TEST_ASSERT_EQ_INT(ctx, -1792, actwk[0].yspeed.w);
@@ -602,9 +587,9 @@ static void test_gandair3_core_bullets_and_ride_effect(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, patchg_table == gandair3_pchg);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s_count);
 
-    set_actor_alias(bullet, 29, 0);
+    trap3_get_work(bullet)->bullet_origin_x = 0;
     bullet->xposi.w.h = 100;
-    bullet->actfree[17] = 1;
+    trap3_get_work(bullet)->travel = 1;
     gandair3_tamm(bullet);
     TEST_ASSERT_EQ_INT(ctx, 0, bullet->colino);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
@@ -619,23 +604,23 @@ static void test_drumr3_and_tr3_fout(test_context *ctx) {
     drumr3_init(drum);
     TEST_ASSERT_EQ_INT(ctx, 2, drum->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 24, drum->sprhsize);
-    TEST_ASSERT_EQ_INT(ctx, 240, actor_alias(drum, 27));
+    TEST_ASSERT_EQ_INT(ctx, 240, trap3_get_work(drum)->base_x);
 
     drumr3_cntset(drum);
-    TEST_ASSERT_EQ_INT(ctx, 1, drum->actfree[13]);
+    TEST_ASSERT_EQ_INT(ctx, 1, trap3_get_work(drum)->drum_speed_high);
     TEST_ASSERT_EQ_INT(ctx, 8, drum->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 0, drum->patno);
-    TEST_ASSERT_EQ_INT(ctx, 4, drum->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 4, trap3_get_work(drum)->timer);
     TEST_ASSERT_EQ_INT(ctx, 5, drum->sprpri);
 
-    drum->actfree[16] = 0;
+    trap3_get_work(drum)->timer = 0;
     drumr3_move1(drum);
     TEST_ASSERT_EQ_INT(ctx, 1, ride_on_clr_count);
-    TEST_ASSERT_EQ_INT(ctx, 4, drum->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 4, trap3_get_work(drum)->timer);
 
-    drum->actfree[16] = 1;
+    trap3_get_work(drum)->timer = 1;
     drum->yposi.l = 0;
-    set_actor_alias(drum, 29, 256);
+    trap3_get_work(drum)->origin_x = 256;
     gametimer.w = 10;
     time_flag = 1;
     drumr3_move1(drum);
@@ -674,35 +659,35 @@ static void test_dispatchers_and_late_state_branches(test_context *ctx) {
 
     reset_state();
     actor = &actwk[2];
-    set_actor_alias(actor, 27, 100);
-    set_actor_alias(actor, 29, 200);
+    trap3_get_work(actor)->base_x = 100;
+    trap3_get_work(actor)->origin_x = 200;
     harir3_ymv2(actor);
     TEST_ASSERT_EQ_INT(ctx, 92, actor->yposi.w.h);
-    actor->actfree[17] = 0;
-    actor->actfree[16] = 0;
-    actor->actfree[18] = 0;
+    trap3_get_work(actor)->travel = 0;
+    trap3_get_work(actor)->timer = 0;
+    trap3_get_work(actor)->reverse_flag = 0;
     harir3_xmv1(actor);
     TEST_ASSERT_EQ_INT(ctx, 192, actor->xposi.w.h);
-    actor->actfree[17] = 0;
-    actor->actfree[16] = 0;
-    actor->actfree[18] = 0;
+    trap3_get_work(actor)->travel = 0;
+    trap3_get_work(actor)->timer = 0;
+    trap3_get_work(actor)->reverse_flag = 0;
     harir3_xmv2(actor);
     TEST_ASSERT_EQ_INT(ctx, 208, actor->xposi.w.h);
-    actor->actfree[16] = 2;
+    trap3_get_work(actor)->timer = 2;
     harir3_sub(actor);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[16]);
-    actor->actfree[16] = 0;
-    actor->actfree[18] = 1;
-    actor->actfree[17] = 16;
+    TEST_ASSERT_EQ_INT(ctx, 1, trap3_get_work(actor)->timer);
+    trap3_get_work(actor)->timer = 0;
+    trap3_get_work(actor)->reverse_flag = 1;
+    trap3_get_work(actor)->travel = 16;
     harir3_sub(actor);
-    TEST_ASSERT_EQ_INT(ctx, 8, actor->actfree[17]);
-    actor->actfree[16] = 0;
-    actor->actfree[18] = 0;
-    actor->actfree[17] = 24;
+    TEST_ASSERT_EQ_INT(ctx, 8, trap3_get_work(actor)->travel);
+    trap3_get_work(actor)->timer = 0;
+    trap3_get_work(actor)->reverse_flag = 0;
+    trap3_get_work(actor)->travel = 24;
     harir3_sub(actor);
-    TEST_ASSERT_EQ_INT(ctx, 32, actor->actfree[17]);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[18]);
-    TEST_ASSERT_EQ_INT(ctx, 60, actor->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 32, trap3_get_work(actor)->travel);
+    TEST_ASSERT_EQ_INT(ctx, 1, trap3_get_work(actor)->reverse_flag);
+    TEST_ASSERT_EQ_INT(ctx, 60, trap3_get_work(actor)->timer);
 
     reset_state();
     actor = &actwk[3];
@@ -710,21 +695,21 @@ static void test_dispatchers_and_late_state_branches(test_context *ctx) {
     frdr3_init(actor);
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk2_count);
     TEST_ASSERT_EQ_INT(ctx, 1, ride_on_chk_count);
-    actor->actfree[16] = 1;
+    trap3_get_work(actor)->timer = 1;
     frdr3_move(actor);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->xposi.l);
     actor->userflag.b.h = 0;
-    actor->actfree[16] = 1;
-    actor->actfree[17] = 0;
-    set_actor_alias(actor, 29, 512);
-    set_actor_alias(actor, 30, -8);
+    trap3_get_work(actor)->timer = 1;
+    trap3_get_work(actor)->travel = 0;
+    trap3_get_work(actor)->origin_x = 512;
+    trap3_get_work(actor)->delta = -8;
     frdr3_move(actor);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 1, trap3_get_work(actor)->travel);
 
     reset_state();
     actor = &actwk[3];
     actor->r_no0 = 2;
-    set_actor_alias(actor, 27, 2048);
+    trap3_get_work(actor)->base_x = 2048;
     frdr3(actor);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
@@ -745,19 +730,19 @@ static void test_dispatchers_and_late_state_branches(test_context *ctx) {
     actor = &actwk[4];
     actor->xposi.w.h = 100;
     actor->sprhsize = 16;
-    actor->actfree[17] = 4;
+    trap3_get_work(actor)->travel = 4;
     actwk[0].xposi.w.h = 200;
     trapdr3_updown(actor);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[17]);
-    actor->actfree[17] = 31;
+    TEST_ASSERT_EQ_INT(ctx, 0, trap3_get_work(actor)->travel);
+    trap3_get_work(actor)->travel = 31;
     actwk[0].xposi.w.h = 50;
     trapdr3_updown(actor);
-    TEST_ASSERT_EQ_INT(ctx, 32, actor->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 32, trap3_get_work(actor)->travel);
 
     reset_state();
     actor = &actwk[4];
     actor->r_no0 = 2;
-    set_actor_alias(actor, 29, 2048);
+    trap3_get_work(actor)->origin_x = 2048;
     trapdr3(actor);
     TEST_ASSERT_EQ_INT(ctx, 1, hitchk_count);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
@@ -768,7 +753,7 @@ static void test_dispatchers_and_late_state_branches(test_context *ctx) {
     for3(actor);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_EQ_INT(ctx, 1, ridechk_count);
-    set_actor_alias(actor, 27, 2048);
+    trap3_get_work(actor)->base_x = 2048;
     for3_move(actor);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
 
@@ -776,12 +761,12 @@ static void test_dispatchers_and_late_state_branches(test_context *ctx) {
     actor = &actwk[6];
     dai3sub(actor);
     TEST_ASSERT_EQ_INT(ctx, 0, sinset_count);
-    actor->actfree[21] = 1;
-    actor->actfree[20] = 8;
+    trap3_get_work(actor)->bob_enabled = 1;
+    trap3_get_work(actor)->bob_angle = 8;
     actor->cddat = 0;
     dai3sub(actor);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[20]);
-    actor->actfree[20] = 64;
+    TEST_ASSERT_EQ_INT(ctx, 0, trap3_get_work(actor)->bob_angle);
+    trap3_get_work(actor)->bob_angle = 64;
     actor->cddat = 8;
     sinset_count = 0;
     dai3sub(actor);
@@ -791,66 +776,66 @@ static void test_dispatchers_and_late_state_branches(test_context *ctx) {
     actor = &actwk[6];
     actor->userflag.b.h = 2;
     for3_lmv(actor);
-    TEST_ASSERT_EQ_INT(ctx, -768, actor_alias(actor, 28));
-    actor->actfree[14] = 2;
-    set_actor_alias(actor, 28, -768);
-    set_actor_alias(actor, 29, 0);
+    TEST_ASSERT_EQ_INT(ctx, -768, trap3_get_work(actor)->velocity);
+    trap3_get_work(actor)->wait_timer = 2;
+    trap3_get_work(actor)->velocity = -768;
+    trap3_get_work(actor)->acceleration = 0;
     for3_rmv(actor);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[14]);
-    actor->actfree[14] = 1;
-    actor->actfree[15] = 7;
+    TEST_ASSERT_EQ_INT(ctx, 1, trap3_get_work(actor)->wait_timer);
+    trap3_get_work(actor)->wait_timer = 1;
+    trap3_get_work(actor)->phase = 7;
     for3_rmv(actor);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->actfree[15]);
+    TEST_ASSERT_EQ_INT(ctx, 2, trap3_get_work(actor)->phase);
 
     actor = &actwk[7];
     actor->userflag.b.h = 4;
     for3_umv(actor);
-    TEST_ASSERT_EQ_INT(ctx, 512, actor_alias(actor, 28));
-    actor->actfree[14] = 2;
-    set_actor_alias(actor, 28, 512);
-    set_actor_alias(actor, 29, 0);
+    TEST_ASSERT_EQ_INT(ctx, 512, trap3_get_work(actor)->velocity);
+    trap3_get_work(actor)->wait_timer = 2;
+    trap3_get_work(actor)->velocity = 512;
+    trap3_get_work(actor)->acceleration = 0;
     for3_dmv(actor);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[14]);
-    actor->actfree[14] = 1;
-    actor->actfree[15] = 7;
+    TEST_ASSERT_EQ_INT(ctx, 1, trap3_get_work(actor)->wait_timer);
+    trap3_get_work(actor)->wait_timer = 1;
+    trap3_get_work(actor)->phase = 7;
     for3_dmv(actor);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->actfree[15]);
+    TEST_ASSERT_EQ_INT(ctx, 2, trap3_get_work(actor)->phase);
 
     reset_state();
     actor = &actwk[6];
     actor->userflag.b.h = 5;
     ridechk_result = 1;
     for3_rup(actor);
-    TEST_ASSERT_EQ_INT(ctx, 30, actor->actfree[14]);
+    TEST_ASSERT_EQ_INT(ctx, 30, trap3_get_work(actor)->wait_timer);
     for3_rup3(actor);
-    TEST_ASSERT_EQ_INT(ctx, 30, actor->actfree[14]);
-    actor->actfree[14] = 2;
+    TEST_ASSERT_EQ_INT(ctx, 30, trap3_get_work(actor)->wait_timer);
+    trap3_get_work(actor)->wait_timer = 2;
     for3_rup1(actor);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[14]);
+    TEST_ASSERT_EQ_INT(ctx, 1, trap3_get_work(actor)->wait_timer);
 
     reset_state();
     actor = &actwk[6];
     actor->userflag.b.h = 6;
-    actor->actfree[15] = 1;
+    trap3_get_work(actor)->phase = 1;
     for3_rup2(actor);
-    TEST_ASSERT_EQ_INT(ctx, -768, actor_alias(actor, 28));
+    TEST_ASSERT_EQ_INT(ctx, -768, trap3_get_work(actor)->velocity);
     actor = &actwk[7];
     actor->userflag.b.h = 7;
-    actor->actfree[15] = 1;
+    trap3_get_work(actor)->phase = 1;
     for3_rup2(actor);
-    TEST_ASSERT_EQ_INT(ctx, -1024, actor_alias(actor, 28));
-    actor->actfree[14] = 2;
-    set_actor_alias(actor, 28, -1024);
-    set_actor_alias(actor, 29, 0);
+    TEST_ASSERT_EQ_INT(ctx, -1024, trap3_get_work(actor)->velocity);
+    trap3_get_work(actor)->wait_timer = 2;
+    trap3_get_work(actor)->velocity = -1024;
+    trap3_get_work(actor)->acceleration = 0;
     for3_rup2(actor);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[14]);
-    actor->actfree[14] = 1;
-    actor->actfree[15] = 2;
-    set_actor_alias(actor, 28, -1024);
-    set_actor_alias(actor, 29, 0);
+    TEST_ASSERT_EQ_INT(ctx, 1, trap3_get_work(actor)->wait_timer);
+    trap3_get_work(actor)->wait_timer = 1;
+    trap3_get_work(actor)->phase = 2;
+    trap3_get_work(actor)->velocity = -1024;
+    trap3_get_work(actor)->acceleration = 0;
     for3_rup2(actor);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->actfree[16]);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 2, trap3_get_work(actor)->timer);
+    TEST_ASSERT_EQ_INT(ctx, 1, trap3_get_work(actor)->bob_enabled);
 
     reset_state();
     actor = &actwk[8];
@@ -871,7 +856,7 @@ static void test_dispatchers_and_late_state_branches(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s_count);
     actor = &actwk[10];
     actor->r_no0 = 2;
-    set_actor_alias(actor, 29, 2048);
+    trap3_get_work(actor)->origin_x = 2048;
     gandair3(actor);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
     frameout_count = 0;
@@ -885,24 +870,24 @@ static void test_dispatchers_and_late_state_branches(test_context *ctx) {
     actwk[0].xposi.w.h = 0;
     gandair3_wait(actor);
     TEST_ASSERT_EQ_INT(ctx, 1, ride_on_chk_count);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 0, trap3_get_work(actor)->timer);
     actor->xposi.w.h = 10;
     actwk[0].xposi.w.h = 50;
     gandair3_wait(actor);
-    TEST_ASSERT_EQ_INT(ctx, 59, actor->actfree[16]);
-    actor->actfree[16] = 0;
+    TEST_ASSERT_EQ_INT(ctx, 59, trap3_get_work(actor)->timer);
+    trap3_get_work(actor)->timer = 0;
     actor->xposi.w.h = 100;
     actwk[0].xposi.w.h = 100;
     gandair3_wait(actor);
-    TEST_ASSERT_EQ_INT(ctx, 59, actor->actfree[16]);
-    actor->actfree[16] = 2;
+    TEST_ASSERT_EQ_INT(ctx, 59, trap3_get_work(actor)->timer);
+    trap3_get_work(actor)->timer = 2;
     time_flag = 1;
     generate_flag = 0;
     patchg_count = 0;
     gandair3_wait(actor);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[16]);
-    actor->actfree[16] = 2;
+    TEST_ASSERT_EQ_INT(ctx, 1, trap3_get_work(actor)->timer);
+    trap3_get_work(actor)->timer = 2;
     time_flag = 2;
     generate_flag = 1;
     patchg_count = 0;
@@ -911,35 +896,35 @@ static void test_dispatchers_and_late_state_branches(test_context *ctx) {
 
     reset_state();
     actor = &actwk[8];
-    set_actor_alias(actor, 27, 100);
-    actor->actfree[17] = 8;
+    trap3_get_work(actor)->base_x = 100;
+    trap3_get_work(actor)->travel = 8;
     gandair3_fire(actor);
-    TEST_ASSERT_EQ_INT(ctx, 16, actor->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 16, trap3_get_work(actor)->travel);
     TEST_ASSERT_EQ_INT(ctx, 1, ride_on_chk_count);
 
     reset_state();
     actor = &actwk[8];
-    set_actor_alias(actor, 27, 100);
-    actor->actfree[16] = 1;
+    trap3_get_work(actor)->base_x = 100;
+    trap3_get_work(actor)->timer = 1;
     gandair3_end(actor);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[16]);
-    actor->actfree[17] = 4;
+    TEST_ASSERT_EQ_INT(ctx, 0, trap3_get_work(actor)->timer);
+    trap3_get_work(actor)->travel = 4;
     gandair3_end(actor);
-    TEST_ASSERT_EQ_INT(ctx, 60, actor->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 60, trap3_get_work(actor)->timer);
     TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    actor->actfree[16] = 0;
+    trap3_get_work(actor)->timer = 0;
     actor->r_no0 = 0;
-    actor->actfree[17] = 2;
+    trap3_get_work(actor)->travel = 2;
     gandair3_end(actor);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->r_no0);
 
     actor->r_no0 = 8;
-    actor->actfree[16] = 0;
+    trap3_get_work(actor)->timer = 0;
     gandair3_wait2(actor);
     TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    actor->actfree[16] = 2;
+    trap3_get_work(actor)->timer = 2;
     gandair3_wait2(actor);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 1, trap3_get_work(actor)->timer);
 
     reset_state();
     actor = &actwk[8];
@@ -954,47 +939,47 @@ static void test_dispatchers_and_late_state_branches(test_context *ctx) {
     reset_state();
     actor = &actwk[12];
     actor->xposi.w.h = 100;
-    actor->actfree[16] = 1;
+    trap3_get_work(actor)->timer = 1;
     gandair3_tami(actor);
     TEST_ASSERT_EQ_INT(ctx, 272, actor->xspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 16, actor_alias(actor, 33));
+    TEST_ASSERT_EQ_INT(ctx, 16, trap3_get_work(actor)->bullet_acceleration);
     TEST_ASSERT_EQ_INT(ctx, 2, actor->mstno.b.h);
-    set_actor_alias(actor, 29, 0);
+    trap3_get_work(actor)->acceleration = 0;
     actor->xposi.w.h = 100;
-    actor->actfree[17] = 0;
+    trap3_get_work(actor)->travel = 0;
     frameout_count = 0;
     gandair3_tamm(actor);
-    TEST_ASSERT_EQ_INT(ctx, 29, actor->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 29, trap3_get_work(actor)->travel);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_count);
 
     reset_state();
     actor = &actwk[13];
     actor->r_no0 = 2;
-    actor->actfree[16] = 1;
+    trap3_get_work(actor)->timer = 1;
     time_flag = 0;
     drumr3_move1(actor);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 1, trap3_get_work(actor)->timer);
     time_flag = 1;
     gametimer.w = 11;
     drumr3_move1(actor);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 1, trap3_get_work(actor)->timer);
     gametimer.w = 10;
-    set_actor_alias(actor, 29, 256);
+    trap3_get_work(actor)->origin_x = 256;
     drumr3_move1(actor);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->actfree[16]);
-    actor->actfree[16] = 2;
-    actor->actfree[17] = 0;
+    TEST_ASSERT_EQ_INT(ctx, 4, trap3_get_work(actor)->timer);
+    trap3_get_work(actor)->timer = 2;
+    trap3_get_work(actor)->travel = 0;
     drumr3_move1(actor);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[16]);
-    actor->actfree[16] = 1;
-    actor->actfree[17] = 1;
+    TEST_ASSERT_EQ_INT(ctx, 1, trap3_get_work(actor)->timer);
+    trap3_get_work(actor)->timer = 1;
+    trap3_get_work(actor)->travel = 1;
     drumr3_move1(actor);
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
 
     reset_state();
     actor = &actwk[13];
     actor->r_no0 = 2;
-    set_actor_alias(actor, 27, 2048);
+    trap3_get_work(actor)->base_x = 2048;
     drumr3(actor);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
     actor->userflag.b.h = 2;
@@ -1007,54 +992,54 @@ static void test_dispatchers_and_late_state_branches(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
 
     actor->r_no0 = 4;
-    actor->actfree[16] = 0;
+    trap3_get_work(actor)->timer = 0;
     drumr3_move2(actor);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->actfree[16]);
-    actor->actfree[16] = 1;
+    TEST_ASSERT_EQ_INT(ctx, 4, trap3_get_work(actor)->timer);
+    trap3_get_work(actor)->timer = 1;
     time_flag = 0;
     drumr3_move2(actor);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 1, trap3_get_work(actor)->timer);
     time_flag = 1;
     gametimer.w = 11;
     drumr3_move2(actor);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[16]);
-    actor->actfree[16] = 1;
-    actor->actfree[17] = 5;
-    set_actor_alias(actor, 29, 256);
+    TEST_ASSERT_EQ_INT(ctx, 1, trap3_get_work(actor)->timer);
+    trap3_get_work(actor)->timer = 1;
+    trap3_get_work(actor)->travel = 5;
+    trap3_get_work(actor)->origin_x = 256;
     gametimer.w = 10;
     time_flag = 1;
     drumr3_move2(actor);
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
     actor->r_no0 = 4;
-    actor->actfree[16] = 2;
-    actor->actfree[17] = 0;
+    trap3_get_work(actor)->timer = 2;
+    trap3_get_work(actor)->travel = 0;
     drumr3_move2(actor);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 1, trap3_get_work(actor)->timer);
 
     actor->r_no0 = 6;
-    actor->actfree[16] = 0;
+    trap3_get_work(actor)->timer = 0;
     drumr3_move3(actor);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->actfree[16]);
-    actor->actfree[16] = 1;
+    TEST_ASSERT_EQ_INT(ctx, 4, trap3_get_work(actor)->timer);
+    trap3_get_work(actor)->timer = 1;
     time_flag = 0;
     drumr3_move3(actor);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 1, trap3_get_work(actor)->timer);
     time_flag = 1;
     gametimer.w = 11;
     drumr3_move3(actor);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[16]);
-    actor->actfree[16] = 1;
-    actor->actfree[17] = 17;
-    set_actor_alias(actor, 29, 256);
+    TEST_ASSERT_EQ_INT(ctx, 1, trap3_get_work(actor)->timer);
+    trap3_get_work(actor)->timer = 1;
+    trap3_get_work(actor)->travel = 17;
+    trap3_get_work(actor)->origin_x = 256;
     gametimer.w = 10;
     drumr3_move3(actor);
     TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 0, trap3_get_work(actor)->travel);
     actor->r_no0 = 6;
-    actor->actfree[16] = 2;
-    actor->actfree[17] = 0;
+    trap3_get_work(actor)->timer = 2;
+    trap3_get_work(actor)->travel = 0;
     drumr3_move3(actor);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 1, trap3_get_work(actor)->timer);
 }
 
 TEST_MAIN_BEGIN;

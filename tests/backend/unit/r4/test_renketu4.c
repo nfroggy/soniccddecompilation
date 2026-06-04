@@ -1,4 +1,3 @@
-#include <stddef.h>
 #include <string.h>
 
 #include "support/test_runner.h"
@@ -104,30 +103,6 @@ static void queue_children(int first_index, int count) {
     }
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int offset) {
-    Uint16 bits = (Uint16)actor->actfree[offset] |
-                  ((Uint16)actor->actfree[offset + 1] << 8);
-    return (Sint16)bits;
-}
-
-static int legacy_word_actfree_offset(int word_index) {
-    return (word_index * 2) - (int)offsetof(sprite_status, actfree);
-}
-
-static void set_legacy_word(sprite_status *actor, int word_index, Sint16 value) {
-    set_actfree_word(actor, legacy_word_actfree_offset(word_index), value);
-}
-
-static Sint16 get_legacy_word(sprite_status *actor, int word_index) {
-    return get_actfree_word(actor, legacy_word_actfree_offset(word_index));
-}
-
 static void test_renketu4_patterns_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, renketu4pat[0] == &renketu4_pat0);
     TEST_ASSERT_TRUE(ctx, renketu4pat[1] == &renketu4_pat1);
@@ -158,13 +133,13 @@ static void test_renketu4_init_spawns_linked_children_and_moves(
     TEST_ASSERT_TRUE(ctx, platform->patbase == renketu4pat);
     TEST_ASSERT_EQ_INT(ctx, 32, platform->sprhsize);
     TEST_ASSERT_EQ_INT(ctx, 8, platform->sprvsize);
-    TEST_ASSERT_EQ_INT(ctx, 100, get_legacy_word(platform, 29));
-    TEST_ASSERT_EQ_INT(ctx, 200, get_legacy_word(platform, 27));
-    TEST_ASSERT_EQ_INT(ctx, 33, platform->actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 100, get_work(platform)->origin_x);
+    TEST_ASSERT_EQ_INT(ctx, 200, get_work(platform)->origin_y);
+    TEST_ASSERT_EQ_INT(ctx, 33, get_work(platform)->angle.b.h);
     TEST_ASSERT_EQ_INT(ctx, 0, platform->patno);
     TEST_ASSERT_EQ_INT(ctx, 1, platform->sprpri);
-    TEST_ASSERT_EQ_INT(ctx, 256, get_legacy_word(platform, 26));
-    TEST_ASSERT_EQ_INT(ctx, 8448, get_legacy_word(platform, 33));
+    TEST_ASSERT_EQ_INT(ctx, 256, get_work(platform)->angular_speed);
+    TEST_ASSERT_EQ_INT(ctx, 8448, get_work(platform)->angle.w);
     TEST_ASSERT_EQ_INT(ctx, 1, sinset_count);
     TEST_ASSERT_EQ_INT(ctx, 33, sinset_angle);
     TEST_ASSERT_EQ_INT(ctx, 112, platform->xposi.w.h);
@@ -178,11 +153,11 @@ static void test_renketu4_init_spawns_linked_children_and_moves(
 
     TEST_ASSERT_EQ_INT(ctx, 8, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 62, actwk[20].actno);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[20].actfree[18]);
-    TEST_ASSERT_EQ_INT(ctx, 100, get_legacy_word(&actwk[20], 29));
-    TEST_ASSERT_EQ_INT(ctx, 200, get_legacy_word(&actwk[20], 27));
+    TEST_ASSERT_EQ_INT(ctx, 1, get_work(&actwk[20])->segment_index);
+    TEST_ASSERT_EQ_INT(ctx, 100, get_work(&actwk[20])->origin_x);
+    TEST_ASSERT_EQ_INT(ctx, 200, get_work(&actwk[20])->origin_y);
     TEST_ASSERT_EQ_INT(ctx, 62, actwk[27].actno);
-    TEST_ASSERT_EQ_INT(ctx, 8, actwk[27].actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 8, get_work(&actwk[27])->segment_index);
 }
 
 static void test_renketu4_init_uses_stage_two_offset_and_piece_sprite(
@@ -191,23 +166,23 @@ static void test_renketu4_init_uses_stage_two_offset_and_piece_sprite(
 
     reset_state();
     stageno.b.l = 2;
-    piece->actfree[18] = 3;
+    get_work(piece)->segment_index = 3;
     piece->xposi.w.h = 100;
     piece->yposi.w.h = 200;
     piece->userflag.b.h = 16;
-    set_legacy_word(piece, 29, 100);
-    set_legacy_word(piece, 27, 200);
+    get_work(piece)->origin_x = 100;
+    get_work(piece)->origin_y = 200;
 
     renketu4(piece);
 
     TEST_ASSERT_EQ_INT(ctx, 2, piece->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1024, piece->sproffset);
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
-    TEST_ASSERT_EQ_INT(ctx, 23, piece->actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 23, get_work(piece)->angle.b.h);
     TEST_ASSERT_EQ_INT(ctx, 1, piece->patno);
     TEST_ASSERT_EQ_INT(ctx, 3, piece->sprpri);
-    TEST_ASSERT_EQ_INT(ctx, -256, get_legacy_word(piece, 26));
-    TEST_ASSERT_EQ_INT(ctx, 5888, get_legacy_word(piece, 33));
+    TEST_ASSERT_EQ_INT(ctx, -256, get_work(piece)->angular_speed);
+    TEST_ASSERT_EQ_INT(ctx, 5888, get_work(piece)->angle.w);
     TEST_ASSERT_EQ_INT(ctx, 0, ridechk_count);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 }
@@ -218,17 +193,17 @@ static void test_renketu4_move_switch_flips_direction_once(test_context *ctx) {
     reset_state();
     platform->r_no0 = 2;
     platform->userflag.b.h = 3;
-    platform->actfree[21] = 32;
-    set_legacy_word(platform, 26, 256);
-    set_legacy_word(platform, 27, 200);
-    set_legacy_word(platform, 29, 100);
+    get_work(platform)->angle.b.h = 32;
+    get_work(platform)->angular_speed = 256;
+    get_work(platform)->origin_y = 200;
+    get_work(platform)->origin_x = 100;
     switchflag[3] = 128;
 
     renketu4(platform);
 
-    TEST_ASSERT_EQ_INT(ctx, -256, get_legacy_word(platform, 26));
-    TEST_ASSERT_EQ_INT(ctx, 7936, get_legacy_word(platform, 33));
-    TEST_ASSERT_EQ_INT(ctx, 1, platform->actfree[19]);
+    TEST_ASSERT_EQ_INT(ctx, -256, get_work(platform)->angular_speed);
+    TEST_ASSERT_EQ_INT(ctx, 7936, get_work(platform)->angle.w);
+    TEST_ASSERT_EQ_INT(ctx, 1, get_work(platform)->switch_latch);
     TEST_ASSERT_EQ_INT(ctx, 1, sinset_count);
     TEST_ASSERT_EQ_INT(ctx, 31, sinset_angle);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -237,9 +212,9 @@ static void test_renketu4_move_switch_flips_direction_once(test_context *ctx) {
     actionsub_count = 0;
     renketu4(platform);
 
-    TEST_ASSERT_EQ_INT(ctx, -256, get_legacy_word(platform, 26));
-    TEST_ASSERT_EQ_INT(ctx, 7680, get_legacy_word(platform, 33));
-    TEST_ASSERT_EQ_INT(ctx, 1, platform->actfree[19]);
+    TEST_ASSERT_EQ_INT(ctx, -256, get_work(platform)->angular_speed);
+    TEST_ASSERT_EQ_INT(ctx, 7680, get_work(platform)->angle.w);
+    TEST_ASSERT_EQ_INT(ctx, 1, get_work(platform)->switch_latch);
     TEST_ASSERT_EQ_INT(ctx, 1, sinset_count);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 }
@@ -250,16 +225,16 @@ static void test_renketu4_move_switch_release_rearms_flip(test_context *ctx) {
     reset_state();
     platform->r_no0 = 2;
     platform->userflag.b.h = 3;
-    platform->actfree[19] = 1;
-    set_legacy_word(platform, 26, -256);
-    set_legacy_word(platform, 27, 200);
-    set_legacy_word(platform, 29, 100);
+    get_work(platform)->switch_latch = 1;
+    get_work(platform)->angular_speed = -256;
+    get_work(platform)->origin_y = 200;
+    get_work(platform)->origin_x = 100;
     switchflag[3] = 0;
 
     renketu4(platform);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, platform->actfree[19]);
-    TEST_ASSERT_EQ_INT(ctx, -256, get_legacy_word(platform, 26));
+    TEST_ASSERT_EQ_INT(ctx, 0, get_work(platform)->switch_latch);
+    TEST_ASSERT_EQ_INT(ctx, -256, get_work(platform)->angular_speed);
 }
 
 static void test_renketu4_move_high_userflag_ignores_switch(test_context *ctx) {
@@ -268,17 +243,17 @@ static void test_renketu4_move_high_userflag_ignores_switch(test_context *ctx) {
     reset_state();
     platform->r_no0 = 2;
     platform->userflag.b.h = (Sint8)131;
-    platform->actfree[19] = 7;
-    set_legacy_word(platform, 26, 256);
-    set_legacy_word(platform, 27, 200);
-    set_legacy_word(platform, 29, 100);
+    get_work(platform)->switch_latch = 7;
+    get_work(platform)->angular_speed = 256;
+    get_work(platform)->origin_y = 200;
+    get_work(platform)->origin_x = 100;
     switchflag[3] = 128;
 
     renketu4(platform);
 
-    TEST_ASSERT_EQ_INT(ctx, 7, platform->actfree[19]);
-    TEST_ASSERT_EQ_INT(ctx, 256, get_legacy_word(platform, 26));
-    TEST_ASSERT_EQ_INT(ctx, 256, get_legacy_word(platform, 33));
+    TEST_ASSERT_EQ_INT(ctx, 7, get_work(platform)->switch_latch);
+    TEST_ASSERT_EQ_INT(ctx, 256, get_work(platform)->angular_speed);
+    TEST_ASSERT_EQ_INT(ctx, 256, get_work(platform)->angle.w);
 }
 
 static void test_renketu4_ridechk_places_player_on_platform(test_context *ctx) {
@@ -314,9 +289,9 @@ static void test_renketu4_entry_frames_out_when_offscreen(test_context *ctx) {
 
     reset_state();
     platform->r_no0 = 2;
-    set_legacy_word(platform, 26, 256);
-    set_legacy_word(platform, 27, 200);
-    set_legacy_word(platform, 29, 1024);
+    get_work(platform)->angular_speed = 256;
+    get_work(platform)->origin_y = 200;
+    get_work(platform)->origin_x = 1024;
     scra_h_posit.w.h = 0;
 
     renketu4(platform);

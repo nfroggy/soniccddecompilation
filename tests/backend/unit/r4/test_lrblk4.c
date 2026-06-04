@@ -1,4 +1,3 @@
-#include <stddef.h>
 #include <string.h>
 
 #include "support/test_runner.h"
@@ -77,25 +76,6 @@ Sint16 hitchk(sprite_status *pActwk, sprite_status *pPlayerwk) {
     return 0;
 }
 
-static size_t short_alias_offset(int short_index) {
-    return (size_t)short_index * sizeof(Sint16) -
-           offsetof(sprite_status, actfree);
-}
-
-static void set_actor_short_alias(sprite_status *actor, int short_index,
-                                  Sint16 value) {
-    size_t offset = short_alias_offset(short_index);
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)bits;
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 actor_short_alias(sprite_status *actor, int short_index) {
-    size_t offset = short_alias_offset(short_index);
-    return (Sint16)((Uint16)actor->actfree[offset] |
-                    ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
 static void reset_logs(void) {
     actionsub_count = 0;
     actionsub_actor = 0;
@@ -164,10 +144,10 @@ static void test_type1_master_child_and_fout_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 6, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 36, actwk[20].actno);
     TEST_ASSERT_EQ_INT(ctx, 1, actwk[20].userflag.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[20].actfree[19]);
-    TEST_ASSERT_EQ_INT(ctx, 48, actwk[20].actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 1, lrblk4_get_work(&actwk[20])->variant);
+    TEST_ASSERT_EQ_INT(ctx, 48, lrblk4_get_work(&actwk[20])->phase);
     TEST_ASSERT_EQ_INT(ctx, 36, actwk[25].actno);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[25].actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 1, lrblk4_get_work(&actwk[25])->child_index);
     TEST_ASSERT_EQ_INT(ctx, 324, actwk[25].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, sinset_count);
     TEST_ASSERT_EQ_INT(ctx, 1, hitchk_count);
@@ -181,7 +161,7 @@ static void test_type1_master_child_and_fout_paths(test_context *ctx) {
     time_flag = 3;
     scra_h_posit.w.h = 0;
     flagwork[9] = 255;
-    set_actor_short_alias(actor, 29, 2048);
+    lrblk4_get_work(actor)->base_x = 2048;
 
     lrblk4(actor);
 
@@ -191,7 +171,7 @@ static void test_type1_master_child_and_fout_paths(test_context *ctx) {
 
     reset_lrblk4_state();
     actor = &actwk[3];
-    actor->actfree[18] = 1;
+    lrblk4_get_work(actor)->child_index = 1;
     actor->xposi.w.h = 100;
     actor->yposi.w.h = 50;
 
@@ -210,18 +190,18 @@ static void test_type2_and_type3_paths(test_context *ctx) {
     actor->userflag.b.h = 2;
     actor->xposi.w.h = 200;
     actor->yposi.w.h = 60;
-    actor->actfree[16] = 128;
+    lrblk4_get_work(actor)->phase = 128;
 
     lrblk4(actor);
 
     TEST_ASSERT_TRUE(ctx, actor->patbase == lrblk4pat2);
-    TEST_ASSERT_EQ_INT(ctx, 168, actor_short_alias(actor, 27));
+    TEST_ASSERT_EQ_INT(ctx, 168, lrblk4_get_work(actor)->wave_origin_x);
     TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 36, actwk[20].actno);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[20].userflag.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[20].actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 1, lrblk4_get_work(&actwk[20])->child_index);
     TEST_ASSERT_EQ_INT(ctx, 264, actwk[20].xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 200, actor_short_alias(&actwk[20], 29));
+    TEST_ASSERT_EQ_INT(ctx, 200, lrblk4_get_work(&actwk[20])->base_x);
     assert_action_only(ctx, actor);
 
     reset_lrblk4_state();
@@ -229,7 +209,7 @@ static void test_type2_and_type3_paths(test_context *ctx) {
     actor->userflag.b.h = 3;
     actor->xposi.w.h = 300;
     actor->yposi.w.h = 100;
-    actor->actfree[18] = 1;
+    lrblk4_get_work(actor)->child_index = 1;
 
     lrblk4(actor);
 
@@ -244,7 +224,7 @@ static void test_type2_and_type3_paths(test_context *ctx) {
     actor->actflg = 128;
     actor->xposi.w.h = 300;
     actor->xspeed.w = 128;
-    set_actor_short_alias(actor, 29, 300);
+    lrblk4_get_work(actor)->base_x = 300;
     actwk[0].yposi.w.h = 120;
 
     lrblk4(actor);
@@ -259,7 +239,7 @@ static void test_type2_and_type3_paths(test_context *ctx) {
     actor->xposi.w.h = 300;
     actor->yposi.w.h = 100;
     actor->xspeed.w = 0;
-    set_actor_short_alias(actor, 29, 300);
+    lrblk4_get_work(actor)->base_x = 300;
     actwk[0].yposi.w.h = 80;
 
     lrblk4(actor);
@@ -270,9 +250,9 @@ static void test_type2_and_type3_paths(test_context *ctx) {
     reset_lrblk4_state();
     actor = &actwk[4];
     actor->userflag.b.h = 2;
-    actor->actfree[18] = 1;
+    lrblk4_get_work(actor)->child_index = 1;
     actor->xposi.w.h = 300;
-    actor->actfree[16] = 64;
+    lrblk4_get_work(actor)->phase = 64;
 
     lrblk4(actor);
 
@@ -291,15 +271,15 @@ static void test_type2_and_type3_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 5, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 36, actwk[20].actno);
     TEST_ASSERT_EQ_INT(ctx, 3, actwk[20].userflag.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[20].actfree[18]);
-    TEST_ASSERT_EQ_INT(ctx, 300, actor_short_alias(&actwk[20], 29));
+    TEST_ASSERT_EQ_INT(ctx, 1, lrblk4_get_work(&actwk[20])->child_index);
+    TEST_ASSERT_EQ_INT(ctx, 300, lrblk4_get_work(&actwk[20])->base_x);
     TEST_ASSERT_EQ_INT(ctx, 300, actor->xposi.w.h);
 
     reset_logs();
     actor->r_no0 = 2;
     actor->xposi.w.h = 70;
     actor->xspeed.w = -128;
-    set_actor_short_alias(actor, 29, 300);
+    lrblk4_get_work(actor)->base_x = 300;
 
     lrblk4(actor);
 
@@ -308,7 +288,7 @@ static void test_type2_and_type3_paths(test_context *ctx) {
     reset_logs();
     actor->xposi.w.h = 530;
     actor->xspeed.w = 128;
-    set_actor_short_alias(actor, 29, 300);
+    lrblk4_get_work(actor)->base_x = 300;
 
     lrblk4(actor);
 
@@ -322,7 +302,7 @@ static void test_type4_type5_type6_type8_paths(test_context *ctx) {
     actor->userflag.b.h = 4;
     actor->xposi.w.h = 400;
     actor->yposi.w.h = 80;
-    actor->actfree[19] = 1;
+    lrblk4_get_work(actor)->variant = 1;
 
     lrblk4(actor);
 
@@ -332,13 +312,13 @@ static void test_type4_type5_type6_type8_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 272, actor->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, -512, actor->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 36, actwk[20].actno);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[20].actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 1, lrblk4_get_work(&actwk[20])->child_index);
     TEST_ASSERT_EQ_INT(ctx, 528, actwk[20].xposi.w.h);
 
     reset_logs();
     actor->r_no0 = 2;
     actor->xposi.w.h = 146;
-    set_actor_short_alias(actor, 29, 400);
+    lrblk4_get_work(actor)->base_x = 400;
 
     lrblk4(actor);
 
@@ -354,49 +334,49 @@ static void test_type4_type5_type6_type8_paths(test_context *ctx) {
 
     TEST_ASSERT_TRUE(ctx, actor->patbase == lrblk4pat5);
     TEST_ASSERT_EQ_INT(ctx, 4, actwkchk_count);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[17]);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[16]);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor_short_alias(actor, 26));
+    TEST_ASSERT_EQ_INT(ctx, 0, lrblk4_get_work(actor)->segment_index);
+    TEST_ASSERT_EQ_INT(ctx, 0, lrblk4_get_work(actor)->phase);
+    TEST_ASSERT_EQ_INT(ctx, 0, lrblk4_get_work(actor)->move_speed);
     TEST_ASSERT_EQ_INT(ctx, 0, hitchk_count);
 
     reset_logs();
     actor->r_no0 = 2;
-    actor->actfree[16] = 1;
-    actor->actfree[17] = 5;
-    set_actor_short_alias(actor, 26, -128);
+    lrblk4_get_work(actor)->phase = 1;
+    lrblk4_get_work(actor)->segment_index = 5;
+    lrblk4_get_work(actor)->move_speed = -128;
 
     lrblk4(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[17]);
-    TEST_ASSERT_EQ_INT(ctx, 128, actor->actfree[16]);
-    TEST_ASSERT_EQ_INT(ctx, 128, actor_short_alias(actor, 26));
+    TEST_ASSERT_EQ_INT(ctx, 0, lrblk4_get_work(actor)->segment_index);
+    TEST_ASSERT_EQ_INT(ctx, 128, lrblk4_get_work(actor)->phase);
+    TEST_ASSERT_EQ_INT(ctx, 128, lrblk4_get_work(actor)->move_speed);
 
     reset_logs();
     actor->r_no0 = 2;
-    actor->actfree[16] = 1;
-    actor->actfree[17] = 0;
-    set_actor_short_alias(actor, 26, 128);
+    lrblk4_get_work(actor)->phase = 1;
+    lrblk4_get_work(actor)->segment_index = 0;
+    lrblk4_get_work(actor)->move_speed = 128;
 
     lrblk4(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[17]);
-    TEST_ASSERT_EQ_INT(ctx, 128, actor->actfree[16]);
-    TEST_ASSERT_EQ_INT(ctx, 128, actor_short_alias(actor, 26));
+    TEST_ASSERT_EQ_INT(ctx, 1, lrblk4_get_work(actor)->segment_index);
+    TEST_ASSERT_EQ_INT(ctx, 128, lrblk4_get_work(actor)->phase);
+    TEST_ASSERT_EQ_INT(ctx, 128, lrblk4_get_work(actor)->move_speed);
 
     reset_lrblk4_state();
     actor = &actwk[5];
     actor->userflag.b.h = 6;
     actor->xposi.w.h = 500;
     actor->yposi.w.h = 120;
-    actor->actfree[18] = 2;
+    lrblk4_get_work(actor)->child_index = 2;
 
     lrblk4(actor);
 
     TEST_ASSERT_TRUE(ctx, actor->patbase == lrblk4pat6);
     TEST_ASSERT_EQ_INT(ctx, 2, actor->patno);
-    TEST_ASSERT_EQ_INT(ctx, 3, actor->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 3, lrblk4_get_work(actor)->segment_index);
     TEST_ASSERT_EQ_INT(ctx, 48, actor->sprhsize);
-    TEST_ASSERT_EQ_INT(ctx, 548, actor_short_alias(actor, 27));
+    TEST_ASSERT_EQ_INT(ctx, 548, lrblk4_get_work(actor)->wave_origin_x);
     TEST_ASSERT_EQ_INT(ctx, 596, actor->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, hitchk_count);
 
@@ -411,7 +391,7 @@ static void test_type4_type5_type6_type8_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 3, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 36, actwk[20].actno);
     TEST_ASSERT_EQ_INT(ctx, 6, actwk[20].userflag.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[20].actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 1, lrblk4_get_work(&actwk[20])->child_index);
     TEST_ASSERT_EQ_INT(ctx, 484, actwk[20].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 152, actwk[20].yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 532, actor->xposi.w.h);
@@ -430,14 +410,14 @@ static void test_type4_type5_type6_type8_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 2, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 36, actwk[20].actno);
     TEST_ASSERT_EQ_INT(ctx, 4, actwk[20].userflag.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 8, actwk[20].actfree[19]);
+    TEST_ASSERT_EQ_INT(ctx, 8, lrblk4_get_work(&actwk[20])->variant);
     TEST_ASSERT_EQ_INT(ctx, 36, actwk[21].actno);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[21].actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 1, lrblk4_get_work(&actwk[21])->child_index);
 
     reset_logs();
     actor->r_no0 = 2;
     actor->xposi.w.h = 854;
-    set_actor_short_alias(actor, 29, 600);
+    lrblk4_get_work(actor)->base_x = 600;
 
     lrblk4(actor);
 

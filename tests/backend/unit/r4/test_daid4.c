@@ -1,4 +1,3 @@
-#include <stddef.h>
 #include <string.h>
 
 #include "support/test_runner.h"
@@ -87,58 +86,6 @@ static void reset_state(void) {
     memset(soundset_requests, 0, sizeof(soundset_requests));
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int offset) {
-    Uint16 bits = (Uint16)actor->actfree[offset] |
-                  ((Uint16)actor->actfree[offset + 1] << 8);
-    return (Sint16)bits;
-}
-
-static void set_actfree_long(sprite_status *actor, int offset, Sint32 value) {
-    Uint32 bits = (Uint32)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)((bits >> 8) & 255);
-    actor->actfree[offset + 2] = (Uint8)((bits >> 16) & 255);
-    actor->actfree[offset + 3] = (Uint8)(bits >> 24);
-}
-
-static Sint32 get_actfree_long(sprite_status *actor, int offset) {
-    Uint32 bits = (Uint32)actor->actfree[offset] |
-                  ((Uint32)actor->actfree[offset + 1] << 8) |
-                  ((Uint32)actor->actfree[offset + 2] << 16) |
-                  ((Uint32)actor->actfree[offset + 3] << 24);
-    return (Sint32)bits;
-}
-
-static int legacy_word_actfree_offset(int word_index) {
-    return (word_index * 2) - (int)offsetof(sprite_status, actfree);
-}
-
-static int legacy_long_actfree_offset(int long_index) {
-    return (long_index * 4) - (int)offsetof(sprite_status, actfree);
-}
-
-static void set_legacy_word(sprite_status *actor, int word_index, Sint16 value) {
-    set_actfree_word(actor, legacy_word_actfree_offset(word_index), value);
-}
-
-static Sint16 get_legacy_word(sprite_status *actor, int word_index) {
-    return get_actfree_word(actor, legacy_word_actfree_offset(word_index));
-}
-
-static void set_legacy_long(sprite_status *actor, int long_index, Sint32 value) {
-    set_actfree_long(actor, legacy_long_actfree_offset(long_index), value);
-}
-
-static Sint32 get_legacy_long(sprite_status *actor, int long_index) {
-    return get_actfree_long(actor, legacy_long_actfree_offset(long_index));
-}
-
 static void assert_action_frame(test_context *ctx, sprite_status *actor) {
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_TRUE(ctx, actionsub_actor == actor);
@@ -175,7 +122,7 @@ static void test_daid4_init_records_origin_and_static_fields(test_context *ctx) 
     TEST_ASSERT_EQ_INT(ctx, 33, platform->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 17168, platform->sproffset);
     TEST_ASSERT_TRUE(ctx, platform->patbase == pat_daid4);
-    TEST_ASSERT_EQ_INT(ctx, 240, get_legacy_word(platform, 23));
+    TEST_ASSERT_EQ_INT(ctx, 240, daid4_work_get(platform)->base_y);
     TEST_ASSERT_EQ_INT(ctx, 0, actionsub_count);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_s_count);
 }
@@ -187,7 +134,7 @@ static void test_daid4_born_waits_until_player_is_low_enough(
     reset_state();
     platform->r_no0 = 2;
     platform->yposi.w.h = 100;
-    set_legacy_word(platform, 23, 100);
+    daid4_work_get(platform)->base_y = 100;
     actwk[0].yposi.w.h = 300;
 
     daid4(platform);
@@ -205,7 +152,7 @@ static void test_daid4_born_moves_to_player_offset_and_enters_off(
     reset_state();
     platform->r_no0 = 2;
     platform->yposi.w.h = 100;
-    set_legacy_word(platform, 23, 100);
+    daid4_work_get(platform)->base_y = 100;
     actwk[0].yposi.w.h = 400;
 
     daid4(platform);
@@ -233,7 +180,7 @@ static void test_daid4_off_initializes_fall_and_keeps_rising_speed(
     TEST_ASSERT_EQ_INT(ctx, 33, platform->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 2, platform->patno);
     TEST_ASSERT_EQ_INT(ctx, 0, platform->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 1024, get_legacy_long(platform, 12));
+    TEST_ASSERT_EQ_INT(ctx, 1024, daid4_work_get(platform)->y_velocity);
     assert_action_frame(ctx, platform);
 }
 
@@ -244,12 +191,12 @@ static void test_daid4_off1_caps_fall_speed(test_context *ctx) {
     platform->r_no0 = 6;
     platform->actflg = 128;
     platform->yposi.w.h = 100;
-    set_legacy_long(platform, 12, 65536);
+    daid4_work_get(platform)->y_velocity = 65536;
 
     daid4(platform);
 
     TEST_ASSERT_EQ_INT(ctx, 101, platform->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 65536, get_legacy_long(platform, 12));
+    TEST_ASSERT_EQ_INT(ctx, 65536, daid4_work_get(platform)->y_velocity);
     TEST_ASSERT_EQ_INT(ctx, 1, ridechk_count);
     assert_action_frame(ctx, platform);
 }
@@ -302,7 +249,7 @@ static void test_daid4_on_resets_when_it_reaches_origin(test_context *ctx) {
     platform->patno = 0;
     platform->sprvsize = 33;
     platform->yposi.w.h = 100;
-    set_legacy_word(platform, 23, 120);
+    daid4_work_get(platform)->base_y = 120;
 
     daid4(platform);
 
@@ -322,7 +269,7 @@ static void test_daid4_on1_without_ride_switches_back_to_off(
     reset_state();
     platform->r_no0 = 10;
     platform->yposi.w.h = 150;
-    set_legacy_word(platform, 23, 100);
+    daid4_work_get(platform)->base_y = 100;
     player->yposi.w.h = 80;
 
     daid4(platform);
@@ -341,7 +288,7 @@ static void test_daid4_on1_with_ride_keeps_on_state(test_context *ctx) {
     reset_state();
     platform->r_no0 = 10;
     platform->yposi.w.h = 150;
-    set_legacy_word(platform, 23, 100);
+    daid4_work_get(platform)->base_y = 100;
     player->yposi.w.h = 80;
     ridechk_result = 1;
 

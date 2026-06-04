@@ -137,19 +137,6 @@ static void queue_ridechk_result(Sint16 value) {
     ridechk_results[ridechk_result_count++] = value;
 }
 
-static void set_actfree_word(sprite_status *actor, int legacy_word,
-                             Sint16 value) {
-    int offset = (legacy_word - 23) * 2;
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int legacy_word) {
-    int offset = (legacy_word - 23) * 2;
-    return (Sint16)(Uint16)(actor->actfree[offset] |
-                            ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
 static void reset_dai_rd1_state(void) {
     memset(actwk, 0, sizeof(actwk));
     memset(&scra_h_posit, 0, sizeof(scra_h_posit));
@@ -230,14 +217,14 @@ static void test_dodai_init_sets_shape_and_spawns_child(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, platform->patno);
     TEST_ASSERT_EQ_INT(ctx, 32, platform->sprhsize);
     TEST_ASSERT_EQ_INT(ctx, 8, platform->sprvsize);
-    TEST_ASSERT_EQ_INT(ctx, 4, platform->actfree[3]);
+    TEST_ASSERT_EQ_INT(ctx, 4, dai_rd1_get_work(platform)->amplitude);
     TEST_ASSERT_EQ_INT(ctx, 10, child->actno);
     TEST_ASSERT_EQ_INT(ctx, 108, child->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 184, child->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 2, child->userflag.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 8, child->actfree[14]);
-    TEST_ASSERT_EQ_INT(ctx, 240, child->actfree[15]);
-    TEST_ASSERT_EQ_INT(ctx, 2, get_actfree_word(child, 28));
+    TEST_ASSERT_EQ_INT(ctx, 8, dai_rd1_get_work(child)->vfuta_x_offset);
+    TEST_ASSERT_EQ_INT(ctx, -16, dai_rd1_get_work(child)->vfuta_y_offset);
+    TEST_ASSERT_EQ_INT(ctx, 2, dai_rd1_get_work(child)->parent_index);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_TRUE(ctx, actionsub_actor == platform);
 }
@@ -280,7 +267,7 @@ static void test_dodai_time_stop_and_offscreen_frameout(test_context *ctx) {
     platform->r_no0 = 2;
     platform->xposi.w.h = 1024;
     platform->cdsts = 1;
-    set_actfree_word(platform, 30, 1024);
+    dai_rd1_get_work(platform)->origin_x = 1024;
     scra_h_posit.w.h = 0;
 
     dodai(platform);
@@ -297,63 +284,63 @@ static void test_dodai_motion_types_and_ride_counter(test_context *ctx) {
     reset_dai_rd1_state();
     platform->r_no0 = 2;
     platform->userflag.b.h = 0;
-    set_actfree_word(platform, 31, 200);
-    platform->actfree[3] = 8;
+    dai_rd1_get_work(platform)->origin_y = 200;
+    dai_rd1_get_work(platform)->amplitude = 8;
     sinset_sin = 32;
 
     dodai(platform);
 
     TEST_ASSERT_EQ_INT(ctx, 1, sinset_count);
-    TEST_ASSERT_EQ_INT(ctx, 1, platform->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 1, dai_rd1_get_work(platform)->phase);
     TEST_ASSERT_EQ_INT(ctx, 216, platform->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, ridechk_count);
 
     reset_dai_rd1_state();
-    platform->actfree[2] = 2;
+    dai_rd1_get_work(platform)->ride_offset = 2;
     queue_ridechk_result(0);
     TEST_ASSERT_EQ_INT(ctx, 0, dodai_ride2(platform));
-    TEST_ASSERT_EQ_INT(ctx, 1, platform->actfree[2]);
+    TEST_ASSERT_EQ_INT(ctx, 1, dai_rd1_get_work(platform)->ride_offset);
 
     reset_dai_rd1_state();
-    platform->actfree[2] = 7;
+    dai_rd1_get_work(platform)->ride_offset = 7;
     queue_ridechk_result(1);
     TEST_ASSERT_EQ_INT(ctx, 1, dodai_ride2(platform));
-    TEST_ASSERT_EQ_INT(ctx, 8, platform->actfree[2]);
+    TEST_ASSERT_EQ_INT(ctx, 8, dai_rd1_get_work(platform)->ride_offset);
 }
 
 static void test_dodai_diagonal_and_fixed_motion_types(test_context *ctx) {
     sprite_status *platform = &actwk[2];
 
     reset_dai_rd1_state();
-    set_actfree_word(platform, 30, 100);
-    set_actfree_word(platform, 31, 200);
-    platform->actfree[3] = 8;
+    dai_rd1_get_work(platform)->origin_x = 100;
+    dai_rd1_get_work(platform)->origin_y = 200;
+    dai_rd1_get_work(platform)->amplitude = 8;
     sinset_sin = 32;
     dodai_lr(platform);
     TEST_ASSERT_EQ_INT(ctx, 116, platform->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 200, platform->yposi.w.h);
 
     reset_dai_rd1_state();
-    set_actfree_word(platform, 30, 100);
-    set_actfree_word(platform, 31, 200);
-    platform->actfree[3] = 8;
+    dai_rd1_get_work(platform)->origin_x = 100;
+    dai_rd1_get_work(platform)->origin_y = 200;
+    dai_rd1_get_work(platform)->amplitude = 8;
     sinset_sin = 32;
     dodai_nA(platform);
     TEST_ASSERT_EQ_INT(ctx, 116, platform->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 216, platform->yposi.w.h);
 
     reset_dai_rd1_state();
-    set_actfree_word(platform, 30, 100);
-    set_actfree_word(platform, 31, 200);
-    platform->actfree[3] = 8;
+    dai_rd1_get_work(platform)->origin_x = 100;
+    dai_rd1_get_work(platform)->origin_y = 200;
+    dai_rd1_get_work(platform)->amplitude = 8;
     sinset_sin = 32;
     dodai_nB(platform);
     TEST_ASSERT_EQ_INT(ctx, 84, platform->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 216, platform->yposi.w.h);
 
     reset_dai_rd1_state();
-    set_actfree_word(platform, 31, 200);
-    platform->actfree[2] = 6;
+    dai_rd1_get_work(platform)->origin_y = 200;
+    dai_rd1_get_work(platform)->ride_offset = 6;
     dodai_fix(platform);
     TEST_ASSERT_EQ_INT(ctx, 203, platform->yposi.w.h);
 }
@@ -364,17 +351,17 @@ static void test_dodai_fall_and_rise_state_machines(test_context *ctx) {
     reset_dai_rd1_state();
     queue_ridechk_result(1);
     dodai_fal(platform);
-    TEST_ASSERT_EQ_INT(ctx, 2, platform->actfree[1]);
-    TEST_ASSERT_EQ_INT(ctx, 29, platform->actfree[4]);
+    TEST_ASSERT_EQ_INT(ctx, 2, dai_rd1_get_work(platform)->state);
+    TEST_ASSERT_EQ_INT(ctx, 29, dai_rd1_get_work(platform)->wait_timer);
 
     reset_dai_rd1_state();
-    platform->actfree[1] = 2;
-    platform->actfree[4] = 1;
+    dai_rd1_get_work(platform)->state = 2;
+    dai_rd1_get_work(platform)->wait_timer = 1;
     dodai_fal(platform);
-    TEST_ASSERT_EQ_INT(ctx, 0, platform->actfree[4]);
+    TEST_ASSERT_EQ_INT(ctx, 0, dai_rd1_get_work(platform)->wait_timer);
 
     reset_dai_rd1_state();
-    platform->actfree[1] = 2;
+    dai_rd1_get_work(platform)->state = 2;
     platform->yspeed.w = 128;
     platform->yposi.l = 100 << 16;
     scra_v_posit.w.h = 0;
@@ -383,7 +370,7 @@ static void test_dodai_fall_and_rise_state_machines(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, (100 << 16) + (128 << 8), platform->yposi.l);
 
     reset_dai_rd1_state();
-    platform->actfree[1] = 2;
+    dai_rd1_get_work(platform)->state = 2;
     platform->yspeed.w = 1024;
     platform->yposi.w.h = 400;
     scra_v_posit.w.h = 100;
@@ -394,28 +381,28 @@ static void test_dodai_fall_and_rise_state_machines(test_context *ctx) {
     reset_dai_rd1_state();
     queue_ridechk_result(1);
     dodai_up(platform);
-    TEST_ASSERT_EQ_INT(ctx, 2, platform->actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 2, dai_rd1_get_work(platform)->state);
 
     reset_dai_rd1_state();
-    platform->actfree[1] = 2;
-    platform->actfree[0] = 64;
+    dai_rd1_get_work(platform)->state = 2;
+    dai_rd1_get_work(platform)->phase = 64;
     platform->yposi.w.h = 123;
     dodai_up(platform);
-    TEST_ASSERT_EQ_INT(ctx, 4, platform->actfree[1]);
-    TEST_ASSERT_EQ_INT(ctx, 123, get_actfree_word(platform, 31));
+    TEST_ASSERT_EQ_INT(ctx, 4, dai_rd1_get_work(platform)->state);
+    TEST_ASSERT_EQ_INT(ctx, 123, dai_rd1_get_work(platform)->origin_y);
 }
 
 static void test_dodai_upx_and_horizontal_state_machines(test_context *ctx) {
     sprite_status *platform = &actwk[2];
 
     reset_dai_rd1_state();
-    platform->actfree[1] = 2;
-    platform->actfree[4] = 1;
+    dai_rd1_get_work(platform)->state = 2;
+    dai_rd1_get_work(platform)->wait_timer = 1;
     dodai_upx(platform);
-    TEST_ASSERT_EQ_INT(ctx, 0, platform->actfree[4]);
+    TEST_ASSERT_EQ_INT(ctx, 0, dai_rd1_get_work(platform)->wait_timer);
 
     reset_dai_rd1_state();
-    platform->actfree[1] = 2;
+    dai_rd1_get_work(platform)->state = 2;
     emycol_u_result = -5;
     platform->yspeed.w = 80;
     platform->yposi.w.h = 200;
@@ -423,36 +410,36 @@ static void test_dodai_upx_and_horizontal_state_machines(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, speedset2_count);
     TEST_ASSERT_EQ_INT(ctx, 1, emycol_u_count);
     TEST_ASSERT_EQ_INT(ctx, 205, platform->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 4, platform->actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 4, dai_rd1_get_work(platform)->state);
 
     reset_dai_rd1_state();
-    set_actfree_word(platform, 30, 100);
-    set_actfree_word(platform, 31, 200);
-    platform->actfree[1] = 2;
-    platform->actfree[0] = 2;
-    platform->actfree[3] = 8;
+    dai_rd1_get_work(platform)->origin_x = 100;
+    dai_rd1_get_work(platform)->origin_y = 200;
+    dai_rd1_get_work(platform)->state = 2;
+    dai_rd1_get_work(platform)->phase = 2;
+    dai_rd1_get_work(platform)->amplitude = 8;
     sinset_sin = 32;
     dodai_rm(platform);
     TEST_ASSERT_EQ_INT(ctx, 116, platform->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 3, platform->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 3, dai_rd1_get_work(platform)->phase);
 
     reset_dai_rd1_state();
-    set_actfree_word(platform, 30, 100);
-    set_actfree_word(platform, 31, 200);
-    platform->actfree[1] = 2;
-    platform->actfree[0] = 2;
-    platform->actfree[3] = 8;
+    dai_rd1_get_work(platform)->origin_x = 100;
+    dai_rd1_get_work(platform)->origin_y = 200;
+    dai_rd1_get_work(platform)->state = 2;
+    dai_rd1_get_work(platform)->phase = 2;
+    dai_rd1_get_work(platform)->amplitude = 8;
     sinset_sin = 32;
     dodai_lm(platform);
     TEST_ASSERT_EQ_INT(ctx, 84, platform->xposi.w.h);
 
     reset_dai_rd1_state();
-    platform->actfree[1] = 2;
-    platform->actfree[0] = 64;
+    dai_rd1_get_work(platform)->state = 2;
+    dai_rd1_get_work(platform)->phase = 64;
     platform->xposi.w.h = 222;
     dodai_rm(platform);
-    TEST_ASSERT_EQ_INT(ctx, 4, platform->actfree[1]);
-    TEST_ASSERT_EQ_INT(ctx, 222, get_actfree_word(platform, 30));
+    TEST_ASSERT_EQ_INT(ctx, 4, dai_rd1_get_work(platform)->state);
+    TEST_ASSERT_EQ_INT(ctx, 222, dai_rd1_get_work(platform)->origin_x);
 }
 
 static void test_dodai_state_machine_break_and_timer_edges(test_context *ctx) {
@@ -461,75 +448,75 @@ static void test_dodai_state_machine_break_and_timer_edges(test_context *ctx) {
     reset_dai_rd1_state();
     queue_ridechk_result(0);
     dodai_fal(platform);
-    TEST_ASSERT_EQ_INT(ctx, 0, platform->actfree[1]);
-    TEST_ASSERT_EQ_INT(ctx, 0, platform->actfree[4]);
+    TEST_ASSERT_EQ_INT(ctx, 0, dai_rd1_get_work(platform)->state);
+    TEST_ASSERT_EQ_INT(ctx, 0, dai_rd1_get_work(platform)->wait_timer);
 
     reset_dai_rd1_state();
     queue_ridechk_result(0);
     dodai_up(platform);
-    TEST_ASSERT_EQ_INT(ctx, 0, platform->actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 0, dai_rd1_get_work(platform)->state);
 
     reset_dai_rd1_state();
     queue_ridechk_result(0);
     dodai_upx(platform);
-    TEST_ASSERT_EQ_INT(ctx, 0, platform->actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 0, dai_rd1_get_work(platform)->state);
 
     reset_dai_rd1_state();
     queue_ridechk_result(1);
     dodai_upx(platform);
-    TEST_ASSERT_EQ_INT(ctx, 2, platform->actfree[1]);
-    TEST_ASSERT_EQ_INT(ctx, 59, platform->actfree[4]);
+    TEST_ASSERT_EQ_INT(ctx, 2, dai_rd1_get_work(platform)->state);
+    TEST_ASSERT_EQ_INT(ctx, 59, dai_rd1_get_work(platform)->wait_timer);
 
     reset_dai_rd1_state();
-    platform->actfree[1] = 2;
+    dai_rd1_get_work(platform)->state = 2;
     emycol_u_result = 3;
     dodai_upx(platform);
     TEST_ASSERT_EQ_INT(ctx, 1, speedset2_count);
     TEST_ASSERT_EQ_INT(ctx, 1, emycol_u_count);
     TEST_ASSERT_EQ_INT(ctx, 1, ridechk_count);
-    TEST_ASSERT_EQ_INT(ctx, 2, platform->actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 2, dai_rd1_get_work(platform)->state);
 
     reset_dai_rd1_state();
     queue_ridechk_result(0);
     dodai_rm(platform);
-    TEST_ASSERT_EQ_INT(ctx, 0, platform->actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 0, dai_rd1_get_work(platform)->state);
 
     reset_dai_rd1_state();
     queue_ridechk_result(1);
     dodai_rm(platform);
-    TEST_ASSERT_EQ_INT(ctx, 2, platform->actfree[1]);
-    TEST_ASSERT_EQ_INT(ctx, 59, platform->actfree[4]);
+    TEST_ASSERT_EQ_INT(ctx, 2, dai_rd1_get_work(platform)->state);
+    TEST_ASSERT_EQ_INT(ctx, 59, dai_rd1_get_work(platform)->wait_timer);
 
     reset_dai_rd1_state();
-    platform->actfree[1] = 2;
-    platform->actfree[4] = 1;
+    dai_rd1_get_work(platform)->state = 2;
+    dai_rd1_get_work(platform)->wait_timer = 1;
     dodai_rm(platform);
-    TEST_ASSERT_EQ_INT(ctx, 0, platform->actfree[4]);
+    TEST_ASSERT_EQ_INT(ctx, 0, dai_rd1_get_work(platform)->wait_timer);
 
     reset_dai_rd1_state();
     queue_ridechk_result(0);
     dodai_lm(platform);
-    TEST_ASSERT_EQ_INT(ctx, 0, platform->actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 0, dai_rd1_get_work(platform)->state);
 
     reset_dai_rd1_state();
     queue_ridechk_result(1);
     dodai_lm(platform);
-    TEST_ASSERT_EQ_INT(ctx, 2, platform->actfree[1]);
-    TEST_ASSERT_EQ_INT(ctx, 59, platform->actfree[4]);
+    TEST_ASSERT_EQ_INT(ctx, 2, dai_rd1_get_work(platform)->state);
+    TEST_ASSERT_EQ_INT(ctx, 59, dai_rd1_get_work(platform)->wait_timer);
 
     reset_dai_rd1_state();
-    platform->actfree[1] = 2;
-    platform->actfree[4] = 1;
+    dai_rd1_get_work(platform)->state = 2;
+    dai_rd1_get_work(platform)->wait_timer = 1;
     dodai_lm(platform);
-    TEST_ASSERT_EQ_INT(ctx, 0, platform->actfree[4]);
+    TEST_ASSERT_EQ_INT(ctx, 0, dai_rd1_get_work(platform)->wait_timer);
 
     reset_dai_rd1_state();
-    platform->actfree[1] = 2;
-    platform->actfree[0] = 64;
+    dai_rd1_get_work(platform)->state = 2;
+    dai_rd1_get_work(platform)->phase = 64;
     platform->xposi.w.h = 111;
     dodai_lm(platform);
-    TEST_ASSERT_EQ_INT(ctx, 4, platform->actfree[1]);
-    TEST_ASSERT_EQ_INT(ctx, 111, get_actfree_word(platform, 30));
+    TEST_ASSERT_EQ_INT(ctx, 4, dai_rd1_get_work(platform)->state);
+    TEST_ASSERT_EQ_INT(ctx, 111, dai_rd1_get_work(platform)->origin_x);
 }
 
 static void test_vfuta_initializes_triggers_and_resets(test_context *ctx) {
@@ -569,7 +556,7 @@ static void test_vfuta_initializes_triggers_and_resets(test_context *ctx) {
 
     reset_dai_rd1_state();
     door->r_no0 = 4;
-    door->actfree[16] = 248;
+    dai_rd1_get_work(door)->vfuta_phase = 248;
     door->patno = 1;
     vfuta(door);
     TEST_ASSERT_EQ_INT(ctx, 2, door->r_no0);

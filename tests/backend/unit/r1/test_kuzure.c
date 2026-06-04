@@ -100,34 +100,6 @@ static void set_ridechk_result(int index, Sint16 value) {
     }
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
-static Sint16 actfree_word(const sprite_status *actor, int offset) {
-    Uint16 value = actor->actfree[offset];
-
-    value |= (Uint16)actor->actfree[offset + 1] << 8;
-    return (Sint16)value;
-}
-
-static void set_actfree_long(sprite_status *actor, int offset, Sint32 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint32)value >> 8);
-    actor->actfree[offset + 2] = (Uint8)((Uint32)value >> 16);
-    actor->actfree[offset + 3] = (Uint8)((Uint32)value >> 24);
-}
-
-static Sint32 actfree_long(const sprite_status *actor, int offset) {
-    Uint32 value = actor->actfree[offset];
-
-    value |= (Uint32)actor->actfree[offset + 1] << 8;
-    value |= (Uint32)actor->actfree[offset + 2] << 16;
-    value |= (Uint32)actor->actfree[offset + 3] << 24;
-    return (Sint32)value;
-}
-
 static void reset_state(void) {
     memset(actwk, 0, sizeof(actwk));
     actionsub_count = 0;
@@ -276,12 +248,13 @@ static void test_acta_check_positive_ride_spawns_a_pieces(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 4, first_visible->actflg);
     TEST_ASSERT_EQ_INT(ctx, 3, first_visible->sprpri);
     TEST_ASSERT_TRUE(ctx, first_visible->patbase == patc);
-    TEST_ASSERT_EQ_INT(ctx, 0x20000, actfree_long(first_visible, 2));
+    TEST_ASSERT_EQ_INT(ctx, 0x20000,
+                       kuzure_work_get(first_visible)->y_velocity);
     TEST_ASSERT_EQ_INT(ctx, 77, first_visible->actno);
     TEST_ASSERT_EQ_INT(ctx, 4, first_visible->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 100, first_visible->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 224, first_visible->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 33, actfree_word(first_visible, 0));
+    TEST_ASSERT_EQ_INT(ctx, 33, kuzure_work_get(first_visible)->wait_timer);
 }
 
 static void test_acta_check_flipped_ride_spawns_a_pieces(test_context *ctx) {
@@ -305,7 +278,7 @@ static void test_acta_check_flipped_ride_spawns_a_pieces(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 5, first_visible->actflg);
     TEST_ASSERT_EQ_INT(ctx, 1, first_visible->cddat);
     TEST_ASSERT_EQ_INT(ctx, 100, first_visible->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 33, actfree_word(first_visible, 0));
+    TEST_ASSERT_EQ_INT(ctx, 33, kuzure_work_get(first_visible)->wait_timer);
     TEST_ASSERT_TRUE(ctx, frameout_actor == actor);
 }
 
@@ -331,7 +304,8 @@ static void test_acta_check_negative_ride_spawns_b_pieces(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, ride_on_clr_count);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_TRUE(ctx, first_piece->patbase == patd);
-    TEST_ASSERT_EQ_INT(ctx, 0x20000, actfree_long(first_piece, 2));
+    TEST_ASSERT_EQ_INT(ctx, 0x20000,
+                       kuzure_work_get(first_piece)->y_velocity);
     TEST_ASSERT_EQ_INT(ctx, 91, first_piece->actno);
     TEST_ASSERT_EQ_INT(ctx, 4, first_piece->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 240, first_piece->yposi.w.h);
@@ -339,7 +313,7 @@ static void test_acta_check_negative_ride_spawns_b_pieces(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 18, first_piece->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 0, first_piece->patno);
     TEST_ASSERT_EQ_INT(ctx, 80, first_piece->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 9, actfree_word(first_piece, 0));
+    TEST_ASSERT_EQ_INT(ctx, 9, kuzure_work_get(first_piece)->wait_timer);
     TEST_ASSERT_TRUE(ctx, frameout_actor == actor);
 }
 
@@ -396,14 +370,14 @@ static void test_actb_wait_timer_runs_out_and_clears_ride(test_context *ctx) {
 
     reset_state();
     actor->r_no0 = 4;
-    actor->actfree[20] = 255;
-    set_actfree_word(actor, 0, 1);
+    kuzure_work_get(actor)->top_piece = 255;
+    kuzure_work_get(actor)->wait_timer = 1;
     set_ridechk_result(0, 1);
 
     actb_wait(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actfree_word(actor, 0));
+    TEST_ASSERT_EQ_INT(ctx, 0, kuzure_work_get(actor)->wait_timer);
     TEST_ASSERT_EQ_INT(ctx, 1, ridechk_count);
     TEST_ASSERT_EQ_INT(ctx, 1, ride_on_clr_count);
     TEST_ASSERT_TRUE(ctx, ride_on_clr_actor == actor);
@@ -414,14 +388,14 @@ static void test_actb_wait_nonzero_timer_keeps_waiting(test_context *ctx) {
 
     reset_state();
     actor->r_no0 = 4;
-    actor->actfree[20] = 255;
-    set_actfree_word(actor, 0, 2);
+    kuzure_work_get(actor)->top_piece = 255;
+    kuzure_work_get(actor)->wait_timer = 2;
     set_ridechk_result(0, 1);
 
     actb_wait(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 1, actfree_word(actor, 0));
+    TEST_ASSERT_EQ_INT(ctx, 1, kuzure_work_get(actor)->wait_timer);
     TEST_ASSERT_EQ_INT(ctx, 1, ridechk_count);
     TEST_ASSERT_EQ_INT(ctx, 0, ride_on_clr_count);
 }
@@ -431,7 +405,7 @@ static void test_actb_wait_without_top_piece_skips_ride_check(test_context *ctx)
 
     reset_state();
     actor->r_no0 = 4;
-    set_actfree_word(actor, 0, 1);
+    kuzure_work_get(actor)->wait_timer = 1;
 
     actb_wait(actor);
 
@@ -447,12 +421,12 @@ static void test_actb_down_accelerates_until_far_below_player(
     reset_state();
     actor->yposi.l = 100 << 16;
     actwk[0].yposi.w.h = 90;
-    set_actfree_long(actor, 2, 0x20000);
+    kuzure_work_get(actor)->y_velocity = 0x20000;
 
     actb_down(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 102, actor->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 0x24000, actfree_long(actor, 2));
+    TEST_ASSERT_EQ_INT(ctx, 0x24000, kuzure_work_get(actor)->y_velocity);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_count);
 
     actor->yposi.l = 700 << 16;

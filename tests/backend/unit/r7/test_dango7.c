@@ -101,28 +101,6 @@ void sinset(Uint8 kakudo, Sint16 *sin, Sint16 *cos) {
     *cos = sinset_cos_result;
 }
 
-static void write_actor_speed(sprite_status *actor, Sint32 speed) {
-    memcpy(&actor->actfree[0], &speed, sizeof(speed));
-}
-
-static Sint32 read_actor_speed(sprite_status *actor) {
-    Sint32 speed;
-
-    memcpy(&speed, &actor->actfree[0], sizeof(speed));
-    return speed;
-}
-
-static void write_actor_variant(sprite_status *actor, Sint32 variant) {
-    memcpy(&actor->actfree[4], &variant, sizeof(variant));
-}
-
-static Sint32 read_actor_variant(sprite_status *actor) {
-    Sint32 variant;
-
-    memcpy(&variant, &actor->actfree[4], sizeof(variant));
-    return variant;
-}
-
 static void reset_dango7_state(void) {
     memset(actwk, 0, sizeof(actwk));
     time_flag = 0;
@@ -216,7 +194,7 @@ static void test_dango7_initializes_green_and_brown_variants(test_context *ctx) 
 
     reset_dango7_state();
     dango(actor);
-    TEST_ASSERT_EQ_INT(ctx, 0, read_actor_speed(actor));
+    TEST_ASSERT_EQ_INT(ctx, 0, dango_get_work(actor)->speed);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_TRUE(ctx, actionsub_actor == actor);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s_count);
@@ -226,7 +204,7 @@ static void test_dango7_initializes_green_and_brown_variants(test_context *ctx) 
     time_flag = 1;
     actor->userflag.b.h = 1;
     dango(actor);
-    TEST_ASSERT_EQ_INT(ctx, 1, read_actor_variant(actor));
+    TEST_ASSERT_EQ_INT(ctx, 1, dango_get_work(actor)->form);
 }
 
 static void test_dango7_fall_walk_and_roll_setup_paths(test_context *ctx) {
@@ -246,13 +224,13 @@ static void test_dango7_fall_walk_and_roll_setup_paths(test_context *ctx) {
 
     reset_dango7_state();
     a_walk(actor);
-    TEST_ASSERT_EQ_INT(ctx, -24576, read_actor_speed(actor));
+    TEST_ASSERT_EQ_INT(ctx, -24576, dango_get_work(actor)->speed);
 
     reset_dango7_state();
     actor->actflg = 1;
     actor->userflag.b.h = 1;
     a_roll(actor);
-    TEST_ASSERT_EQ_INT(ctx, 65536, read_actor_speed(actor));
+    TEST_ASSERT_EQ_INT(ctx, 65536, dango_get_work(actor)->speed);
 }
 
 static void test_dango7_transition_helpers_capture_exact_state(
@@ -277,9 +255,9 @@ static void test_dango7_transition_helpers_capture_exact_state(
     actor->yposi.w.h = 50;
     actor->sprvsize = 16;
     actor->colino = 44;
-    write_actor_speed(actor, -1234);
+    dango_get_work(actor)->speed = -1234;
     a_roll_stop(actor);
-    TEST_ASSERT_EQ_INT(ctx, 0, read_actor_speed(actor));
+    TEST_ASSERT_EQ_INT(ctx, 0, dango_get_work(actor)->speed);
 
     reset_dango7_state();
     actor->r_no0 = 24;
@@ -304,11 +282,11 @@ static void test_dango7_move_reverses_when_wall_blocks(test_context *ctx) {
     actor->actflg = 0;
     actor->cddat = 0;
     actor->sprhs = 14;
-    write_actor_speed(actor, 65536);
+    dango_get_work(actor)->speed = 65536;
     emycol_r_result = -1;
     a_walk1(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, -65536, read_actor_speed(actor));
+    TEST_ASSERT_EQ_INT(ctx, -65536, dango_get_work(actor)->speed);
     TEST_ASSERT_EQ_INT(ctx, 1, emycol_r_count);
     TEST_ASSERT_EQ_INT(ctx, 14, emycol_r_arg);
     TEST_ASSERT_EQ_INT(ctx, 0, patchg_count);
@@ -326,8 +304,8 @@ static void test_dango7_walk1_detects_player_side_and_green_patch(
     actor->r_no0 = 6;
     actwk[0].xposi.w.h = 110;
     actwk[0].yposi.w.h = 60;
-    write_actor_speed(actor, 65536);
-    write_actor_variant(actor, 0);
+    dango_get_work(actor)->speed = 65536;
+    dango_get_work(actor)->form = 0;
     a_walk1(actor);
     TEST_ASSERT_EQ_INT(ctx, 1, emycol_r_count);
     TEST_ASSERT_EQ_INT(ctx, 1, emycol_d_count);
@@ -342,8 +320,8 @@ static void test_dango7_walk1_detects_player_side_and_green_patch(
     actor->r_no0 = 6;
     actwk[0].xposi.w.h = 90;
     actwk[0].yposi.w.h = 60;
-    write_actor_speed(actor, 65536);
-    write_actor_variant(actor, 0);
+    dango_get_work(actor)->speed = 65536;
+    dango_get_work(actor)->form = 0;
     a_walk1(actor);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_TRUE(ctx, patchg_table == pchg_e);
@@ -358,7 +336,7 @@ static void test_dango7_move_restores_x_when_floor_is_out_of_range(
     actor->sprhs = 14;
     actor->xposi.w.h = 20;
     actor->yposi.w.h = 30;
-    write_actor_speed(actor, 65536);
+    dango_get_work(actor)->speed = 65536;
     emycol_r_result = 0;
     emycol_d_result = 7;
     moved = a_move(actor);
@@ -375,8 +353,8 @@ static void test_dango7_move_patchg_and_roll_collision_paths(
     reset_dango7_state();
     actor->sprhs = 14;
     actor->userflag.b.h = 1;
-    write_actor_variant(actor, 1);
-    write_actor_speed(actor, -4096);
+    dango_get_work(actor)->form = 1;
+    dango_get_work(actor)->speed = -4096;
     emycol_l_result = 0;
     emycol_d_result = 3;
     a_walk1(actor);
@@ -403,8 +381,8 @@ static void test_dango7_move_patchg_and_roll_collision_paths(
     TEST_ASSERT_EQ_INT(ctx, -896, actwk[0].xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, -448, actwk[0].yspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[0].cddat & 2);
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].actfree[18]);
-    TEST_ASSERT_EQ_INT(ctx, 229376, read_actor_speed(actor));
+    TEST_ASSERT_EQ_INT(ctx, 0, player_work_get(&actwk[0])->jump_started);
+    TEST_ASSERT_EQ_INT(ctx, 229376, dango_get_work(actor)->speed);
 }
 
 static void test_dango7_roll1_no_collision_moves_or_advances_state(
@@ -416,8 +394,8 @@ static void test_dango7_roll1_no_collision_moves_or_advances_state(
     actor->colicnt = 0;
     actor->xposi.w.h = 12;
     actor->yposi.w.h = 30;
-    write_actor_speed(actor, 65536);
-    write_actor_variant(actor, 0);
+    dango_get_work(actor)->speed = 65536;
+    dango_get_work(actor)->form = 0;
     emycol_r_result = 0;
     emycol_d_result = -6;
     a_roll1(actor);
@@ -429,8 +407,8 @@ static void test_dango7_roll1_no_collision_moves_or_advances_state(
     actor->colicnt = 0;
     actor->xposi.w.h = 12;
     actor->yposi.w.h = 30;
-    write_actor_speed(actor, 65536);
-    write_actor_variant(actor, 1);
+    dango_get_work(actor)->speed = 65536;
+    dango_get_work(actor)->form = 1;
     emycol_r_result = 0;
     emycol_d_result = 6;
     a_roll1(actor);
@@ -441,7 +419,7 @@ static void test_dango7_roll1_no_collision_moves_or_advances_state(
     actor->sprhs = 14;
     actor->r_no0 = 18;
     actor->colicnt = 0;
-    write_actor_speed(actor, 65536);
+    dango_get_work(actor)->speed = 65536;
     emycol_r_result = -1;
     a_roll1(actor);
     TEST_ASSERT_EQ_INT(ctx, 0, patchg_count);

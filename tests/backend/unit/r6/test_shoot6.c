@@ -159,11 +159,6 @@ static void queue_actwkchk2(sprite_status *actor) {
     actwkchk2_queue[actwkchk2_queue_count++] = actor;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
 static void reset_logs(void) {
     actionsub_count = 0;
     actionsub_actor = 0;
@@ -232,7 +227,7 @@ static void test_megami_spawns_rings_and_finishes(test_context *ctx) {
 
     TEST_ASSERT_EQ_INT(ctx, 2, megamiwk->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 4, megamiwk->actflg);
-    TEST_ASSERT_EQ_INT(ctx, 50, megamiwk->actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 50, megami_get_work(megamiwk)->ring_count);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s_count);
 
     actwk[0].xposi.w.h = 100;
@@ -242,8 +237,8 @@ static void test_megami_spawns_rings_and_finishes(test_context *ctx) {
 
     queue_actwkchk(ring);
     random_result = 5;
-    megamiwk->actfree[0] = 0;
-    megamiwk->actfree[1] = 1;
+    megami_get_work(megamiwk)->ring_timer = 0;
+    megami_get_work(megamiwk)->ring_count = 1;
     megami(megamiwk);
 
     TEST_ASSERT_EQ_INT(ctx, 17, ring->actno);
@@ -254,8 +249,8 @@ static void test_megami_spawns_rings_and_finishes(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, -512, ring->yspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 255, sys_pattim4);
 
-    megamiwk->actfree[0] = 0;
-    megamiwk->actfree[1] = 0;
+    megami_get_work(megamiwk)->ring_timer = 0;
+    megami_get_work(megamiwk)->ring_count = 0;
     megami(megamiwk);
     TEST_ASSERT_EQ_INT(ctx, 6, megamiwk->r_no0);
 }
@@ -273,12 +268,12 @@ static void test_gas_spawns_child_and_child_resets_parent(test_context *ctx) {
 
     TEST_ASSERT_EQ_INT(ctx, 2, gaswk->r_no0);
     TEST_ASSERT_TRUE(ctx, gaswk->patbase == gaspat);
-    TEST_ASSERT_EQ_INT(ctx, 119, gaswk->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 119, gas_get_work(gaswk)->timer);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s_count);
 
     reset_logs();
-    gaswk->actfree[0] = 1;
+    gas_get_work(gaswk)->timer = 1;
     queue_actwkchk(cloud);
     gas_move0(gaswk);
 
@@ -293,7 +288,7 @@ static void test_gas_spawns_child_and_child_resets_parent(test_context *ctx) {
     reset_logs();
     gas_move2(cloud);
 
-    TEST_ASSERT_EQ_INT(ctx, 120, gaswk->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 120, gas_get_work(gaswk)->timer);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
     TEST_ASSERT_TRUE(ctx, frameout_actor == cloud);
 }
@@ -318,7 +313,7 @@ static void test_gas_collision_freezes_player_and_rejects_guards(
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_TRUE(ctx, patchg_actor == gaswk);
     TEST_ASSERT_TRUE(ctx, patchg_table == gaschg);
-    TEST_ASSERT_EQ_INT(ctx, 65, actwk[0].actfree[2]);
+    TEST_ASSERT_EQ_INT(ctx, 65, player_work_get(&actwk[0])->status_flags);
     TEST_ASSERT_EQ_INT(ctx, 5, ice->actno);
     TEST_ASSERT_EQ_INT(ctx, 8, ice->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 24, ice->sprhs);
@@ -357,7 +352,7 @@ static void test_gas_floor_launch_damage_and_ice_fragments(test_context *ctx) {
     gaswk->yposi.w.h = 200;
     gas_init(gaswk);
     queue_actwkchk(cloud);
-    gaswk->actfree[0] = 1;
+    gas_get_work(gaswk)->timer = 1;
     gas_move0(gaswk);
     reset_logs();
     emycol_d_result = -5;
@@ -367,12 +362,12 @@ static void test_gas_floor_launch_damage_and_ice_fragments(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, emycol_d_count);
     TEST_ASSERT_EQ_INT(ctx, 1, sub_sync_count);
     TEST_ASSERT_EQ_INT(ctx, 146, sub_sync_requests[0]);
-    TEST_ASSERT_EQ_INT(ctx, 15, cloud->actfree[6]);
+    TEST_ASSERT_EQ_INT(ctx, 15, gas_get_work(cloud)->u.ice.ice_timer);
     TEST_ASSERT_EQ_INT(ctx, 6, cloud->r_no0);
     TEST_ASSERT_EQ_INT(ctx, cloud->yposi.l, gaswk->yposi.l);
 
-    cloud->actfree[6] = 1;
-    actwk[0].actfree[2] = 255;
+    gas_get_work(cloud)->u.ice.ice_timer = 1;
+    player_work_get(&actwk[0])->status_flags = 255;
     actwk[0].cddat = 32;
     swdata.b.l = 16;
     queue_actwkchk(piece0);
@@ -381,7 +376,7 @@ static void test_gas_floor_launch_damage_and_ice_fragments(test_context *ctx) {
     swdata.b.l = 16;
     gas_move4(cloud);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, gaswk->actfree[2] & 65);
+    TEST_ASSERT_EQ_INT(ctx, 0, player_work_get(gaswk)->status_flags & 65);
     TEST_ASSERT_EQ_INT(ctx, -1664, gaswk->yspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 2, gaswk->mstno.b.h);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
@@ -391,9 +386,9 @@ static void test_gas_floor_launch_damage_and_ice_fragments(test_context *ctx) {
     reset_shoot6_state();
     gas_init(gaswk);
     queue_actwkchk(cloud);
-    gaswk->actfree[0] = 1;
+    gas_get_work(gaswk)->timer = 1;
     gas_move0(gaswk);
-    cloud->actfree[6] = 0;
+    gas_get_work(cloud)->u.ice.ice_timer = 0;
     reset_logs();
     gas_move4(cloud);
 
@@ -411,18 +406,18 @@ static void test_gas_floor_launch_damage_and_ice_fragments(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 12, piece0->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 99, piece0->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 202, piece0->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 3, piece0->actfree[6]);
+    TEST_ASSERT_EQ_INT(ctx, 3, gas_get_work(piece0)->u.ice.ice_timer);
     TEST_ASSERT_EQ_INT(ctx, -2, piece0->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 106, piece1->xposi.w.h);
 
-    piece0->actfree[6] = 2;
+    gas_get_work(piece0)->u.ice.ice_timer = 2;
     piece0->xspeed.w = 3;
     piece0->yspeed.w = -4;
     gas_move5(piece0);
-    TEST_ASSERT_EQ_INT(ctx, 1, piece0->actfree[6]);
+    TEST_ASSERT_EQ_INT(ctx, 1, gas_get_work(piece0)->u.ice.ice_timer);
     TEST_ASSERT_EQ_INT(ctx, 102, piece0->xposi.w.h);
 
-    piece0->actfree[6] = 1;
+    gas_get_work(piece0)->u.ice.ice_timer = 1;
     piece0->patno = 11;
     gas_move5(piece0);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
@@ -435,11 +430,11 @@ static void test_gas_and_ice_early_return_edges(test_context *ctx) {
     sprite_status *piece1 = &actwk[11];
 
     reset_shoot6_state();
-    gaswk->actfree[0] = 0;
+    gas_get_work(gaswk)->timer = 0;
     gas_move0(gaswk);
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
 
-    gaswk->actfree[0] = 1;
+    gas_get_work(gaswk)->timer = 1;
     gas_move0(gaswk);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 0, cloud->actno);
@@ -447,7 +442,7 @@ static void test_gas_and_ice_early_return_edges(test_context *ctx) {
     reset_logs();
     ice_set(&actwk[0]);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].actfree[2]);
+    TEST_ASSERT_EQ_INT(ctx, 0, player_work_get(&actwk[0])->status_flags);
 
     reset_shoot6_state();
     gaswk->mstno.b.h = 0;
@@ -465,11 +460,11 @@ static void test_gas_and_ice_early_return_edges(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
 
     actwk[0].r_no0 = 0;
-    actwk[0].actfree[2] = 1;
+    player_work_get(&actwk[0])->status_flags = 1;
     gas_coli(gaswk);
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
 
-    actwk[0].actfree[2] = 0;
+    player_work_get(&actwk[0])->status_flags = 0;
     gaswk->xposi.w.h = 100;
     gaswk->yposi.w.h = 200;
     actwk[0].xposi.w.h = 100;
@@ -482,13 +477,13 @@ static void test_gas_and_ice_early_return_edges(test_context *ctx) {
     reset_shoot6_state();
     gas_init(gaswk);
     queue_actwkchk(cloud);
-    gaswk->actfree[0] = 1;
+    gas_get_work(gaswk)->timer = 1;
     gas_move0(gaswk);
-    cloud->actfree[6] = 2;
+    gas_get_work(cloud)->u.ice.ice_timer = 2;
     reset_logs();
     swdata.b.l = 0;
     gas_move4(cloud);
-    TEST_ASSERT_EQ_INT(ctx, 1, cloud->actfree[6]);
+    TEST_ASSERT_EQ_INT(ctx, 1, gas_get_work(cloud)->u.ice.ice_timer);
     TEST_ASSERT_EQ_INT(ctx, 4, cloud->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
 
@@ -501,9 +496,9 @@ static void test_gas_and_ice_early_return_edges(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 3, actwkchk_count);
 
     reset_logs();
-    piece0->actfree[6] = 1;
+    gas_get_work(piece0)->u.ice.ice_timer = 1;
     piece0->patno = 10;
-    piece0->actfree[7] = 0;
+    gas_get_work(piece0)->u.ice.ice_table = 0;
     gas_move5(piece0);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
     TEST_ASSERT_TRUE(ctx, frameout_actor == piece0);
@@ -525,21 +520,21 @@ static void test_catapult_cycle_and_child_follow(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, cata->patbase == cata_pat);
     TEST_ASSERT_EQ_INT(ctx, 4, child->actno);
     TEST_ASSERT_EQ_INT(ctx, 8, child->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[0].actfree[2] & 1);
+    TEST_ASSERT_EQ_INT(ctx, 1, player_work_get(&actwk[0])->status_flags & 1);
     TEST_ASSERT_EQ_INT(ctx, 3072, cata->xspeed.w);
 
     reset_logs();
     swdata1.b.h = 16;
-    actwk[0].actfree[2] = 1;
+    player_work_get(&actwk[0])->status_flags = 1;
     cata_move0(cata);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].actfree[2] & 1);
+    TEST_ASSERT_EQ_INT(ctx, 0, player_work_get(&actwk[0])->status_flags & 1);
     TEST_ASSERT_EQ_INT(ctx, -1664, actwk[0].yspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
 
     cata->xposi.w.h = 1013;
     cata->cddat = 8;
-    actwk[0].actfree[2] = 1;
+    player_work_get(&actwk[0])->status_flags = 1;
     cata_move0(cata);
     TEST_ASSERT_EQ_INT(ctx, 1012, cata->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 6, cata->r_no0);
@@ -589,7 +584,7 @@ static void test_catapult_early_return_edges(test_context *ctx) {
     cata_move0(cata);
     TEST_ASSERT_EQ_INT(ctx, 1012, cata->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 6, cata->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].actfree[2]);
+    TEST_ASSERT_EQ_INT(ctx, 0, player_work_get(&actwk[0])->status_flags);
 
     reset_logs();
     child->r_no0 = 8;
@@ -628,7 +623,7 @@ static void test_shooter_route_and_speed_paths(test_context *ctx) {
     shooterinit(shoot);
     TEST_ASSERT_EQ_INT(ctx, 4, shoot->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[0].r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 129, actwk[0].actfree[2]);
+    TEST_ASSERT_EQ_INT(ctx, 129, player_work_get(&actwk[0])->status_flags);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
 
     reset_shoot6_state();
@@ -646,7 +641,8 @@ static void test_shooter_route_and_speed_paths(test_context *ctx) {
     shoot->userflag.b.l = 1;
     shootermove(shoot);
     TEST_ASSERT_EQ_INT(ctx, 4, shoot->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 129 | 64, actwk[0].actfree[2]);
+    TEST_ASSERT_EQ_INT(ctx, 129 | 64,
+                       player_work_get(&actwk[0])->status_flags);
     TEST_ASSERT_EQ_INT(ctx, 64, actwk[0].actflg & 64);
 
     reset_shoot6_state();
@@ -661,17 +657,17 @@ static void test_shooter_route_and_speed_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
 
     actwk[0].xspeed.w = 1;
-    shoot->actfree[4] = 1;
+    shooter_get_work(shoot)->move_timer_high = 1;
     shootermove3(shoot);
     TEST_ASSERT_TRUE(ctx, actwk[0].xposi.l != 100 << 16);
 
-    shoot->actfree[4] = 0;
-    shoot->actfree[16] = 10;
-    shoot->actfree[17] = 12;
-    actwk[0].actfree[2] = 129;
+    shooter_get_work(shoot)->move_timer_high = 0;
+    shooter_get_work(shoot)->move_index = 10;
+    shooter_get_work(shoot)->move_limit = 12;
+    player_work_get(&actwk[0])->status_flags = 129;
     shootermove3(shoot);
     TEST_ASSERT_EQ_INT(ctx, 0, shoot->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].actfree[2]);
+    TEST_ASSERT_EQ_INT(ctx, 0, player_work_get(&actwk[0])->status_flags);
 
     reset_shoot6_state();
     shoot->xposi.w.h = 100;
@@ -679,14 +675,14 @@ static void test_shooter_route_and_speed_paths(test_context *ctx) {
     actwk[0].xposi.w.h = 100;
     actwk[0].yposi.w.h = 200;
     actwk[0].mspeed.w = 2048;
-    set_actfree_word(shoot, 12, 0);
-    set_actfree_word(shoot, 14, 64);
+    shooter_get_work(shoot)->target_x = 0;
+    shooter_get_work(shoot)->target_y = 64;
     shooterspdset(shoot);
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 2048, actwk[0].yspeed.w);
 
-    set_actfree_word(shoot, 12, -64);
-    set_actfree_word(shoot, 14, 0);
+    shooter_get_work(shoot)->target_x = -64;
+    shooter_get_work(shoot)->target_y = 0;
     shooterspdset(shoot);
     TEST_ASSERT_EQ_INT(ctx, -2048, actwk[0].xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].yspeed.w);
@@ -705,9 +701,9 @@ static void test_megami_early_return_edges(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 2, megamiwk->r_no0);
 
     megamiwk->r_no0 = 4;
-    megamiwk->actfree[0] = 2;
+    megami_get_work(megamiwk)->ring_timer = 2;
     m_move1(megamiwk);
-    TEST_ASSERT_EQ_INT(ctx, 1, megamiwk->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 1, megami_get_work(megamiwk)->ring_timer);
     TEST_ASSERT_EQ_INT(ctx, 4, megamiwk->r_no0);
 
     megamiwk->actno = 77;
@@ -777,8 +773,8 @@ static void test_shooter_wrapper_and_route_edges(test_context *ctx) {
     actwk[0].xposi.w.h = 100;
     actwk[0].yposi.w.h = 200;
     actwk[0].mspeed.w = 2048;
-    set_actfree_word(shoot, 12, 0);
-    set_actfree_word(shoot, 14, 64);
+    shooter_get_work(shoot)->target_x = 0;
+    shooter_get_work(shoot)->target_y = 64;
     shooter(shoot);
     TEST_ASSERT_EQ_INT(ctx, 6, shoot->r_no0);
 
@@ -805,7 +801,7 @@ static void test_shooter_wrapper_and_route_edges(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 2, shoot->r_no0);
 
     actwk[0].yposi.w.h = 200;
-    actwk[0].actfree[2] = 1;
+    player_work_get(&actwk[0])->status_flags = 1;
     shootermove(shoot);
     TEST_ASSERT_EQ_INT(ctx, 2, shoot->r_no0);
 
@@ -817,11 +813,11 @@ static void test_shooter_wrapper_and_route_edges(test_context *ctx) {
     actwk[0].mspeed.w = 2048;
     shooterinit(shoot);
     reset_logs();
-    shoot->actfree[4] = 0;
-    shoot->actfree[16] = 0;
-    shoot->actfree[17] = 12;
+    shooter_get_work(shoot)->move_timer_high = 0;
+    shooter_get_work(shoot)->move_index = 0;
+    shooter_get_work(shoot)->move_limit = 12;
     shootermove3(shoot);
-    TEST_ASSERT_EQ_INT(ctx, 6, shoot->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 6, shooter_get_work(shoot)->move_index);
 
     reset_shoot6_state();
     shoot->xposi.w.h = 100;
@@ -832,20 +828,20 @@ static void test_shooter_wrapper_and_route_edges(test_context *ctx) {
     shooterinit(shoot);
     shootermove2(shoot);
     reset_logs();
-    shoot->actfree[4] = 1;
-    shoot->actfree[16] = 56;
-    shoot->actfree[17] = 78;
+    shooter_get_work(shoot)->move_timer_high = 1;
+    shooter_get_work(shoot)->move_index = 56;
+    shooter_get_work(shoot)->move_limit = 78;
     swdata1.b.h = 0;
     shooter(shoot);
-    TEST_ASSERT_EQ_INT(ctx, 56, shoot->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 56, shooter_get_work(shoot)->move_index);
 
     reset_logs();
-    shoot->actfree[4] = 1;
-    shoot->actfree[16] = 56;
-    shoot->actfree[17] = 78;
+    shooter_get_work(shoot)->move_timer_high = 1;
+    shooter_get_work(shoot)->move_index = 56;
+    shooter_get_work(shoot)->move_limit = 78;
     swdata1.b.h = 16;
     shootermove3(shoot);
-    TEST_ASSERT_EQ_INT(ctx, 158, shoot->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 158, shooter_get_work(shoot)->move_index);
 
     reset_shoot6_state();
     shoot->xposi.w.h = 100;
@@ -853,33 +849,33 @@ static void test_shooter_wrapper_and_route_edges(test_context *ctx) {
     actwk[0].xposi.w.h = 100;
     actwk[0].yposi.w.h = 200;
     actwk[0].mspeed.w = 2048;
-    set_actfree_word(shoot, 12, 32);
-    set_actfree_word(shoot, 14, 64);
+    shooter_get_work(shoot)->target_x = 32;
+    shooter_get_work(shoot)->target_y = 64;
     shooterspdset(shoot);
     TEST_ASSERT_EQ_INT(ctx, 1024, actwk[0].xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 2048, actwk[0].yspeed.w);
 
-    set_actfree_word(shoot, 12, 32);
-    set_actfree_word(shoot, 14, -64);
+    shooter_get_work(shoot)->target_x = 32;
+    shooter_get_work(shoot)->target_y = -64;
     shooterspdset(shoot);
     TEST_ASSERT_EQ_INT(ctx, 1024, actwk[0].xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, -2048, actwk[0].yspeed.w);
 
-    set_actfree_word(shoot, 12, -64);
-    set_actfree_word(shoot, 14, 32);
+    shooter_get_work(shoot)->target_x = -64;
+    shooter_get_work(shoot)->target_y = 32;
     shooterspdset(shoot);
     TEST_ASSERT_EQ_INT(ctx, 1024, actwk[0].yspeed.w);
     TEST_ASSERT_EQ_INT(ctx, -2048, actwk[0].xspeed.w);
 
     actwk[0].mspeed.w = -2048;
-    set_actfree_word(shoot, 12, 0);
-    set_actfree_word(shoot, 14, 64);
+    shooter_get_work(shoot)->target_x = 0;
+    shooter_get_work(shoot)->target_y = 64;
     shooterspdset(shoot);
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, -2048, actwk[0].yspeed.w);
 
-    set_actfree_word(shoot, 12, 64);
-    set_actfree_word(shoot, 14, 32);
+    shooter_get_work(shoot)->target_x = 64;
+    shooter_get_work(shoot)->target_y = 32;
     shooterspdset(shoot);
     TEST_ASSERT_EQ_INT(ctx, -2048, actwk[0].xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, -1024, actwk[0].yspeed.w);

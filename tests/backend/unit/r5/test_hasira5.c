@@ -107,22 +107,6 @@ static void queue_actor(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
-static void set_actfree_long(sprite_status *actor, int offset, Sint32 value) {
-    Uint32 bits = (Uint32)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)((bits >> 8) & 255);
-    actor->actfree[offset + 2] = (Uint8)((bits >> 16) & 255);
-    actor->actfree[offset + 3] = (Uint8)((bits >> 24) & 255);
-}
-
-static Sint32 actfree_long(sprite_status *actor, int offset) {
-    Uint32 bits = (Uint32)actor->actfree[offset] |
-                  ((Uint32)actor->actfree[offset + 1] << 8) |
-                  ((Uint32)actor->actfree[offset + 2] << 16) |
-                  ((Uint32)actor->actfree[offset + 3] << 24);
-    return (Sint32)bits;
-}
-
 static void test_init_sets_fields_and_waits_without_collision(
     test_context *ctx) {
     sprite_status *pillar = &actwk[3];
@@ -193,34 +177,34 @@ static void test_collision_spawns_all_eight_fragments_and_drops_main(
     TEST_ASSERT_EQ_INT(ctx, 12, pillar->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, (92 << 16) - 77101, pillar->xposi.l);
     TEST_ASSERT_EQ_INT(ctx, (176 << 16) - 131072 + 16384, pillar->yposi.l);
-    TEST_ASSERT_EQ_INT(ctx, -77101, actfree_long(pillar, 0));
-    TEST_ASSERT_EQ_INT(ctx, -114688, actfree_long(pillar, 4));
+    TEST_ASSERT_EQ_INT(ctx, -77101, hasira5_work_get(pillar)->x_velocity);
+    TEST_ASSERT_EQ_INT(ctx, -114688, hasira5_work_get(pillar)->y_velocity);
 
     TEST_ASSERT_EQ_INT(ctx, 44, actwk[40].actno);
     TEST_ASSERT_EQ_INT(ctx, 4, actwk[40].r_no0);
     TEST_ASSERT_EQ_INT(ctx, 5, actwk[40].patno);
     TEST_ASSERT_EQ_INT(ctx, 108, actwk[40].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 176, actwk[40].yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 77101, actfree_long(&actwk[40], 0));
-    TEST_ASSERT_EQ_INT(ctx, -131072, actfree_long(&actwk[40], 4));
+    TEST_ASSERT_EQ_INT(ctx, 77101, hasira5_work_get(&actwk[40])->x_velocity);
+    TEST_ASSERT_EQ_INT(ctx, -131072, hasira5_work_get(&actwk[40])->y_velocity);
 
     TEST_ASSERT_EQ_INT(ctx, 3, actwk[41].patno);
     TEST_ASSERT_EQ_INT(ctx, 92, actwk[41].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 192, actwk[41].yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, -163840, actfree_long(&actwk[41], 0));
-    TEST_ASSERT_EQ_INT(ctx, -98304, actfree_long(&actwk[41], 4));
+    TEST_ASSERT_EQ_INT(ctx, -163840, hasira5_work_get(&actwk[41])->x_velocity);
+    TEST_ASSERT_EQ_INT(ctx, -98304, hasira5_work_get(&actwk[41])->y_velocity);
 
     TEST_ASSERT_EQ_INT(ctx, 7, actwk[45].patno);
     TEST_ASSERT_EQ_INT(ctx, 92, actwk[45].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 224, actwk[45].yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, -163840, actfree_long(&actwk[45], 0));
-    TEST_ASSERT_EQ_INT(ctx, 65536, actfree_long(&actwk[45], 4));
+    TEST_ASSERT_EQ_INT(ctx, -163840, hasira5_work_get(&actwk[45])->x_velocity);
+    TEST_ASSERT_EQ_INT(ctx, 65536, hasira5_work_get(&actwk[45])->y_velocity);
 
     TEST_ASSERT_EQ_INT(ctx, 5, actwk[46].patno);
     TEST_ASSERT_EQ_INT(ctx, 108, actwk[46].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 224, actwk[46].yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 163840, actfree_long(&actwk[46], 0));
-    TEST_ASSERT_EQ_INT(ctx, 65536, actfree_long(&actwk[46], 4));
+    TEST_ASSERT_EQ_INT(ctx, 163840, hasira5_work_get(&actwk[46])->x_velocity);
+    TEST_ASSERT_EQ_INT(ctx, 65536, hasira5_work_get(&actwk[46])->y_velocity);
 
     TEST_ASSERT_EQ_INT(ctx, 2, actionsub_count);
     TEST_ASSERT_TRUE(ctx, actionsub_actor == pillar);
@@ -258,15 +242,15 @@ static void test_down_moves_or_frames_out_by_player_distance(test_context *ctx) 
     fragment->xposi.l = 100 << 16;
     fragment->yposi.l = 200 << 16;
     actwk[0].yposi.w.h = 200;
-    set_actfree_long(fragment, 0, 2 << 16);
-    set_actfree_long(fragment, 4, -1 << 16);
+    hasira5_work_get(fragment)->x_velocity = 2 << 16;
+    hasira5_work_get(fragment)->y_velocity = -1 << 16;
 
     hasira5(fragment);
 
     TEST_ASSERT_EQ_INT(ctx, 102, fragment->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 199, fragment->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, (Sint32)((-1 << 16) + 16384),
-                       actfree_long(fragment, 4));
+                       hasira5_work_get(fragment)->y_velocity);
     TEST_ASSERT_EQ_INT(ctx, 2, actionsub_count);
     TEST_ASSERT_TRUE(ctx, actionsub_actor == fragment);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s_count);

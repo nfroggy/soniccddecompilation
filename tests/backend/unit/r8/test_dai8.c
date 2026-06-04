@@ -88,9 +88,17 @@ static void queue_actwkchk(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
+static void set_dai8_word(sprite_status *actor, int offset, Sint16 value) {
+    dai8_work *work = dai8_get_work(actor);
+
+    switch (offset) {
+    case 4:
+        work->origin_x = value;
+        break;
+    case 6:
+        work->origin_y = value;
+        break;
+    }
 }
 
 static void reset_logs(void) {
@@ -253,7 +261,7 @@ static void test_dai8_child_frames_out_when_origin_words_differ(
     reset_dai8_state();
     queue_actwkchk(child);
     init_platform(parent, 1000, 200, 1);
-    set_actfree_word(child, 4, 1001);
+    set_dai8_word(child, 4, 1001);
 
     dai8(child);
 
@@ -267,7 +275,7 @@ static void test_dai8_child_frames_out_when_origin_words_differ(
     child = &actwk[20];
     queue_actwkchk(child);
     init_platform(parent, 1000, 200, 1);
-    set_actfree_word(child, 6, 201);
+    set_dai8_word(child, 6, 201);
 
     dai8(child);
 

@@ -1,4 +1,3 @@
-#include <stddef.h>
 #include <string.h>
 
 #include "support/test_runner.h"
@@ -68,18 +67,6 @@ Uint8 CCset(Sint32 lSrc, Sint32 lDst) { return lSrc - lDst < 0; }
 
 Uint8 CSset(Uint16 wSrc, Uint16 wDst) {
     return (Uint32)wSrc + (Uint32)wDst > 65535;
-}
-
-static size_t short_alias_offset(int short_index) {
-    return (size_t)short_index * sizeof(Sint16) -
-           offsetof(sprite_status, actfree);
-}
-
-static void set_actor_short_alias(sprite_status *actor, int short_index,
-                                  Uint16 value) {
-    size_t offset = short_alias_offset(short_index);
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)(value >> 8);
 }
 
 static void queue_actor(sprite_status *actor) {
@@ -266,7 +253,7 @@ static void test_item_collision_preserves_bumper_behaviors(test_context *ctx) {
 
     reset_coli4_state();
     item->colino = 65;
-    set_actor_short_alias(player, 26, 90);
+    player_work_get(player)->damage_invulnerability_timer = 90;
     TEST_ASSERT_EQ_INT(ctx, -1, pcolitem(player, item));
 
     reset_coli4_state();
@@ -347,7 +334,7 @@ static void test_player_damage_and_death_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 0, jumpcolsub_count);
 
     reset_coli4_state();
-    set_actor_short_alias(player, 26, 1);
+    player_work_get(player)->damage_invulnerability_timer = 1;
     TEST_ASSERT_EQ_INT(ctx, -1, pcole(player, enemy));
     TEST_ASSERT_EQ_INT(ctx, 0, jumpcolsub_count);
 

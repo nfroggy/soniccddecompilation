@@ -3,6 +3,7 @@
 #include "support/test_runner.h"
 #include "src/equ.h"
 #include "src/player.h"
+#include "src/player_work.h"
 #include "src/types.h"
 
 Uint8 mapwka[8][64];
@@ -336,8 +337,16 @@ static void reset_player_state(void) {
 }
 
 static void set_player_work_word(int offset, Uint16 value) {
-    actwk[0].actfree[offset] = (Uint8)value;
-    actwk[0].actfree[offset + 1] = (Uint8)(value >> 8);
+    player_work *work = player_work_get(&actwk[0]);
+
+    switch (offset) {
+    case 8:
+        work->invincibility_timer = value;
+        break;
+    case 10:
+        work->speed_shoes_timer = value;
+        break;
+    }
 }
 
 static void test_bye_chk_resets_counter_when_not_waiting(test_context *ctx) {
@@ -456,7 +465,7 @@ static void test_mizuki_set_spawns_only_for_stage0_tile_47(test_context *ctx) {
     actwk[0].xposi.w.h = 768;
     actwk[0].yposi.w.h = 502;
     actwk[0].xspeed.w = -20;
-    actwk[0].actfree[2] = 1;
+    player_work_get(&actwk[0])->status_flags = 1;
     mapwka[2][3] = 47;
 
     mizuki_set();
@@ -481,7 +490,7 @@ static void test_mizuki_set_spawns_only_for_stage0_tile_47(test_context *ctx) {
     actwk[0].xposi.w.h = 768;
     actwk[0].yposi.w.h = 502;
     actwk[0].xspeed.w = 20;
-    actwk[0].actfree[2] = 1;
+    player_work_get(&actwk[0])->status_flags = 1;
     mapwka[2][3] = 47;
 
     mizuki_set();
@@ -500,7 +509,7 @@ static void test_mizuki_set_guards_odd_timer_position_and_allocation(
     actwk[0].sprvsize = 10;
     actwk[0].xposi.w.h = 768;
     actwk[0].yposi.w.h = 502;
-    actwk[0].actfree[2] = 1;
+    player_work_get(&actwk[0])->status_flags = 1;
 
     mizuki_set();
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
@@ -517,11 +526,11 @@ static void test_mizuki_set_guards_odd_timer_position_and_allocation(
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
 
     actwk[0].xposi.w.h = 768;
-    actwk[0].actfree[2] = 0;
+    player_work_get(&actwk[0])->status_flags = 0;
     mizuki_set();
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
 
-    actwk[0].actfree[2] = 1;
+    player_work_get(&actwk[0])->status_flags = 1;
     actwkchk_fail = 1;
     mizuki_set();
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
@@ -553,13 +562,13 @@ static void test_scr_h_moves_toward_center_or_speed_edges(test_context *ctx) {
 
     scra_hline = 170;
     actwk[0].mspeed.w = 2000;
-    actwk[0].actfree[2] = 2;
+    player_work_get(&actwk[0])->status_flags = 2;
     actwk[0].xposi.w.h = 100;
     scr_h();
     TEST_ASSERT_EQ_INT(ctx, 168, scra_hline);
 
     scra_hline = 224;
-    actwk[0].actfree[2] = 0;
+    player_work_get(&actwk[0])->status_flags = 0;
     actwk[0].mspeed.w = -2000;
     scr_h();
     TEST_ASSERT_EQ_INT(ctx, 224, scra_hline);
@@ -615,15 +624,15 @@ static void test_play00_and_play00move_dispatch_visible_states(test_context *ctx
     TEST_ASSERT_TRUE(ctx, actwk[0].patbase == sncpat);
 
     reset_player_state();
-    actwk[0].actfree[0] = 29;
+    player_work_get(&actwk[0])->spin_dash_counter = 29;
     play00(&actwk[0]);
-    TEST_ASSERT_EQ_INT(ctx, 30, actwk[0].actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 30, player_work_get(&actwk[0])->spin_dash_counter);
 
     reset_player_state();
-    actwk[0].actfree[0] = 44;
+    player_work_get(&actwk[0])->spin_dash_counter = 44;
     actwk[0].cddat = 4;
     play00(&actwk[0]);
-    TEST_ASSERT_EQ_INT(ctx, 45, actwk[0].actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 45, player_work_get(&actwk[0])->spin_dash_counter);
 
     reset_player_state();
     debugflag.w = 1;
@@ -653,7 +662,7 @@ static void test_play00move_auto_backto_and_water_state_paths(test_context *ctx)
     TEST_ASSERT_EQ_INT(ctx, 132, swdata.b.l);
 
     reset_player_state();
-    actwk[0].actfree[2] = 1;
+    player_work_get(&actwk[0])->status_flags = 1;
     stageno.b.h = 6;
     backto_cnt = 8;
     plpower_a = 1;
@@ -665,7 +674,7 @@ static void test_play00move_auto_backto_and_water_state_paths(test_context *ctx)
 
     reset_player_state();
     watercoliflag = 1;
-    actwk[0].actfree[2] = 1;
+    player_work_get(&actwk[0])->status_flags = 1;
     stageno.b.h = 6;
     actwk[0].mstno.b.h = 0;
     actwk[0].mstno.b.l = 12;
@@ -677,7 +686,7 @@ static void test_play00move_auto_backto_and_water_state_paths(test_context *ctx)
     reset_player_state();
     keep_work.TimeWarp = 1;
     time_item = 1;
-    actwk[0].actfree[2] = 1;
+    player_work_get(&actwk[0])->status_flags = 1;
     actwk[0].mspeed.w = 1536;
 
     play00move();
@@ -995,7 +1004,7 @@ static void test_backto_chk_resets_before_time_warp_threshold(test_context *ctx)
     reset_player_state();
     keep_work.TimeWarp = 1;
     time_item = 1;
-    actwk[0].actfree[0] = 1;
+    player_work_get(&actwk[0])->spin_dash_counter = 1;
     backto_chk();
     TEST_ASSERT_EQ_INT(ctx, 0, backto_cnt);
 
@@ -1089,14 +1098,14 @@ static void test_chk11_time_attack_exit_forces_signed_speed(test_context *ctx) {
     reset_player_state();
     mapwka[0][0] = 6;
     chk11();
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].actfree[2]);
+    TEST_ASSERT_EQ_INT(ctx, 0, player_work_get(&actwk[0])->status_flags);
 
     reset_player_state();
     time_flag = 1;
     stageno.w = 1;
     mapwka[0][0] = 6;
     chk11();
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].actfree[2]);
+    TEST_ASSERT_EQ_INT(ctx, 0, player_work_get(&actwk[0])->status_flags);
 
     reset_player_state();
     time_flag = 1;
@@ -1105,12 +1114,12 @@ static void test_chk11_time_attack_exit_forces_signed_speed(test_context *ctx) {
     chk11();
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].xspeed.w);
 
-    actwk[0].actfree[2] = 2;
+    player_work_get(&actwk[0])->status_flags = 2;
     actwk[0].yspeed.w = 10;
     chk11();
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].xspeed.w);
 
-    actwk[0].actfree[2] = 2;
+    player_work_get(&actwk[0])->status_flags = 2;
     actwk[0].yspeed.w = -500;
     chk11();
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].xspeed.w);
@@ -1258,7 +1267,7 @@ static void test_jumpchk_rejects_missing_buttons_and_low_clearance(
     TEST_ASSERT_EQ_INT(ctx, 0, jumpchk());
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].cddat);
 
-    actwk[0].actfree[0] = 1;
+    player_work_get(&actwk[0])->spin_dash_counter = 1;
     swdata.b.l = 16;
     TEST_ASSERT_EQ_INT(ctx, 0, jumpchk());
 
@@ -1297,7 +1306,7 @@ static void test_jumpchk_rejects_missing_buttons_and_low_clearance(
 static void test_jumpchk_uses_flip_platform_jump_geometry(test_context *ctx) {
     reset_player_state();
     actwk[0].cddat = 8;
-    actwk[0].actfree[19] = 3;
+    player_work_get(&actwk[0])->ride_actor_index = 3;
     actwk[0].xposi.w.h = 1030;
     actwk[0].yposi.w.h = 190;
     actwk[3].actno = 30;
@@ -1354,7 +1363,7 @@ static void test_keispd_variants_apply_slope_speed_rules(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 100, actwk[0].mspeed.w);
 
     reset_player_state();
-    actwk[0].actfree[0] = 1;
+    player_work_get(&actwk[0])->spin_dash_counter = 1;
     actwk[0].mspeed.w = 100;
     keispd();
     keispd2();
@@ -1370,26 +1379,26 @@ static void test_keispd_variants_apply_slope_speed_rules(test_context *ctx) {
 
 static void test_jumpchk2_release_and_fall_clamps(test_context *ctx) {
     reset_player_state();
-    actwk[0].actfree[18] = 1;
+    player_work_get(&actwk[0])->jump_started = 1;
     actwk[0].yspeed.w = -2000;
     swdata.b.h = 112;
 
     jumpchk2();
 
     TEST_ASSERT_EQ_INT(ctx, -2000, actwk[0].yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[0].actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 1, player_work_get(&actwk[0])->jump_started);
 
     reset_player_state();
-    actwk[0].actfree[18] = 1;
+    player_work_get(&actwk[0])->jump_started = 1;
     actwk[0].yspeed.w = -2000;
 
     jumpchk2();
 
     TEST_ASSERT_EQ_INT(ctx, -1024, actwk[0].yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 0, player_work_get(&actwk[0])->spin_dash_counter);
 
     reset_player_state();
-    actwk[0].actfree[18] = 1;
+    player_work_get(&actwk[0])->jump_started = 1;
     actwk[0].cddat = 64;
     actwk[0].yspeed.w = -2000;
 
@@ -1407,7 +1416,7 @@ static void test_jumpchk2_release_and_fall_clamps(test_context *ctx) {
 
 static void test_walk_and_ballwalk_adjust_speed_and_direction(test_context *ctx) {
     reset_player_state();
-    actwk[0].actfree[0] = 1;
+    player_work_get(&actwk[0])->spin_dash_counter = 1;
     actwk[0].mspeed.w = -100;
     plwalk_l();
     plwalk_r();
@@ -1542,7 +1551,7 @@ static void test_plwalk_brake_and_lever_crouch_jump_roll(test_context *ctx) {
     wave_all_stop_count = 0;
     pladdspdwk = 20;
     actwk[0].cddat = 4;
-    actwk[0].actfree[0] = 0;
+    player_work_get(&actwk[0])->spin_dash_counter = 0;
     actwk[0].mspeed.w = 5;
     swdata.w = 0;
 
@@ -1569,7 +1578,7 @@ static void test_plwalk_brake_and_lever_crouch_jump_roll(test_context *ctx) {
 
 static void test_levermove_release_and_camera_branches(test_context *ctx) {
     reset_player_state();
-    actwk[0].actfree[0] = 10;
+    player_work_get(&actwk[0])->spin_dash_counter = 10;
 
     levermove();
 
@@ -1578,7 +1587,7 @@ static void test_levermove_release_and_camera_branches(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].mspeed.w);
 
     reset_player_state();
-    actwk[0].actfree[0] = 30;
+    player_work_get(&actwk[0])->spin_dash_counter = 30;
 
     levermove();
 
@@ -1645,7 +1654,7 @@ static void test_levermove_platform_edges_and_charge_acceleration(
 
     reset_player_state();
     emycol_d_result = 12;
-    actwk[0].actfree[12] = 3;
+    player_work_get(&actwk[0])->floor_left = 3;
 
     levermove();
 
@@ -1660,7 +1669,7 @@ static void test_levermove_platform_edges_and_charge_acceleration(
     levermove();
     emycol_d_result = 12;
     actwk[0].cddat = 0;
-    actwk[0].actfree[0] = 0;
+    player_work_get(&actwk[0])->spin_dash_counter = 0;
     swdata.w = 0;
     wave_all_stop_count = 0;
     levermove();
@@ -1669,7 +1678,7 @@ static void test_levermove_platform_edges_and_charge_acceleration(
     reset_player_state();
     emycol_d_result = 12;
     actwk[0].cddat = 1;
-    actwk[0].actfree[13] = 3;
+    player_work_get(&actwk[0])->floor_right = 3;
 
     levermove();
 
@@ -1677,7 +1686,7 @@ static void test_levermove_platform_edges_and_charge_acceleration(
 
     reset_player_state();
     plmaxspdwk = 200;
-    actwk[0].actfree[0] = 1;
+    player_work_get(&actwk[0])->spin_dash_counter = 1;
     swdata.b.h = 1;
 
     levermove();
@@ -1686,7 +1695,7 @@ static void test_levermove_platform_edges_and_charge_acceleration(
 
     reset_player_state();
     plmaxspdwk = 200;
-    actwk[0].actfree[0] = 1;
+    player_work_get(&actwk[0])->spin_dash_counter = 1;
     actwk[0].cddat = 1;
     swdata.b.h = 1;
 
@@ -1696,7 +1705,7 @@ static void test_levermove_platform_edges_and_charge_acceleration(
 
     reset_player_state();
     plmaxspdwk = -200;
-    actwk[0].actfree[0] = 1;
+    player_work_get(&actwk[0])->spin_dash_counter = 1;
     swdata.b.h = 1;
 
     levermove();
@@ -1706,7 +1715,7 @@ static void test_levermove_platform_edges_and_charge_acceleration(
     reset_player_state();
     plmaxspdwk = 200;
     plpower_s = 1;
-    actwk[0].actfree[0] = 1;
+    player_work_get(&actwk[0])->spin_dash_counter = 1;
     actwk[0].mspeed.w = 240;
     swdata.b.h = 1;
 
@@ -1716,7 +1725,7 @@ static void test_levermove_platform_edges_and_charge_acceleration(
 
     reset_player_state();
     actwk[0].cddat = 8;
-    actwk[0].actfree[19] = 2;
+    player_work_get(&actwk[0])->ride_actor_index = 2;
     actwk[2].cddat = 128;
 
     levermove();
@@ -1725,7 +1734,7 @@ static void test_levermove_platform_edges_and_charge_acceleration(
 
     reset_player_state();
     actwk[0].cddat = 8;
-    actwk[0].actfree[19] = 2;
+    player_work_get(&actwk[0])->ride_actor_index = 2;
     actwk[2].actno = 30;
 
     levermove();
@@ -1734,7 +1743,7 @@ static void test_levermove_platform_edges_and_charge_acceleration(
 
     reset_player_state();
     actwk[0].cddat = 8;
-    actwk[0].actfree[19] = 2;
+    player_work_get(&actwk[0])->ride_actor_index = 2;
     actwk[0].xposi.w.h = 100;
     actwk[2].xposi.w.h = 0;
     actwk[2].sprhsize = 60;
@@ -1745,7 +1754,7 @@ static void test_levermove_platform_edges_and_charge_acceleration(
 
     reset_player_state();
     actwk[0].cddat = 8;
-    actwk[0].actfree[19] = 2;
+    player_work_get(&actwk[0])->ride_actor_index = 2;
     actwk[0].xposi.w.h = 10;
     actwk[2].xposi.w.h = 0;
     actwk[2].sprhsize = 60;
@@ -1756,7 +1765,7 @@ static void test_levermove_platform_edges_and_charge_acceleration(
 
     reset_player_state();
     plmaxspdwk = 200;
-    actwk[0].actfree[0] = 1;
+    player_work_get(&actwk[0])->spin_dash_counter = 1;
     actwk[0].cddat = 1;
     actwk[0].mspeed.w = -500;
     swdata.b.h = 1;
@@ -1771,7 +1780,7 @@ static void test_levermove_platform_edges_and_charge_acceleration(
     levermove();
 
     TEST_ASSERT_EQ_INT(ctx, 7, actwk[0].mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 0, player_work_get(&actwk[0])->spin_dash_counter);
 
     reset_player_state();
     pladdspdwk = 0;
@@ -1794,7 +1803,7 @@ static void test_levermove_platform_edges_and_charge_acceleration(
     TEST_ASSERT_EQ_INT(ctx, 66, scr_cnt);
 
     reset_player_state();
-    actwk[0].actfree[0] = 1;
+    player_work_get(&actwk[0])->spin_dash_counter = 1;
     swdata.b.h = 2;
 
     levermove();
@@ -1807,7 +1816,7 @@ static void test_levermove_platform_edges_and_charge_acceleration(
     levermove();
 
     TEST_ASSERT_EQ_INT(ctx, 8, actwk[0].mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 0, player_work_get(&actwk[0])->spin_dash_counter);
 
     reset_player_state();
     actwk[0].cddat = 1;
@@ -1845,7 +1854,7 @@ static void test_levermove_platform_edges_and_charge_acceleration(
 static void test_levermove_ride_geometry_and_button_latches(test_context *ctx) {
     reset_player_state();
     actwk[0].cddat = 8;
-    actwk[0].actfree[19] = 2;
+    player_work_get(&actwk[0])->ride_actor_index = 2;
     actwk[2].actno = 30;
     actwk[0].mstno.b.h = 9;
 
@@ -1855,7 +1864,7 @@ static void test_levermove_ride_geometry_and_button_latches(test_context *ctx) {
 
     reset_player_state();
     actwk[0].cddat = 8;
-    actwk[0].actfree[19] = 2;
+    player_work_get(&actwk[0])->ride_actor_index = 2;
     actwk[0].xposi.w.h = 95;
     actwk[2].xposi.w.h = 100;
     actwk[2].sprhsize = 8;
@@ -1866,7 +1875,7 @@ static void test_levermove_ride_geometry_and_button_latches(test_context *ctx) {
 
     reset_player_state();
     actwk[0].cddat = 9;
-    actwk[0].actfree[19] = 2;
+    player_work_get(&actwk[0])->ride_actor_index = 2;
     actwk[0].xposi.w.h = 200;
     actwk[2].xposi.w.h = 100;
     actwk[2].sprhsize = 8;
@@ -1916,7 +1925,7 @@ static void test_balllmove_charge_release_and_spin_dash_finish(
     reset_player_state();
     plmaxspdwk = 200;
     actwk[0].cddat = 4;
-    actwk[0].actfree[0] = 1;
+    player_work_get(&actwk[0])->spin_dash_counter = 1;
     actwk[0].mspeed.w = 180;
     swdata.b.h = 2;
 
@@ -1928,7 +1937,7 @@ static void test_balllmove_charge_release_and_spin_dash_finish(
     reset_player_state();
     plmaxspdwk = 200;
     actwk[0].cddat = 4;
-    actwk[0].actfree[0] = 45;
+    player_work_get(&actwk[0])->spin_dash_counter = 45;
     actwk[0].mspeed.w = 100;
 
     balllmove();
@@ -1944,7 +1953,7 @@ static void test_balllmove_left_charge_release_and_water_motion(
     reset_player_state();
     plmaxspdwk = 200;
     actwk[0].cddat = 5;
-    actwk[0].actfree[0] = 1;
+    player_work_get(&actwk[0])->spin_dash_counter = 1;
     actwk[0].mspeed.w = -180;
     swdata.b.h = 2;
 
@@ -1955,7 +1964,7 @@ static void test_balllmove_left_charge_release_and_water_motion(
     reset_player_state();
     plmaxspdwk = 200;
     actwk[0].cddat = 5;
-    actwk[0].actfree[0] = 45;
+    player_work_get(&actwk[0])->spin_dash_counter = 45;
     actwk[0].mspeed.w = -100;
 
     balllmove();
@@ -1976,7 +1985,7 @@ static void test_balllmove_left_charge_release_and_water_motion(
 static void test_balllmove_abort_charge_and_power_s_cap(test_context *ctx) {
     reset_player_state();
     actwk[0].cddat = 4;
-    actwk[0].actfree[0] = 1;
+    player_work_get(&actwk[0])->spin_dash_counter = 1;
     actwk[0].mspeed.w = 100;
 
     balllmove();
@@ -1991,7 +2000,7 @@ static void test_balllmove_abort_charge_and_power_s_cap(test_context *ctx) {
     plpower_s = 1;
     plmaxspdwk = 200;
     actwk[0].cddat = 4;
-    actwk[0].actfree[0] = 1;
+    player_work_get(&actwk[0])->spin_dash_counter = 1;
     actwk[0].mspeed.w = 240;
     swdata.b.h = 2;
 
@@ -2002,7 +2011,7 @@ static void test_balllmove_abort_charge_and_power_s_cap(test_context *ctx) {
     reset_player_state();
     plmaxspdwk = -200;
     actwk[0].cddat = 4;
-    actwk[0].actfree[0] = 1;
+    player_work_get(&actwk[0])->spin_dash_counter = 1;
     actwk[0].mspeed.w = 100;
     swdata.b.h = 2;
 
@@ -2013,7 +2022,7 @@ static void test_balllmove_abort_charge_and_power_s_cap(test_context *ctx) {
     reset_player_state();
     plmaxspdwk = 200;
     actwk[0].cddat = 5;
-    actwk[0].actfree[0] = 1;
+    player_work_get(&actwk[0])->spin_dash_counter = 1;
     actwk[0].mspeed.w = -500;
     swdata.b.h = 2;
 
@@ -2060,7 +2069,7 @@ static void test_balllmove_abort_charge_and_power_s_cap(test_context *ctx) {
     swdata.b.l = 16;
     levermove();
     actwk[0].cddat = 4;
-    actwk[0].actfree[0] = 1;
+    player_work_get(&actwk[0])->spin_dash_counter = 1;
     actwk[0].mspeed.w = 100;
     swdata.w = 0;
 
@@ -2116,7 +2125,7 @@ static void test_jumpmove_air_control_and_camera_return(test_context *ctx) {
     reset_player_state();
     time_flag = 1;
     stageno.w = 0;
-    actwk[0].actfree[2] = 2;
+    player_work_get(&actwk[0])->status_flags = 2;
     actwk[0].xposi.w.h = 1700;
     actwk[0].xspeed.w = 123;
     swdata.b.h = 8;
@@ -2230,7 +2239,7 @@ static void test_direcchg_positive_and_skip_cases(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].direc.b.h);
 
     reset_player_state();
-    actwk[0].actfree[2] = 2;
+    player_work_get(&actwk[0])->status_flags = 2;
     actwk[0].direc.b.h = 10;
     direcchg();
     TEST_ASSERT_EQ_INT(ctx, 10, actwk[0].direc.b.h);
@@ -2516,7 +2525,7 @@ static void test_fallchk_sets_airborne_state_for_steep_low_speed(
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[0].cddat);
 
     reset_player_state();
-    actwk[0].actfree[14] = 1;
+    player_work_get(&actwk[0])->jump_lock = 1;
     actwk[0].direc.b.h = 80;
     actwk[0].mspeed.w = 500;
     fallchk();
@@ -2800,7 +2809,7 @@ static void test_frip_spd_uses_flip_actor_geometry(test_context *ctx) {
     Uint8 cal_direc = 123;
 
     reset_player_state();
-    actwk[0].actfree[19] = 3;
+    player_work_get(&actwk[0])->ride_actor_index = 3;
 
     TEST_ASSERT_EQ_INT(ctx, 255, frip_spd(&cal_jump, &cal_direc));
     TEST_ASSERT_EQ_INT(ctx, 0, cal_jump);
@@ -3025,7 +3034,7 @@ static void test_play00_damage_die_wrappers_and_grounded_damage_sub(
     actwk[0].mspeed.w = 13;
     play00damage_sub();
     actionsub_count = 0;
-    actwk[0].actfree[2] = 64;
+    player_work_get(&actwk[0])->status_flags = 64;
     playpowercnt();
     playpowercnt();
     TEST_ASSERT_EQ_INT(ctx, 0, actionsub_count);
@@ -3048,7 +3057,7 @@ static void test_playpowercnt_expires_item_seeded_power_timers(
     TEST_ASSERT_EQ_INT(ctx, 1, plpower_m);
     sub_sync_count = 0;
     da_set_count = 0;
-    actwk[0].actfree[2] = 64;
+    player_work_get(&actwk[0])->status_flags = 64;
 
     for (i = 0; i < 1320; ++i) {
         playpowercnt();
@@ -3064,7 +3073,7 @@ static void test_playpowercnt_expires_item_seeded_power_timers(
     TEST_ASSERT_EQ_INT(ctx, 1, plpower_s);
     sub_sync_count = 0;
     da_set_count = 0;
-    actwk[0].actfree[2] = 64;
+    player_work_get(&actwk[0])->status_flags = 64;
 
     for (i = 0; i < 1320; ++i) {
         playpowercnt();
@@ -3083,7 +3092,7 @@ static void test_playpowercnt_expires_item_seeded_power_timers(
     TEST_ASSERT_EQ_INT(ctx, 1, plpower_s);
     sub_sync_count = 0;
     da_set_count = 0;
-    actwk[0].actfree[2] = 64;
+    player_work_get(&actwk[0])->status_flags = 64;
 
     for (i = 0; i < 1320; ++i) {
         playpowercnt();
@@ -3099,7 +3108,7 @@ static void test_playpowercnt_expires_item_seeded_power_timers(
     collect_item_powerup(3);
     sub_sync_count = 0;
     da_set_count = 0;
-    actwk[0].actfree[2] = 64;
+    player_work_get(&actwk[0])->status_flags = 64;
 
     for (i = 0; i < 1320; ++i) {
         playpowercnt();
@@ -3113,7 +3122,7 @@ static void test_playpowercnt_expires_item_seeded_power_timers(
     collect_item_powerup(4);
     sub_sync_count = 0;
     da_set_count = 0;
-    actwk[0].actfree[2] = 64;
+    player_work_get(&actwk[0])->status_flags = 64;
 
     for (i = 0; i < 1320; ++i) {
         playpowercnt();
@@ -3240,7 +3249,7 @@ static void test_animation_changers_select_exact_frames_and_timing(
     reset_player_state();
     actwk[0].pattim = 0;
     actwk[0].mspeed.w = 300;
-    actwk[0].actfree[2] = 2;
+    player_work_get(&actwk[0])->status_flags = 2;
     actwk[0].direc.b.h = 64;
     playrunchg2(254);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[0].pattim);
@@ -3261,7 +3270,7 @@ static void test_animation_changers_select_exact_frames_and_timing(
     reset_player_state();
     actwk[0].pattim = 0;
     actwk[0].mspeed.w = 1000;
-    actwk[0].actfree[2] = 2;
+    player_work_get(&actwk[0])->status_flags = 2;
     playrunchg(255);
     TEST_ASSERT_EQ_INT(ctx, 4, actwk[0].pattim);
     TEST_ASSERT_EQ_INT(ctx, 166, actwk[0].patno);
@@ -3277,7 +3286,7 @@ static void test_animation_changers_select_exact_frames_and_timing(
     reset_player_state();
     actwk[0].pattim = 0;
     actwk[0].mspeed.w = 300;
-    actwk[0].actfree[2] = 2;
+    player_work_get(&actwk[0])->status_flags = 2;
     actwk[0].direc.b.h = -16;
     playrunchg2(254);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[0].pattim);
@@ -3426,3 +3435,4 @@ test_animation_changers_select_exact_frames_and_timing(&ctx);
 test_empty_player_hooks_are_callable(&ctx);
 test_little_patchg_maps_only_in_chibi_mode(&ctx);
 TEST_MAIN_END;
+

@@ -80,14 +80,10 @@ static void queue_hitchk_result(Sint16 value) {
     hitchk_results[hitchk_result_count++] = value;
 }
 
-static void set_actor_word(sprite_status *actor, int index, Sint16 value) {
-    int offset = (index - 23) * 2;
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
-static void set_actor_byte(sprite_status *actor, int index, Sint8 value) {
-    ((Sint8 *)actor)[index] = value;
+static void set_angle_high(sprite_status *actor, Sint8 value) {
+    branko7_work *work = branko7_work_get(actor);
+    work->angle = (Sint16)(((Uint16)work->angle & 0x00ff) |
+                           ((Uint16)(Uint8)value << 8));
 }
 
 static void reset_branko7_state(void) {
@@ -169,7 +165,7 @@ static void test_branko7_initializes_existing_child_and_table_variant(
     reset_branko7_state();
     swing->xposi.w.h = 200;
     swing->yposi.w.h = 80;
-    swing->actfree[18] = 1;
+    branko7_work_get(swing)->segment_index = 1;
     swing->userflag.b.h = 0x60;
     sinset_sin_value = 0;
     sinset_cos_value = 0;
@@ -213,30 +209,30 @@ static void test_branko7_positioning_and_direction_toggles(test_context *ctx) {
     sprite_status *swing = &actwk[2];
 
     reset_branko7_state();
-    set_actor_word(swing, 26, 254);
-    set_actor_word(swing, 28, 256);
-    set_actor_word(swing, 30, -256);
-    set_actor_word(swing, 31, 1000);
-    set_actor_word(swing, 33, 2);
-    set_actor_word(swing, 27, 50);
-    set_actor_word(swing, 29, 100);
-    set_actor_byte(swing, 63, 7);
-    set_actor_byte(swing, 64, 2);
+    branko7_work_get(swing)->swing_speed = 254;
+    branko7_work_get(swing)->area1 = 256;
+    branko7_work_get(swing)->area2 = -256;
+    branko7_work_get(swing)->angle = 1000;
+    branko7_work_get(swing)->acceleration = 2;
+    branko7_work_get(swing)->origin_y = 50;
+    branko7_work_get(swing)->origin_x = 100;
+    set_angle_high(swing, 7);
+    branko7_work_get(swing)->segment_index = 2;
     sinset_sin_value = 256;
     sinset_cos_value = -128;
     branko7_posiset(swing);
     TEST_ASSERT_EQ_INT(ctx, 8, sinset_angle);
 
     reset_branko7_state();
-    swing->actfree[19] = 1;
-    set_actor_word(swing, 26, -254);
-    set_actor_word(swing, 28, 256);
-    set_actor_word(swing, 30, -256);
-    set_actor_word(swing, 31, 1000);
-    set_actor_word(swing, 33, 2);
-    set_actor_word(swing, 27, 50);
-    set_actor_word(swing, 29, 100);
-    set_actor_byte(swing, 64, 2);
+    branko7_work_get(swing)->direction = 1;
+    branko7_work_get(swing)->swing_speed = -254;
+    branko7_work_get(swing)->area1 = 256;
+    branko7_work_get(swing)->area2 = -256;
+    branko7_work_get(swing)->angle = 1000;
+    branko7_work_get(swing)->acceleration = 2;
+    branko7_work_get(swing)->origin_y = 50;
+    branko7_work_get(swing)->origin_x = 100;
+    branko7_work_get(swing)->segment_index = 2;
     sinset_sin_value = -256;
     sinset_cos_value = 128;
     branko7_posiset(swing);
@@ -249,11 +245,11 @@ static void test_branko7_move_sets_speed_only_for_ride_piece(
     reset_branko7_state();
     swing->xposi.l = 100 << 16;
     swing->yposi.l = 50 << 16;
-    swing->actfree[5] = 1;
-    swing->actfree[18] = 0;
-    set_actor_word(swing, 27, 50);
-    set_actor_word(swing, 29, 100);
-    set_actor_byte(swing, 64, 2);
+    branko7_work_get(swing)->total_segments = 1;
+    branko7_work_get(swing)->segment_index = 0;
+    branko7_work_get(swing)->origin_y = 50;
+    branko7_work_get(swing)->origin_x = 100;
+    branko7_work_get(swing)->segment_index = 2;
     sinset_sin_value = 128;
     sinset_cos_value = 128;
     branko7_move(swing);
@@ -262,11 +258,11 @@ static void test_branko7_move_sets_speed_only_for_ride_piece(
     reset_branko7_state();
     swing->xposi.l = 100 << 16;
     swing->yposi.l = 50 << 16;
-    swing->actfree[5] = 2;
-    swing->actfree[18] = 1;
-    set_actor_word(swing, 27, 50);
-    set_actor_word(swing, 29, 100);
-    set_actor_byte(swing, 64, 2);
+    branko7_work_get(swing)->total_segments = 2;
+    branko7_work_get(swing)->segment_index = 1;
+    branko7_work_get(swing)->origin_y = 50;
+    branko7_work_get(swing)->origin_x = 100;
+    branko7_work_get(swing)->segment_index = 2;
     sinset_sin_value = 128;
     sinset_cos_value = 128;
     queue_hitchk_result(0);

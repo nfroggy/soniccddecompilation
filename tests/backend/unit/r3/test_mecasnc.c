@@ -132,21 +132,6 @@ static void queue_actor(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
-static void set_actor_word(sprite_status *actor, int index, Sint16 value) {
-    int offset = 0;
-
-    if (index == 27) {
-        offset = 8;
-    } else if (index == 28) {
-        offset = 10;
-    } else if (index == 33) {
-        offset = 20;
-    }
-
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
 static void reset_mecasnc_state(void) {
     memset(actwk, 0, sizeof(actwk));
     ta_flag = 0;
@@ -232,7 +217,7 @@ static void test_mecasnc_entry_init_wait_and_fout(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 
     reset_mecasnc_state();
-    actor->actfree[16] = 1;
+    mecasnc3_work_get(actor)->hover_angle = 1;
     mecasnc3_matu1(actor);
 
     reset_mecasnc_state();
@@ -257,7 +242,7 @@ static void test_mecasnc_motion_states(test_context *ctx) {
     reset_mecasnc_state();
     actor->xposi.l = 0x04000000;
     actor->xspeed.w = -400;
-    set_actor_word(actor, 33, -500);
+    mecasnc3_work_get(actor)->acceleration = -500;
     mecasnc3_come(actor);
 
     reset_mecasnc_state();
@@ -269,47 +254,47 @@ static void test_mecasnc_motion_states(test_context *ctx) {
 
     reset_mecasnc_state();
     actor->xposi.w.h = 930;
-    set_actor_word(actor, 28, 5);
+    mecasnc3_work_get(actor)->ride_actor_index = 5;
     actwk[5].xposi.w.h = 900;
     mecasnc3_come(actor);
 
     reset_mecasnc_state();
     actor->xposi.l = 0x01000000;
     actwk[0].xposi.l = 0x02000000;
-    set_actor_word(actor, 27, 100);
-    actor->actfree[16] = 0;
+    mecasnc3_work_get(actor)->base_y = 100;
+    mecasnc3_work_get(actor)->hover_angle = 0;
     mecasnc3_hovr(actor);
 
     reset_mecasnc_state();
-    set_actor_word(actor, 27, 100);
-    actor->actfree[16] = 128;
+    mecasnc3_work_get(actor)->base_y = 100;
+    mecasnc3_work_get(actor)->hover_angle = 128;
     mecasnc3_hovr(actor);
 
     reset_mecasnc_state();
     actor->xposi.l = 0x02000000;
     actor->yposi.l = 0x01000000;
     actor->yspeed.w = -256;
-    set_actor_word(actor, 33, 11);
-    actor->actfree[17] = 2;
+    mecasnc3_work_get(actor)->acceleration = 11;
+    mecasnc3_work_get(actor)->lift_timer = 2;
     mecasnc3_upmv(actor);
 
     reset_mecasnc_state();
     actor->yposi.l = 0x01000000;
     actor->yspeed.w = -256;
-    set_actor_word(actor, 33, 11);
-    actor->actfree[17] = 1;
-    actor->actfree[6] = 4;
+    mecasnc3_work_get(actor)->acceleration = 11;
+    mecasnc3_work_get(actor)->lift_timer = 1;
+    mecasnc3_work_get(actor)->wait_timer = 4;
     mecasnc3_upmv(actor);
 
     reset_mecasnc_state();
     actor->xposi.w.h = 400;
-    actor->actfree[6] = 4;
+    mecasnc3_work_get(actor)->wait_timer = 4;
     actwk[0].xposi.w.h = 200;
     mecasnc3_upmv(actor);
 
     reset_mecasnc_state();
     actor->xposi.w.h = 300;
-    actor->actfree[6] = 1;
+    mecasnc3_work_get(actor)->wait_timer = 1;
     actor->cddat = 1;
     actwk[0].xposi.w.h = 200;
     mecasnc3_upmv(actor);
@@ -317,7 +302,7 @@ static void test_mecasnc_motion_states(test_context *ctx) {
     reset_mecasnc_state();
     actor->xposi.l = 0x05000000;
     actor->xspeed.w = 800;
-    set_actor_word(actor, 33, 400);
+    mecasnc3_work_get(actor)->acceleration = 400;
     mecasnc3_rght(actor);
 
     reset_mecasnc_state();
@@ -337,7 +322,7 @@ static void test_emie_init_walk_help_and_palette(test_context *ctx) {
     assert_palette(ctx, colorwk[18], 128, 32, 96, 1);
 
     reset_mecasnc_state();
-    emie->actfree[20] = 7;
+    emie3_work_get(emie)->initialized_flag = 7;
     emie->xposi.l = 0x03000000;
     actwk[0].xposi.l = 0x02000000;
     emie3_init(emie);
@@ -367,8 +352,8 @@ static void test_emie_init_walk_help_and_palette(test_context *ctx) {
 
     reset_mecasnc_state();
     emie->r_no0 = 2;
-    actwk[4].actfree[19] = 1;
-    set_actor_word(emie, 28, 4);
+    mecasnc3_work_get(&actwk[4])->ready_flag = 1;
+    emie3_work_get(emie)->ride_actor_index = 4;
     emie3_walk(emie);
     TEST_ASSERT_EQ_INT(ctx, 1, sub_sync_count);
     TEST_ASSERT_EQ_INT(ctx, 125, sub_sync_requests[0]);
@@ -399,21 +384,21 @@ static void test_emie_init_walk_help_and_palette(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1000, actwk[10].yposi.w.h);
 
     reset_mecasnc_state();
-    set_actor_word(emie, 28, 5);
+    emie3_work_get(emie)->ride_actor_index = 5;
     actwk[5].actno = 49;
     actwk[5].xposi.w.h = 300;
     actwk[5].yposi.w.h = 88;
     emie3_help(emie);
 
     reset_mecasnc_state();
-    set_actor_word(emie, 28, 5);
+    emie3_work_get(emie)->ride_actor_index = 5;
     actwk[5].actno = 49;
     actwk[5].cddat = 1;
     actwk[5].xposi.w.h = 300;
     emie3_help(emie);
 
     reset_mecasnc_state();
-    set_actor_word(emie, 28, 5);
+    emie3_work_get(emie)->ride_actor_index = 5;
     actwk[5].actno = 0;
     emie3_help(emie);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
@@ -443,13 +428,13 @@ static void test_animation_and_heart_helpers(test_context *ctx) {
     empatchg(actor, msc_pchg);
 
     reset_mecasnc_state();
-    actor->actfree[17] = 240;
+    emie3_work_get(actor)->heart_timer = 240;
     actor->xposi.w.h = 100;
     actor->yposi.w.h = 50;
     heartset(actor);
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
 
-    actor->actfree[17] = 248;
+    emie3_work_get(actor)->heart_timer = 248;
     queue_actor(&actwk[10]);
     heartset(actor);
     TEST_ASSERT_EQ_INT(ctx, 51, actwk[10].actno);
@@ -457,13 +442,13 @@ static void test_animation_and_heart_helpers(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 38, actwk[10].yposi.w.h);
 
     reset_mecasnc_state();
-    actor->actfree[17] = 248;
+    emie3_work_get(actor)->heart_timer = 248;
     heartset(actor);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[10].actno);
 
     reset_mecasnc_state();
-    actor->actfree[17] = 248;
+    emie3_work_get(actor)->heart_timer = 248;
     actor->cddat = 1;
     actor->xposi.w.h = 100;
     actor->yposi.w.h = 50;
@@ -484,7 +469,7 @@ static void test_hari3x_wrappers_init_break_and_ride_damage(test_context *ctx) {
 
     reset_mecasnc_state();
     hari->r_no0 = 4;
-    hari->actfree[16] = 2;
+    hari3x_work_get(hari)->timer = 2;
     hari3x(hari);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 
@@ -520,11 +505,11 @@ static void test_hari3x_wrappers_init_break_and_ride_damage(test_context *ctx) {
     brknset(hari);
 
     reset_mecasnc_state();
-    hari->actfree[18] = 2;
+    hari3x_work_get(hari)->piece_index = 2;
     hari3x_init(hari);
 
     reset_mecasnc_state();
-    hari->actfree[18] = 3;
+    hari3x_work_get(hari)->piece_index = 3;
     hari3x_spdset(hari);
 
     reset_mecasnc_state();
@@ -532,8 +517,8 @@ static void test_hari3x_wrappers_init_break_and_ride_damage(test_context *ctx) {
     hari->yposi.l = 0x02000000;
     hari->xspeed.w = 512;
     hari->yspeed.w = -512;
-    set_actor_word(hari, 33, 96);
-    hari->actfree[16] = 1;
+    hari3x_work_get(hari)->gravity = 96;
+    hari3x_work_get(hari)->timer = 1;
     hari3x_brkn(hari);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
 
@@ -648,18 +633,18 @@ static void test_heart_and_fire_actors(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s_count);
 
     reset_mecasnc_state();
-    heart->actfree[16] = 19;
+    heart3_work_get(heart)->timer = 19;
     heart->yspeed.w = -96;
     heart3_move(heart);
 
     reset_mecasnc_state();
-    heart->actfree[16] = 109;
+    heart3_work_get(heart)->timer = 109;
     heart->yspeed.w = -96;
     heart3_move(heart);
 
     reset_mecasnc_state();
-    heart->actfree[16] = 119;
-    heart->actfree[18] = 255;
+    heart3_work_get(heart)->timer = 119;
+    heart3_work_get(heart)->no_wave = 255;
     heart3_move(heart);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
 
@@ -671,7 +656,7 @@ static void test_heart_and_fire_actors(test_context *ctx) {
     actwk[5].actno = 49;
     actwk[5].xposi.w.h = 400;
     actwk[5].yposi.w.h = 90;
-    set_actor_word(fire, 28, 5);
+    msnc3fire_work_get(fire)->parent_index = 5;
     msnc3fire_move(fire);
     TEST_ASSERT_TRUE(ctx, patchg_table == fire_pchg);
 
@@ -679,7 +664,7 @@ static void test_heart_and_fire_actors(test_context *ctx) {
     actwk[5].actno = 49;
     actwk[5].cddat = 1;
     actwk[5].xposi.w.h = 400;
-    set_actor_word(fire, 28, 5);
+    msnc3fire_work_get(fire)->parent_index = 5;
     msnc3fire(fire);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 }

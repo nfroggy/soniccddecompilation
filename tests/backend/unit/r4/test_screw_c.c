@@ -124,7 +124,7 @@ static void test_screw_c_existing_actor_with_live_parent_runs_action(
     reset_screw_c_state();
     actwk[0].actno = 101;
     screw_actor->r_no0 = 2;
-    screw_actor->actfree[2] = 101;
+    screw_c_work_get(screw_actor)->parent_actno = 101;
 
     screw(screw_actor);
 
@@ -138,7 +138,7 @@ static void test_screw_c_frames_out_when_parent_actor_changes(
     reset_screw_c_state();
     actwk[0].actno = 1;
     screw_actor->r_no0 = 2;
-    screw_actor->actfree[2] = 2;
+    screw_c_work_get(screw_actor)->parent_actno = 2;
 
     screw(screw_actor);
 

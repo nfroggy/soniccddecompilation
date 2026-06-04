@@ -131,11 +131,6 @@ static void reset_friend3_logs(void) {
     emycol_d_actor = 0;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
 static void init_inco(sprite_status *actor, Sint16 x, Sint16 y,
                       Sint8 userflag_h) {
     reset_friend3_state();
@@ -243,9 +238,9 @@ static void test_inco_movie_variant_initializes_and_uses_parent(
     init_inco(actor, 120, 220, -128);
 
 
-    set_actfree_word(actor, 20, 2);
+    friend3_get_work(actor)->movie_parent_index = 2;
     parent->actno = 56;
-    actor->actfree[4] = 124;
+    friend3_get_work(actor)->angle = 124;
 
     friend(actor);
 
@@ -263,7 +258,7 @@ static void test_inco_movie_frameouts_when_parent_invalid(test_context *ctx) {
     reset_friend3_state();
     actor->r_no0 = 4;
     actor->userflag.b.h = -128;
-    set_actfree_word(actor, 20, 2);
+    friend3_get_work(actor)->movie_parent_index = 2;
 
     friend(actor);
 
@@ -275,9 +270,9 @@ static void test_inco_movie_frameouts_when_parent_invalid(test_context *ctx) {
     parent = &actwk[2];
     actor->r_no0 = 4;
     actor->userflag.b.h = -128;
-    set_actfree_word(actor, 20, 2);
+    friend3_get_work(actor)->movie_parent_index = 2;
     parent->actno = 56;
-    parent->actfree[21] = 255;
+    friend3_get_work(parent)->movie_done = 255;
 
     friend(actor);
 
@@ -345,7 +340,7 @@ static void test_pocky_movie_variant_initializes_and_moves(test_context *ctx) {
     init_pocky(actor, 300, 400, -127);
 
 
-    set_actfree_word(actor, 20, 2);
+    friend3_get_work(actor)->movie_parent_index = 2;
     parent->actno = 56;
 
     friend(actor);
@@ -364,7 +359,7 @@ static void test_pocky_movie_frameouts_when_parent_invalid(test_context *ctx) {
     reset_friend3_state();
     actor->userflag.b.h = -127;
     actor->r_no0 = 8;
-    set_actfree_word(actor, 20, 2);
+    friend3_get_work(actor)->movie_parent_index = 2;
 
     friend(actor);
 
@@ -376,9 +371,9 @@ static void test_pocky_movie_frameouts_when_parent_invalid(test_context *ctx) {
     parent = &actwk[2];
     actor->userflag.b.h = -127;
     actor->r_no0 = 8;
-    set_actfree_word(actor, 20, 2);
+    friend3_get_work(actor)->movie_parent_index = 2;
     parent->actno = 56;
-    parent->actfree[21] = 255;
+    friend3_get_work(parent)->movie_done = 255;
 
     friend(actor);
 

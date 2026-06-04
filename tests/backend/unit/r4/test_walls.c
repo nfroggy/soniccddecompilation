@@ -1,4 +1,3 @@
-#include <stddef.h>
 #include <string.h>
 
 #include "support/test_runner.h"
@@ -94,30 +93,6 @@ static void queue_children(int first_index, int count) {
     }
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int offset) {
-    Uint16 bits = (Uint16)actor->actfree[offset] |
-                  ((Uint16)actor->actfree[offset + 1] << 8);
-    return (Sint16)bits;
-}
-
-static int legacy_word_actfree_offset(int word_index) {
-    return (word_index * 2) - (int)offsetof(sprite_status, actfree);
-}
-
-static void set_legacy_word(sprite_status *actor, int word_index, Sint16 value) {
-    set_actfree_word(actor, legacy_word_actfree_offset(word_index), value);
-}
-
-static Sint16 get_legacy_word(sprite_status *actor, int word_index) {
-    return get_actfree_word(actor, legacy_word_actfree_offset(word_index));
-}
-
 static void test_walls_tables_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, pat_walls[0] == &pat00);
     TEST_ASSERT_TRUE(ctx, pat_walls[1] == &pat01);
@@ -160,11 +135,11 @@ static void test_walls_init_creates_children_and_moves_twice(test_context *ctx) 
     TEST_ASSERT_EQ_INT(ctx, 17514, wall->sproffset);
     TEST_ASSERT_TRUE(ctx, wall->patbase == pat_walls);
     TEST_ASSERT_EQ_INT(ctx, 4, wall->patno);
-    TEST_ASSERT_EQ_INT(ctx, 100, get_legacy_word(wall, 26));
-    TEST_ASSERT_EQ_INT(ctx, 5, get_legacy_word(wall, 27));
-    TEST_ASSERT_EQ_INT(ctx, 190, get_legacy_word(wall, 23));
-    TEST_ASSERT_EQ_INT(ctx, 20, wall->actfree[14]);
-    TEST_ASSERT_EQ_INT(ctx, 27, wall->actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 100, walls_work_get(wall)->origin_x);
+    TEST_ASSERT_EQ_INT(ctx, 5, walls_work_get(wall)->parent_actor);
+    TEST_ASSERT_EQ_INT(ctx, 190, walls_work_get(wall)->timer);
+    TEST_ASSERT_EQ_INT(ctx, 20, walls_work_get(wall)->child_actors[0]);
+    TEST_ASSERT_EQ_INT(ctx, 27, walls_work_get(wall)->child_actors[7]);
     TEST_ASSERT_EQ_INT(ctx, 2, frameout_s00_count);
     TEST_ASSERT_TRUE(ctx, frameout_s00_actor == wall);
     TEST_ASSERT_EQ_INT(ctx, 100, frameout_s00_xposi);
@@ -178,7 +153,7 @@ static void test_walls_init_creates_children_and_moves_twice(test_context *ctx) 
     TEST_ASSERT_EQ_INT(ctx, 133, left->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 0, left->xposi.w.l);
     TEST_ASSERT_EQ_INT(ctx, 128, left->xspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 5, get_legacy_word(left, 27));
+    TEST_ASSERT_EQ_INT(ctx, 5, walls_work_get(left)->parent_actor);
 
     TEST_ASSERT_EQ_INT(ctx, 51, right->actno);
     TEST_ASSERT_EQ_INT(ctx, -2, right->userflag.b.h);
@@ -218,11 +193,11 @@ static void test_walls_existing_main_moves_children_once(test_context *ctx) {
     wall->r_no0 = 2;
     wall->xposi.w.h = 200;
     for (i = 0; i < 8; ++i) {
-        wall->actfree[14 + i] = (Uint8)(30 + i);
+        walls_work_get(wall)->child_actors[i] = (Uint8)(30 + i);
         actwk[30 + i].xposi.w.h = 400 + i;
     }
-    set_legacy_word(wall, 26, 200);
-    set_legacy_word(wall, 23, 2);
+    walls_work_get(wall)->origin_x = 200;
+    walls_work_get(wall)->timer = 2;
 
     walls(wall);
 
@@ -233,7 +208,7 @@ static void test_walls_existing_main_moves_children_once(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 401, right->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 0, right->xposi.w.l);
     TEST_ASSERT_EQ_INT(ctx, 0, right->xspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 1, get_legacy_word(wall, 23));
+    TEST_ASSERT_EQ_INT(ctx, 1, walls_work_get(wall)->timer);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s00_count);
     TEST_ASSERT_EQ_INT(ctx, 200, frameout_s00_xposi);
 }
@@ -256,13 +231,13 @@ static void test_walls_main_move_rolls_timer_to_stationary_segment(
         actwk[40 + i].xposi.w.h = 500 + i;
         actwk[40 + i].xposi.w.l = 0;
     }
-    set_legacy_word(wall, 26, 120);
-    set_legacy_word(wall, 23, 1);
-    set_legacy_word(wall, 28, 0);
+    walls_work_get(wall)->origin_x = 120;
+    walls_work_get(wall)->timer = 1;
+    walls_work_get(wall)->data_index = 0;
 
     main_move(wall);
-    TEST_ASSERT_EQ_INT(ctx, 60, get_legacy_word(wall, 23));
-    TEST_ASSERT_EQ_INT(ctx, 8, get_legacy_word(wall, 28));
+    TEST_ASSERT_EQ_INT(ctx, 60, walls_work_get(wall)->timer);
+    TEST_ASSERT_EQ_INT(ctx, 8, walls_work_get(wall)->data_index);
     TEST_ASSERT_EQ_INT(ctx, 500, left->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, -32768, left->xposi.w.l);
     TEST_ASSERT_EQ_INT(ctx, 128, left->xspeed.w);
@@ -271,7 +246,7 @@ static void test_walls_main_move_rolls_timer_to_stationary_segment(
     TEST_ASSERT_EQ_INT(ctx, -128, right->xspeed.w);
 
     main_move(wall);
-    TEST_ASSERT_EQ_INT(ctx, 59, get_legacy_word(wall, 23));
+    TEST_ASSERT_EQ_INT(ctx, 59, walls_work_get(wall)->timer);
     TEST_ASSERT_EQ_INT(ctx, 500, left->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, -32768, left->xposi.w.l);
     TEST_ASSERT_EQ_INT(ctx, 500, right->xposi.w.h);
@@ -286,7 +261,7 @@ static void test_walls_option_frames_out_when_parent_is_gone(
 
     reset_state();
     child->userflag.b.h = (Sint8)128;
-    set_legacy_word(child, 27, 5);
+    walls_work_get(child)->parent_actor = 5;
     actwk[5].actno = 0;
 
     walls(child);
@@ -303,7 +278,7 @@ static void test_walls_option_checks_collision_when_parent_is_alive(
 
     reset_state();
     child->userflag.b.h = (Sint8)128;
-    set_legacy_word(child, 27, 5);
+    walls_work_get(child)->parent_actor = 5;
     actwk[5].actno = 51;
 
     walls(child);

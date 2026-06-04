@@ -176,47 +176,6 @@ Sint16 emycol_r(sprite_status *pActwk, Uint8 iD3) {
 
 Sint32 stub_random(void) { return random_value; }
 
-static size_t short_alias_offset(int short_index) {
-    return (size_t)(short_index - 23) * sizeof(Sint16);
-}
-
-static void set_actor_short_alias(sprite_status *actor, int short_index,
-                                  Sint16 value) {
-    size_t offset = short_alias_offset(short_index);
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)bits;
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 actor_short_alias(const sprite_status *actor, int short_index) {
-    size_t offset = short_alias_offset(short_index);
-    return (Sint16)((Uint16)actor->actfree[offset] |
-                    ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
-static size_t long_alias_offset(int long_index) {
-    return (size_t)long_index * sizeof(Sint32) -
-           offsetof(sprite_status, actfree);
-}
-
-static void set_actor_long_alias(sprite_status *actor, int long_index,
-                                 Sint32 value) {
-    size_t offset = long_alias_offset(long_index);
-    Uint32 bits = (Uint32)value;
-    actor->actfree[offset] = (Uint8)bits;
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-    actor->actfree[offset + 2] = (Uint8)(bits >> 16);
-    actor->actfree[offset + 3] = (Uint8)(bits >> 24);
-}
-
-static Sint32 actor_long_alias(const sprite_status *actor, int long_index) {
-    size_t offset = long_alias_offset(long_index);
-    return (Sint32)((Uint32)actor->actfree[offset] |
-                    ((Uint32)actor->actfree[offset + 1] << 8) |
-                    ((Uint32)actor->actfree[offset + 2] << 16) |
-                    ((Uint32)actor->actfree[offset + 3] << 24));
-}
-
 static void reset_boss3_state(void) {
     memset(actwk, 0, sizeof(actwk));
     memset(flagwork, 0, sizeof(flagwork));
@@ -269,38 +228,38 @@ static void test_small_platform_init_hit_and_bomb_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 48, actwk[1].sprhsize);
     TEST_ASSERT_EQ_INT(ctx, 62, actwk[1].colino);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[1].colicnt);
-    TEST_ASSERT_EQ_INT(ctx, -163840, actor_long_alias(&actwk[1], 13));
-    TEST_ASSERT_EQ_INT(ctx, 652, actor_short_alias(&actwk[1], 25));
+    TEST_ASSERT_EQ_INT(ctx, -163840, egg3_get_work(&actwk[1])->vertical_speed);
+    TEST_ASSERT_EQ_INT(ctx, 652, egg3_get_work(&actwk[1])->target_position);
     TEST_ASSERT_EQ_INT(ctx, 50, actwk[40].actno);
     TEST_ASSERT_EQ_INT(ctx, 452, actwk[40].xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor_short_alias(&actwk[40], 28));
-    TEST_ASSERT_EQ_INT(ctx, 40, actor_short_alias(&actwk[1], 28));
+    TEST_ASSERT_EQ_INT(ctx, 1, egg3_get_work(&actwk[40])->child_index);
+    TEST_ASSERT_EQ_INT(ctx, 40, egg3_get_work(&actwk[1])->child_index);
 
     reset_boss3_state();
     actwk[1].colino = 0;
     egg3dai_s_chk(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 172, soundset_requests[0]);
     TEST_ASSERT_EQ_INT(ctx, 4, actwk[1].r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 4, actwk[1].actfree[2]);
+    TEST_ASSERT_EQ_INT(ctx, 4, egg3_get_work(&actwk[1])->flags);
     TEST_ASSERT_EQ_INT(ctx, 1, actwk[1].mstno.b.h);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 
     reset_boss3_state();
     actwk[1].yposi.w.h = 700;
-    actwk[1].actfree[0] = 15;
-    set_actor_long_alias(&actwk[1], 13, -0x400000);
-    set_actor_short_alias(&actwk[1], 25, 690);
+    egg3_get_work(&actwk[1])->timer = 15;
+    egg3_get_work(&actwk[1])->vertical_speed = -0x400000;
+    egg3_get_work(&actwk[1])->target_position = 690;
     egg3dai_s_up(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 6, actwk[1].r_no0);
     TEST_ASSERT_EQ_INT(ctx, 690, actwk[1].yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[1].actfree[2] & 4);
+    TEST_ASSERT_EQ_INT(ctx, 0, egg3_get_work(&actwk[1])->flags & 4);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_TRUE(ctx, patchg_table == (Uint8 **)egg3dai_s_pchg);
 
     reset_boss3_state();
-    set_actor_short_alias(&actwk[1], 28, 40);
-    set_actor_short_alias(&actwk[1], 33, 120);
-    actwk[1].actfree[2] = 2;
+    egg3_get_work(&actwk[1])->child_index = 40;
+    egg3_get_work(&actwk[1])->explosion_timer = 120;
+    egg3_get_work(&actwk[1])->flags = 2;
     egg3dai_s_bom(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 2, frameout_count);
     TEST_ASSERT_TRUE(ctx, frameout_actor == &actwk[1]);
@@ -311,37 +270,37 @@ static void test_jaba_and_flash_helpers(test_context *ctx) {
     actwk[0].xposi.w.h = 1152;
     actwk[0].yposi.w.h = 1307;
     jaba_s_chk(&actwk[1]);
-    TEST_ASSERT_EQ_INT(ctx, 2, actwk[1].actfree[2]);
+    TEST_ASSERT_EQ_INT(ctx, 2, egg3_get_work(&actwk[1])->flags);
     TEST_ASSERT_EQ_INT(ctx, 103, sub_sync_requests[0]);
     TEST_ASSERT_EQ_INT(ctx, 63, actwk[40].actno);
     TEST_ASSERT_EQ_INT(ctx, 6, actwk[40].r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1056, actwk[40].xposi.w.h);
 
     reset_boss3_state();
-    actwk[1].actfree[1] = 2;
+    egg3_get_work(&actwk[1])->flash_timer = 2;
     actwk[1].patno = 4;
     egg3flash(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 5, actwk[1].patno);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[1].actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 1, egg3_get_work(&actwk[1])->flash_timer);
     TEST_ASSERT_EQ_INT(ctx, 5, colorset2_values[0]);
 
     egg3flash(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 4, actwk[1].patno);
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[1].actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 0, egg3_get_work(&actwk[1])->flash_timer);
     TEST_ASSERT_EQ_INT(ctx, 6, colorset2_values[1]);
 
     reset_boss3_state();
-    actwk[1].actfree[16] = 0;
+    egg3_get_work(&actwk[1])->jaba_count = 0;
     actwk[0].xposi.w.h = 896;
     actwk[0].yposi.w.h = 260;
     TEST_ASSERT_EQ_INT(ctx, 0, jabaopen_chk(&actwk[1]));
     actwk[0].xposi.w.h = 831;
     TEST_ASSERT_EQ_INT(ctx, 1, jabaopen_chk(&actwk[1]));
-    actwk[1].actfree[16] = 4;
+    egg3_get_work(&actwk[1])->jaba_count = 4;
     TEST_ASSERT_EQ_INT(ctx, 1, jabaopen_chk(&actwk[1]));
 
     reset_boss3_state();
-    actwk[1].actfree[16] = 0;
+    egg3_get_work(&actwk[1])->jaba_count = 0;
     actwk[0].xposi.w.h = 896;
     actwk[0].yposi.w.h = 100;
     TEST_ASSERT_EQ_INT(ctx, 1, jabaopen_chk(&actwk[1]));
@@ -350,7 +309,7 @@ static void test_jaba_and_flash_helpers(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, jabaopen_chk(&actwk[1]));
 
     reset_boss3_state();
-    actwk[1].actfree[1] = 0;
+    egg3_get_work(&actwk[1])->flash_timer = 0;
     egg3flash(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 0, colorset2_count);
 
@@ -359,7 +318,7 @@ static void test_jaba_and_flash_helpers(test_context *ctx) {
     actwk[0].yposi.w.h = 1307;
     actwkchk_fail_after = 0;
     jaba_s_chk(&actwk[1]);
-    TEST_ASSERT_EQ_INT(ctx, 2, actwk[1].actfree[2]);
+    TEST_ASSERT_EQ_INT(ctx, 2, egg3_get_work(&actwk[1])->flags);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[40].actno);
 }
@@ -374,36 +333,36 @@ static void test_large_platform_hit_bomb_and_end_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 51, actwk[40].actno);
     TEST_ASSERT_EQ_INT(ctx, 50, actwk[41].actno);
     TEST_ASSERT_EQ_INT(ctx, 61, actwk[42].actno);
-    TEST_ASSERT_EQ_INT(ctx, 40, actor_short_alias(&actwk[1], 29));
-    TEST_ASSERT_EQ_INT(ctx, 41, actor_short_alias(&actwk[1], 28));
+    TEST_ASSERT_EQ_INT(ctx, 40, egg3_get_work(&actwk[1])->support_index);
+    TEST_ASSERT_EQ_INT(ctx, 41, egg3_get_work(&actwk[1])->child_index);
 
     reset_boss3_state();
-    set_actor_short_alias(&actwk[1], 28, 40);
+    egg3_get_work(&actwk[1])->child_index = 40;
     actwk[0].yposi.w.h = 200;
     egg3dai_l_demo(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 220, actwk[1].yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 220, actor_short_alias(&actwk[1], 25));
-    TEST_ASSERT_EQ_INT(ctx, 4, actwk[1].actfree[2]);
+    TEST_ASSERT_EQ_INT(ctx, 220, egg3_get_work(&actwk[1])->target_position);
+    TEST_ASSERT_EQ_INT(ctx, 4, egg3_get_work(&actwk[1])->flags);
     actwk[0].yposi.w.h = 448;
     egg3dai_l_demo(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 4, actwk[1].r_no0);
-    TEST_ASSERT_EQ_INT(ctx, -163840, actor_long_alias(&actwk[1], 13));
-    TEST_ASSERT_EQ_INT(ctx, 376, actor_short_alias(&actwk[1], 25));
+    TEST_ASSERT_EQ_INT(ctx, -163840, egg3_get_work(&actwk[1])->vertical_speed);
+    TEST_ASSERT_EQ_INT(ctx, 376, egg3_get_work(&actwk[1])->target_position);
 
     reset_boss3_state();
-    actwk[1].actfree[16] = 0;
+    egg3_get_work(&actwk[1])->jaba_count = 0;
     jaba_open(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 63, actwk[40].actno);
     TEST_ASSERT_EQ_INT(ctx, 896, actwk[40].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 528, actwk[40].yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[1].actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 1, egg3_get_work(&actwk[1])->jaba_count);
 
     reset_boss3_state();
-    set_actor_short_alias(&actwk[1], 29, 40);
+    egg3_get_work(&actwk[1])->support_index = 40;
     actwk[1].colicnt = 1;
     actwk[1].yposi.w.h = 500;
     egg3dai_l_hit(&actwk[1]);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[1].actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 1, egg3_get_work(&actwk[1])->phase);
     TEST_ASSERT_EQ_INT(ctx, 6, actwk[1].r_no0);
     TEST_ASSERT_EQ_INT(ctx, 100, scoreup_value);
     TEST_ASSERT_EQ_INT(ctx, 20, sub_sync_requests[0]);
@@ -411,20 +370,20 @@ static void test_large_platform_hit_bomb_and_end_paths(test_context *ctx) {
 
     reset_boss3_state();
     generate_flag = 1;
-    set_actor_short_alias(&actwk[1], 29, 40);
-    actwk[1].actfree[17] = 2;
+    egg3_get_work(&actwk[1])->support_index = 40;
+    egg3_get_work(&actwk[1])->phase = 2;
     actwk[1].colicnt = 1;
     actwk[1].yposi.w.h = 500;
     egg3dai_l_hit(&actwk[1]);
-    TEST_ASSERT_EQ_INT(ctx, 3, actwk[1].actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 3, egg3_get_work(&actwk[1])->phase);
     TEST_ASSERT_EQ_INT(ctx, 19, sub_sync_requests[0]);
     TEST_ASSERT_EQ_INT(ctx, 6, actwk[40].r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1020, actwk[40].sproffset);
 
     reset_boss3_state();
-    set_actor_short_alias(&actwk[1], 28, 40);
-    actwk[1].actfree[2] = 1;
-    actwk[1].actfree[16] = 4;
+    egg3_get_work(&actwk[1])->child_index = 40;
+    egg3_get_work(&actwk[1])->flags = 1;
+    egg3_get_work(&actwk[1])->jaba_count = 4;
     egg3dai_l_end(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 2, frameout_count);
     TEST_ASSERT_TRUE(ctx, frameout_actor == &actwk[1]);
@@ -450,20 +409,20 @@ static void test_large_platform_hit_bomb_and_end_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[42].actno);
 
     reset_boss3_state();
-    actwk[1].actfree[16] = 0;
+    egg3_get_work(&actwk[1])->jaba_count = 0;
     actwk[0].xposi.w.h = 896;
     actwk[0].yposi.w.h = 260;
     actwk[1].colino = 0;
     egg3dai_l_chk(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 63, actwk[40].actno);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[1].actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 1, egg3_get_work(&actwk[1])->phase);
     TEST_ASSERT_EQ_INT(ctx, 4, actwk[1].r_no0);
 
     reset_boss3_state();
-    actwk[1].actfree[16] = 2;
+    egg3_get_work(&actwk[1])->jaba_count = 2;
     jaba_last(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 0, bossflag);
-    actwk[1].actfree[16] = 3;
+    egg3_get_work(&actwk[1])->jaba_count = 3;
     actwk[0].xposi.w.h = 700;
     actwk[0].yposi.w.h = 260;
     jaba_last(&actwk[1]);
@@ -481,7 +440,7 @@ static void test_bomb_setters_spawn_and_mark_completion(test_context *ctx) {
     reset_boss3_state();
     actwk[1].xposi.w.h = 100;
     actwk[1].yposi.w.h = 200;
-    set_actor_short_alias(&actwk[1], 33, 0);
+    egg3_get_work(&actwk[1])->explosion_timer = 0;
     bom_set(&actwk[1], one_bomb_tbl);
     TEST_ASSERT_EQ_INT(ctx, 24, actwk[40].actno);
     TEST_ASSERT_EQ_INT(ctx, 105, actwk[40].xposi.w.h);
@@ -490,31 +449,31 @@ static void test_bomb_setters_spawn_and_mark_completion(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 158, soundset_requests[0]);
 
     reset_boss3_state();
-    set_actor_short_alias(&actwk[1], 28, 40);
-    set_actor_short_alias(&actwk[1], 33, 119);
+    egg3_get_work(&actwk[1])->child_index = 40;
+    egg3_get_work(&actwk[1])->explosion_timer = 119;
     bom_set_dai(&actwk[1]);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[1].actfree[2] & 1);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[40].actfree[2] & 1);
+    TEST_ASSERT_EQ_INT(ctx, 1, egg3_get_work(&actwk[1])->flags & 1);
+    TEST_ASSERT_EQ_INT(ctx, 1, egg3_get_work(&actwk[40])->flags & 1);
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
 
     reset_boss3_state();
     actwk[1].xposi.w.h = 300;
     actwk[1].yposi.w.h = 400;
-    set_actor_short_alias(&actwk[1], 33, 0);
+    egg3_get_work(&actwk[1])->explosion_timer = 0;
     bom_set_cannon(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 24, actwk[40].actno);
     TEST_ASSERT_EQ_INT(ctx, 268, actwk[40].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 400, actwk[40].yposi.w.h);
 
     reset_boss3_state();
-    set_actor_short_alias(&actwk[1], 33, 2);
+    egg3_get_work(&actwk[1])->explosion_timer = 2;
     bom_set_ctrl2(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
 
     reset_boss3_state();
     actwk[1].xposi.w.h = 100;
     actwk[1].yposi.w.h = 200;
-    set_actor_short_alias(&actwk[1], 33, 1);
+    egg3_get_work(&actwk[1])->explosion_timer = 1;
     bom_set_ctrl2(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 24, actwk[40].actno);
     TEST_ASSERT_EQ_INT(ctx, 84, actwk[40].xposi.w.h);
@@ -522,7 +481,7 @@ static void test_bomb_setters_spawn_and_mark_completion(test_context *ctx) {
 
     reset_boss3_state();
     actwkchk_fail_after = 0;
-    set_actor_short_alias(&actwk[1], 33, 0);
+    egg3_get_work(&actwk[1])->explosion_timer = 0;
     bom_set(&actwk[1], one_bomb_tbl);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
@@ -535,19 +494,19 @@ static void test_egg3_and_attachments(test_context *ctx) {
     egg3_ini(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[1].r_no0);
     TEST_ASSERT_EQ_INT(ctx, 4, actwk[1].actflg);
-    TEST_ASSERT_EQ_INT(ctx, 184, actor_short_alias(&actwk[1], 25));
+    TEST_ASSERT_EQ_INT(ctx, 184, egg3_get_work(&actwk[1])->target_position);
 
     reset_boss3_state();
-    set_actor_short_alias(&actwk[1], 28, 40);
+    egg3_get_work(&actwk[1])->child_index = 40;
     actwk[40].yposi.w.h = 333;
     egg3_norm(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 333, actwk[1].yposi.w.h);
 
     reset_boss3_state();
-    set_actor_short_alias(&actwk[1], 28, 40);
+    egg3_get_work(&actwk[1])->child_index = 40;
     actwk[1].yposi.w.h = 100;
     actwk[40].yposi.w.h = 120;
-    set_actor_long_alias(&actwk[1], 13, 0x200000);
+    egg3_get_work(&actwk[1])->vertical_speed = 0x200000;
     egg3_tobi(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 120, actwk[1].yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[1].r_no0);
@@ -555,23 +514,23 @@ static void test_egg3_and_attachments(test_context *ctx) {
 
     reset_boss3_state();
     actwk[1].yposi.w.h = 200;
-    set_actor_short_alias(&actwk[1], 25, 196);
+    egg3_get_work(&actwk[1])->target_position = 196;
     egg3_esc1(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 8, actwk[1].r_no0);
     TEST_ASSERT_EQ_INT(ctx, 3, actwk[1].sprpri);
     TEST_ASSERT_EQ_INT(ctx, actwk[1].xposi.w.h + 560,
-                       actor_short_alias(&actwk[1], 25));
+                       egg3_get_work(&actwk[1])->target_position);
 
     reset_boss3_state();
     actwk[1].xposi.w.h = 100;
-    set_actor_short_alias(&actwk[1], 25, 103);
+    egg3_get_work(&actwk[1])->target_position = 103;
     egg3_esc2(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
 
     reset_boss3_state();
-    set_actor_short_alias(&actwk[1], 28, 40);
+    egg3_get_work(&actwk[1])->child_index = 40;
     actwk[40].yposi.w.h = 600;
-    actwk[40].actfree[2] = 4;
+    egg3_get_work(&actwk[40])->flags = 4;
     egg3haguruma(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[1].r_no0);
     TEST_ASSERT_EQ_INT(ctx, 600, actwk[1].yposi.w.h);
@@ -579,24 +538,24 @@ static void test_egg3_and_attachments(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 
     reset_boss3_state();
-    set_actor_short_alias(&actwk[1], 28, 40);
-    actwk[40].actfree[17] = 1;
+    egg3_get_work(&actwk[1])->child_index = 40;
+    egg3_get_work(&actwk[40])->phase = 1;
     egg3cannon(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
 
     reset_boss3_state();
-    set_actor_short_alias(&actwk[1], 28, 40);
+    egg3_get_work(&actwk[1])->child_index = 40;
     actwk[1].yposi.w.h = 100;
     actwk[40].yposi.w.h = 200;
-    set_actor_long_alias(&actwk[1], 13, 0);
+    egg3_get_work(&actwk[1])->vertical_speed = 0;
     egg3_tobi(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[1].r_no0);
 
     reset_boss3_state();
-    set_actor_short_alias(&actwk[1], 28, 40);
+    egg3_get_work(&actwk[1])->child_index = 40;
     actwk[1].yposi.w.h = 200;
     actwk[40].yposi.w.h = 200;
-    actwk[40].actfree[17] = 2;
+    egg3_get_work(&actwk[40])->phase = 2;
     egg3_tobi(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[1].r_no0);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[40].patno);
@@ -604,12 +563,12 @@ static void test_egg3_and_attachments(test_context *ctx) {
 
     reset_boss3_state();
     actwk[1].xposi.w.h = 100;
-    set_actor_short_alias(&actwk[1], 25, 200);
+    egg3_get_work(&actwk[1])->target_position = 200;
     egg3_esc2(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_count);
 
     reset_boss3_state();
-    actwk[1].actfree[2] = 1;
+    egg3_get_work(&actwk[1])->flags = 1;
     egg3haguruma(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 0, actionsub_count);
 }
@@ -622,10 +581,10 @@ static void test_cannon_and_punch_bomb_paths(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, actwk[1].patbase == egg3cannon_pat);
 
     reset_boss3_state();
-    set_actor_short_alias(&actwk[1], 28, 40);
+    egg3_get_work(&actwk[1])->child_index = 40;
     actwk[1].xposi.w.h = 500;
     actwk[1].yposi.w.h = 600;
-    actwk[1].actfree[0] = 119;
+    egg3_get_work(&actwk[1])->timer = 119;
     actwk[1].patcnt = 0;
     actwk[0].yposi.w.h = 900;
     random_value = 0x3456;
@@ -670,15 +629,15 @@ static void test_cannon_and_punch_bomb_paths(test_context *ctx) {
     punchbom_ini(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[1].r_no0);
     TEST_ASSERT_EQ_INT(ctx, 215, actwk[1].colino);
-    TEST_ASSERT_EQ_INT(ctx, 32, actor_short_alias(&actwk[1], 31));
-    TEST_ASSERT_EQ_INT(ctx, 1536, actor_short_alias(&actwk[1], 32));
+    TEST_ASSERT_EQ_INT(ctx, 32, egg3_get_work(&actwk[1])->y_acceleration);
+    TEST_ASSERT_EQ_INT(ctx, 1536, egg3_get_work(&actwk[1])->max_y_speed);
 
     reset_boss3_state();
     actwk[1].xspeed.w = 256;
     actwk[1].yspeed.w = 0;
-    set_actor_short_alias(&actwk[1], 30, 0);
-    set_actor_short_alias(&actwk[1], 31, 32);
-    set_actor_short_alias(&actwk[1], 32, 64);
+    egg3_get_work(&actwk[1])->x_acceleration = 0;
+    egg3_get_work(&actwk[1])->y_acceleration = 32;
+    egg3_get_work(&actwk[1])->max_y_speed = 64;
     add_spd3(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 32, actwk[1].yspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 1, actwk[1].xposi.w.h);
@@ -730,57 +689,57 @@ static void test_dispatchers_and_remaining_movement_paths(test_context *ctx) {
     reset_boss3_state();
     actwk[1].r_no0 = 4;
     actwk[1].yposi.w.h = 200;
-    set_actor_long_alias(&actwk[1], 13, -0x400000);
-    set_actor_short_alias(&actwk[1], 25, 190);
+    egg3_get_work(&actwk[1])->vertical_speed = -0x400000;
+    egg3_get_work(&actwk[1])->target_position = 190;
     egg3dai_s(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 6, actwk[1].r_no0);
 
     reset_boss3_state();
     actwk[1].r_no0 = 6;
-    set_actor_short_alias(&actwk[1], 33, 120);
+    egg3_get_work(&actwk[1])->explosion_timer = 120;
     egg3dai_s(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 6, actwk[1].r_no0);
 
     reset_boss3_state();
-    actwk[1].actfree[17] = 1;
+    egg3_get_work(&actwk[1])->phase = 1;
     scra_vline = 170;
     egg3dai_l(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 176, scra_vline);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[1].r_no0);
 
     reset_boss3_state();
-    actwk[1].actfree[2] = 1;
+    egg3_get_work(&actwk[1])->flags = 1;
     actwk[1].r_no0 = 10;
     egg3dai_l(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 0, actionsub_count);
 
     reset_boss3_state();
     actwk[1].r_no0 = 6;
-    actwk[1].actfree[17] = 1;
+    egg3_get_work(&actwk[1])->phase = 1;
     actwk[1].yposi.w.h = 100;
-    set_actor_long_alias(&actwk[1], 13, 0);
-    set_actor_short_alias(&actwk[1], 25, 100);
+    egg3_get_work(&actwk[1])->vertical_speed = 0;
+    egg3_get_work(&actwk[1])->target_position = 100;
     egg3dai_l_up(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 4, actwk[1].r_no0);
     TEST_ASSERT_EQ_INT(ctx, 63, actwk[1].colino);
 
     reset_boss3_state();
     actwk[1].r_no0 = 6;
-    actwk[1].actfree[17] = 3;
+    egg3_get_work(&actwk[1])->phase = 3;
     actwk[1].colicnt = 1;
     actwk[1].yposi.w.h = 100;
-    set_actor_long_alias(&actwk[1], 13, 0);
-    set_actor_short_alias(&actwk[1], 25, 100);
+    egg3_get_work(&actwk[1])->vertical_speed = 0;
+    egg3_get_work(&actwk[1])->target_position = 100;
     egg3dai_l_up(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 8, actwk[1].r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, genecolor_count);
 
     reset_boss3_state();
     actwk[1].r_no0 = 8;
-    actwk[1].actfree[0] = 3;
+    egg3_get_work(&actwk[1])->timer = 3;
     actwk[1].yposi.w.h = 100;
-    set_actor_long_alias(&actwk[1], 13, 0);
-    set_actor_short_alias(&actwk[1], 25, 100);
+    egg3_get_work(&actwk[1])->vertical_speed = 0;
+    egg3_get_work(&actwk[1])->target_position = 100;
     egg3dai_l_bom(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 10, actwk[1].r_no0);
     TEST_ASSERT_EQ_INT(ctx, 6, actwk[1].patno);
@@ -793,38 +752,38 @@ static void test_dispatchers_and_remaining_movement_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 
     reset_boss3_state();
-    set_actor_short_alias(&actwk[1], 28, 40);
+    egg3_get_work(&actwk[1])->child_index = 40;
     actwk[1].r_no0 = 4;
     actwk[1].yposi.w.h = 200;
     actwk[40].yposi.w.h = 200;
-    set_actor_long_alias(&actwk[1], 13, 0);
+    egg3_get_work(&actwk[1])->vertical_speed = 0;
     egg3(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[1].r_no0);
 
     reset_boss3_state();
     actwk[1].r_no0 = 6;
     actwk[1].yposi.w.h = 200;
-    set_actor_short_alias(&actwk[1], 25, 196);
+    egg3_get_work(&actwk[1])->target_position = 196;
     egg3(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 8, actwk[1].r_no0);
 
     reset_boss3_state();
     actwk[1].r_no0 = 8;
     actwk[1].xposi.w.h = 100;
-    set_actor_short_alias(&actwk[1], 25, 103);
+    egg3_get_work(&actwk[1])->target_position = 103;
     egg3(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
 
     reset_boss3_state();
-    set_actor_short_alias(&actwk[1], 28, 40);
+    egg3_get_work(&actwk[1])->child_index = 40;
     egg3cannon(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[1].r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 
     reset_boss3_state();
-    set_actor_short_alias(&actwk[1], 28, 40);
+    egg3_get_work(&actwk[1])->child_index = 40;
     actwk[1].r_no0 = 2;
-    actwk[1].actfree[0] = 119;
+    egg3_get_work(&actwk[1])->timer = 119;
     actwk[0].yposi.w.h = 900;
     egg3cannon(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 4, actwk[1].r_no0);
@@ -862,15 +821,15 @@ static void test_dispatchers_and_remaining_movement_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, actwk[1].mstno.w);
 
     reset_boss3_state();
-    actwk[1].actfree[0] = 239;
+    egg3_get_work(&actwk[1])->timer = 239;
     punchbom_mov(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 4, actwk[1].r_no0);
 
     reset_boss3_state();
     actwk[1].xspeed.w = 256;
     actwk[1].yspeed.w = 256;
-    actwk[1].actfree[1] = 2;
-    set_actor_short_alias(&actwk[1], 31, 0);
+    egg3_get_work(&actwk[1])->flash_timer = 2;
+    egg3_get_work(&actwk[1])->y_acceleration = 0;
     emycol_d_result = -5;
     emycol_r_result = -7;
     punchbom_mov(&actwk[1]);
@@ -880,8 +839,8 @@ static void test_dispatchers_and_remaining_movement_paths(test_context *ctx) {
     reset_boss3_state();
     actwk[1].xspeed.w = -256;
     actwk[1].yspeed.w = -256;
-    actwk[1].actfree[1] = 2;
-    set_actor_short_alias(&actwk[1], 31, 0);
+    egg3_get_work(&actwk[1])->flash_timer = 2;
+    egg3_get_work(&actwk[1])->y_acceleration = 0;
     emycol_u_result = -4;
     emycol_l_result = -6;
     punchbom_mov(&actwk[1]);
@@ -891,25 +850,25 @@ static void test_dispatchers_and_remaining_movement_paths(test_context *ctx) {
     reset_boss3_state();
     actwk[1].xspeed.w = 128;
     actwk[1].yspeed.w = 256;
-    set_actor_short_alias(&actwk[1], 30, 0);
-    set_actor_short_alias(&actwk[1], 31, 0);
+    egg3_get_work(&actwk[1])->x_acceleration = 0;
+    egg3_get_work(&actwk[1])->y_acceleration = 0;
     add_spd3(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 1, actwk[1].yposi.w.h);
 
     reset_boss3_state();
     actwk[1].xspeed.w = 128;
     actwk[1].yspeed.w = -100;
-    set_actor_short_alias(&actwk[1], 30, 0);
-    set_actor_short_alias(&actwk[1], 31, -32);
-    set_actor_short_alias(&actwk[1], 32, -64);
+    egg3_get_work(&actwk[1])->x_acceleration = 0;
+    egg3_get_work(&actwk[1])->y_acceleration = -32;
+    egg3_get_work(&actwk[1])->max_y_speed = -64;
     add_spd3(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, -64, actwk[1].yspeed.w);
 
     reset_boss3_state();
     actwk[1].xspeed.w = 256;
     actwk[1].yspeed.w = 512;
-    set_actor_short_alias(&actwk[1], 30, 16);
-    set_actor_short_alias(&actwk[1], 31, -32);
+    egg3_get_work(&actwk[1])->x_acceleration = 16;
+    egg3_get_work(&actwk[1])->y_acceleration = -32;
     add_spd2(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 272, actwk[1].xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 480, actwk[1].yspeed.w);
@@ -923,8 +882,8 @@ static void test_final_boss3_branch_edges(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[40].actno);
 
     reset_boss3_state();
-    actwk[1].actfree[17] = 1;
-    actwk[1].actfree[2] = 1;
+    egg3_get_work(&actwk[1])->phase = 1;
+    egg3_get_work(&actwk[1])->flags = 1;
     actwk[1].r_no0 = 10;
     scra_vline = 175;
     egg3dai_l(&actwk[1]);
@@ -932,7 +891,7 @@ static void test_final_boss3_branch_edges(test_context *ctx) {
 
     reset_boss3_state();
     actwk[1].r_no0 = 2;
-    set_actor_short_alias(&actwk[1], 28, 40);
+    egg3_get_work(&actwk[1])->child_index = 40;
     actwk[0].yposi.w.h = 448;
     egg3dai_l(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 4, actwk[1].r_no0);
@@ -946,30 +905,30 @@ static void test_final_boss3_branch_edges(test_context *ctx) {
 
     reset_boss3_state();
     actwk[1].r_no0 = 6;
-    actwk[1].actfree[17] = 1;
+    egg3_get_work(&actwk[1])->phase = 1;
     actwk[1].yposi.w.h = 100;
-    set_actor_long_alias(&actwk[1], 13, 0);
-    set_actor_short_alias(&actwk[1], 25, 100);
+    egg3_get_work(&actwk[1])->vertical_speed = 0;
+    egg3_get_work(&actwk[1])->target_position = 100;
     egg3dai_l(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 4, actwk[1].r_no0);
 
     reset_boss3_state();
     actwk[1].r_no0 = 8;
     actwk[1].yposi.w.h = 100;
-    set_actor_long_alias(&actwk[1], 13, 0);
-    set_actor_short_alias(&actwk[1], 25, 99);
+    egg3_get_work(&actwk[1])->vertical_speed = 0;
+    egg3_get_work(&actwk[1])->target_position = 99;
     egg3dai_l(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 8, actwk[1].r_no0);
 
     reset_boss3_state();
-    set_actor_short_alias(&actwk[1], 28, 40);
+    egg3_get_work(&actwk[1])->child_index = 40;
     actwk[0].yposi.w.h = 220;
-    set_actor_short_alias(&actwk[1], 25, 220);
+    egg3_get_work(&actwk[1])->target_position = 220;
     egg3dai_l_demo(&actwk[1]);
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[1].actfree[2] & 4);
+    TEST_ASSERT_EQ_INT(ctx, 0, egg3_get_work(&actwk[1])->flags & 4);
 
     reset_boss3_state();
-    actwk[1].actfree[16] = 0;
+    egg3_get_work(&actwk[1])->jaba_count = 0;
     actwk[0].xposi.w.h = 896;
     actwk[0].yposi.w.h = 497;
     TEST_ASSERT_EQ_INT(ctx, 1, jabaopen_chk(&actwk[1]));
@@ -982,37 +941,37 @@ static void test_final_boss3_branch_edges(test_context *ctx) {
 
     reset_boss3_state();
     actwk[1].yposi.w.h = 100;
-    set_actor_long_alias(&actwk[1], 13, 0);
-    set_actor_short_alias(&actwk[1], 25, 99);
+    egg3_get_work(&actwk[1])->vertical_speed = 0;
+    egg3_get_work(&actwk[1])->target_position = 99;
     egg3dai_l_bom(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[1].r_no0);
 
     reset_boss3_state();
-    set_actor_short_alias(&actwk[1], 33, 120);
+    egg3_get_work(&actwk[1])->explosion_timer = 120;
     egg3dai_l_end(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_count);
 
     reset_boss3_state();
-    set_actor_short_alias(&actwk[1], 28, 40);
+    egg3_get_work(&actwk[1])->child_index = 40;
     egg3cannon(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[1].r_no0);
 
     reset_boss3_state();
-    set_actor_short_alias(&actwk[1], 28, 40);
+    egg3_get_work(&actwk[1])->child_index = 40;
     actwk[0].yposi.w.h = 1024;
     egg3cannon_01(&actwk[1]);
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[1].actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 0, egg3_get_work(&actwk[1])->timer);
 
     reset_boss3_state();
-    set_actor_short_alias(&actwk[1], 28, 40);
-    actwk[40].actfree[16] = 1;
+    egg3_get_work(&actwk[1])->child_index = 40;
+    egg3_get_work(&actwk[40])->jaba_count = 1;
     actwk[0].yposi.w.h = 900;
     egg3cannon_01(&actwk[1]);
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[1].actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 0, egg3_get_work(&actwk[1])->timer);
 
     reset_boss3_state();
-    set_actor_short_alias(&actwk[1], 28, 40);
-    actwk[1].actfree[0] = 119;
+    egg3_get_work(&actwk[1])->child_index = 40;
+    egg3_get_work(&actwk[1])->timer = 119;
     actwk[0].yposi.w.h = 900;
     actwkchk_fail_after = 0;
     egg3cannon_01(&actwk[1]);
@@ -1021,21 +980,21 @@ static void test_final_boss3_branch_edges(test_context *ctx) {
 
     reset_boss3_state();
     actwk[1].pattim = 1;
-    set_actor_short_alias(&actwk[1], 31, 0);
+    egg3_get_work(&actwk[1])->y_acceleration = 0;
     punchbom_mov(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 1, actwk[1].patno);
 
     reset_boss3_state();
     actwk[1].yspeed.w = 64;
-    set_actor_short_alias(&actwk[1], 31, 32);
-    set_actor_short_alias(&actwk[1], 32, 64);
+    egg3_get_work(&actwk[1])->y_acceleration = 32;
+    egg3_get_work(&actwk[1])->max_y_speed = 64;
     add_spd3(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 64, actwk[1].yspeed.w);
 
     reset_boss3_state();
     actwk[1].yspeed.w = 0;
-    set_actor_short_alias(&actwk[1], 31, -32);
-    set_actor_short_alias(&actwk[1], 32, -64);
+    egg3_get_work(&actwk[1])->y_acceleration = -32;
+    egg3_get_work(&actwk[1])->max_y_speed = -64;
     add_spd3(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, -32, actwk[1].yspeed.w);
 }

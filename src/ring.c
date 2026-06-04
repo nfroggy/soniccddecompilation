@@ -339,7 +339,7 @@ void flyringmove(sprite_status *pActwk) {
 
     speedset2(pActwk);
     if ((pActwk->yspeed.w += 24) >= 0) {
-        if (!((systemtimer.b.b4 + ((Uint32)(pActwk - actwk) / 68)) & 3)) {
+        if (!((systemtimer.b.b4 + ((Uint32)(pActwk - actwk) / sizeof(sprite_status))) & 3)) {
             if ((d1 = emycol_d(pActwk)) < 0) {
                 pActwk->yposi.w.h += d1;
                 pActwk->yspeed.w -= pActwk->yspeed.w / 4;

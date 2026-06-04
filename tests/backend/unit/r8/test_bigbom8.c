@@ -86,16 +86,28 @@ static void queue_actor(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
+static void set_bigbom8_word(sprite_status *actor, int offset, Sint16 value) {
+    if (offset == 0)
+        bigbom8_get_work(actor)->timer = value;
 }
 
-static void set_actfree_long(sprite_status *actor, int offset, Sint32 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint32)value >> 8);
-    actor->actfree[offset + 2] = (Uint8)((Uint32)value >> 16);
-    actor->actfree[offset + 3] = (Uint8)((Uint32)value >> 24);
+static void set_bigbom8_long(sprite_status *actor, int offset, Sint32 value) {
+    bigbom8_work *work = bigbom8_get_work(actor);
+
+    switch (offset) {
+    case 0:
+        work->fire_x_speed = value;
+        break;
+    case 4:
+        work->fire_y_speed = value;
+        break;
+    case 8:
+        work->fire_x_accel = value;
+        break;
+    case 12:
+        work->fire_y_accel = value;
+        break;
+    }
 }
 
 static void reset_logs(void) {
@@ -411,7 +423,7 @@ static void test_bigbom_body_wait_and_constant_move_paths(test_context *ctx) {
     body_actor->r_no0 = 4;
     body_actor->xposi.w.h = 100;
     body_actor->yposi.w.h = 200;
-    body_actor->actfree[19] = 166;
+    bigbom8_get_work(body_actor)->collision_id = 166;
     actwk[0].xposi.w.h = 120;
     actwk[0].yposi.w.h = 200;
 
@@ -462,7 +474,7 @@ static void test_bigbom_body_prio_move_stop_and_die_paths(test_context *ctx) {
 
     body_actor->r_no0 = 20;
     body_actor->userflag.b.l = 2;
-    body_actor->actfree[19] = 166;
+    bigbom8_get_work(body_actor)->collision_id = 166;
     prio_flag = 0;
 
     bigbom(body_actor);
@@ -554,7 +566,7 @@ static void test_bigbom_projectile_wait_move_and_die_paths(test_context *ctx) {
 
     reset_logs();
     projectile->r_no0 = 4;
-    set_actfree_word(projectile, 0, -1);
+    set_bigbom8_word(projectile, 0, -1);
     bigbom(projectile);
 
     TEST_ASSERT_EQ_INT(ctx, 6, projectile->r_no0);
@@ -584,7 +596,7 @@ static void test_bigbom_explosion_animates_then_frames_out(test_context *ctx) {
 
     reset_logs();
     explosion->r_no0 = 2;
-    set_actfree_word(explosion, 0, 1);
+    set_bigbom8_word(explosion, 0, 1);
     bigbom(explosion);
 
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
@@ -600,10 +612,10 @@ static void test_bigbom_fire_moves_and_frames_out_below_player(test_context *ctx
     fire->userflag.b.h = 8;
     fire->xposi.l = 100 << 16;
     fire->yposi.l = 100 << 16;
-    set_actfree_long(fire, 0, 65536);
-    set_actfree_long(fire, 4, -32768);
-    set_actfree_long(fire, 8, 8192);
-    set_actfree_long(fire, 12, 4096);
+    set_bigbom8_long(fire, 0, 65536);
+    set_bigbom8_long(fire, 4, -32768);
+    set_bigbom8_long(fire, 8, 8192);
+    set_bigbom8_long(fire, 12, 4096);
     actwk[0].yposi.w.h = 90;
 
     bigbom(fire);
@@ -634,11 +646,11 @@ static void test_bigbom_fire_userflag_two_refreshes_collision(
     fire->userflag.b.l = 2;
     fire->xposi.l = 100 << 16;
     fire->yposi.l = 100 << 16;
-    set_actfree_long(fire, 0, 65536);
-    set_actfree_long(fire, 4, -32768);
-    set_actfree_long(fire, 8, 8192);
-    set_actfree_long(fire, 12, 4096);
-    fire->actfree[19] = 167;
+    set_bigbom8_long(fire, 0, 65536);
+    set_bigbom8_long(fire, 4, -32768);
+    set_bigbom8_long(fire, 8, 8192);
+    set_bigbom8_long(fire, 12, 4096);
+    bigbom8_get_work(fire)->collision_id = 167;
     actwk[0].yposi.w.h = 90;
 
     bigbom(fire);

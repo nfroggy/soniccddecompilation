@@ -223,7 +223,7 @@ static void test_piston_type1_holds_pause_while_delay_positive(
     actor->yposi.w.h = 210;
     piston(actor);
     reset_logs();
-    actor->actfree[16] = 1;
+    piston_get_work(actor)->pause_timer = 1;
 
     piston(actor);
 
@@ -239,7 +239,7 @@ static void test_piston_type1_exits_pause_and_advances(test_context *ctx) {
     actor->yposi.w.h = 210;
     piston(actor);
     reset_logs();
-    actor->actfree[16] = 0;
+    piston_get_work(actor)->pause_timer = 0;
 
     piston(actor);
 

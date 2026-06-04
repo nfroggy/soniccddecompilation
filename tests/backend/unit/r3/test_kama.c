@@ -125,18 +125,6 @@ static void queue_actor(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
-static void set_actor_word(sprite_status *actor, int index, Sint16 value) {
-    int offset = (index - 23) * 2;
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
-static Sint16 actor_word(sprite_status *actor, int index) {
-    int offset = (index - 23) * 2;
-    return (Sint16)(actor->actfree[offset] |
-                    ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
 static void reset_kama_state(void) {
     memset(actwk, 0, sizeof(actwk));
     plpower_m = 0;
@@ -266,7 +254,7 @@ static void test_kama_wait_attack_and_timer_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 37, actwk[10].actno);
     TEST_ASSERT_EQ_INT(ctx, 117, actwk[10].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 109, actwk[11].xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 119, actor_word(actor, 24));
+    TEST_ASSERT_EQ_INT(ctx, 119, kama_get_work(actor)->timer);
 
     reset_kama_state();
     actwk[0].xposi.w.h = 100;
@@ -279,12 +267,12 @@ static void test_kama_wait_attack_and_timer_paths(test_context *ctx) {
     kama_wait(actor);
 
     reset_kama_state();
-    set_actor_word(actor, 24, 1);
+    kama_get_work(actor)->timer = 1;
     kama_atck(actor);
-    TEST_ASSERT_EQ_INT(ctx, 59, actor_word(actor, 24));
+    TEST_ASSERT_EQ_INT(ctx, 59, kama_get_work(actor)->timer);
 
     reset_kama_state();
-    set_actor_word(actor, 24, 1);
+    kama_get_work(actor)->timer = 1;
     dircol_l2_result = -1;
     kama_pati(actor);
 }
@@ -308,14 +296,14 @@ static void test_kama_move_ground_wall_and_reveal_paths(test_context *ctx) {
     reset_kama_state();
     dircol_l2_result = -1;
     kama_move(actor);
-    TEST_ASSERT_EQ_INT(ctx, 71, actor_word(actor, 24));
+    TEST_ASSERT_EQ_INT(ctx, 71, kama_get_work(actor)->timer);
 
     reset_kama_state();
     dircol_r2_result = -1;
     kama_move(actor);
 
     reset_kama_state();
-    set_actor_word(actor, 24, 1);
+    kama_get_work(actor)->timer = 1;
     actor->actflg = 0;
     actor->cddat = 0;
     actor->r_no0 = 6;
@@ -366,31 +354,31 @@ static void test_tama_kama_init_wait_and_display_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 200, frameout_s00_xpos);
 
     reset_kama_state();
-    actor->actfree[4] = 1;
+    kama_get_work(actor)->parent_flags = 1;
     wpkama_init(actor);
 
     reset_kama_state();
     actor->r_no0 = 2;
-    set_actor_word(actor, 24, 1);
-    set_actor_word(actor, 26, 5);
+    kama_get_work(actor)->timer = 1;
+    kama_get_work(actor)->parent_index = 5;
     actwk[5].actno = 0;
     wpkama_wait(actor);
-    TEST_ASSERT_EQ_INT(ctx, 60, actor_word(actor, 28));
+    TEST_ASSERT_EQ_INT(ctx, 60, kama_get_work(actor)->display_timer);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
 
     reset_kama_state();
     actor->r_no0 = 2;
-    set_actor_word(actor, 24, 2);
-    set_actor_word(actor, 26, 5);
+    kama_get_work(actor)->timer = 2;
+    kama_get_work(actor)->parent_index = 5;
     actwk[5].actno = 36;
     wpkama_wait(actor);
     TEST_ASSERT_TRUE(ctx, patchg_table == wpkama_pchg);
 
     reset_kama_state();
     actor->colino = 135;
-    set_actor_word(actor, 28, 1);
+    kama_get_work(actor)->display_timer = 1;
     wpkama_disp(actor);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor_word(actor, 28));
+    TEST_ASSERT_EQ_INT(ctx, 1, kama_get_work(actor)->display_timer);
 }
 
 static void test_wpkama_collision_checks_and_reveal(test_context *ctx) {
@@ -436,7 +424,7 @@ static void test_wpkama_move_sound_collision_and_frameout(test_context *ctx) {
     bullet->xspeed.w = 256;
     bullet->yspeed.w = 0;
     bullet->colino = 135;
-    set_actor_word(bullet, 28, 2);
+    kama_get_work(bullet)->display_timer = 2;
     player->cddat = 4;
     player->xposi.w.h = 1;
     player->yposi.w.h = 0;
@@ -448,7 +436,7 @@ static void test_wpkama_move_sound_collision_and_frameout(test_context *ctx) {
 
     reset_kama_state();
     bullet->r_no0 = 4;
-    set_actor_word(bullet, 27, 123);
+    kama_get_work(bullet)->origin_x = 123;
     tama_kama(bullet);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s00_count);
     TEST_ASSERT_EQ_INT(ctx, 123, frameout_s00_xpos);

@@ -75,17 +75,6 @@ Sint16 emycol_l(sprite_status *pActwk, Uint8 byD3) {
     return emycol_l_result;
 }
 
-static void set_actor_word(sprite_status *actor, int index, Sint16 value) {
-    int offset = (index - 23) * 2;
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
-static void set_actor_long(sprite_status *actor, int byte_offset,
-                           Sint32 value) {
-    memcpy(&actor->actfree[byte_offset], &value, sizeof(value));
-}
-
 static void reset_batta_state(void) {
     memset(actwk, 0, sizeof(actwk));
     actionsub_count = 0;
@@ -144,7 +133,7 @@ static void test_batta_lateral_collision_helper(test_context *ctx) {
     sprite_status *actor = &actwk[2];
 
     reset_batta_state();
-    actor->actfree[12] = 255;
+    batta_work_get(actor)->facing_flag = 255;
     emycol_r_result = -7;
     emylr_jump(actor, 240);
     TEST_ASSERT_EQ_INT(ctx, 1, emycol_r_count);
@@ -152,7 +141,7 @@ static void test_batta_lateral_collision_helper(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 0, emycol_l_count);
 
     reset_batta_state();
-    actor->actfree[12] = 1;
+    batta_work_get(actor)->facing_flag = 1;
     emycol_l_result = 9;
     emylr_jump(actor, 8);
     TEST_ASSERT_EQ_INT(ctx, 0, emycol_r_count);
@@ -164,30 +153,30 @@ static void test_batta_down_floor_wall_and_gravity_paths(test_context *ctx) {
     sprite_status *actor = &actwk[2];
 
     reset_batta_state();
-    actor->actfree[12] = 255;
+    batta_work_get(actor)->facing_flag = 255;
     emycol_d_result = 3;
     emycol_r_result = -1;
-    set_actor_word(actor, 28, -16);
+    batta_work_get(actor)->wall_probe_offset = -16;
     batta_down(actor);
 
     reset_batta_state();
-    actor->actfree[12] = 1;
+    batta_work_get(actor)->facing_flag = 1;
     emycol_d_result = -2;
     emycol_l_result = -4;
-    set_actor_word(actor, 28, 16);
+    batta_work_get(actor)->wall_probe_offset = 16;
     batta_down(actor);
 
     reset_batta_state();
-    actor->actfree[12] = 255;
+    batta_work_get(actor)->facing_flag = 255;
     actor->yposi.w.h = 100;
     actor->userflag.b.h = 0;
     emycol_d_result = -5;
     emycol_r_result = -1;
-    set_actor_word(actor, 28, -16);
+    batta_work_get(actor)->wall_probe_offset = -16;
     batta_down(actor);
 
     reset_batta_state();
-    actor->actfree[12] = 255;
+    batta_work_get(actor)->facing_flag = 255;
     actor->yposi.w.h = 100;
     actor->userflag.b.h = 1;
     emycol_d_result = -2;
@@ -195,20 +184,20 @@ static void test_batta_down_floor_wall_and_gravity_paths(test_context *ctx) {
     batta_down(actor);
 
     reset_batta_state();
-    actor->actfree[12] = 255;
+    batta_work_get(actor)->facing_flag = 255;
     actor->xposi.w.h = 10;
     actor->yposi.w.h = 20;
     emycol_d_result = 0;
     emycol_r_result = 0;
-    set_actor_long(actor, 0, 65536);
-    set_actor_long(actor, 4, 0);
+    batta_work_get(actor)->x_velocity = 65536;
+    batta_work_get(actor)->y_velocity = 0;
     batta_down(actor);
 
     reset_batta_state();
-    actor->actfree[12] = 255;
+    batta_work_get(actor)->facing_flag = 255;
     emycol_d_result = 0;
     emycol_r_result = 0;
-    set_actor_long(actor, 4, 458752);
+    batta_work_get(actor)->y_velocity = 458752;
     batta_down(actor);
     batta_down(actor);
 }
@@ -220,22 +209,22 @@ static void test_batta_wait_release_paths(test_context *ctx) {
     actor->userflag.b.h = 1;
     actor->yposi.w.h = 100;
     actor->patno = 0;
-    set_actor_word(actor, 31, 11);
+    batta_work_get(actor)->wait_timer = 11;
     batta_wait(actor);
 
     reset_batta_state();
     actor->userflag.b.h = 1;
     actor->yposi.w.h = 100;
     actor->patno = 1;
-    set_actor_word(actor, 31, 6);
+    batta_work_get(actor)->wait_timer = 6;
     batta_wait(actor);
 
     reset_batta_state();
     actor->userflag.b.h = 0;
     actor->yposi.w.h = 100;
     actor->patno = 0;
-    ((char *)actor)[54] = 1;
-    set_actor_word(actor, 31, 1);
+    batta_work_get(actor)->hop_count = 1;
+    batta_work_get(actor)->wait_timer = 1;
     batta_wait(actor);
 
     reset_batta_state();
@@ -243,9 +232,9 @@ static void test_batta_wait_release_paths(test_context *ctx) {
     actor->actflg = 1;
     actor->cddat = 1;
     actor->patno = 1;
-    actor->actfree[12] = 1;
-    ((char *)actor)[54] = 0;
-    set_actor_word(actor, 31, 1);
+    batta_work_get(actor)->facing_flag = 1;
+    batta_work_get(actor)->hop_count = 0;
+    batta_work_get(actor)->wait_timer = 1;
     batta_wait(actor);
 }
 
@@ -253,21 +242,21 @@ static void test_batta_up_wall_ceiling_and_fall_paths(test_context *ctx) {
     sprite_status *actor = &actwk[2];
 
     reset_batta_state();
-    actor->actfree[12] = 255;
+    batta_work_get(actor)->facing_flag = 255;
     emycol_u_result = 1;
     emycol_r_result = -1;
-    set_actor_word(actor, 28, -16);
+    batta_work_get(actor)->wall_probe_offset = -16;
     batta_up(actor);
 
     reset_batta_state();
-    actor->actfree[12] = 255;
+    batta_work_get(actor)->facing_flag = 255;
     emycol_u_result = -5;
     emycol_r_result = -7;
-    set_actor_word(actor, 28, -16);
+    batta_work_get(actor)->wall_probe_offset = -16;
     batta_up(actor);
 
     reset_batta_state();
-    actor->actfree[12] = 255;
+    batta_work_get(actor)->facing_flag = 255;
     actor->yposi.w.h = 100;
     actor->patno = 0;
     emycol_u_result = -5;
@@ -285,7 +274,7 @@ static void test_batta_up_wall_ceiling_and_fall_paths(test_context *ctx) {
     actor->yposi.w.h = 100;
     emycol_u_result = 0;
     emycol_r_result = 0;
-    set_actor_long(actor, 4, -16384);
+    batta_work_get(actor)->y_velocity = -16384;
     batta_up(actor);
 
     reset_batta_state();
@@ -293,7 +282,7 @@ static void test_batta_up_wall_ceiling_and_fall_paths(test_context *ctx) {
     actor->patno = 0;
     emycol_u_result = 0;
     emycol_r_result = 0;
-    set_actor_long(actor, 4, -4096);
+    batta_work_get(actor)->y_velocity = -4096;
     batta_up(actor);
 }
 

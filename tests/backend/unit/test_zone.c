@@ -119,11 +119,6 @@ Sint32 actwkchk(sprite_status **ppActwk) {
 
 static void wave_all_stop_callback(void) { ++wave_stop_count; }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
 static void reset_zone_state(void) {
     ta_flag = 0;
     clrspflg_save = 0;
@@ -255,7 +250,7 @@ static void test_over_move_converges_to_target(test_context *ctx) {
     reset_zone_state();
     memset(&actor, 0, sizeof(actor));
     actor.r_no0 = 2;
-    set_actfree_word(&actor, 0, 288);
+    zone_get_work(&actor)->over.target_x = 288;
 
     actor.xposi.w.h = 280;
     over(&actor);
@@ -423,15 +418,15 @@ static void test_clear_init_wait_and_actor_setup_paths(test_context *ctx) {
 
     reset_zone_state();
     memset(&actor, 0, sizeof(actor));
-    actor.actfree[8] = 2;
+    zone_get_work(&actor)->clear.start_delay = 2;
     clear(&actor);
     TEST_ASSERT_EQ_INT(ctx, 12, actor.r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor.actfree[8]);
+    TEST_ASSERT_EQ_INT(ctx, 1, zone_get_work(&actor)->clear.start_delay);
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
 
     reset_zone_state();
     memset(&actor, 0, sizeof(actor));
-    actor.actfree[8] = 1;
+    zone_get_work(&actor)->clear.start_delay = 1;
     stageno.w = 1282;
     generate_flag = 1;
     systemtimer.w.l = 321;
@@ -476,8 +471,8 @@ static void test_clear_move0_position_and_action_paths(test_context *ctx) {
     actor.r_no0 = 4;
     actor.xposi.w.h = 280;
     actor.patno = 0;
-    set_actfree_word(&actor, 0, 288);
-    set_actfree_word(&actor, 8, 351);
+    zone_get_work(&actor)->clear.target_x = 288;
+    zone_get_work(&actor)->clear.slide_timer = 351;
     clear(&actor);
     TEST_ASSERT_EQ_INT(ctx, 288, actor.xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -486,8 +481,8 @@ static void test_clear_move0_position_and_action_paths(test_context *ctx) {
     memset(&actor, 0, sizeof(actor));
     actor.r_no0 = 4;
     actor.xposi.w.h = 296;
-    set_actfree_word(&actor, 0, 288);
-    set_actfree_word(&actor, 8, 360);
+    zone_get_work(&actor)->clear.target_x = 288;
+    zone_get_work(&actor)->clear.slide_timer = 360;
     clear(&actor);
     TEST_ASSERT_EQ_INT(ctx, 288, actor.xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 0, actionsub_count);
@@ -497,7 +492,7 @@ static void test_clear_move0_position_and_action_paths(test_context *ctx) {
     actor.r_no0 = 4;
     actor.xposi.w.h = 288;
     actor.patno = 0;
-    set_actfree_word(&actor, 0, 288);
+    zone_get_work(&actor)->clear.target_x = 288;
     clear(&actor);
     TEST_ASSERT_EQ_INT(ctx, 6, actor.r_no0);
 
@@ -506,7 +501,7 @@ static void test_clear_move0_position_and_action_paths(test_context *ctx) {
     actor.r_no0 = 4;
     actor.xposi.w.h = 288;
     actor.patno = 2;
-    set_actfree_word(&actor, 0, 288);
+    zone_get_work(&actor)->clear.target_x = 288;
     clear(&actor);
     TEST_ASSERT_EQ_INT(ctx, 4, actor.r_no0);
 }
@@ -518,7 +513,7 @@ static void test_clear_move1_counts_down_without_bonus(test_context *ctx) {
     memset(&actor, 0, sizeof(actor));
     actor.r_no0 = 6;
     special_flag = 1;
-    set_actfree_word(&actor, 8, 31);
+    zone_get_work(&actor)->clear.slide_timer = 31;
     clear(&actor);
     TEST_ASSERT_EQ_INT(ctx, 1, bonus_f);
     TEST_ASSERT_EQ_INT(ctx, 1, sound_count);
@@ -530,7 +525,7 @@ static void test_clear_move1_counts_down_without_bonus(test_context *ctx) {
     actor.r_no0 = 6;
     systemtimer.w.l = 600;
     ClearSountWait = 0;
-    set_actfree_word(&actor, 8, 0);
+    zone_get_work(&actor)->clear.slide_timer = 0;
     clear(&actor);
     TEST_ASSERT_EQ_INT(ctx, 8, actor.r_no0);
     TEST_ASSERT_EQ_INT(ctx, 60, ClearSountWait);
@@ -543,7 +538,7 @@ static void test_clear_move1_awards_bonus_and_sounds(test_context *ctx) {
     memset(&actor, 0, sizeof(actor));
     actor.r_no0 = 6;
     timebonus = 100;
-    set_actfree_word(&actor, 8, 50);
+    zone_get_work(&actor)->clear.slide_timer = 50;
     clear(&actor);
     TEST_ASSERT_EQ_INT(ctx, 0, timebonus);
     TEST_ASSERT_EQ_INT(ctx, 1, wave_stop_count);
@@ -555,10 +550,10 @@ static void test_clear_move1_awards_bonus_and_sounds(test_context *ctx) {
     reset_zone_state();
     memset(&actor, 0, sizeof(actor));
     actor.r_no0 = 6;
-    actor.actfree[8] = 2;
+    zone_get_work(&actor)->clear.start_delay = 2;
     timebonus = 200;
     ringbonus = 100;
-    set_actfree_word(&actor, 8, 5);
+    zone_get_work(&actor)->clear.slide_timer = 5;
     clear(&actor);
     TEST_ASSERT_EQ_INT(ctx, 100, timebonus);
     TEST_ASSERT_EQ_INT(ctx, 0, ringbonus);
@@ -570,7 +565,7 @@ static void test_clear_move1_awards_bonus_and_sounds(test_context *ctx) {
     memset(&actor, 0, sizeof(actor));
     actor.r_no0 = 6;
     timebonus = 200;
-    set_actfree_word(&actor, 8, 0x0200);
+    zone_get_work(&actor)->clear.slide_timer = 0x0200;
     clear(&actor);
     TEST_ASSERT_EQ_INT(ctx, 0, sound_count);
     TEST_ASSERT_EQ_INT(ctx, 10, scoreup_values[0]);

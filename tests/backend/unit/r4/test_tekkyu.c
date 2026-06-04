@@ -1,4 +1,3 @@
-#include <stddef.h>
 #include <string.h>
 
 #include "support/test_runner.h"
@@ -90,30 +89,6 @@ static void queue_children(int first_index, int count) {
     }
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int offset) {
-    Uint16 bits = (Uint16)actor->actfree[offset] |
-                  ((Uint16)actor->actfree[offset + 1] << 8);
-    return (Sint16)bits;
-}
-
-static int legacy_word_actfree_offset(int word_index) {
-    return (word_index * 2) - (int)offsetof(sprite_status, actfree);
-}
-
-static void set_legacy_word(sprite_status *actor, int word_index, Sint16 value) {
-    set_actfree_word(actor, legacy_word_actfree_offset(word_index), value);
-}
-
-static Sint16 get_legacy_word(sprite_status *actor, int word_index) {
-    return get_actfree_word(actor, legacy_word_actfree_offset(word_index));
-}
-
 static void spawn_tekkyu(sprite_status *main_actor) {
     queue_children(20, 6);
     main_actor->actno = 54;
@@ -148,10 +123,10 @@ static void test_tekkyu_main_init_spawns_chain_and_moves(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 8, main_actor->sprvsize);
     TEST_ASSERT_TRUE(ctx, main_actor->patbase == pat_tyuusin);
     TEST_ASSERT_EQ_INT(ctx, 872, main_actor->sproffset);
-    TEST_ASSERT_EQ_INT(ctx, 256, get_legacy_word(main_actor, 23));
-    TEST_ASSERT_EQ_INT(ctx, 256, get_legacy_word(main_actor, 24));
-    TEST_ASSERT_EQ_INT(ctx, 20, get_legacy_word(main_actor, 25));
-    TEST_ASSERT_EQ_INT(ctx, 25, get_legacy_word(main_actor, 30));
+    TEST_ASSERT_EQ_INT(ctx, 256, tekkyu_get_work(main_actor)->angle);
+    TEST_ASSERT_EQ_INT(ctx, 256, tekkyu_get_work(main_actor)->angular_speed);
+    TEST_ASSERT_EQ_INT(ctx, 20, tekkyu_get_work(main_actor)->child_index[0]);
+    TEST_ASSERT_EQ_INT(ctx, 25, tekkyu_get_work(main_actor)->child_index[5]);
     TEST_ASSERT_EQ_INT(ctx, 1, sinset_count);
     TEST_ASSERT_EQ_INT(ctx, 1, sinset_angle);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -163,10 +138,10 @@ static void test_tekkyu_main_init_spawns_chain_and_moves(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, -1, first_child->userflag.b.h);
     TEST_ASSERT_EQ_INT(ctx, 8, first_child->sprhsize);
     TEST_ASSERT_EQ_INT(ctx, 8, first_child->sprvsize);
-    TEST_ASSERT_EQ_INT(ctx, 5, get_legacy_word(first_child, 33));
+    TEST_ASSERT_EQ_INT(ctx, 5, tekkyu_get_work(first_child)->parent_index);
     TEST_ASSERT_EQ_INT(ctx, 54, last_child->actno);
     TEST_ASSERT_EQ_INT(ctx, -2, last_child->userflag.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 5, get_legacy_word(last_child, 33));
+    TEST_ASSERT_EQ_INT(ctx, 5, tekkyu_get_work(last_child)->parent_index);
 }
 
 static void test_tekkyu_main_init_reverses_speed_for_nonzero_userflag(
@@ -180,8 +155,8 @@ static void test_tekkyu_main_init_reverses_speed_for_nonzero_userflag(
 
     tekkyu(main_actor);
 
-    TEST_ASSERT_EQ_INT(ctx, -256, get_legacy_word(main_actor, 23));
-    TEST_ASSERT_EQ_INT(ctx, -256, get_legacy_word(main_actor, 24));
+    TEST_ASSERT_EQ_INT(ctx, -256, tekkyu_get_work(main_actor)->angle);
+    TEST_ASSERT_EQ_INT(ctx, -256, tekkyu_get_work(main_actor)->angular_speed);
     TEST_ASSERT_EQ_INT(ctx, 255, sinset_angle);
 }
 
@@ -210,21 +185,21 @@ static void test_tekkyu_existing_main_moves_without_allocation(
     main_actor->r_no0 = 2;
     main_actor->xposi.w.h = 300;
     main_actor->yposi.w.h = 400;
-    set_legacy_word(main_actor, 23, 512);
-    set_legacy_word(main_actor, 24, 256);
-    set_legacy_word(main_actor, 25, 20);
-    set_legacy_word(main_actor, 26, 21);
-    set_legacy_word(main_actor, 27, 22);
-    set_legacy_word(main_actor, 28, 23);
-    set_legacy_word(main_actor, 29, 24);
-    set_legacy_word(main_actor, 30, 25);
+    tekkyu_get_work(main_actor)->angle = 512;
+    tekkyu_get_work(main_actor)->angular_speed = 256;
+    tekkyu_get_work(main_actor)->child_index[0] = 20;
+    tekkyu_get_work(main_actor)->child_index[1] = 21;
+    tekkyu_get_work(main_actor)->child_index[2] = 22;
+    tekkyu_get_work(main_actor)->child_index[3] = 23;
+    tekkyu_get_work(main_actor)->child_index[4] = 24;
+    tekkyu_get_work(main_actor)->child_index[5] = 25;
     sinset_sin = 512;
     sinset_cos = 1024;
 
     tekkyu(main_actor);
 
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
-    TEST_ASSERT_EQ_INT(ctx, 768, get_legacy_word(main_actor, 23));
+    TEST_ASSERT_EQ_INT(ctx, 768, tekkyu_get_work(main_actor)->angle);
     TEST_ASSERT_EQ_INT(ctx, 3, sinset_angle);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_TRUE(ctx, actionsub_actor == main_actor);
@@ -288,9 +263,9 @@ static void test_tekkyu_option_frames_out_when_parent_is_gone(
     reset_state();
     chain->r_no0 = 2;
     chain->userflag.b.h = -1;
-    set_legacy_word(chain, 24, 123);
-    set_legacy_word(chain, 26, 456);
-    set_legacy_word(chain, 33, 5);
+    tekkyu_get_work(chain)->target_x = (Sint32)123 << 16;
+    tekkyu_get_work(chain)->target_y = (Sint32)456 << 16;
+    tekkyu_get_work(chain)->parent_index = 5;
     actwk[5].actno = 0;
 
     tekkyu(chain);

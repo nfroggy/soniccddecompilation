@@ -77,14 +77,14 @@ static void test_haguruma_player_outside_resets_prior_contact(test_context *ctx)
 
     reset_haguruma_state();
     initialize_wheel_with_player_away(wheel, 1000, 1000);
-    wheel->actfree[16] = 1;
-    actwk[0].actfree[14] = 1;
+    haguruma_get_work(wheel)->engaged = 1;
+    player_work_get(&actwk[0])->jump_lock = 1;
     actwk[0].xposi.w.h = 300;
     actwk[0].yposi.w.h = 300;
 
     haguruma(wheel);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].actfree[14]);
+    TEST_ASSERT_EQ_INT(ctx, 0, player_work_get(&actwk[0])->jump_lock);
     assert_frameout_s_called_for(ctx, wheel);
 }
 
@@ -99,7 +99,7 @@ static void test_haguruma_player_outside_without_contact_only_frames(
 
     haguruma(wheel);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].actfree[14]);
+    TEST_ASSERT_EQ_INT(ctx, 0, player_work_get(&actwk[0])->jump_lock);
     assert_frameout_s_called_for(ctx, wheel);
 }
 
@@ -112,12 +112,12 @@ static void test_haguruma_player_inside_but_riding_clears_contact(
     actwk[0].xposi.w.h = 100;
     actwk[0].yposi.w.h = 200;
     actwk[0].cddat = 2;
-    wheel->actfree[16] = 1;
-    actwk[0].actfree[14] = 1;
+    haguruma_get_work(wheel)->engaged = 1;
+    player_work_get(&actwk[0])->jump_lock = 1;
 
     haguruma(wheel);
 
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[0].actfree[14]);
+    TEST_ASSERT_EQ_INT(ctx, 1, player_work_get(&actwk[0])->jump_lock);
     assert_frameout_s_called_for(ctx, wheel);
 }
 
@@ -139,7 +139,7 @@ static void test_haguruma_player_enters_positive_wheel_from_standstill(
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].mstno.b.h);
     TEST_ASSERT_EQ_INT(ctx, 1, actwk[0].mstno.b.l);
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].cddat);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[0].actfree[14]);
+    TEST_ASSERT_EQ_INT(ctx, 1, player_work_get(&actwk[0])->jump_lock);
     TEST_ASSERT_EQ_INT(ctx, 1024, actwk[0].mspeed.w);
     assert_frameout_s_called_for(ctx, wheel);
 }
@@ -172,7 +172,7 @@ static void test_haguruma_positive_wheel_keeps_middle_speed_on_held_contact(
 
     reset_haguruma_state();
     initialize_wheel_with_player_away(wheel, 100, 200);
-    wheel->actfree[16] = 1;
+    haguruma_get_work(wheel)->engaged = 1;
     actwk[0].xposi.w.h = 100;
     actwk[0].yposi.w.h = 200;
     actwk[0].mstno.b.h = 9;
@@ -183,7 +183,7 @@ static void test_haguruma_positive_wheel_keeps_middle_speed_on_held_contact(
 
     TEST_ASSERT_EQ_INT(ctx, 9, actwk[0].mstno.b.h);
     TEST_ASSERT_EQ_INT(ctx, 8, actwk[0].mstno.b.l);
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].actfree[14]);
+    TEST_ASSERT_EQ_INT(ctx, 0, player_work_get(&actwk[0])->jump_lock);
     TEST_ASSERT_EQ_INT(ctx, 2048, actwk[0].mspeed.w);
     assert_frameout_s_called_for(ctx, wheel);
 }

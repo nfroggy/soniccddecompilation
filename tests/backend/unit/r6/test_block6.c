@@ -130,7 +130,7 @@ static void seed_parent(sprite_status *parent, Sint8 table, Sint8 group) {
 static sprite_status *spawn_from_parent(sprite_status *parent,
                                         sprite_status *slot) {
     queue_actwkchk(slot);
-    parent->actfree[10] = 255;
+    block6_get_work(parent)->trigger = 255;
     main_move(parent);
     return slot;
 }
@@ -162,7 +162,7 @@ static void test_block6_parent_init_sets_visible_state_and_callbacks(
     TEST_ASSERT_EQ_INT(ctx, 16, parent->sprhsize);
     TEST_ASSERT_EQ_INT(ctx, 16, parent->sprvsize);
     TEST_ASSERT_TRUE(ctx, parent->patbase == pat_block6);
-    TEST_ASSERT_EQ_INT(ctx, 255, parent->actfree[10]);
+    TEST_ASSERT_EQ_INT(ctx, 255, block6_get_work(parent)->trigger);
     TEST_ASSERT_EQ_INT(ctx, 1, hitchk_count);
     TEST_ASSERT_TRUE(ctx, hitchk_actor == parent);
     TEST_ASSERT_TRUE(ctx, hitchk_player == &actwk[0]);
@@ -179,11 +179,11 @@ static void test_block6_parent_move_waits_when_trigger_is_clear(
     reset_block6_state();
     seed_parent(parent, 0, 2);
     reset_logs();
-    parent->actfree[10] = 0;
+    block6_get_work(parent)->trigger = 0;
 
     main_move(parent);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, parent->actfree[10]);
+    TEST_ASSERT_EQ_INT(ctx, 0, block6_get_work(parent)->trigger);
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_count);
 }
@@ -199,7 +199,7 @@ static void test_block6_parent_move_spawns_child_with_copied_visible_state(
     spawn_from_parent(parent, child);
 
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
-    TEST_ASSERT_EQ_INT(ctx, 0, parent->actfree[10]);
+    TEST_ASSERT_EQ_INT(ctx, 0, block6_get_work(parent)->trigger);
     TEST_ASSERT_EQ_INT(ctx, 42, child->actno);
     TEST_ASSERT_EQ_INT(ctx, parent->actflg, child->actflg);
     TEST_ASSERT_EQ_INT(ctx, parent->sproffset, child->sproffset);
@@ -383,7 +383,7 @@ static void test_block6_child_lifecycle_reaches_back_stop_and_die(
     TEST_ASSERT_EQ_INT(ctx, -4194304, child2_y_after_forward);
     block6(child2);
     drive_until_rno(ctx, child2, 10);
-    TEST_ASSERT_EQ_INT(ctx, 255, parent->actfree[10]);
+    TEST_ASSERT_EQ_INT(ctx, 255, block6_get_work(parent)->trigger);
 
     block6(child2);
     TEST_ASSERT_EQ_INT(ctx, 12, child2->r_no0);

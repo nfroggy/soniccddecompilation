@@ -97,47 +97,6 @@ void soundset(Sint16 ReqNo) {
     ++soundset_count;
 }
 
-static size_t short_alias_offset(int short_index) {
-    return (size_t)short_index * sizeof(Sint16) - offsetof(sprite_status, actfree);
-}
-
-static size_t pointer_alias_offset(int pointer_index) {
-    return (size_t)pointer_index * sizeof(void *) - offsetof(sprite_status, actfree);
-}
-
-static void set_actor_short_alias(sprite_status *actor, int short_index,
-                                  Sint16 value) {
-    size_t offset = short_alias_offset(short_index);
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
-static Sint16 actor_short_alias(sprite_status *actor, int short_index) {
-    size_t offset = short_alias_offset(short_index);
-    return (Sint16)((Uint16)actor->actfree[offset] |
-                    ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
-static void set_actor_pointer_alias(sprite_status *actor, int pointer_index,
-                                    char *value) {
-    uintptr_t raw = (uintptr_t)value;
-    size_t offset = pointer_alias_offset(pointer_index);
-
-    for (size_t i = 0; i < sizeof(void *); ++i) {
-        actor->actfree[offset + i] = (Uint8)(raw >> (i * 8));
-    }
-}
-
-static char *actor_pointer_alias(sprite_status *actor, int pointer_index) {
-    uintptr_t raw = 0;
-    size_t offset = pointer_alias_offset(pointer_index);
-
-    for (size_t i = 0; i < sizeof(void *); ++i) {
-        raw |= ((uintptr_t)actor->actfree[offset + i]) << (i * 8);
-    }
-    return (char *)raw;
-}
-
 static void queue_actor(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
@@ -214,7 +173,7 @@ static void test_mm_init_projector_and_allocation_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 251, main->colino);
     TEST_ASSERT_EQ_INT(ctx, 9135, main->sproffset);
     TEST_ASSERT_TRUE(ctx, main->patbase == pat_movie);
-    TEST_ASSERT_TRUE(ctx, actor_pointer_alias(main, 12) == tbl0);
+    TEST_ASSERT_TRUE(ctx, movie1_work_get(main)->explosion_script == tbl0);
 }
 
 static void test_mm_init_spawns_four_children(test_context *ctx) {
@@ -237,7 +196,7 @@ static void test_mm_init_spawns_four_children(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 379, actwk[40].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 193, actwk[40].yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, -1, actwk[40].userflag.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 3, actor_short_alias(&actwk[40], 33));
+    TEST_ASSERT_EQ_INT(ctx, 3, movie1_work_get(&actwk[40])->parent_actor);
     TEST_ASSERT_EQ_INT(ctx, 45, actwk[41].actno);
     TEST_ASSERT_EQ_INT(ctx, 312, actwk[41].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 196, actwk[41].yposi.w.h);
@@ -304,7 +263,7 @@ static void test_mm_wait_and_die_paths(test_context *ctx) {
     mm_die(main);
     TEST_ASSERT_EQ_INT(ctx, 6, main->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, main->patno);
-    TEST_ASSERT_EQ_INT(ctx, 255, main->actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 255, movie1_work_get(main)->parent_destroyed);
     TEST_ASSERT_EQ_INT(ctx, 1, ride_on_clr_count);
     TEST_ASSERT_TRUE(ctx, ride_on_clr_actor == main);
     TEST_ASSERT_TRUE(ctx, ride_on_clr_player == &actwk[0]);
@@ -321,7 +280,7 @@ static void test_m_baku_waits_spawns_and_finishes_script(test_context *ctx) {
     reset_movie1_state();
     main->xposi.w.h = 400;
     main->yposi.w.h = 200;
-    set_actor_pointer_alias(main, 12, tbl0);
+    movie1_work_get(main)->explosion_script = tbl0;
     queue_actor(&actwk[40]);
 
     m_baku(main);
@@ -332,20 +291,20 @@ static void test_m_baku_waits_spawns_and_finishes_script(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 400, actwk[40].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 200, actwk[40].yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 158, soundset_requests[0]);
-    TEST_ASSERT_TRUE(ctx, actor_pointer_alias(main, 12) == &tbl0[3]);
+    TEST_ASSERT_TRUE(ctx, movie1_work_get(main)->explosion_script == &tbl0[3]);
 
     m_baku(main);
 
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
-    TEST_ASSERT_TRUE(ctx, actor_pointer_alias(main, 12) == &tbl0[3]);
+    TEST_ASSERT_TRUE(ctx, movie1_work_get(main)->explosion_script == &tbl0[3]);
 
     reset_movie1_state();
     main->r_no0 = 6;
-    set_actor_pointer_alias(main, 12, &tbl0[36]);
+    movie1_work_get(main)->explosion_script = &tbl0[36];
     m_baku(main);
     TEST_ASSERT_EQ_INT(ctx, 8, main->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 60, actor_short_alias(main, 23));
+    TEST_ASSERT_EQ_INT(ctx, 60, movie1_work_get(main)->explosion_timer);
 }
 
 static void test_m_baku_allocation_failure_after_script_time(
@@ -353,7 +312,7 @@ static void test_m_baku_allocation_failure_after_script_time(
     sprite_status *main = &actwk[3];
 
     reset_movie1_state();
-    set_actor_pointer_alias(main, 12, tbl0);
+    movie1_work_get(main)->explosion_script = tbl0;
     m_baku(main);
     m_baku(main);
 
@@ -365,9 +324,9 @@ static void test_mm1wait_counts_down_and_sets_projector(test_context *ctx) {
     sprite_status *main = &actwk[3];
 
     reset_movie1_state();
-    set_actor_short_alias(main, 23, 2);
+    movie1_work_get(main)->explosion_timer = 2;
     mm1wait(main);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor_short_alias(main, 23));
+    TEST_ASSERT_EQ_INT(ctx, 1, movie1_work_get(main)->explosion_timer);
     TEST_ASSERT_EQ_INT(ctx, 0, projector_flag);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_count);
 
@@ -382,20 +341,20 @@ static void test_sub_parent_gates_and_initializes_variants(test_context *ctx) {
     sprite_status *parent = &actwk[3];
 
     reset_movie1_state();
-    set_actor_short_alias(child, 33, 3);
+    movie1_work_get(child)->parent_actor = 3;
     parent->actno = 0;
     sub(child);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
 
     reset_movie1_state();
-    set_actor_short_alias(child, 33, 3);
+    movie1_work_get(child)->parent_actor = 3;
     parent->actno = 46;
-    parent->actfree[21] = 1;
+    movie1_work_get(parent)->parent_destroyed = 1;
     sub(child);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
 
     reset_movie1_state();
-    set_actor_short_alias(child, 33, 3);
+    movie1_work_get(child)->parent_actor = 3;
     parent->actno = 46;
     child->userflag.b.h = -1;
     stageno.b.l = 1;
@@ -413,7 +372,7 @@ static void test_sub_parent_gates_and_initializes_variants(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, actionsub_actor == child);
 
     reset_movie1_state();
-    set_actor_short_alias(child, 33, 3);
+    movie1_work_get(child)->parent_actor = 3;
     parent->actno = 46;
     child->userflag.b.h = 1;
     sub(child);
@@ -442,7 +401,7 @@ static void test_movie1_wrapper_paths(test_context *ctx) {
 
     reset_movie1_state();
     child->userflag.b.h = 1;
-    set_actor_short_alias(child, 33, 3);
+    movie1_work_get(child)->parent_actor = 3;
     actwk[3].actno = 46;
     child->r_no0 = 2;
     movie1(child);

@@ -116,23 +116,12 @@ static void queue_body_segments(int first_index) {
     }
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int offset) {
-    return (Sint16)((Uint16)actor->actfree[offset] |
-                    ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
 static void link_live_segments(sprite_status *actor, int first_index) {
     int i;
 
-    set_actfree_word(actor, 16, (Sint16)first_index);
-    set_actfree_word(actor, 18, (Sint16)(first_index + 1));
-    set_actfree_word(actor, 20, (Sint16)(first_index + 2));
+    kemusi_get_work(actor)->link_indices[0] = (Sint16)first_index;
+    kemusi_get_work(actor)->link_indices[1] = (Sint16)(first_index + 1);
+    kemusi_get_work(actor)->link_indices[2] = (Sint16)(first_index + 2);
     for (i = 0; i < 3; ++i) {
         actwk[first_index + i].actno = 34;
     }
@@ -147,7 +136,7 @@ static void assert_common_segment(test_context *ctx, sprite_status *actor,
     TEST_ASSERT_EQ_INT(ctx, 8, actor->sprhsize);
     TEST_ASSERT_EQ_INT(ctx, 9214, actor->sproffset);
     TEST_ASSERT_TRUE(ctx, actor->patbase == pat_kemusi);
-    TEST_ASSERT_EQ_INT(ctx, origin, get_actfree_word(actor, 10));
+    TEST_ASSERT_EQ_INT(ctx, origin, kemusi_get_work(actor)->origin_x);
 }
 
 static void assert_visible_main_callbacks(test_context *ctx,
@@ -209,12 +198,12 @@ static void test_init_spawns_three_normal_segments(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, actor->patno);
     TEST_ASSERT_EQ_INT(ctx, 12, actor->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 51, actor->colino);
-    TEST_ASSERT_EQ_INT(ctx, 3, get_actfree_word(actor, 0));
-    TEST_ASSERT_EQ_INT(ctx, 36, get_actfree_word(actor, 2));
-    TEST_ASSERT_EQ_INT(ctx, 6, get_actfree_word(actor, 6));
-    TEST_ASSERT_EQ_INT(ctx, 30, get_actfree_word(actor, 16));
-    TEST_ASSERT_EQ_INT(ctx, 31, get_actfree_word(actor, 18));
-    TEST_ASSERT_EQ_INT(ctx, 32, get_actfree_word(actor, 20));
+    TEST_ASSERT_EQ_INT(ctx, 3, kemusi_get_work(actor)->step_delta);
+    TEST_ASSERT_EQ_INT(ctx, 36, kemusi_get_work(actor)->move_duration);
+    TEST_ASSERT_EQ_INT(ctx, 6, kemusi_get_work(actor)->step_reset);
+    TEST_ASSERT_EQ_INT(ctx, 30, kemusi_get_work(actor)->link_indices[0]);
+    TEST_ASSERT_EQ_INT(ctx, 31, kemusi_get_work(actor)->link_indices[1]);
+    TEST_ASSERT_EQ_INT(ctx, 32, kemusi_get_work(actor)->link_indices[2]);
     assert_common_segment(ctx, actor, 100);
     assert_visible_main_callbacks(ctx, actor, 100);
 
@@ -227,16 +216,16 @@ static void test_init_spawns_three_normal_segments(test_context *ctx) {
         TEST_ASSERT_EQ_INT(ctx, 2, part->patno);
         TEST_ASSERT_EQ_INT(ctx, 11, part->sprvsize);
         TEST_ASSERT_EQ_INT(ctx, 180, part->colino);
-        TEST_ASSERT_EQ_INT(ctx, 2 - i, get_actfree_word(part, 0));
-        TEST_ASSERT_EQ_INT(ctx, 36, get_actfree_word(part, 2));
-        TEST_ASSERT_EQ_INT(ctx, 6, get_actfree_word(part, 6));
+        TEST_ASSERT_EQ_INT(ctx, 2 - i, kemusi_get_work(part)->step_delta);
+        TEST_ASSERT_EQ_INT(ctx, 36, kemusi_get_work(part)->move_duration);
+        TEST_ASSERT_EQ_INT(ctx, 6, kemusi_get_work(part)->step_reset);
         assert_common_segment(ctx, part, 100);
     }
 
-    TEST_ASSERT_EQ_INT(ctx, 4, get_actfree_word(&actwk[30], 16));
-    TEST_ASSERT_EQ_INT(ctx, 31, get_actfree_word(&actwk[30], 18));
-    TEST_ASSERT_EQ_INT(ctx, 32, get_actfree_word(&actwk[30], 20));
-    TEST_ASSERT_EQ_INT(ctx, 30, get_actfree_word(&actwk[32], 18));
+    TEST_ASSERT_EQ_INT(ctx, 4, kemusi_get_work(&actwk[30])->link_indices[0]);
+    TEST_ASSERT_EQ_INT(ctx, 31, kemusi_get_work(&actwk[30])->link_indices[1]);
+    TEST_ASSERT_EQ_INT(ctx, 32, kemusi_get_work(&actwk[30])->link_indices[2]);
+    TEST_ASSERT_EQ_INT(ctx, 30, kemusi_get_work(&actwk[32])->link_indices[1]);
 }
 
 static void test_init_time_variant_and_allocation_failure(test_context *ctx) {
@@ -251,8 +240,8 @@ static void test_init_time_variant_and_allocation_failure(test_context *ctx) {
 
     kemusi(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 36, get_actfree_word(actor, 2));
-    TEST_ASSERT_EQ_INT(ctx, 12, get_actfree_word(actor, 6));
+    TEST_ASSERT_EQ_INT(ctx, 36, kemusi_get_work(actor)->move_duration);
+    TEST_ASSERT_EQ_INT(ctx, 12, kemusi_get_work(actor)->step_reset);
     TEST_ASSERT_EQ_INT(ctx, 3, actwk[40].patno);
     TEST_ASSERT_EQ_INT(ctx, 7, actwk[40].sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 51, actwk[40].colino);
@@ -295,7 +284,7 @@ static void test_fall_landing_counts_main_and_child_segments(test_context *ctx) 
     reset_kemusi_state();
     actor->r_no0 = 2;
     actor->yposi.w.h = 50;
-    set_actfree_word(actor, 10, 100);
+    kemusi_get_work(actor)->origin_x = 100;
     link_live_segments(actor, 30);
     queue_emycol(1);
 
@@ -303,7 +292,7 @@ static void test_fall_landing_counts_main_and_child_segments(test_context *ctx) 
 
     TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 51, actor->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 0, get_actfree_word(actor, 12));
+    TEST_ASSERT_EQ_INT(ctx, 0, kemusi_get_work(actor)->landed_count);
 
     reset_logs();
     queue_emycol(-3);
@@ -312,23 +301,23 @@ static void test_fall_landing_counts_main_and_child_segments(test_context *ctx) 
 
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 49, actor->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 1, get_actfree_word(actor, 12));
+    TEST_ASSERT_EQ_INT(ctx, 1, kemusi_get_work(actor)->landed_count);
 
     reset_logs();
     actor->actno = 34;
     child->userflag.b.l = -1;
     child->r_no0 = 2;
     child->yposi.w.h = 70;
-    set_actfree_word(child, 16, 4);
-    set_actfree_word(child, 18, 31);
-    set_actfree_word(child, 20, 32);
+    kemusi_get_work(child)->link_indices[0] = 4;
+    kemusi_get_work(child)->link_indices[1] = 31;
+    kemusi_get_work(child)->link_indices[2] = 32;
     queue_emycol(-2);
 
     kemusi(child);
 
     TEST_ASSERT_EQ_INT(ctx, 4, child->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 69, child->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 2, get_actfree_word(actor, 12));
+    TEST_ASSERT_EQ_INT(ctx, 2, kemusi_get_work(actor)->landed_count);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_s00_count);
 }
 
@@ -339,11 +328,11 @@ static void test_stop_waits_for_all_segments_then_starts_move(
     reset_kemusi_state();
     actor->r_no0 = 4;
     actor->patno = 1;
-    set_actfree_word(actor, 0, 3);
-    set_actfree_word(actor, 2, 36);
-    set_actfree_word(actor, 6, 6);
-    set_actfree_word(actor, 10, 100);
-    set_actfree_word(actor, 12, 3);
+    kemusi_get_work(actor)->step_delta = 3;
+    kemusi_get_work(actor)->move_duration = 36;
+    kemusi_get_work(actor)->step_reset = 6;
+    kemusi_get_work(actor)->origin_x = 100;
+    kemusi_get_work(actor)->landed_count = 3;
     link_live_segments(actor, 30);
 
     kemusi(actor);
@@ -352,7 +341,7 @@ static void test_stop_waits_for_all_segments_then_starts_move(
     TEST_ASSERT_EQ_INT(ctx, 1, actor->patno);
 
     reset_logs();
-    set_actfree_word(actor, 12, 4);
+    kemusi_get_work(actor)->landed_count = 4;
 
     kemusi(actor);
 
@@ -360,9 +349,9 @@ static void test_stop_waits_for_all_segments_then_starts_move(
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[30].r_no0);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[31].r_no0);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[32].r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, get_actfree_word(actor, 0));
-    TEST_ASSERT_EQ_INT(ctx, 35, get_actfree_word(actor, 4));
-    TEST_ASSERT_EQ_INT(ctx, 6, get_actfree_word(actor, 8));
+    TEST_ASSERT_EQ_INT(ctx, 0, kemusi_get_work(actor)->step_delta);
+    TEST_ASSERT_EQ_INT(ctx, 35, kemusi_get_work(actor)->move_timer);
+    TEST_ASSERT_EQ_INT(ctx, 6, kemusi_get_work(actor)->step_counter);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->patno);
 }
 
@@ -374,13 +363,13 @@ static void test_move_state_initializes_child_without_flipping_patno(
     child->userflag.b.l = -1;
     child->r_no0 = 6;
     child->patno = 3;
-    set_actfree_word(child, 0, 2);
-    set_actfree_word(child, 2, 36);
-    set_actfree_word(child, 6, 6);
-    set_actfree_word(child, 10, 100);
-    set_actfree_word(child, 16, 4);
-    set_actfree_word(child, 18, 31);
-    set_actfree_word(child, 20, 32);
+    kemusi_get_work(child)->step_delta = 2;
+    kemusi_get_work(child)->move_duration = 36;
+    kemusi_get_work(child)->step_reset = 6;
+    kemusi_get_work(child)->origin_x = 100;
+    kemusi_get_work(child)->link_indices[0] = 4;
+    kemusi_get_work(child)->link_indices[1] = 31;
+    kemusi_get_work(child)->link_indices[2] = 32;
     actwk[4].actno = 34;
     actwk[31].actno = 34;
     actwk[32].actno = 34;
@@ -388,9 +377,9 @@ static void test_move_state_initializes_child_without_flipping_patno(
     kemusi(child);
 
     TEST_ASSERT_EQ_INT(ctx, 8, child->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 1, get_actfree_word(child, 0));
-    TEST_ASSERT_EQ_INT(ctx, 35, get_actfree_word(child, 4));
-    TEST_ASSERT_EQ_INT(ctx, 5, get_actfree_word(child, 8));
+    TEST_ASSERT_EQ_INT(ctx, 1, kemusi_get_work(child)->step_delta);
+    TEST_ASSERT_EQ_INT(ctx, 35, kemusi_get_work(child)->move_timer);
+    TEST_ASSERT_EQ_INT(ctx, 5, kemusi_get_work(child)->step_counter);
     TEST_ASSERT_EQ_INT(ctx, 3, child->patno);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_s00_count);
 }
@@ -402,30 +391,30 @@ static void test_move1_timer_and_floor_adjust_paths(test_context *ctx) {
     actor->r_no0 = 8;
     actor->xposi.w.h = 100;
     actor->yposi.w.h = 40;
-    set_actfree_word(actor, 0, 3);
-    set_actfree_word(actor, 4, 2);
-    set_actfree_word(actor, 6, 6);
-    set_actfree_word(actor, 8, 5);
-    set_actfree_word(actor, 10, 100);
+    kemusi_get_work(actor)->step_delta = 3;
+    kemusi_get_work(actor)->move_timer = 2;
+    kemusi_get_work(actor)->step_reset = 6;
+    kemusi_get_work(actor)->step_counter = 5;
+    kemusi_get_work(actor)->origin_x = 100;
     link_live_segments(actor, 30);
 
     kemusi(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 8, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 2, get_actfree_word(actor, 8));
-    TEST_ASSERT_EQ_INT(ctx, 1, get_actfree_word(actor, 4));
+    TEST_ASSERT_EQ_INT(ctx, 2, kemusi_get_work(actor)->step_counter);
+    TEST_ASSERT_EQ_INT(ctx, 1, kemusi_get_work(actor)->move_timer);
     TEST_ASSERT_EQ_INT(ctx, 100, actor->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 0, emycol_d_count);
 
     reset_logs();
-    set_actfree_word(actor, 8, 3);
-    set_actfree_word(actor, 4, 1);
+    kemusi_get_work(actor)->step_counter = 3;
+    kemusi_get_work(actor)->move_timer = 1;
     queue_emycol(2);
 
     kemusi(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 6, get_actfree_word(actor, 8));
+    TEST_ASSERT_EQ_INT(ctx, 6, kemusi_get_work(actor)->step_counter);
     TEST_ASSERT_EQ_INT(ctx, 99, actor->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 42, actor->yposi.w.h);
 }
@@ -437,11 +426,11 @@ static void test_move1_reverses_at_origin_range_and_floor_edge(
     reset_kemusi_state();
     actor->r_no0 = 8;
     actor->xposi.w.h = 181;
-    set_actfree_word(actor, 0, 3);
-    set_actfree_word(actor, 4, 3);
-    set_actfree_word(actor, 6, 6);
-    set_actfree_word(actor, 8, 3);
-    set_actfree_word(actor, 10, 100);
+    kemusi_get_work(actor)->step_delta = 3;
+    kemusi_get_work(actor)->move_timer = 3;
+    kemusi_get_work(actor)->step_reset = 6;
+    kemusi_get_work(actor)->step_counter = 3;
+    kemusi_get_work(actor)->origin_x = 100;
     link_live_segments(actor, 30);
 
     kemusi(actor);
@@ -454,11 +443,11 @@ static void test_move1_reverses_at_origin_range_and_floor_edge(
     actor = &actwk[4];
     actor->r_no0 = 8;
     actor->xposi.w.h = 100;
-    set_actfree_word(actor, 0, 3);
-    set_actfree_word(actor, 4, 3);
-    set_actfree_word(actor, 6, 6);
-    set_actfree_word(actor, 8, 3);
-    set_actfree_word(actor, 10, 100);
+    kemusi_get_work(actor)->step_delta = 3;
+    kemusi_get_work(actor)->move_timer = 3;
+    kemusi_get_work(actor)->step_reset = 6;
+    kemusi_get_work(actor)->step_counter = 3;
+    kemusi_get_work(actor)->origin_x = 100;
     link_live_segments(actor, 30);
     queue_emycol(7);
 

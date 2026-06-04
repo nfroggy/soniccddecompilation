@@ -120,16 +120,6 @@ static void queue_emycol_d(Sint16 result) {
     emycol_d_queue[emycol_d_queue_count++] = result;
 }
 
-static void set_actor_word(sprite_status *actor, int index, Sint16 value) {
-    int offset = (index - 23) * 2;
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
-static void set_actfree_long(sprite_status *actor, int offset, Sint32 value) {
-    memcpy(&actor->actfree[offset], &value, sizeof(value));
-}
-
 static void reset_tentou_state(void) {
     memset(actwk, 0, sizeof(actwk));
     enemy_suicide_count = 0;
@@ -233,7 +223,7 @@ static void test_tentou_a_init_and_fall_paths(test_context *ctx) {
     ten_a_fall(actor);
 
     reset_tentou_state();
-    set_actfree_long(actor, 0, 1);
+    tentou_get_work(actor)->u0.horizontal_speed = 1;
     emycol_d_result = -8;
     ten_a_fall(actor);
 }
@@ -284,8 +274,8 @@ static void test_tentou_a_hover_up_and_abs(test_context *ctx) {
     ten_a_up(actor);
 
     reset_tentou_state();
-    set_actor_word(actor, 29, 15);
-    set_actfree_long(actor, 4, 12288);
+    tentou_get_work(actor)->hover_counter = 15;
+    tentou_get_work(actor)->hover_speed = 12288;
     ten_a_hover(actor);
     TEST_ASSERT_EQ_INT(ctx, 5, abs(-5));
     TEST_ASSERT_EQ_INT(ctx, 7, abs(7));
@@ -297,8 +287,8 @@ static void test_tentou_a_lr_ground_wall_and_ledge_paths(test_context *ctx) {
     reset_tentou_state();
     actor->cddat = 1;
     actor->userflag.b.h = 0;
-    actor->actfree[21] = 255;
-    set_actor_word(actor, 29, 127);
+    tentou_get_work(actor)->spawn_bombs = 255;
+    tentou_get_work(actor)->hover_counter = 127;
     actor->actno = 22;
     queue_actor(&actwk[10]);
     emycol_r_result = 0;
@@ -309,7 +299,7 @@ static void test_tentou_a_lr_ground_wall_and_ledge_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, actwk[10].userflag.b.h);
 
     reset_tentou_state();
-    set_actfree_long(actor, 0, -1);
+    tentou_get_work(actor)->u0.horizontal_speed = -1;
     emycol_l_result = -1;
     ten_a_lr(actor);
 
@@ -321,7 +311,7 @@ static void test_tentou_a_lr_ground_wall_and_ledge_paths(test_context *ctx) {
 
     reset_tentou_state();
     actor->r_no0 = 10;
-    set_actfree_long(actor, 0, 1);
+    tentou_get_work(actor)->u0.horizontal_speed = 1;
     actor->xposi.w.h = 100;
     actor->sprhsize = 8;
     emycol_d2_result = 16;
@@ -358,7 +348,7 @@ static void test_tentou_b_init_fall_wait_blink_and_die(test_context *ctx) {
     ten_b_fall(actor);
 
     reset_tentou_state();
-    set_actor_word(actor, 23, 1);
+    tentou_get_work(actor)->u0.bomb_timer = 1;
     ten_b_wait(actor);
 
     reset_tentou_state();
@@ -366,11 +356,11 @@ static void test_tentou_b_init_fall_wait_blink_and_die(test_context *ctx) {
     ten_b_wait(actor);
 
     reset_tentou_state();
-    set_actor_word(actor, 23, 2);
+    tentou_get_work(actor)->u0.bomb_timer = 2;
     ten_b_blink(actor);
     TEST_ASSERT_TRUE(ctx, patchg_table == pchg1);
     reset_tentou_logs();
-    set_actor_word(actor, 23, 1);
+    tentou_get_work(actor)->u0.bomb_timer = 1;
     ten_b_blink(actor);
 
     reset_tentou_state();

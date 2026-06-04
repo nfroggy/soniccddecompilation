@@ -73,11 +73,6 @@ static void reset_harir5_state(void) {
     playdamageset_actor = 0;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
 static void assert_tail_action_only(test_context *ctx, sprite_status *actor) {
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_TRUE(ctx, actionsub_actor == actor);
@@ -131,7 +126,7 @@ static void test_init_sets_type_specific_size_collision_and_pattern(
     }
 }
 
-static void test_motion_kinds_use_origin_and_actfree_amplitude(
+static void test_motion_kinds_use_origin_and_work_amplitude(
     test_context *ctx) {
     sprite_status *spike = &actwk[3];
 
@@ -141,7 +136,7 @@ static void test_motion_kinds_use_origin_and_actfree_amplitude(
     spike->yposi.w.h = 240;
     spike->userflag.b.h = 4;
     harir5(spike);
-    TEST_ASSERT_EQ_INT(ctx, 8, spike->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 8, harir5_get_work(spike)->move_offset);
     TEST_ASSERT_EQ_INT(ctx, 248, spike->yposi.w.h);
 
     reset_harir5_state();
@@ -150,7 +145,7 @@ static void test_motion_kinds_use_origin_and_actfree_amplitude(
     spike->yposi.w.h = 240;
     spike->userflag.b.h = 5;
     harir5(spike);
-    TEST_ASSERT_EQ_INT(ctx, 8, spike->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 8, harir5_get_work(spike)->move_offset);
     TEST_ASSERT_EQ_INT(ctx, 232, spike->yposi.w.h);
 
     reset_harir5_state();
@@ -159,7 +154,7 @@ static void test_motion_kinds_use_origin_and_actfree_amplitude(
     spike->yposi.w.h = 240;
     spike->userflag.b.h = 6;
     harir5(spike);
-    TEST_ASSERT_EQ_INT(ctx, 8, spike->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 8, harir5_get_work(spike)->move_offset);
     TEST_ASSERT_EQ_INT(ctx, 120, spike->xposi.w.h);
 
     reset_harir5_state();
@@ -168,7 +163,7 @@ static void test_motion_kinds_use_origin_and_actfree_amplitude(
     spike->yposi.w.h = 240;
     spike->userflag.b.h = 7;
     harir5(spike);
-    TEST_ASSERT_EQ_INT(ctx, 8, spike->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 8, harir5_get_work(spike)->move_offset);
     TEST_ASSERT_EQ_INT(ctx, 136, spike->xposi.w.h);
 }
 
@@ -177,48 +172,48 @@ static void test_motion_timer_growth_pause_and_reverse_edges(test_context *ctx) 
 
     reset_harir5_state();
     prime_moving_origin(spike);
-    spike->actfree[16] = 1;
-    spike->actfree[17] = 24;
+    harir5_get_work(spike)->wait_timer = 1;
+    harir5_get_work(spike)->move_offset = 24;
 
     harir5(spike);
 
-    TEST_ASSERT_EQ_INT(ctx, 32, spike->actfree[17]);
-    TEST_ASSERT_EQ_INT(ctx, 1, spike->actfree[18]);
-    TEST_ASSERT_EQ_INT(ctx, 60, spike->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 32, harir5_get_work(spike)->move_offset);
+    TEST_ASSERT_EQ_INT(ctx, 1, harir5_get_work(spike)->moving_back);
+    TEST_ASSERT_EQ_INT(ctx, 60, harir5_get_work(spike)->wait_timer);
     TEST_ASSERT_EQ_INT(ctx, 272, spike->yposi.w.h);
 
     reset_harir5_state();
     prime_moving_origin(spike);
-    spike->actfree[16] = 2;
-    spike->actfree[17] = 24;
+    harir5_get_work(spike)->wait_timer = 2;
+    harir5_get_work(spike)->move_offset = 24;
 
     harir5(spike);
 
-    TEST_ASSERT_EQ_INT(ctx, 24, spike->actfree[17]);
-    TEST_ASSERT_EQ_INT(ctx, 1, spike->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 24, harir5_get_work(spike)->move_offset);
+    TEST_ASSERT_EQ_INT(ctx, 1, harir5_get_work(spike)->wait_timer);
     TEST_ASSERT_EQ_INT(ctx, 264, spike->yposi.w.h);
 
     reset_harir5_state();
     prime_moving_origin(spike);
-    spike->actfree[17] = 16;
-    spike->actfree[18] = 1;
+    harir5_get_work(spike)->move_offset = 16;
+    harir5_get_work(spike)->moving_back = 1;
 
     harir5(spike);
 
-    TEST_ASSERT_EQ_INT(ctx, 8, spike->actfree[17]);
-    TEST_ASSERT_EQ_INT(ctx, 1, spike->actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 8, harir5_get_work(spike)->move_offset);
+    TEST_ASSERT_EQ_INT(ctx, 1, harir5_get_work(spike)->moving_back);
     TEST_ASSERT_EQ_INT(ctx, 248, spike->yposi.w.h);
 
     reset_harir5_state();
     prime_moving_origin(spike);
-    spike->actfree[17] = 0;
-    spike->actfree[18] = 1;
+    harir5_get_work(spike)->move_offset = 0;
+    harir5_get_work(spike)->moving_back = 1;
 
     harir5(spike);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, spike->actfree[17]);
-    TEST_ASSERT_EQ_INT(ctx, 0, spike->actfree[18]);
-    TEST_ASSERT_EQ_INT(ctx, 60, spike->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 0, harir5_get_work(spike)->move_offset);
+    TEST_ASSERT_EQ_INT(ctx, 0, harir5_get_work(spike)->moving_back);
+    TEST_ASSERT_EQ_INT(ctx, 60, harir5_get_work(spike)->wait_timer);
     TEST_ASSERT_EQ_INT(ctx, 240, spike->yposi.w.h);
 }
 
@@ -259,7 +254,7 @@ static void test_flat_spikes_damage_player_when_all_guards_allow(
     TEST_ASSERT_EQ_INT(ctx, 0, playdamageset_count);
 }
 
-static void test_parent_follow_uses_actfree_offsets(test_context *ctx) {
+static void test_parent_follow_uses_work_offsets(test_context *ctx) {
     sprite_status *parent = &actwk[5];
     sprite_status *child = &actwk[3];
 
@@ -271,10 +266,10 @@ static void test_parent_follow_uses_actfree_offsets(test_context *ctx) {
     child->patno = 1;
     child->xposi.w.h = 128;
     child->yposi.w.h = 240;
-    set_actfree_word(child, 10, 5);
-    set_actfree_word(child, 12, 1541);
-    child->actfree[14] = 5;
-    child->actfree[15] = 6;
+    harir5_get_work(child)->ride_actor_index = 5;
+    harir5_get_work(child)->origin_x = 1541;
+    harir5_get_work(child)->ride_x_offset = 5;
+    harir5_get_work(child)->ride_y_offset = 6;
     scra_h_posit.w.h = 1664;
 
     harir5(child);
@@ -306,9 +301,9 @@ static void test_offscreen_clears_persistent_flag_and_frames_out(
 
 TEST_MAIN_BEGIN;
     test_init_sets_type_specific_size_collision_and_pattern(&ctx);
-    test_motion_kinds_use_origin_and_actfree_amplitude(&ctx);
+    test_motion_kinds_use_origin_and_work_amplitude(&ctx);
     test_motion_timer_growth_pause_and_reverse_edges(&ctx);
     test_flat_spikes_damage_player_when_all_guards_allow(&ctx);
-    test_parent_follow_uses_actfree_offsets(&ctx);
+    test_parent_follow_uses_work_offsets(&ctx);
     test_offscreen_clears_persistent_flag_and_frames_out(&ctx);
 TEST_MAIN_END

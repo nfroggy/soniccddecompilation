@@ -121,11 +121,6 @@ static void queue_actwk(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
 static void reset_trap_state(void) {
     memset(actwk, 0, sizeof(actwk));
     plpower_m = 0;
@@ -396,7 +391,7 @@ static void test_harir8_master_child_follows_live_parent(test_context *ctx) {
     frameout_s00_count = 0;
     platform->xposi.w.h = 150;
     platform->yposi.w.h = 70;
-    child->actfree[14] = (Uint8)-6;
+    trap_r81_work_get(child)->follow_x_offset = (Uint8)-6;
 
     harir8(child);
 
@@ -516,7 +511,7 @@ static void test_harir8_skips_when_player_hidden_flag_blocks_damage(
     spike->yposi.w.h = 100;
     spike->cddat = 8;
     player->yposi.w.h = 90;
-    set_actfree_word(player, 6, 1);
+    player_work_get(player)->damage_invulnerability_timer = 1;
     hitchk_result = 1;
 
     harir8(spike);
@@ -555,7 +550,7 @@ static void test_anar8_opening_completes_into_wait_state(test_context *ctx) {
     gate->r_no0 = 2;
     gate->actflg = 128;
     gate->xposi.w.h = 100;
-    gate->actfree[19] = 7;
+    trap_r81_work_get(gate)->animation_index = 7;
 
     anar8(gate);
 
@@ -572,7 +567,7 @@ static void test_anar8_closing_completes_back_to_opening_state(test_context *ctx
     gate->r_no0 = 4;
     gate->actflg = 128;
     gate->xposi.w.h = 100;
-    gate->actfree[19] = 7;
+    trap_r81_work_get(gate)->animation_index = 7;
 
     anar8(gate);
 
@@ -590,7 +585,7 @@ static void test_anar8_right_gate_initializes_without_partner(test_context *ctx)
     gate->actflg = 128;
     gate->xposi.w.h = 224;
     gate->yposi.w.h = 64;
-    gate->actfree[20] = 1;
+    trap_r81_work_get(gate)->paired_gate = 1;
 
     anar8(gate);
 
@@ -625,8 +620,8 @@ static void test_anar8_open_wait_timer_clears_ride_without_moving(
     gate->actno = 55;
     gate->r_no0 = 2;
     gate->xposi.w.h = 100;
-    gate->actfree[16] = 2;
-    gate->actfree[19] = 3;
+    trap_r81_work_get(gate)->timer = 2;
+    trap_r81_work_get(gate)->animation_index = 3;
 
     anar8(gate);
 
@@ -643,8 +638,8 @@ static void test_anar8_right_gate_closing_progresses_without_finishing(
     gate->r_no0 = 4;
     gate->actflg = 128;
     gate->xposi.w.h = 220;
-    gate->actfree[20] = 1;
-    gate->actfree[19] = 2;
+    trap_r81_work_get(gate)->paired_gate = 1;
+    trap_r81_work_get(gate)->animation_index = 2;
 
     anar8(gate);
 
@@ -661,8 +656,8 @@ static void test_anar8_close_wait_timer_checks_ride_without_moving(
     gate->actno = 55;
     gate->r_no0 = 4;
     gate->xposi.w.h = 100;
-    gate->actfree[16] = 2;
-    gate->actfree[19] = 3;
+    trap_r81_work_get(gate)->timer = 2;
+    trap_r81_work_get(gate)->animation_index = 3;
 
     anar8(gate);
 
@@ -695,8 +690,8 @@ static void test_futagor8_wraps_animation_index_after_last_shape(
     platform->actno = 56;
     platform->r_no0 = 2;
     platform->patno = 6;
-    platform->actfree[16] = 1;
-    platform->actfree[18] = 11;
+    trap_r81_work_get(platform)->timer = 1;
+    trap_r81_work_get(platform)->pattern_index = 11;
 
     futagor8(platform);
 
@@ -734,3 +729,4 @@ TEST_MAIN_BEGIN;
     test_futagor8_initializes_first_platform_shape(&ctx);
     test_futagor8_wraps_animation_index_after_last_shape(&ctx);
 TEST_MAIN_END
+

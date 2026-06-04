@@ -1,4 +1,3 @@
-#include <stddef.h>
 #include <string.h>
 
 #include "support/test_runner.h"
@@ -111,46 +110,6 @@ static void queue_actor(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
-static void set_actfree_long(sprite_status *actor, int offset, Sint32 value) {
-    Uint32 bits = (Uint32)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)((bits >> 8) & 255);
-    actor->actfree[offset + 2] = (Uint8)((bits >> 16) & 255);
-    actor->actfree[offset + 3] = (Uint8)(bits >> 24);
-}
-
-static Sint32 get_actfree_long(sprite_status *actor, int offset) {
-    Uint32 bits = (Uint32)actor->actfree[offset] |
-                  ((Uint32)actor->actfree[offset + 1] << 8) |
-                  ((Uint32)actor->actfree[offset + 2] << 16) |
-                  ((Uint32)actor->actfree[offset + 3] << 24);
-    return (Sint32)bits;
-}
-
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int offset) {
-    Uint16 bits = (Uint16)actor->actfree[offset] |
-                  ((Uint16)actor->actfree[offset + 1] << 8);
-    return (Sint16)bits;
-}
-
-static int legacy_word_actfree_offset(int word_index) {
-    return (word_index * 2) - (int)offsetof(sprite_status, actfree);
-}
-
-static void set_legacy_word(sprite_status *actor, int word_index, Sint16 value) {
-    set_actfree_word(actor, legacy_word_actfree_offset(word_index), value);
-}
-
-static Sint16 get_legacy_word(sprite_status *actor, int word_index) {
-    return get_actfree_word(actor, legacy_word_actfree_offset(word_index));
-}
-
 static void test_kowasi4_patterns_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, pat_kowasi4[0] == &pat00);
     TEST_ASSERT_TRUE(ctx, pat_kowasi4[1] == &pat01);
@@ -230,16 +189,16 @@ static void test_kowasi4_wait_collision_spawns_fragments(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 8, block->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 88, block->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 190, block->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, -252434, get_actfree_long(block, 0));
-    TEST_ASSERT_EQ_INT(ctx, -67760, get_actfree_long(block, 4));
+    TEST_ASSERT_EQ_INT(ctx, -252434, kowasi4_work_get(block)->x_velocity);
+    TEST_ASSERT_EQ_INT(ctx, -67760, kowasi4_work_get(block)->y_velocity);
 
     TEST_ASSERT_EQ_INT(ctx, 57, actwk[40].actno);
     TEST_ASSERT_EQ_INT(ctx, 4, actwk[40].r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, actwk[40].patno);
     TEST_ASSERT_EQ_INT(ctx, 108, actwk[40].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 192, actwk[40].yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, -189326, get_actfree_long(&actwk[40], 0));
-    TEST_ASSERT_EQ_INT(ctx, -189326, get_actfree_long(&actwk[40], 4));
+    TEST_ASSERT_EQ_INT(ctx, -189326, kowasi4_work_get(&actwk[40])->x_velocity);
+    TEST_ASSERT_EQ_INT(ctx, -189326, kowasi4_work_get(&actwk[40])->y_velocity);
 
     TEST_ASSERT_EQ_INT(ctx, 92, actwk[41].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 208, actwk[41].yposi.w.h);
@@ -266,10 +225,10 @@ static void test_kowasi4_wait_negative_xspeed_uses_flipped_speed_table(
 
     kowasi4(block);
 
-    TEST_ASSERT_EQ_INT(ctx, 252434, get_actfree_long(block, 0));
-    TEST_ASSERT_EQ_INT(ctx, -67760, get_actfree_long(block, 4));
-    TEST_ASSERT_EQ_INT(ctx, 189326, get_actfree_long(&actwk[40], 0));
-    TEST_ASSERT_EQ_INT(ctx, -189326, get_actfree_long(&actwk[40], 4));
+    TEST_ASSERT_EQ_INT(ctx, 252434, kowasi4_work_get(block)->x_velocity);
+    TEST_ASSERT_EQ_INT(ctx, -67760, kowasi4_work_get(block)->y_velocity);
+    TEST_ASSERT_EQ_INT(ctx, 189326, kowasi4_work_get(&actwk[40])->x_velocity);
+    TEST_ASSERT_EQ_INT(ctx, -189326, kowasi4_work_get(&actwk[40])->y_velocity);
 }
 
 static void test_kowasi4_wait_vertical_speed_dominates_base_table(
@@ -289,10 +248,10 @@ static void test_kowasi4_wait_vertical_speed_dominates_base_table(
 
     kowasi4(block);
 
-    TEST_ASSERT_EQ_INT(ctx, -84144, get_actfree_long(block, 0));
-    TEST_ASSERT_EQ_INT(ctx, -376832, get_actfree_long(block, 4));
-    TEST_ASSERT_EQ_INT(ctx, 84144, get_actfree_long(&actwk[40], 0));
-    TEST_ASSERT_EQ_INT(ctx, -393216, get_actfree_long(&actwk[40], 4));
+    TEST_ASSERT_EQ_INT(ctx, -84144, kowasi4_work_get(block)->x_velocity);
+    TEST_ASSERT_EQ_INT(ctx, -376832, kowasi4_work_get(block)->y_velocity);
+    TEST_ASSERT_EQ_INT(ctx, 84144, kowasi4_work_get(&actwk[40])->x_velocity);
+    TEST_ASSERT_EQ_INT(ctx, -393216, kowasi4_work_get(&actwk[40])->y_velocity);
 }
 
 static void test_kowasi4_wait_allocation_failure_keeps_first_fragment_only(
@@ -322,8 +281,8 @@ static void test_kowasi4_down_moves_or_frames_out_by_player_distance(
     fragment->r_no0 = 4;
     fragment->xposi.l = 100 << 16;
     fragment->yposi.l = 200 << 16;
-    set_actfree_long(fragment, 0, 2 << 16);
-    set_actfree_long(fragment, 4, -1 << 16);
+    kowasi4_work_get(fragment)->x_velocity = 2 << 16;
+    kowasi4_work_get(fragment)->y_velocity = -1 << 16;
     actwk[0].yposi.w.h = 200;
 
     kowasi4(fragment);
@@ -331,7 +290,7 @@ static void test_kowasi4_down_moves_or_frames_out_by_player_distance(
     TEST_ASSERT_EQ_INT(ctx, 102, fragment->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 199, fragment->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, (Sint32)((-1 << 16) + 16384),
-                       get_actfree_long(fragment, 4));
+                       kowasi4_work_get(fragment)->y_velocity);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_TRUE(ctx, actionsub_actor == fragment);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_count);

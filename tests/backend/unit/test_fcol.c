@@ -140,7 +140,7 @@ static void test_fcol_down_position_and_state_branches(test_context *ctx) {
 
     reset_fcol_state();
     setup_actor(&actor);
-    actor.actfree[14] = 1;
+    fcol_work_get(&actor)->force_position_adjust = 1;
     TEST_ASSERT_EQ_INT(ctx, 1, fcol_d(&actor));
     TEST_ASSERT_EQ_INT(ctx, 131, actor.yposi.w.h);
 
@@ -180,7 +180,7 @@ static void test_fcol_side_and_up_branches(test_context *ctx) {
 
     reset_fcol_state();
     setup_actor(&actor);
-    actor.actfree[14] = 1;
+    fcol_work_get(&actor)->force_position_adjust = 1;
     TEST_ASSERT_EQ_INT(ctx, 1, fcol_r(&actor));
     TEST_ASSERT_EQ_INT(ctx, 131, actor.xposi.w.h);
 
@@ -246,7 +246,7 @@ static void test_fcol_zero_and_remaining_position_branches(test_context *ctx) {
 
     reset_fcol_state();
     setup_actor(&actor);
-    actor.actfree[14] = 1;
+    fcol_work_get(&actor)->force_position_adjust = 1;
     TEST_ASSERT_EQ_INT(ctx, 1, fcol_u(&actor));
     TEST_ASSERT_EQ_INT(ctx, 76, actor.yposi.w.h);
 
@@ -259,7 +259,7 @@ static void test_fcol_zero_and_remaining_position_branches(test_context *ctx) {
 
     reset_fcol_state();
     setup_actor(&actor);
-    actor.actfree[14] = 1;
+    fcol_work_get(&actor)->force_position_adjust = 1;
     TEST_ASSERT_EQ_INT(ctx, 1, fcol_l(&actor));
     TEST_ASSERT_EQ_INT(ctx, 76, actor.xposi.w.h);
 

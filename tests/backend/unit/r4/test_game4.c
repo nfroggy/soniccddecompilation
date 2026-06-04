@@ -1,4 +1,3 @@
-#include <stddef.h>
 #include <string.h>
 
 #include "support/test_runner.h"
@@ -60,14 +59,6 @@ static PALETTEENTRY colorwk[16], colorwk2[16], colorwk3[16], colorwk4[16];
 static int_union hscroll_buffer[256];
 static Sint32 fade_flag;
 static Uint32 fake_hwnd;
-
-static Sint16 actor_short_alias(const sprite_status *actor, int short_index) {
-    Sint16 value;
-    const size_t byte_offset =
-        (size_t)short_index * sizeof(Sint16) - offsetof(sprite_status, actfree);
-    memcpy(&value, &actor->actfree[byte_offset], sizeof(value));
-    return value;
-}
 
 Sint32 stub_SetGrid(Sint32 a, Sint32 b, Sint32 c, Sint32 d);
 void stub_EAsprset(Sint16 a, Sint16 b, Uint16 c, Uint16 d, Uint16 e);
@@ -487,7 +478,9 @@ static void test_small_helpers(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, actwk[0].actno);
     plflag = 1;
     play_act_set();
-    TEST_ASSERT_EQ_INT(ctx, 120, actor_short_alias(&actwk[0], 26));
+    TEST_ASSERT_EQ_INT(
+        ctx, 120,
+        player_work_get(&actwk[0])->damage_invulnerability_timer);
 
     scdset();
     TEST_ASSERT_TRUE(ctx, scdadr == zone1scd);
@@ -827,7 +820,7 @@ static void test_watercnt_and_collision(test_context *ctx) {
     watercoli();
 
     reset_game4_state();
-    actwk[0].actfree[2] = 1;
+    player_work_get(&actwk[0])->status_flags = 1;
     watercoli();
 
     reset_game4_state();

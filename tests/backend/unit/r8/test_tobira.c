@@ -105,9 +105,17 @@ static void queue_actwkchk2(sprite_status *actor) {
     actwkchk2_queue[actwkchk2_queue_count++] = actor;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
+static void set_tobira_word(sprite_status *actor, int offset, Sint16 value) {
+    tobira8_work *work = tobira8_get_work(actor);
+
+    switch (offset) {
+    case 0:
+        work->parent_index = value;
+        break;
+    case 4:
+        work->base_y = value;
+        break;
+    }
 }
 
 static void assert_ms_end_callbacks(test_context *ctx, sprite_status *master,
@@ -203,7 +211,7 @@ static void test_tobira_ini_com_returns_offsets_and_sets_common_fields(
     Sint16 d1 = 0;
 
     reset_tobira_state();
-    set_actfree_word(master_actor, 4, 184);
+    set_tobira_word(master_actor, 4, 184);
 
     ini_com(master_actor, part, &d0, &d1);
 
@@ -263,7 +271,7 @@ static void test_tobira_closed_opens_when_forced_by_actfree(test_context *ctx) {
 
     reset_tobira_state();
     setup_initialized_door(master_actor, slave_actor, 0);
-    master_actor->actfree[21] = 1;
+    tobira8_get_work(master_actor)->trigger_open = 1;
 
     m_closed(master_actor);
 
@@ -420,7 +428,7 @@ static void test_tobira_m_area_captures_unsigned_boundaries(test_context *ctx) {
 
     reset_tobira_state();
     master_actor->xposi.w.h = 100;
-    set_actfree_word(master_actor, 4, 184);
+    set_tobira_word(master_actor, 4, 184);
     actwk[0].xposi.w.h = 108;
     actwk[0].yposi.w.h = 136;
     TEST_ASSERT_EQ_INT(ctx, 1, m_area(master_actor, 8, 64));
@@ -442,7 +450,7 @@ static void test_tobira_slave_frames_out_when_master_disappears(
 
     reset_tobira_state();
     actwk[3].actno = 41;
-    set_actfree_word(slave_actor, 0, 3);
+    set_tobira_word(slave_actor, 0, 3);
 
     tobira(slave_actor);
 
@@ -475,3 +483,4 @@ TEST_MAIN_BEGIN;
     test_tobira_m_area_captures_unsigned_boundaries(&ctx);
     test_tobira_slave_frames_out_when_master_disappears(&ctx);
 TEST_MAIN_END
+

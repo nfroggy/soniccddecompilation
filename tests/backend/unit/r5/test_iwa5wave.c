@@ -120,19 +120,6 @@ static void queue_actor(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
-static Sint16 actfree_word(sprite_status *actor, int offset) {
-    return (Sint16)((Uint16)actor->actfree[offset] |
-                    ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
-static Sint32 actfree_long(sprite_status *actor, int offset) {
-    Uint32 bits = (Uint32)actor->actfree[offset] |
-                  ((Uint32)actor->actfree[offset + 1] << 8) |
-                  ((Uint32)actor->actfree[offset + 2] << 16) |
-                  ((Uint32)actor->actfree[offset + 3] << 24);
-    return (Sint32)bits;
-}
-
 static void test_init_sets_main_and_child_wave_segments(test_context *ctx) {
     sprite_status *main = &actwk[3];
     sprite_status *child = &actwk[9];
@@ -155,23 +142,25 @@ static void test_init_sets_main_and_child_wave_segments(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 17543, main->sproffset);
     TEST_ASSERT_TRUE(ctx, main->patbase == pat_iwa5wave);
     TEST_ASSERT_EQ_INT(ctx, 164, main->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 100, actfree_word(main, 2));
-    TEST_ASSERT_EQ_INT(ctx, 200, actfree_word(main, 12));
-    TEST_ASSERT_EQ_INT(ctx, -32768, actfree_word(main, 14));
+    TEST_ASSERT_EQ_INT(ctx, 100, get_work(main)->origin_x);
+    TEST_ASSERT_EQ_INT(ctx, 200, get_work(main)->origin_y);
+    TEST_ASSERT_EQ_INT(ctx, -32768, get_work(main)->angle);
     TEST_ASSERT_EQ_INT(ctx, ((100 << 16) - 0x800000),
-                       actfree_long(main, 4));
+                       get_work(main)->left_bound);
     TEST_ASSERT_EQ_INT(ctx, ((100 << 16) + 0x800000),
-                       actfree_long(main, 8));
+                       get_work(main)->right_bound);
 
     TEST_ASSERT_EQ_INT(ctx, 41, child->actno);
     TEST_ASSERT_EQ_INT(ctx, 2, child->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 36, child->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 200, child->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 3, actfree_word(child, 0));
-    TEST_ASSERT_EQ_INT(ctx, 200, actfree_word(child, 12));
-    TEST_ASSERT_EQ_INT(ctx, -32768, actfree_word(child, 14));
-    TEST_ASSERT_EQ_INT(ctx, actfree_long(main, 4), actfree_long(child, 4));
-    TEST_ASSERT_EQ_INT(ctx, actfree_long(main, 8), actfree_long(child, 8));
+    TEST_ASSERT_EQ_INT(ctx, 3, get_work(child)->parent_actor);
+    TEST_ASSERT_EQ_INT(ctx, 200, get_work(child)->origin_y);
+    TEST_ASSERT_EQ_INT(ctx, -32768, get_work(child)->angle);
+    TEST_ASSERT_EQ_INT(ctx, get_work(main)->left_bound,
+                       get_work(child)->left_bound);
+    TEST_ASSERT_EQ_INT(ctx, get_work(main)->right_bound,
+                       get_work(child)->right_bound);
 }
 
 static void test_init_allocation_failure_keeps_only_main_segment(
@@ -188,7 +177,7 @@ static void test_init_allocation_failure_keeps_only_main_segment(
 
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 164, main->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 0, actfree_word(main, 14));
+    TEST_ASSERT_EQ_INT(ctx, 0, get_work(main)->angle);
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[9].r_no0);
 }
 
@@ -221,14 +210,14 @@ static void test_main_move_wraps_x_sets_wave_y_and_calls_frameout_origin(
     TEST_ASSERT_EQ_INT(ctx, 100, frameout_s00_xpos);
 
     reset_iwa5wave_logs();
-    main->xposi.l = actfree_long(main, 4);
+    main->xposi.l = get_work(main)->left_bound;
 
     iwa5wave(main);
 
-    TEST_ASSERT_EQ_INT(ctx, actfree_long(main, 8), main->xposi.l);
+    TEST_ASSERT_EQ_INT(ctx, get_work(main)->right_bound, main->xposi.l);
     TEST_ASSERT_EQ_INT(ctx,
-                       (Sint16)((actfree_long(main, 8) -
-                                 actfree_long(main, 4)) >>
+                       (Sint16)((get_work(main)->right_bound -
+                                 get_work(main)->left_bound) >>
                                 8),
                        main->xspeed.w);
 }

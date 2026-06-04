@@ -55,11 +55,6 @@ static void queue_actor(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
 static void reset_rollplat_state(void) {
     memset(actwk, 0, sizeof(actwk));
     actionsub_count = 0;
@@ -183,7 +178,7 @@ static void test_rollplat_move_ignores_player_when_contact_latch_is_set(
 
     reset_rollplat_state();
     actor->r_no0 = 2;
-    actor->actfree[20] = 1;
+    rollplat_get_work(actor)->touch_latch = 1;
     actor->xposi.w.h = 100;
     actor->yposi.w.h = 100;
     actwk[0].xposi.w.h = 100;
@@ -205,7 +200,7 @@ static void test_rollplat_contact_sets_rotation_and_spawns_next_plate(
     actor->r_no0 = 2;
     actor->xposi.w.h = 100;
     actor->yposi.w.h = 100;
-    set_actfree_word(actor, 4, -2);
+    rollplat_get_work(actor)->sequence_step = -2;
     actwk[0].xposi.w.h = 100;
     actwk[0].yposi.w.h = 100;
     actwk[0].yspeed.w = 0;
@@ -226,8 +221,8 @@ static void test_rollplat_upward_player_uses_reverse_rotation_without_spawn(
     actor->r_no0 = 2;
     actor->xposi.w.h = 100;
     actor->yposi.w.h = 100;
-    set_actfree_word(actor, 0, 5);
-    set_actfree_word(actor, 4, -2);
+    rollplat_get_work(actor)->spin_timer = 5;
+    rollplat_get_work(actor)->sequence_step = -2;
     actwk[0].xposi.w.h = 100;
     actwk[0].yposi.w.h = 100;
     actwk[0].yspeed.w = -1;
@@ -248,8 +243,8 @@ static void test_rollplat_third_spawn_releases_anchor_plate(test_context *ctx) {
     actor->r_no0 = 2;
     actor->xposi.w.h = 100;
     actor->yposi.w.h = 100;
-    set_actfree_word(actor, 4, 2);
-    set_actfree_word(actor, 2, 6);
+    rollplat_get_work(actor)->sequence_step = 2;
+    rollplat_get_work(actor)->initial_child_index = 6;
     actwk[0].xposi.w.h = 100;
     actwk[0].yposi.w.h = 100;
     queue_actor(child);
@@ -267,11 +262,11 @@ static void test_rollplat_completed_cycle_releases_all_linked_plates(
     actor->r_no0 = 2;
     actor->xposi.w.h = 100;
     actor->yposi.w.h = 100;
-    set_actfree_word(actor, 4, 4);
-    set_actfree_word(actor, 2, 6);
-    set_actfree_word(actor, 6, 7);
-    set_actfree_word(actor, 8, 8);
-    set_actfree_word(actor, 10, 9);
+    rollplat_get_work(actor)->sequence_step = 4;
+    rollplat_get_work(actor)->initial_child_index = 6;
+    rollplat_get_work(actor)->active_child_index = 7;
+    rollplat_get_work(actor)->previous_child_index = 8;
+    rollplat_get_work(actor)->oldest_child_index = 9;
     actwk[0].xposi.w.h = 100;
     actwk[0].yposi.w.h = 100;
 

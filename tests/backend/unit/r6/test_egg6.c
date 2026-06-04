@@ -125,21 +125,9 @@ static void queue_actor(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
 static void set_bomb_floor(sprite_status *actor, Sint16 value) {
     actor->userflag.w = (Uint16)value;
-    set_actfree_word(actor, 4, value);
-}
-
-static void set_actfree_long(sprite_status *actor, int offset, Sint32 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint32)value >> 8);
-    actor->actfree[offset + 2] = (Uint8)((Uint32)value >> 16);
-    actor->actfree[offset + 3] = (Uint8)((Uint32)value >> 24);
+    egg6_get_bomb_work(actor)->target_y = value;
 }
 
 static void assert_body_callbacks(test_context *ctx, sprite_status *actor,
@@ -236,7 +224,7 @@ static void test_egg_make0_waits_then_spawns_scripted_debris(
     act_make0(egg);
 
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
-    TEST_ASSERT_EQ_INT(ctx, 2, egg->actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 2, egg6_get_work(egg)->spawn_timer);
 }
 
 static void test_egg_make0_handles_exhaustion_and_end_marker(
@@ -261,7 +249,7 @@ static void test_egg_make0_handles_exhaustion_and_end_marker(
 
     TEST_ASSERT_EQ_INT(ctx, 4, egg->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, egg->patno);
-    TEST_ASSERT_EQ_INT(ctx, 60, egg->actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 60, egg6_get_work(egg)->spawn_timer);
 }
 
 static void test_egg_wait_and_make1_spawn_bombs_or_frames_out_on_failure(
@@ -271,12 +259,12 @@ static void test_egg_wait_and_make1_spawn_bombs_or_frames_out_on_failure(
 
     reset_egg6_state();
     egg->r_no0 = 6;
-    egg->actfree[21] = 2;
+    egg6_get_work(egg)->spawn_timer = 2;
 
     act_wait(egg);
 
     TEST_ASSERT_EQ_INT(ctx, 6, egg->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 1, egg->actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 1, egg6_get_work(egg)->spawn_timer);
 
     act_wait(egg);
 
@@ -332,7 +320,7 @@ static void test_bomb_init_fall_and_die_paths(test_context *ctx) {
     bombwk->r_no0 = 2;
     bombwk->yposi.l = 100 << 16;
     set_bomb_floor(bombwk, 104);
-    set_actfree_long(bombwk, 0, 2048);
+    egg6_get_bomb_work(bombwk)->fall_speed = 2048;
 
     bomb(bombwk);
 

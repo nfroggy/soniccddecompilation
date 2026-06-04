@@ -131,7 +131,7 @@ static void test_sw8_clears_inactive_switch_flag(test_context *ctx) {
     reset_sw8_state();
     initialize_switch(sw_actor, 5);
     switchflag[5] = 255;
-    sw_actor->actfree[21] = 0;
+    sw8_work_get(sw_actor)->current_pressed = 0;
     sw_actor->yposi.w.h = 20;
     actwk[0].yposi.w.h = 20;
     hitchk_result = 0;
@@ -150,7 +150,7 @@ static void test_sw8_ignores_hit_when_player_is_below_switch(test_context *ctx) 
     reset_sw8_state();
     initialize_switch(sw_actor, 6);
     switchflag[6] = 255;
-    sw_actor->actfree[21] = 0;
+    sw8_work_get(sw_actor)->current_pressed = 0;
     sw_actor->yposi.w.h = 20;
     actwk[0].yposi.w.h = 21;
     hitchk_result = 1;
@@ -169,7 +169,7 @@ static void test_sw8_press_transition_toggles_switch_and_sprite(
     reset_sw8_state();
     initialize_switch(sw_actor, 7);
     sw_actor->actflg = 128;
-    sw_actor->actfree[21] = 0;
+    sw8_work_get(sw_actor)->current_pressed = 0;
     sw_actor->sprvsize = 8;
     sw_actor->patno = 0;
     sw_actor->yposi.w.h = 20;
@@ -190,7 +190,7 @@ static void test_sw8_held_press_keeps_pressed_shape(test_context *ctx) {
 
     reset_sw8_state();
     initialize_switch(sw_actor, 8);
-    sw_actor->actfree[21] = 255;
+    sw8_work_get(sw_actor)->current_pressed = 255;
     sw_actor->sprvsize = 4;
     sw_actor->patno = 1;
     sw_actor->yposi.w.h = 24;
@@ -211,7 +211,7 @@ static void test_sw8_release_transition_restores_switch_shape(
 
     reset_sw8_state();
     initialize_switch(sw_actor, 9);
-    sw_actor->actfree[21] = 255;
+    sw8_work_get(sw_actor)->current_pressed = 255;
     sw_actor->sprvsize = 4;
     sw_actor->patno = 1;
     sw_actor->yposi.w.h = 24;
@@ -236,3 +236,4 @@ TEST_MAIN_BEGIN;
     test_sw8_held_press_keeps_pressed_shape(&ctx);
     test_sw8_release_transition_restores_switch_shape(&ctx);
 TEST_MAIN_END
+

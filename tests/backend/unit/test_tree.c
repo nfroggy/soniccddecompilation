@@ -66,19 +66,6 @@ static void queue_actor(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
-static void set_legacy_word(sprite_status *actor, int word_index,
-                            Sint16 value) {
-    int offset = (word_index - 23) * 2;
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
-static Sint16 get_legacy_word(sprite_status *actor, int word_index) {
-    int offset = (word_index - 23) * 2;
-    return (Sint16)(Uint16)(actor->actfree[offset] |
-                            ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
 static void reset_tree_state(void) {
     memset(actwk, 0, sizeof(actwk));
     actionsub_count = 0;
@@ -152,8 +139,8 @@ static void test_hoshi_init_spawns_full_layout(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 44, star->actno);
     TEST_ASSERT_EQ_INT(ctx, 2, star->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1064, star->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 1000, get_legacy_word(star, 23));
-    TEST_ASSERT_EQ_INT(ctx, 1064, get_legacy_word(star, 24));
+    TEST_ASSERT_EQ_INT(ctx, 1000, tree_get_work(star)->origin_x);
+    TEST_ASSERT_EQ_INT(ctx, 1064, tree_get_work(star)->base_x);
     TEST_ASSERT_EQ_INT(ctx, 1128, actwk[5].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 936, actwk[6].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 872, actwk[7].xposi.w.h);
@@ -197,8 +184,8 @@ static void test_hoshi_move_tracks_player_progress(test_context *ctx) {
 
     reset_tree_state();
     star->r_no0 = 2;
-    set_legacy_word(star, 23, 1000);
-    set_legacy_word(star, 24, 1128);
+    tree_get_work(star)->origin_x = 1000;
+    tree_get_work(star)->base_x = 1128;
 
     hoshi(star);
 
@@ -206,7 +193,7 @@ static void test_hoshi_move_tracks_player_progress(test_context *ctx) {
     assert_action_frameout_s00(ctx, star, 1000);
 
     reset_logs();
-    player->actfree[2] = 2;
+    player_work_get(player)->status_flags = 2;
     player->xposi.w.h = 1120;
     hoshi(star);
     TEST_ASSERT_EQ_INT(ctx, 1176, star->xposi.w.h);
@@ -254,7 +241,7 @@ static void test_kasoku0_catches_left_moving_player(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 0, player->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 0, player->mspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 55, player->mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 1, player->actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 1, player_work_get(player)->jump_started);
     TEST_ASSERT_EQ_INT(ctx, 14, bumper->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 7, bumper->sprhs);
     TEST_ASSERT_EQ_INT(ctx, 205, bumper->yposi.w.h);
@@ -328,7 +315,7 @@ static void test_kasoku_init_and_entry_callbacks(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1089, booster->sproffset);
     TEST_ASSERT_EQ_INT(ctx, 32, booster->sprhsize);
     TEST_ASSERT_EQ_INT(ctx, 32, booster->sprvsize);
-    TEST_ASSERT_EQ_INT(ctx, 600, get_legacy_word(booster, 23));
+    TEST_ASSERT_EQ_INT(ctx, 600, tree_get_work(booster)->origin_x);
     assert_action_frameout_s00(ctx, booster, 600);
 
     reset_tree_state();
@@ -352,8 +339,8 @@ static void test_kasoku_move_animates_and_pushes_player(test_context *ctx) {
     booster->yposi.w.h = 100;
     booster->sprhsize = 32;
     booster->sprvsize = 32;
-    set_legacy_word(booster, 23, 1000);
-    player->actfree[2] = 2;
+    tree_get_work(booster)->origin_x = 1000;
+    player_work_get(player)->status_flags = 2;
     player->xposi.w.h = 1034;
     player->yposi.w.h = 100;
     player->yspeed.w = -10;
@@ -362,7 +349,7 @@ static void test_kasoku_move_animates_and_pushes_player(test_context *ctx) {
 
     TEST_ASSERT_EQ_INT(ctx, 0, booster->patno);
     TEST_ASSERT_EQ_INT(ctx, 1003, booster->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 60, booster->actfree[4]);
+    TEST_ASSERT_EQ_INT(ctx, 60, tree_get_work(booster)->bounce_timer);
     TEST_ASSERT_EQ_INT(ctx, -3072, player->yspeed.w);
     assert_action_frameout_s00(ctx, booster, 1000);
 
@@ -375,7 +362,7 @@ static void test_kasoku_move_animates_and_pushes_player(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, patchg_actor == booster);
     TEST_ASSERT_TRUE(ctx, patchg_table == kasokuchg);
     TEST_ASSERT_EQ_INT(ctx, 1, booster->mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 59, booster->actfree[4]);
+    TEST_ASSERT_EQ_INT(ctx, 59, tree_get_work(booster)->bounce_timer);
     TEST_ASSERT_EQ_INT(ctx, 3072, player->yspeed.w);
 
     reset_tree_state();
@@ -384,15 +371,15 @@ static void test_kasoku_move_animates_and_pushes_player(test_context *ctx) {
     booster->yposi.w.h = 100;
     booster->sprhsize = 32;
     booster->sprvsize = 32;
-    booster->actfree[4] = 2;
-    set_legacy_word(booster, 23, 1000);
+    tree_get_work(booster)->bounce_timer = 2;
+    tree_get_work(booster)->origin_x = 1000;
     player->xposi.w.h = 1000;
     player->yposi.w.h = 100;
 
     kasoku(booster);
 
     TEST_ASSERT_EQ_INT(ctx, 2, booster->mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 1, booster->actfree[4]);
+    TEST_ASSERT_EQ_INT(ctx, 1, tree_get_work(booster)->bounce_timer);
 }
 
 static void test_kasoku_move_direction_and_guard_paths(test_context *ctx) {
@@ -402,8 +389,8 @@ static void test_kasoku_move_direction_and_guard_paths(test_context *ctx) {
     reset_tree_state();
     booster->r_no0 = 2;
     booster->userflag.b.h = 1;
-    set_legacy_word(booster, 23, 1000);
-    player->actfree[2] = 2;
+    tree_get_work(booster)->origin_x = 1000;
+    player_work_get(player)->status_flags = 2;
     player->xposi.w.h = 1120;
     player->yposi.w.h = 300;
 
@@ -419,8 +406,8 @@ static void test_kasoku_move_direction_and_guard_paths(test_context *ctx) {
     booster->yposi.w.h = 100;
     booster->sprhsize = 32;
     booster->sprvsize = 32;
-    set_legacy_word(booster, 23, 1000);
-    player->actfree[2] = 2;
+    tree_get_work(booster)->origin_x = 1000;
+    player_work_get(player)->status_flags = 2;
     player->xposi.w.h = 1270;
     player->yposi.w.h = 100;
     kasoku(booster);
@@ -434,7 +421,7 @@ static void test_kasoku_move_direction_and_guard_paths(test_context *ctx) {
     booster->yposi.w.h = 100;
     booster->sprhsize = 32;
     booster->sprvsize = 32;
-    set_legacy_word(booster, 23, 1000);
+    tree_get_work(booster)->origin_x = 1000;
     player->xposi.w.h = 900;
     player->yposi.w.h = 100;
     kasoku(booster);
@@ -446,7 +433,7 @@ static void test_kasoku_move_direction_and_guard_paths(test_context *ctx) {
     booster->yposi.w.h = 100;
     booster->sprhsize = 32;
     booster->sprvsize = 32;
-    set_legacy_word(booster, 23, 1000);
+    tree_get_work(booster)->origin_x = 1000;
     player->xposi.w.h = 1000;
     player->yposi.w.h = 60;
     kasoku(booster);
@@ -458,7 +445,7 @@ static void test_kasoku_move_direction_and_guard_paths(test_context *ctx) {
     booster->yposi.w.h = 100;
     booster->sprhsize = 32;
     booster->sprvsize = 32;
-    set_legacy_word(booster, 23, 1000);
+    tree_get_work(booster)->origin_x = 1000;
     player->xposi.w.h = 1000;
     player->yposi.w.h = 200;
     kasoku(booster);
@@ -470,7 +457,7 @@ static void test_kasoku_move_direction_and_guard_paths(test_context *ctx) {
     booster->yposi.w.h = 100;
     booster->sprhsize = 32;
     booster->sprvsize = 32;
-    set_legacy_word(booster, 23, 1000);
+    tree_get_work(booster)->origin_x = 1000;
     player->xposi.w.h = 1000;
     player->yposi.w.h = 100;
     player->mstno.b.h = 43;

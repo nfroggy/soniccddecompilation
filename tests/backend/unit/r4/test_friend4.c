@@ -1,4 +1,3 @@
-#include <stddef.h>
 #include <string.h>
 
 #include "support/test_runner.h"
@@ -66,65 +65,6 @@ Sint32 frameout_s(sprite_status *pActwk) {
 void frameout(sprite_status *pActwk) {
     ++frameout_count;
     frameout_actor = pActwk;
-}
-
-static size_t short_alias_offset(int short_index) {
-    return (size_t)short_index * sizeof(Sint16) -
-           offsetof(sprite_status, actfree);
-}
-
-static size_t long_alias_offset(int long_index) {
-    return (size_t)long_index * sizeof(Sint32) -
-           offsetof(sprite_status, actfree);
-}
-
-static void set_actor_short_alias(sprite_status *actor, int short_index,
-                                  Sint16 value) {
-    size_t offset = short_alias_offset(short_index);
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)bits;
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 actor_short_alias(sprite_status *actor, int short_index) {
-    size_t offset = short_alias_offset(short_index);
-    return (Sint16)((Uint16)actor->actfree[offset] |
-                    ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
-static void set_actor_long_alias(sprite_status *actor, int long_index,
-                                 Sint32 value) {
-    size_t offset = long_alias_offset(long_index);
-    Uint32 bits = (Uint32)value;
-    actor->actfree[offset] = (Uint8)bits;
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-    actor->actfree[offset + 2] = (Uint8)(bits >> 16);
-    actor->actfree[offset + 3] = (Uint8)(bits >> 24);
-}
-
-static Sint32 actor_long_alias(sprite_status *actor, int long_index) {
-    size_t offset = long_alias_offset(long_index);
-    Uint32 bits = actor->actfree[offset] |
-                  ((Uint32)actor->actfree[offset + 1] << 8) |
-                  ((Uint32)actor->actfree[offset + 2] << 16) |
-                  ((Uint32)actor->actfree[offset + 3] << 24);
-    return (Sint32)bits;
-}
-
-static void set_actfree_long(sprite_status *actor, int offset, Sint32 value) {
-    Uint32 bits = (Uint32)value;
-    actor->actfree[offset] = (Uint8)bits;
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-    actor->actfree[offset + 2] = (Uint8)(bits >> 16);
-    actor->actfree[offset + 3] = (Uint8)(bits >> 24);
-}
-
-static Sint32 actfree_long(sprite_status *actor, int offset) {
-    Uint32 bits = actor->actfree[offset] |
-                  ((Uint32)actor->actfree[offset + 1] << 8) |
-                  ((Uint32)actor->actfree[offset + 2] << 16) |
-                  ((Uint32)actor->actfree[offset + 3] << 24);
-    return (Sint32)bits;
 }
 
 static void reset_logs(void) {
@@ -224,9 +164,9 @@ static void test_normal_init_variants(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, actor->mstno.b.h);
     TEST_ASSERT_EQ_INT(ctx, 1104, actor->sproffset);
     TEST_ASSERT_TRUE(ctx, actor->patbase == pat_friend0);
-    TEST_ASSERT_EQ_INT(ctx, 200, actor_short_alias(actor, 25));
-    TEST_ASSERT_EQ_INT(ctx, 65536, actfree_long(actor, 0));
-    TEST_ASSERT_EQ_INT(ctx, 256, actor_long_alias(actor, 14));
+    TEST_ASSERT_EQ_INT(ctx, 200, friend4_get_work(actor)->base_y);
+    TEST_ASSERT_EQ_INT(ctx, 65536, friend4_get_work(actor)->x_speed);
+    TEST_ASSERT_EQ_INT(ctx, 256, friend4_get_work(actor)->phase_delta);
 
     reset_friend4_state();
     actor->userflag.b.h = 1;
@@ -251,20 +191,20 @@ static void test_normal_move_and_direction_limits(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 0, sinset_angle);
     TEST_ASSERT_EQ_INT(ctx, 101, actor->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 204, actor->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 256, actor_long_alias(actor, 13));
+    TEST_ASSERT_EQ_INT(ctx, 256, friend4_get_work(actor)->phase);
     assert_patch_and_action(ctx, actor);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s_count);
     TEST_ASSERT_TRUE(ctx, frameout_s_actor == actor);
 
     reset_logs();
-    set_actor_long_alias(actor, 13, -512);
-    set_actor_long_alias(actor, 14, 256);
-    set_actfree_long(actor, 0, 65536);
+    friend4_get_work(actor)->phase = -512;
+    friend4_get_work(actor)->phase_delta = 256;
+    friend4_get_work(actor)->x_speed = 65536;
 
     friend4(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, -256, actor_long_alias(actor, 14));
-    TEST_ASSERT_EQ_INT(ctx, -65536, actfree_long(actor, 0));
+    TEST_ASSERT_EQ_INT(ctx, -256, friend4_get_work(actor)->phase_delta);
+    TEST_ASSERT_EQ_INT(ctx, -65536, friend4_get_work(actor)->x_speed);
     TEST_ASSERT_EQ_INT(ctx, 5, actor->actflg);
     TEST_ASSERT_EQ_INT(ctx, 1, actor->cddat);
     assert_patch_and_action(ctx, actor);
@@ -272,14 +212,14 @@ static void test_normal_move_and_direction_limits(test_context *ctx) {
     reset_logs();
     actor->actflg = 4;
     actor->cddat = 0;
-    set_actor_long_alias(actor, 13, 65535);
-    set_actor_long_alias(actor, 14, 1);
-    set_actfree_long(actor, 0, 65536);
+    friend4_get_work(actor)->phase = 65535;
+    friend4_get_work(actor)->phase_delta = 1;
+    friend4_get_work(actor)->x_speed = 65536;
 
     friend4(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, -1, actor_long_alias(actor, 14));
-    TEST_ASSERT_EQ_INT(ctx, -65536, actfree_long(actor, 0));
+    TEST_ASSERT_EQ_INT(ctx, -1, friend4_get_work(actor)->phase_delta);
+    TEST_ASSERT_EQ_INT(ctx, -65536, friend4_get_work(actor)->x_speed);
     TEST_ASSERT_EQ_INT(ctx, 5, actor->actflg);
     TEST_ASSERT_EQ_INT(ctx, 1, actor->cddat);
 }
@@ -297,8 +237,8 @@ static void test_movie_init_and_parent_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 254, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 5, actor->actflg);
     TEST_ASSERT_EQ_INT(ctx, 1, actor->cddat);
-    TEST_ASSERT_EQ_INT(ctx, 500, actor_short_alias(actor, 30));
-    TEST_ASSERT_EQ_INT(ctx, 512, actor_long_alias(actor, 14));
+    TEST_ASSERT_EQ_INT(ctx, 500, friend4_get_work(actor)->base_x);
+    TEST_ASSERT_EQ_INT(ctx, 512, friend4_get_work(actor)->phase_delta);
 
     reset_logs();
     friend4(actor);
@@ -309,7 +249,7 @@ static void test_movie_init_and_parent_paths(test_context *ctx) {
 
     reset_logs();
     actwk[0].actno = 82;
-    actwk[0].actfree[21] = 1;
+    friend4_get_work(&actwk[0])->movie_done = 1;
 
     friend4(actor);
 
@@ -318,9 +258,9 @@ static void test_movie_init_and_parent_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 0, patchg_count);
 
     reset_logs();
-    actwk[0].actfree[21] = 0;
-    actor->actfree[9] = 7;
-    set_actor_long_alias(actor, 13, -512);
+    friend4_get_work(&actwk[0])->movie_done = 0;
+    friend4_get_work(actor)->phase_hi1 = 7;
+    friend4_get_work(actor)->phase = -512;
     actor->sprpri = 5;
 
     friend4(actor);
@@ -335,7 +275,7 @@ static void test_movie_init_and_parent_paths(test_context *ctx) {
     assert_patch_and_action(ctx, actor);
 
     reset_logs();
-    set_actor_long_alias(actor, 13, -512);
+    friend4_get_work(actor)->phase = -512;
     actor->sprpri = 3;
 
     friend4(actor);
@@ -354,8 +294,8 @@ static void test_movie_init_and_parent_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 254, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 4, actor->actflg);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->cddat);
-    TEST_ASSERT_EQ_INT(ctx, -512, actor_long_alias(actor, 14));
-    TEST_ASSERT_EQ_INT(ctx, 12288, actor_long_alias(actor, 13));
+    TEST_ASSERT_EQ_INT(ctx, -512, friend4_get_work(actor)->phase_delta);
+    TEST_ASSERT_EQ_INT(ctx, 12288, friend4_get_work(actor)->phase);
     TEST_ASSERT_TRUE(ctx, actor->patbase == pat_friend1);
     TEST_ASSERT_EQ_INT(ctx, 9296, actor->sproffset);
 }

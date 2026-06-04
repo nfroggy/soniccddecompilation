@@ -123,9 +123,20 @@ static void queue_actwk(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
+static void set_trap_r82_word(sprite_status *actor, int offset, Sint16 value) {
+    trap_r82_work *work = trap_r82_work_get(actor);
+
+    switch (offset) {
+    case 6:
+        work->trigger_timer = value;
+        break;
+    case 8:
+        work->origin_y = value;
+        break;
+    case 12:
+        work->origin_x = value;
+        break;
+    }
 }
 
 static void reset_trap_state(void) {
@@ -287,7 +298,7 @@ static void test_togeita_existing_piece_patno_three_init_returns(
 
     reset_trap_state();
     piece->actno = 51;
-    piece->actfree[19] = 1;
+    trap_r82_work_get(piece)->group_index = 1;
     piece->patno = 3;
     piece->userflag.b.h = 0;
 
@@ -326,7 +337,7 @@ static void test_togeita_move1_advances_when_player_is_in_trigger_box(
     main->xposi.w.h = 244;
     main->yposi.w.h = 120;
     main->userflag.b.h = 0;
-    set_actfree_word(main, 12, 300);
+    set_trap_r82_word(main, 12, 300);
     actwk[0].xposi.w.h = 300;
     actwk[0].yposi.w.h = 130;
 
@@ -346,7 +357,7 @@ static void test_togeita_move1_does_not_advance_for_player_above(
     main->xposi.w.h = 244;
     main->yposi.w.h = 120;
     main->userflag.b.h = 1;
-    set_actfree_word(main, 12, 300);
+    set_trap_r82_word(main, 12, 300);
     actwk[0].xposi.w.h = 300;
     actwk[0].yposi.w.h = 100;
 
@@ -363,7 +374,7 @@ static void test_togeita_move1_does_not_advance_for_far_below_player(
     main->r_no0 = 2;
     main->yposi.w.h = 120;
     main->userflag.b.h = 0;
-    set_actfree_word(main, 12, 300);
+    set_trap_r82_word(main, 12, 300);
     actwk[0].xposi.w.h = 300;
     actwk[0].yposi.w.h = 376;
 
@@ -380,7 +391,7 @@ static void test_togeita_move1_userflag_one_uses_wide_trigger(
     main->r_no0 = 2;
     main->yposi.w.h = 120;
     main->userflag.b.h = 1;
-    set_actfree_word(main, 12, 300);
+    set_trap_r82_word(main, 12, 300);
     actwk[0].xposi.w.h = 360;
     actwk[0].yposi.w.h = 130;
 
@@ -397,7 +408,7 @@ static void test_togeita_move1_rejects_player_left_of_trigger(
     main->r_no0 = 2;
     main->yposi.w.h = 120;
     main->userflag.b.h = 0;
-    set_actfree_word(main, 12, 300);
+    set_trap_r82_word(main, 12, 300);
     actwk[0].xposi.w.h = 240;
     actwk[0].yposi.w.h = 130;
 
@@ -414,7 +425,7 @@ static void test_togeita_move1_rejects_player_right_of_trigger(
     main->r_no0 = 2;
     main->yposi.w.h = 120;
     main->userflag.b.h = 0;
-    set_actfree_word(main, 12, 300);
+    set_trap_r82_word(main, 12, 300);
     actwk[0].xposi.w.h = 348;
     actwk[0].yposi.w.h = 130;
 
@@ -466,7 +477,7 @@ static void test_togeita_move2_existing_stop_skips_collision(test_context *ctx) 
     main->actno = 51;
     main->r_no0 = 4;
     main->userflag.b.h = 0;
-    main->actfree[21] = 255;
+    trap_r82_work_get(main)->stopped = 255;
 
     togeita(main);
 
@@ -484,10 +495,10 @@ static void test_togeita_move2_periodically_spawns_extra_piece(
     main->xposi.w.h = 244;
     main->yposi.w.h = 120;
     main->userflag.b.h = 0;
-    main->actfree[17] = 3;
-    set_actfree_word(main, 6, 299);
-    set_actfree_word(main, 8, 120);
-    set_actfree_word(main, 12, 300);
+    trap_r82_work_get(main)->segment_count = 3;
+    set_trap_r82_word(main, 6, 299);
+    set_trap_r82_word(main, 8, 120);
+    set_trap_r82_word(main, 12, 300);
     actwk[0].xposi.w.h = 300;
     actwk[0].yposi.w.h = 120;
     queue_actwk(extra);
@@ -500,7 +511,7 @@ static void test_togeita_move2_periodically_spawns_extra_piece(
     TEST_ASSERT_EQ_INT(ctx, 300, extra->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 72, extra->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 3, extra->userflag.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 4, main->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 4, trap_r82_work_get(main)->segment_count);
     TEST_ASSERT_EQ_INT(ctx, 1, emycol_d_count);
 }
 
@@ -518,10 +529,10 @@ static void test_togeita_move2_extra_piece_later_tick_cases(test_context *ctx) {
         main->xposi.w.h = 244;
         main->yposi.w.h = 120;
         main->userflag.b.h = 0;
-        main->actfree[17] = 2;
-        set_actfree_word(main, 6, tick_values[i]);
-        set_actfree_word(main, 8, 120);
-        set_actfree_word(main, 12, 300);
+        trap_r82_work_get(main)->segment_count = 2;
+        set_trap_r82_word(main, 6, tick_values[i]);
+        set_trap_r82_word(main, 8, 120);
+        set_trap_r82_word(main, 12, 300);
         actwk[0].xposi.w.h = 300;
         actwk[0].yposi.w.h = 120;
         queue_actwk(extra);
@@ -534,7 +545,7 @@ static void test_togeita_move2_extra_piece_later_tick_cases(test_context *ctx) {
         TEST_ASSERT_EQ_INT(ctx, 300, extra->xposi.w.h);
         TEST_ASSERT_EQ_INT(ctx, 88, extra->yposi.w.h);
         TEST_ASSERT_EQ_INT(ctx, 2, extra->userflag.b.h);
-        TEST_ASSERT_EQ_INT(ctx, 3, main->actfree[17]);
+        TEST_ASSERT_EQ_INT(ctx, 3, trap_r82_work_get(main)->segment_count);
         TEST_ASSERT_EQ_INT(ctx, 1, emycol_d_count);
     }
 }
@@ -550,10 +561,10 @@ static void test_togeita_move2_extra_piece_default_tick_returns(
     main->xposi.w.h = 244;
     main->yposi.w.h = 120;
     main->userflag.b.h = 0;
-    main->actfree[17] = 3;
-    set_actfree_word(main, 6, 300);
-    set_actfree_word(main, 8, 120);
-    set_actfree_word(main, 12, 300);
+    trap_r82_work_get(main)->segment_count = 3;
+    set_trap_r82_word(main, 6, 300);
+    set_trap_r82_word(main, 8, 120);
+    set_trap_r82_word(main, 12, 300);
     actwk[0].xposi.w.h = 300;
     actwk[0].yposi.w.h = 120;
     queue_actwk(extra);
@@ -563,7 +574,7 @@ static void test_togeita_move2_extra_piece_default_tick_returns(
 
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 0, extra->actno);
-    TEST_ASSERT_EQ_INT(ctx, 3, main->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 3, trap_r82_work_get(main)->segment_count);
     TEST_ASSERT_EQ_INT(ctx, 1, emycol_d_count);
 }
 
@@ -577,10 +588,10 @@ static void test_togeita_move2_skips_extra_piece_for_far_above_player(
     main->xposi.w.h = 244;
     main->yposi.w.h = 120;
     main->userflag.b.h = 0;
-    main->actfree[17] = 3;
-    set_actfree_word(main, 6, 299);
-    set_actfree_word(main, 8, 120);
-    set_actfree_word(main, 12, 300);
+    trap_r82_work_get(main)->segment_count = 3;
+    set_trap_r82_word(main, 6, 299);
+    set_trap_r82_word(main, 8, 120);
+    set_trap_r82_word(main, 12, 300);
     actwk[0].xposi.w.h = 300;
     actwk[0].yposi.w.h = -8;
     emycol_d_result = 0;
@@ -600,10 +611,10 @@ static void test_togeita_move2_skips_extra_piece_for_outside_x(
     main->xposi.w.h = 244;
     main->yposi.w.h = 120;
     main->userflag.b.h = 0;
-    main->actfree[17] = 3;
-    set_actfree_word(main, 6, 299);
-    set_actfree_word(main, 8, 120);
-    set_actfree_word(main, 12, 300);
+    trap_r82_work_get(main)->segment_count = 3;
+    set_trap_r82_word(main, 6, 299);
+    set_trap_r82_word(main, 8, 120);
+    set_trap_r82_word(main, 12, 300);
     actwk[0].xposi.w.h = 500;
     actwk[0].yposi.w.h = 120;
     emycol_d_result = 0;
@@ -623,10 +634,10 @@ static void test_togeita_move2_extra_piece_allocation_failure_is_ignored(
     main->xposi.w.h = 244;
     main->yposi.w.h = 120;
     main->userflag.b.h = 0;
-    main->actfree[17] = 3;
-    set_actfree_word(main, 6, 299);
-    set_actfree_word(main, 8, 120);
-    set_actfree_word(main, 12, 300);
+    trap_r82_work_get(main)->segment_count = 3;
+    set_trap_r82_word(main, 6, 299);
+    set_trap_r82_word(main, 8, 120);
+    set_trap_r82_word(main, 12, 300);
     actwk[0].xposi.w.h = 300;
     actwk[0].yposi.w.h = 120;
     emycol_d_result = 0;
@@ -877,7 +888,7 @@ static void test_harir8_patno_zero_skips_when_hidden_player_flag_blocks(
     spike->r_no0 = 2;
     spike->userflag.b.h = -1;
     spike->cddat = 8;
-    set_actfree_word(&actwk[0], 6, 1);
+    player_work_get(&actwk[0])->damage_invulnerability_timer = 1;
     hitchk_result = 1;
 
     harir8(spike);
@@ -969,7 +980,7 @@ static void test_harir8_master_child_follows_parent(test_context *ctx) {
     frameout_s00_count = 0;
     platform->xposi.w.h = 180;
     platform->yposi.w.h = 90;
-    child->actfree[14] = (Uint8)-8;
+    trap_r82_work_get(child)->follow_x_offset = (Uint8)-8;
 
     harir8(child);
 
@@ -1081,3 +1092,4 @@ TEST_MAIN_BEGIN;
     test_togedair8_special_userflag_runs_tokusyu_block(&ctx);
     test_tokusyu_block_priority_one_checks_ride(&ctx);
 TEST_MAIN_END
+

@@ -23,7 +23,13 @@ Sint32 frameout_s(sprite_status *pActwk);
 void frameout(sprite_status *pActwk);
 
 #include "src/r7/wall7.c"
+#define hscrollwork_get_pair hscrollwork_get_pair_wall73
+#define hscrollwork_set_pair hscrollwork_set_pair_wall73
+#define hscrollwork_add_pair hscrollwork_add_pair_wall73
 #include "src/r7/wall73.c"
+#undef hscrollwork_get_pair
+#undef hscrollwork_set_pair
+#undef hscrollwork_add_pair
 
 Sint16 hitchk(sprite_status *pActwk, sprite_status *pPlayerwk) {
     ++hitchk_count;
@@ -46,18 +52,6 @@ Sint32 frameout_s(sprite_status *pActwk) {
 void frameout(sprite_status *pActwk) {
     ++frameout_count;
     frameout_actor = pActwk;
-}
-
-static void set_actor_word(sprite_status *actor, int index, Sint16 value) {
-    int offset = (index - 23) * 2;
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
-static Sint16 get_actor_word(sprite_status *actor, int index) {
-    int offset = (index - 23) * 2;
-    return (Sint16)(actor->actfree[offset] |
-                    ((Uint16)actor->actfree[offset + 1] << 8));
 }
 
 static void reset_wall7_state(void) {
@@ -118,21 +112,21 @@ static void test_wall73_move_start_and_direction(test_context *ctx) {
     wall->userflag.b.l = 2;
     wall->yposi.w.h = 100;
     TEST_ASSERT_EQ_INT(ctx, 0, move_blk(wall));
-    TEST_ASSERT_EQ_INT(ctx, 0, get_actor_word(wall, 23));
+    TEST_ASSERT_EQ_INT(ctx, 0, wall73_work_get(wall)->move_target_y);
 
     reset_wall7_state();
     bossflag = 128;
     wall->userflag.b.l = 2;
     wall->yposi.w.h = 100;
     TEST_ASSERT_EQ_INT(ctx, 0, move_blk(wall));
-    TEST_ASSERT_EQ_INT(ctx, 132, get_actor_word(wall, 23));
+    TEST_ASSERT_EQ_INT(ctx, 132, wall73_work_get(wall)->move_target_y);
 
     reset_wall7_state();
     bossflag = 128;
     wall->userflag.b.l = 130;
     wall->yposi.w.h = 100;
     TEST_ASSERT_EQ_INT(ctx, 0, move_blk(wall));
-    TEST_ASSERT_EQ_INT(ctx, 68, get_actor_word(wall, 23));
+    TEST_ASSERT_EQ_INT(ctx, 68, wall73_work_get(wall)->move_target_y);
 }
 
 static void test_wall73_move_completion_paths(test_context *ctx) {
@@ -143,7 +137,7 @@ static void test_wall73_move_completion_paths(test_context *ctx) {
     wall->userflag.b.l = 1;
     wall->yposi.w.h = 100;
     wall->yspeed.w = 512;
-    set_actor_word(wall, 23, 102);
+    wall73_work_get(wall)->move_target_y = 102;
     TEST_ASSERT_EQ_INT(ctx, -1, move_blk(wall));
     TEST_ASSERT_EQ_INT(ctx, 0, bossflag & 128);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
@@ -154,7 +148,7 @@ static void test_wall73_move_completion_paths(test_context *ctx) {
     wall->userflag.b.l = 65;
     wall->yposi.w.h = 100;
     wall->yspeed.w = 512;
-    set_actor_word(wall, 23, 102);
+    wall73_work_get(wall)->move_target_y = 102;
     TEST_ASSERT_EQ_INT(ctx, 0, move_blk(wall));
     TEST_ASSERT_EQ_INT(ctx, 0, bossflag & 128);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_count);
@@ -165,7 +159,7 @@ static void test_wall73_move_completion_paths(test_context *ctx) {
     wall->userflag.b.l = 1;
     wall->yposi.w.h = 100;
     wall->yspeed.w = 512;
-    set_actor_word(wall, 23, 102);
+    wall73_work_get(wall)->move_target_y = 102;
     wall73(wall);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
     TEST_ASSERT_EQ_INT(ctx, 0, hitchk_count);
@@ -182,7 +176,7 @@ static void test_wall73_move_updates_remaining_steps_and_size(test_context *ctx)
     wall->patno = 2;
     wall->yposi.w.h = 100;
     wall->yspeed.w = 512;
-    set_actor_word(wall, 23, 102);
+    wall73_work_get(wall)->move_target_y = 102;
     TEST_ASSERT_EQ_INT(ctx, 0, move_blk(wall));
 
     reset_wall7_state();
@@ -191,7 +185,7 @@ static void test_wall73_move_updates_remaining_steps_and_size(test_context *ctx)
     wall->patno = 0;
     wall->yposi.w.h = 100;
     wall->yspeed.w = 512;
-    set_actor_word(wall, 23, 102);
+    wall73_work_get(wall)->move_target_y = 102;
     TEST_ASSERT_EQ_INT(ctx, 0, move_blk(wall));
 
     reset_wall7_state();
@@ -200,7 +194,7 @@ static void test_wall73_move_updates_remaining_steps_and_size(test_context *ctx)
     wall->patno = 4;
     wall->yposi.w.h = 100;
     wall->yspeed.w = 512;
-    set_actor_word(wall, 23, 102);
+    wall73_work_get(wall)->move_target_y = 102;
     TEST_ASSERT_EQ_INT(ctx, 0, move_blk(wall));
 }
 

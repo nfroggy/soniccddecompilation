@@ -111,17 +111,6 @@ static void queue_bridge_children(int first_index) {
     }
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int offset) {
-    return (Sint16)((Uint16)actor->actfree[offset] |
-                    ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
 static void setup_initialized_bridge(sprite_status *bridge) {
     reset_hashi5_state();
     bridge->actno = 47;
@@ -174,22 +163,24 @@ static void test_init_builds_controller_and_eight_segments(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 64, bridge->sprhsize);
     TEST_ASSERT_EQ_INT(ctx, 8, bridge->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 1, bridge->patno);
-    TEST_ASSERT_EQ_INT(ctx, 100, get_actfree_word(bridge, 12));
-    TEST_ASSERT_EQ_INT(ctx, 120, get_actfree_word(bridge, 8));
+    TEST_ASSERT_EQ_INT(ctx, 100, hashi5_get_work(bridge)->origin_x);
+    TEST_ASSERT_EQ_INT(ctx, 120, hashi5_get_work(bridge)->origin_y);
     TEST_ASSERT_EQ_INT(ctx, 8, actwkchk_count);
     assert_tail_action(ctx, bridge);
 
     for (i = 0; i < 8; ++i) {
         sprite_status *segment = &actwk[20 + i];
-        TEST_ASSERT_EQ_INT(ctx, 20 + i, bridge->actfree[i]);
+        TEST_ASSERT_EQ_INT(ctx, 20 + i,
+                           hashi5_get_work(bridge)->child_indices[i]);
         TEST_ASSERT_EQ_INT(ctx, 47, segment->actno);
         TEST_ASSERT_EQ_INT(ctx, 4, segment->r_no0);
         TEST_ASSERT_EQ_INT(ctx, 3, segment->sprpri);
         TEST_ASSERT_EQ_INT(ctx, 17152, segment->sproffset);
         TEST_ASSERT_TRUE(ctx, segment->patbase == hashi5pat);
-        TEST_ASSERT_EQ_INT(ctx, 3, get_actfree_word(segment, 10));
-        TEST_ASSERT_EQ_INT(ctx, 255, segment->actfree[21]);
-        TEST_ASSERT_EQ_INT(ctx, 7 - i, segment->actfree[18]);
+        TEST_ASSERT_EQ_INT(ctx, 3, hashi5_get_work(segment)->parent_index);
+        TEST_ASSERT_EQ_INT(ctx, 255, hashi5_get_work(segment)->remove_flag);
+        TEST_ASSERT_EQ_INT(ctx, 7 - i,
+                           hashi5_get_work(segment)->segment_order);
         TEST_ASSERT_EQ_INT(ctx, 36 + i * 16, segment->xposi.w.h);
         TEST_ASSERT_EQ_INT(ctx, 120, segment->yposi.w.h);
     }
@@ -207,8 +198,8 @@ static void test_init_allocation_failure_leaves_missing_slots_zero(
     hashi5(bridge);
 
     TEST_ASSERT_EQ_INT(ctx, 8, actwkchk_count);
-    TEST_ASSERT_EQ_INT(ctx, 0, bridge->actfree[0]);
-    TEST_ASSERT_EQ_INT(ctx, 0, bridge->actfree[7]);
+    TEST_ASSERT_EQ_INT(ctx, 0, hashi5_get_work(bridge)->child_indices[0]);
+    TEST_ASSERT_EQ_INT(ctx, 0, hashi5_get_work(bridge)->child_indices[7]);
     assert_tail_action(ctx, bridge);
 }
 
@@ -227,8 +218,8 @@ static void test_move_ride_sags_bridge_and_places_player(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, ride_on_set_actor == bridge);
     TEST_ASSERT_TRUE(ctx, ride_on_set_player == &actwk[0]);
     TEST_ASSERT_EQ_INT(ctx, 112, actwk[0].yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 4, bridge->actfree[16]);
-    TEST_ASSERT_EQ_INT(ctx, 4, bridge->actfree[19]);
+    TEST_ASSERT_EQ_INT(ctx, 4, hashi5_get_work(bridge)->bend_angle);
+    TEST_ASSERT_EQ_INT(ctx, 4, hashi5_get_work(bridge)->ride_segment);
     TEST_ASSERT_EQ_INT(ctx, 1, sinset_count);
     TEST_ASSERT_EQ_INT(ctx, 4, sinset_angle);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s_count);
@@ -241,15 +232,15 @@ static void test_move_at_full_sag_keeps_angle_and_updates_player(
     sprite_status *bridge = &actwk[3];
 
     setup_initialized_bridge(bridge);
-    bridge->actfree[16] = 64;
+    hashi5_get_work(bridge)->bend_angle = 64;
     actwk[0].xposi.w.h = 100;
     actwk[0].yposi.w.h = 115;
     actwk[0].sprvsize = 8;
 
     hashi5(bridge);
 
-    TEST_ASSERT_EQ_INT(ctx, 64, bridge->actfree[16]);
-    TEST_ASSERT_EQ_INT(ctx, 4, bridge->actfree[19]);
+    TEST_ASSERT_EQ_INT(ctx, 64, hashi5_get_work(bridge)->bend_angle);
+    TEST_ASSERT_EQ_INT(ctx, 4, hashi5_get_work(bridge)->ride_segment);
     TEST_ASSERT_EQ_INT(ctx, 1, sinset_count);
     TEST_ASSERT_EQ_INT(ctx, 64, sinset_angle);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s_count);
@@ -261,26 +252,26 @@ static void test_move_without_ride_recovers_and_clears_stale_player_link(
     sprite_status *bridge = &actwk[3];
 
     setup_initialized_bridge(bridge);
-    bridge->actfree[16] = 8;
+    hashi5_get_work(bridge)->bend_angle = 8;
     actwk[0].r_no0 = 6;
-    actwk[0].actfree[19] = 3;
-    actwk[0].actfree[14] = 77;
+    player_work_get(&actwk[0])->ride_actor_index = 3;
+    player_work_get(&actwk[0])->jump_lock = 77;
     actwk[0].cddat = 8;
 
     hashi5(bridge);
 
     TEST_ASSERT_EQ_INT(ctx, 0, ride_on_set_count);
-    TEST_ASSERT_EQ_INT(ctx, 4, bridge->actfree[16]);
-    TEST_ASSERT_EQ_INT(ctx, 0, bridge->actfree[19]);
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].actfree[14]);
+    TEST_ASSERT_EQ_INT(ctx, 4, hashi5_get_work(bridge)->bend_angle);
+    TEST_ASSERT_EQ_INT(ctx, 0, hashi5_get_work(bridge)->ride_segment);
+    TEST_ASSERT_EQ_INT(ctx, 0, player_work_get(&actwk[0])->jump_lock);
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].cddat);
     TEST_ASSERT_EQ_INT(ctx, 1, sinset_count);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s_count);
     assert_tail_action(ctx, bridge);
 
     reset_logs();
-    bridge->actfree[16] = 0;
-    actwk[0].actfree[19] = 0;
+    hashi5_get_work(bridge)->bend_angle = 0;
+    player_work_get(&actwk[0])->ride_actor_index = 0;
 
     hashi5(bridge);
 
@@ -302,7 +293,7 @@ static void test_ride_check_rejects_editmode_speed_and_position_cases(
     hashi5(bridge);
 
     TEST_ASSERT_EQ_INT(ctx, 0, ride_on_set_count);
-    TEST_ASSERT_EQ_INT(ctx, 0, bridge->actfree[19]);
+    TEST_ASSERT_EQ_INT(ctx, 0, hashi5_get_work(bridge)->ride_segment);
 
     reset_logs();
     editmode.b.h = 0;
@@ -336,16 +327,16 @@ static void test_posiget_rejects_flagged_negative_and_far_positions(
     setup_initialized_bridge(bridge);
     actwk[0].cddat = 2;
     hashi5_posiget1p(bridge);
-    TEST_ASSERT_EQ_INT(ctx, 0, bridge->actfree[19]);
+    TEST_ASSERT_EQ_INT(ctx, 0, hashi5_get_work(bridge)->ride_segment);
 
     actwk[0].cddat = 0;
     actwk[0].xposi.w.h = 20;
     hashi5_posiget1p(bridge);
-    TEST_ASSERT_EQ_INT(ctx, 0, bridge->actfree[19]);
+    TEST_ASSERT_EQ_INT(ctx, 0, hashi5_get_work(bridge)->ride_segment);
 
     actwk[0].xposi.w.h = 160;
     hashi5_posiget1p(bridge);
-    TEST_ASSERT_EQ_INT(ctx, 0, bridge->actfree[19]);
+    TEST_ASSERT_EQ_INT(ctx, 0, hashi5_get_work(bridge)->ride_segment);
 }
 
 static void test_posiset_covers_return_and_no_second_side_paths(
@@ -354,18 +345,19 @@ static void test_posiset_covers_return_and_no_second_side_paths(
     int i;
 
     setup_initialized_bridge(bridge);
-    for (i = 0; i < 9; ++i) {
-        bridge->actfree[i] = (Uint8)(20 + (i % 8));
+    for (i = 0; i < 8; ++i) {
+        hashi5_get_work(bridge)->child_indices[i] = (Uint8)(20 + i);
     }
-    bridge->actfree[16] = 12;
+    hashi5_get_work(bridge)->origin_y = 20;
+    hashi5_get_work(bridge)->bend_angle = 12;
 
-    bridge->actfree[19] = 7;
+    hashi5_get_work(bridge)->ride_segment = 7;
     hashi5_posiset(bridge);
     TEST_ASSERT_EQ_INT(ctx, 1, sinset_count);
     TEST_ASSERT_EQ_INT(ctx, 12, sinset_angle);
 
     reset_logs();
-    bridge->actfree[19] = 8;
+    hashi5_get_work(bridge)->ride_segment = 8;
     hashi5_posiset(bridge);
     TEST_ASSERT_EQ_INT(ctx, 1, sinset_count);
     TEST_ASSERT_EQ_INT(ctx, 12, sinset_angle);
@@ -383,7 +375,7 @@ static void test_segment_move2_liveness_paths(test_context *ctx) {
     assert_tail_action(ctx, segment);
 
     reset_logs();
-    bridge->actfree[21] = 1;
+    hashi5_get_work(bridge)->remove_flag = 1;
     hashi5(segment);
 
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
@@ -391,7 +383,7 @@ static void test_segment_move2_liveness_paths(test_context *ctx) {
     assert_tail_action(ctx, segment);
 
     reset_logs();
-    bridge->actfree[21] = 0;
+    hashi5_get_work(bridge)->remove_flag = 0;
     bridge->actno = 0;
     hashi5(segment);
 

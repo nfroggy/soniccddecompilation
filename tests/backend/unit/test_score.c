@@ -279,11 +279,11 @@ static void test_score_ten_point_actor_initializes_moves_and_frames_out(
     TEST_ASSERT_EQ_INT(ctx, 4, actor.actflg);
     TEST_ASSERT_TRUE(ctx, actor.patbase == tenpat);
     TEST_ASSERT_EQ_INT(ctx, 3, actor.patno);
-    TEST_ASSERT_EQ_INT(ctx, 23, actor.actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 23, ten_point_work_get(&actor)->display_timer);
     TEST_ASSERT_EQ_INT(ctx, 98, actor.yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_count);
 
-    actor.actfree[0] = 1;
+    ten_point_work_get(&actor)->display_timer = 1;
     actor.yposi.w.h = 50;
     score(&actor);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
@@ -304,7 +304,7 @@ static void test_tensuu_static_entry_initializes_actor(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 2, actor.r_no0);
     TEST_ASSERT_TRUE(ctx, actor.patbase == tenpat);
     TEST_ASSERT_EQ_INT(ctx, 4, actor.patno);
-    TEST_ASSERT_EQ_INT(ctx, 23, actor.actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 23, ten_point_work_get(&actor)->display_timer);
     TEST_ASSERT_EQ_INT(ctx, 78, actor.yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 }

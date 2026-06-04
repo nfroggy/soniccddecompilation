@@ -131,16 +131,34 @@ static void queue_actwkchk2(sprite_status *actor) {
     actwkchk2_queue[actwkchk2_queue_count++] = actor;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
+static void set_kabuto8_word(sprite_status *actor, int offset, Sint16 value) {
+    kabuto8_work *work = kabuto8_get_work(actor);
+
+    switch (offset) {
+    case 0:
+        work->timer = value;
+        break;
+    case 2:
+        work->offset_x = value;
+        break;
+    case 4:
+        work->offset_y = value;
+        break;
+    case 6:
+        work->base_x = value;
+        break;
+    case 8:
+        work->sound_timer = value;
+        break;
+    case 20:
+        work->parent_index = value;
+        break;
+    }
 }
 
-static void set_actfree_long(sprite_status *actor, int offset, Sint32 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint32)value >> 8);
-    actor->actfree[offset + 2] = (Uint8)((Uint32)value >> 16);
-    actor->actfree[offset + 3] = (Uint8)((Uint32)value >> 24);
+static void set_kabuto8_long(sprite_status *actor, int offset, Sint32 value) {
+    if (offset == 2)
+        kabuto8_get_work(actor)->x_speed = value;
 }
 
 static void assert_body_outer_callbacks(test_context *ctx,
@@ -254,7 +272,7 @@ static void test_kabuto_body_fall_continues_then_lands(test_context *ctx) {
     body->r_no0 = 2;
     body->xposi.w.h = 100;
     body->yposi.w.h = 200;
-    set_actfree_word(body, 6, 100);
+    set_kabuto8_word(body, 6, 100);
     emycol_d_results[0] = 3;
     emycol_d_result_count = 1;
 
@@ -266,7 +284,7 @@ static void test_kabuto_body_fall_continues_then_lands(test_context *ctx) {
     reset_logs();
     body->r_no0 = 2;
     body->yposi.w.h = 201;
-    set_actfree_word(body, 6, 100);
+    set_kabuto8_word(body, 6, 100);
     emycol_d_results[0] = -4;
     emycol_d_result_count = 1;
 
@@ -284,9 +302,9 @@ static void test_kabuto_body_move_updates_position_without_sound(
     body->actflg = 0;
     body->xposi.l = 100 << 16;
     body->yposi.w.h = 200;
-    set_actfree_word(body, 0, 2);
-    set_actfree_long(body, 2, -20480);
-    set_actfree_word(body, 6, 100);
+    set_kabuto8_word(body, 0, 2);
+    set_kabuto8_long(body, 2, -20480);
+    set_kabuto8_word(body, 6, 100);
     emycol_d_results[0] = 5;
     emycol_d_result_count = 1;
 
@@ -305,10 +323,10 @@ static void test_kabuto_body_move_triggers_sound_and_reverses_timer(
     body->actflg = 128;
     body->xposi.l = 100 << 16;
     body->yposi.w.h = 200;
-    set_actfree_word(body, 0, 0);
-    set_actfree_long(body, 2, -20480);
-    set_actfree_word(body, 6, 100);
-    set_actfree_word(body, 8, 31);
+    set_kabuto8_word(body, 0, 0);
+    set_kabuto8_long(body, 2, -20480);
+    set_kabuto8_word(body, 6, 100);
+    set_kabuto8_word(body, 8, 31);
     emycol_d_results[0] = -2;
     emycol_d_result_count = 1;
 
@@ -337,7 +355,7 @@ static void test_kabuto_tusk_frames_out_when_parent_missing(test_context *ctx) {
     reset_kabuto8_state();
     tusk->r_no0 = 2;
     tusk->userflag.b.l = -1;
-    set_actfree_word(tusk, 20, 3);
+    set_kabuto8_word(tusk, 20, 3);
     actwk[3].actno = 0;
 
     kabuto(tusk);
@@ -359,10 +377,10 @@ static void test_kabuto_tusk_uses_existing_offsets_while_timer_positive(
     body->yposi.w.h = 200;
     tusk->r_no0 = 2;
     tusk->userflag.b.l = -1;
-    set_actfree_word(tusk, 20, 3);
-    set_actfree_word(tusk, 0, 2);
-    set_actfree_word(tusk, 2, 5);
-    set_actfree_word(tusk, 4, 6);
+    set_kabuto8_word(tusk, 20, 3);
+    set_kabuto8_word(tusk, 0, 2);
+    set_kabuto8_word(tusk, 2, 5);
+    set_kabuto8_word(tusk, 4, 6);
 
     kabuto(tusk);
 
@@ -383,8 +401,8 @@ static void test_kabuto_tusk_timer_expiry_toggles_high_motion(
     body->yposi.w.h = 200;
     tusk->r_no0 = 2;
     tusk->userflag.b.l = -1;
-    set_actfree_word(tusk, 20, 3);
-    set_actfree_word(tusk, 0, 0);
+    set_kabuto8_word(tusk, 20, 3);
+    set_kabuto8_word(tusk, 0, 0);
 
     kabuto(tusk);
 
@@ -406,8 +424,8 @@ static void test_kabuto_tusk_userflag_high_forces_offsets_and_flip(
     tusk->mstno.b.h = 0;
     tusk->userflag.b.h = 1;
     tusk->userflag.b.l = -1;
-    set_actfree_word(tusk, 20, 3);
-    set_actfree_word(tusk, 0, 40);
+    set_kabuto8_word(tusk, 20, 3);
+    set_kabuto8_word(tusk, 0, 40);
 
     kabuto(tusk);
 

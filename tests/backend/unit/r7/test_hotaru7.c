@@ -91,30 +91,6 @@ Sint32 actwkchk2(sprite_status *pActwk, sprite_status **ppNewActwk) {
     return actwkchk2_result;
 }
 
-static void set_actfree_word(sprite_status *actor, int actfree_index,
-                             Sint16 value) {
-    actor->actfree[actfree_index] = (Uint8)value;
-    actor->actfree[actfree_index + 1] = (Uint8)((Uint16)value >> 8);
-}
-
-static void set_actfree_dword(sprite_status *actor, int actfree_index,
-                              Sint32 value) {
-    actor->actfree[actfree_index] = (Uint8)value;
-    actor->actfree[actfree_index + 1] = (Uint8)((Uint32)value >> 8);
-    actor->actfree[actfree_index + 2] = (Uint8)((Uint32)value >> 16);
-    actor->actfree[actfree_index + 3] = (Uint8)((Uint32)value >> 24);
-}
-
-static void set_actfree_pointer(sprite_status *actor, int actfree_index,
-                                const void *ptr) {
-    memcpy(&actor->actfree[actfree_index], &ptr, sizeof(ptr));
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int actfree_index) {
-    return (Sint16)((Uint16)actor->actfree[actfree_index] |
-                    ((Uint16)actor->actfree[actfree_index + 1] << 8));
-}
-
 static void reset_hotaru7_state(void) {
     memset(actwk, 0, sizeof(actwk));
     memset(flagwork, 0, sizeof(flagwork));
@@ -149,8 +125,8 @@ static void reset_hotaru7_state(void) {
 
 static void prepare_child(sprite_status *child, Sint16 parent_index) {
     child->userflag.b.l = -1;
-    child->actfree[12] = 9;
-    set_actfree_word(child, 0, parent_index);
+    hotaru7_work_get(child)->parent_cdsts = 9;
+    hotaru7_work_get(child)->parent_index = parent_index;
     actwk[parent_index].actno = 35;
     actwk[parent_index].cdsts = 9;
 }
@@ -223,7 +199,7 @@ static void test_hotaru7_child_frameout_and_suicide_gates(test_context *ctx) {
 
     reset_hotaru7_state();
     child->userflag.b.l = -1;
-    set_actfree_word(child, 0, 3);
+    hotaru7_work_get(child)->parent_index = 3;
 
     hotaru7(child);
 
@@ -262,7 +238,7 @@ static void test_hotaru7_child_initializes_variants_and_direction(
     TEST_ASSERT_EQ_INT(ctx, 12, child->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 50, child->colino);
     TEST_ASSERT_TRUE(ctx, child->patbase == pat_hotaru7_e);
-    TEST_ASSERT_EQ_INT(ctx, 200, get_actfree_word(child, 2));
+    TEST_ASSERT_EQ_INT(ctx, 200, hotaru7_work_get(child)->origin_x);
 
     reset_hotaru7_state();
     child = &actwk[6];
@@ -305,11 +281,11 @@ static void test_hotaru7_child_fly_reverses_and_alerts_siblings(
 
     reset_hotaru7_state();
     prepare_child(child, 3);
-    set_actfree_word(&actwk[3], 10, 7);
-    set_actfree_word(&actwk[3], 8, 8);
+    hotaru7_work_get(&actwk[3])->child1_index = 7;
+    hotaru7_work_get(&actwk[3])->child2_index = 8;
     child->xposi.w.h = 279;
-    set_actfree_word(child, 2, 200);
-    set_actfree_dword(child, 4, 65536);
+    hotaru7_work_get(child)->origin_x = 200;
+    hotaru7_work_get(child)->speed = 65536;
     actwk[0].xposi.w.h = 279;
     actwk[0].yposi.w.h = 0;
 
@@ -326,8 +302,8 @@ static void test_hotaru7_child_fly_reverses_and_alerts_siblings(
     reset_hotaru7_state();
     prepare_child(child, 3);
     child->xposi.w.h = 200;
-    set_actfree_word(child, 2, 200);
-    set_actfree_dword(child, 4, -65536);
+    hotaru7_work_get(child)->origin_x = 200;
+    hotaru7_work_get(child)->speed = -65536;
 
     b_fly(child);
 
@@ -348,20 +324,20 @@ static void test_hotaru7_parent_make_spawns_each_side(test_context *ctx) {
     stable_flag_byte = 2;
     stable_offset_table[0] = 36;
     stable_offset_table[1] = 60;
-    set_actfree_pointer(main, 0, &stable_flag_byte);
-    set_actfree_pointer(main, 4, stable_offset_table);
+    hotaru7_work_get(main)->flag_work = &stable_flag_byte;
+    hotaru7_work_get(main)->position_table = stable_offset_table;
     next_spawn = &actwk[10];
 
     a_make(main);
 
     TEST_ASSERT_EQ_INT(ctx, 6, main->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk2_count);
-    TEST_ASSERT_EQ_INT(ctx, 10, get_actfree_word(main, 10));
+    TEST_ASSERT_EQ_INT(ctx, 10, hotaru7_work_get(main)->child1_index);
     TEST_ASSERT_EQ_INT(ctx, 35, actwk[10].actno);
     TEST_ASSERT_EQ_INT(ctx, -1, actwk[10].userflag.b.l);
     TEST_ASSERT_EQ_INT(ctx, 136, actwk[10].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 260, actwk[10].yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 9, actwk[10].actfree[12]);
+    TEST_ASSERT_EQ_INT(ctx, 9, hotaru7_work_get(&actwk[10])->parent_cdsts);
 
     reset_hotaru7_state();
     main = &actwk[4];
@@ -372,21 +348,21 @@ static void test_hotaru7_parent_make_spawns_each_side(test_context *ctx) {
     stable_flag_byte = 1;
     stable_offset_table[0] = 8;
     stable_offset_table[1] = -68;
-    set_actfree_pointer(main, 0, &stable_flag_byte);
-    set_actfree_pointer(main, 4, stable_offset_table);
+    hotaru7_work_get(main)->flag_work = &stable_flag_byte;
+    hotaru7_work_get(main)->position_table = stable_offset_table;
     next_spawn = &actwk[11];
 
     a_make(main);
 
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk2_count);
-    TEST_ASSERT_EQ_INT(ctx, 11, get_actfree_word(main, 8));
+    TEST_ASSERT_EQ_INT(ctx, 11, hotaru7_work_get(main)->child2_index);
     TEST_ASSERT_EQ_INT(ctx, 92, actwk[11].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 268, actwk[11].yposi.w.h);
 
     reset_hotaru7_state();
     main = &actwk[4];
     stable_flag_byte = 0;
-    set_actfree_pointer(main, 0, &stable_flag_byte);
+    hotaru7_work_get(main)->flag_work = &stable_flag_byte;
     actwkchk2_result = 1;
 
     a_make(main);
@@ -396,7 +372,7 @@ static void test_hotaru7_parent_make_spawns_each_side(test_context *ctx) {
     reset_hotaru7_state();
     main = &actwk[4];
     stable_flag_byte = 1;
-    set_actfree_pointer(main, 0, &stable_flag_byte);
+    hotaru7_work_get(main)->flag_work = &stable_flag_byte;
     actwkchk2_result = 1;
 
     a_make(main);
@@ -411,23 +387,23 @@ static void test_hotaru7_parent_move_tracks_child_completion(
     reset_hotaru7_state();
     main->actno = 35;
     stable_flag_byte = 0;
-    set_actfree_pointer(main, 0, &stable_flag_byte);
-    set_actfree_word(main, 10, 10);
-    set_actfree_word(main, 8, 11);
+    hotaru7_work_get(main)->flag_work = &stable_flag_byte;
+    hotaru7_work_get(main)->child1_index = 10;
+    hotaru7_work_get(main)->child2_index = 11;
     actwk[10].actno = 0;
     actwk[11].actno = 0;
 
     a_move(main);
 
     TEST_ASSERT_EQ_INT(ctx, 3, stable_flag_byte);
-    TEST_ASSERT_EQ_INT(ctx, 0, get_actfree_word(main, 10));
-    TEST_ASSERT_EQ_INT(ctx, 0, get_actfree_word(main, 8));
+    TEST_ASSERT_EQ_INT(ctx, 0, hotaru7_work_get(main)->child1_index);
+    TEST_ASSERT_EQ_INT(ctx, 0, hotaru7_work_get(main)->child2_index);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s0_count);
 
     reset_hotaru7_state();
     main = &actwk[4];
     stable_flag_byte = 131;
-    set_actfree_pointer(main, 0, &stable_flag_byte);
+    hotaru7_work_get(main)->flag_work = &stable_flag_byte;
 
     a_move(main);
 
@@ -441,9 +417,9 @@ static void test_hotaru7_near_moves_children_and_fixes_missing_pairs(
 
     reset_hotaru7_state();
     prepare_child(child, 3);
-    set_actfree_word(&actwk[3], 10, 7);
-    set_actfree_word(&actwk[3], 8, 8);
-    set_actfree_dword(child, 4, -65536);
+    hotaru7_work_get(&actwk[3])->child1_index = 7;
+    hotaru7_work_get(&actwk[3])->child2_index = 8;
+    hotaru7_work_get(child)->speed = -65536;
     actwk[7].xposi.w.h = 100;
     actwk[8].xposi.w.h = 120;
     actwk[7].yposi.w.h = 50;
@@ -460,9 +436,9 @@ static void test_hotaru7_near_moves_children_and_fixes_missing_pairs(
 
     reset_hotaru7_state();
     prepare_child(child, 3);
-    set_actfree_word(&actwk[3], 10, 7);
-    set_actfree_word(&actwk[3], 8, 8);
-    set_actfree_dword(child, 4, 65536);
+    hotaru7_work_get(&actwk[3])->child1_index = 7;
+    hotaru7_work_get(&actwk[3])->child2_index = 8;
+    hotaru7_work_get(child)->speed = 65536;
     actwk[7].actflg = actwk[8].actflg = 1;
     actwk[7].cddat = actwk[8].cddat = 1;
     actwk[7].xposi.w.h = 200;
@@ -480,9 +456,9 @@ static void test_hotaru7_near_moves_children_and_fixes_missing_pairs(
 
     reset_hotaru7_state();
     prepare_child(child, 3);
-    set_actfree_word(&actwk[3], 10, 7);
-    set_actfree_word(&actwk[3], 8, 8);
-    set_actfree_dword(child, 4, -65536);
+    hotaru7_work_get(&actwk[3])->child1_index = 7;
+    hotaru7_work_get(&actwk[3])->child2_index = 8;
+    hotaru7_work_get(child)->speed = -65536;
     actwk[7].actflg = actwk[8].actflg = 1;
     actwk[7].cddat = actwk[8].cddat = 1;
     actwk[7].xposi.w.h = 200;
@@ -497,9 +473,9 @@ static void test_hotaru7_near_moves_children_and_fixes_missing_pairs(
 
     reset_hotaru7_state();
     prepare_child(child, 3);
-    set_actfree_word(&actwk[3], 10, 7);
-    set_actfree_word(&actwk[3], 8, 8);
-    set_actfree_dword(child, 4, 65536);
+    hotaru7_work_get(&actwk[3])->child1_index = 7;
+    hotaru7_work_get(&actwk[3])->child2_index = 8;
+    hotaru7_work_get(child)->speed = 65536;
     actwk[7].xposi.w.h = 156;
     actwk[8].xposi.w.h = 164;
     actwk[7].yposi.w.h = 108;
@@ -512,7 +488,7 @@ static void test_hotaru7_near_moves_children_and_fixes_missing_pairs(
 
     reset_hotaru7_state();
     prepare_child(child, 3);
-    set_actfree_word(&actwk[3], 10, 0);
+    hotaru7_work_get(&actwk[3])->child1_index = 0;
 
     b_near(child);
 
@@ -606,9 +582,9 @@ static void test_hotaru7_make_c_and_die_vector_paths(test_context *ctx) {
     sprite_status *shot = &actwk[20];
 
     reset_hotaru7_state();
-    set_actfree_word(main, 10, 7);
-    set_actfree_word(main, 8, 8);
-    set_actfree_word(left, 0, 3);
+    hotaru7_work_get(main)->child1_index = 7;
+    hotaru7_work_get(main)->child2_index = 8;
+    hotaru7_work_get(left)->parent_index = 3;
     left->actno = 35;
     left->actflg = 128;
     left->sproffset = 300;
@@ -629,9 +605,9 @@ static void test_hotaru7_make_c_and_die_vector_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 237, shot->yposi.w.h);
 
     reset_hotaru7_state();
-    set_actfree_word(main, 10, 7);
-    set_actfree_word(main, 8, 8);
-    set_actfree_word(left, 0, 3);
+    hotaru7_work_get(main)->child1_index = 7;
+    hotaru7_work_get(main)->child2_index = 8;
+    hotaru7_work_get(left)->parent_index = 3;
     left->actflg = 128;
     right->actflg = 0;
 
@@ -640,9 +616,9 @@ static void test_hotaru7_make_c_and_die_vector_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
 
     reset_hotaru7_state();
-    set_actfree_word(main, 10, 7);
-    set_actfree_word(main, 8, 8);
-    set_actfree_word(left, 0, 3);
+    hotaru7_work_get(main)->child1_index = 7;
+    hotaru7_work_get(main)->child2_index = 8;
+    hotaru7_work_get(left)->parent_index = 3;
     left->actflg = 128;
     right->actflg = 128;
     actwkchk_result = 1;
@@ -652,17 +628,17 @@ static void test_hotaru7_make_c_and_die_vector_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
 
     reset_hotaru7_state();
-    set_actfree_word(main, 10, 7);
-    set_actfree_word(main, 8, 8);
+    hotaru7_work_get(main)->child1_index = 7;
+    hotaru7_work_get(main)->child2_index = 8;
     b_die_v(&actwk[7], main);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, get_actfree_word(main, 10));
+    TEST_ASSERT_EQ_INT(ctx, 0, hotaru7_work_get(main)->child1_index);
 
-    set_actfree_word(main, 10, 9);
-    set_actfree_word(main, 8, 8);
+    hotaru7_work_get(main)->child1_index = 9;
+    hotaru7_work_get(main)->child2_index = 8;
     b_die_v(&actwk[7], main);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, get_actfree_word(main, 8));
+    TEST_ASSERT_EQ_INT(ctx, 0, hotaru7_work_get(main)->child2_index);
 }
 
 static void test_hotaru7_projectile_initializes_and_rejects_missing_links(
@@ -671,8 +647,8 @@ static void test_hotaru7_projectile_initializes_and_rejects_missing_links(
 
     reset_hotaru7_state();
     shot->userflag.b.l = -2;
-    set_actfree_word(shot, 2, 7);
-    set_actfree_word(shot, 0, 8);
+    hotaru7_work_get(shot)->partner1_index = 7;
+    hotaru7_work_get(shot)->partner2_index = 8;
 
     hotaru7(shot);
 
@@ -682,8 +658,8 @@ static void test_hotaru7_projectile_initializes_and_rejects_missing_links(
     reset_hotaru7_state();
     shot = &actwk[9];
     shot->userflag.b.l = -2;
-    set_actfree_word(shot, 2, 7);
-    set_actfree_word(shot, 0, 8);
+    hotaru7_work_get(shot)->partner1_index = 7;
+    hotaru7_work_get(shot)->partner2_index = 8;
     actwk[7].actno = 35;
     actwk[7].r_no0 = 16;
     actwk[8].actno = 35;

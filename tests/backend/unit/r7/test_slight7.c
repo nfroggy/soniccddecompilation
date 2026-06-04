@@ -102,7 +102,7 @@ static void test_slight7_actionsub_gating(test_context *ctx) {
     light->r_no0 = 2;
     light->userflag.b.h = 4;
     light->userflag.b.l = 0;
-    light->actfree[6] = 0;
+    slight7_work_get(light)->display_phase = 0;
     gametimer.w = 2;
     slight7(light);
     TEST_ASSERT_EQ_INT(ctx, 0, actionsub_count);
@@ -111,7 +111,7 @@ static void test_slight7_actionsub_gating(test_context *ctx) {
     light->r_no0 = 2;
     light->userflag.b.h = 4;
     light->userflag.b.l = 0;
-    light->actfree[6] = 2;
+    slight7_work_get(light)->display_phase = 2;
     gametimer.w = 6;
     slight7(light);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -120,7 +120,7 @@ static void test_slight7_actionsub_gating(test_context *ctx) {
     light->r_no0 = 2;
     light->userflag.b.h = 4;
     light->userflag.b.l = 4;
-    light->actfree[6] = 2;
+    slight7_work_get(light)->display_phase = 2;
     gametimer.w = 6;
     slight7(light);
     TEST_ASSERT_EQ_INT(ctx, 0, actionsub_count);
@@ -129,7 +129,7 @@ static void test_slight7_actionsub_gating(test_context *ctx) {
     light->r_no0 = 2;
     light->userflag.b.h = 4;
     light->userflag.b.l = 4;
-    light->actfree[6] = 6;
+    slight7_work_get(light)->display_phase = 6;
     gametimer.w = 6;
     slight7(light);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -157,30 +157,30 @@ static void test_slight7_animation_tables(test_context *ctx) {
     light->r_no0 = 2;
     light->xposi.w.h = 200;
     light->userflag.b.h = 0;
-    light->actfree[18] = 2;
+    slight7_work_get(light)->anim_index = 2;
     type0(light);
 
     reset_slight7_state();
     light->xposi.w.h = 200;
-    light->actfree[18] = 5;
+    slight7_work_get(light)->anim_index = 5;
     type0(light);
 
     reset_slight7_state();
     light->xposi.w.h = 200;
-    light->actfree[16] = 2;
-    light->actfree[18] = 1;
+    slight7_work_get(light)->frame_timer = 2;
+    slight7_work_get(light)->anim_index = 1;
     type1(light);
 
     reset_slight7_state();
     light->xposi.w.h = 200;
-    light->actfree[16] = 1;
-    light->actfree[18] = 3;
+    slight7_work_get(light)->frame_timer = 1;
+    slight7_work_get(light)->anim_index = 3;
     type2(light);
 
     reset_slight7_state();
     light->xposi.w.h = 200;
-    light->actfree[16] = 1;
-    light->actfree[18] = 2;
+    slight7_work_get(light)->frame_timer = 1;
+    slight7_work_get(light)->anim_index = 2;
     type3(light);
 }
 

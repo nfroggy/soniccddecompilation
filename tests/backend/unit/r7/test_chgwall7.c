@@ -119,7 +119,7 @@ static void test_chgwall7_priority_off_clears_previous_ride(test_context *ctx) {
     reset_chgwall7_state();
     wall->r_no0 = 2;
     prio_flag = 0;
-    wall->actfree[0] = 0;
+    chgwall7_work_get(wall)->player_contact_latch = 0;
     chgwall7(wall);
     TEST_ASSERT_EQ_INT(ctx, 0, hitchk_count);
     TEST_ASSERT_EQ_INT(ctx, 0, ride_on_clr_count);
@@ -127,7 +127,7 @@ static void test_chgwall7_priority_off_clears_previous_ride(test_context *ctx) {
     reset_chgwall7_state();
     wall->r_no0 = 2;
     prio_flag = 0;
-    wall->actfree[0] = 1;
+    chgwall7_work_get(wall)->player_contact_latch = 1;
     chgwall7(wall);
     TEST_ASSERT_EQ_INT(ctx, 1, ride_on_clr_count);
     TEST_ASSERT_TRUE(ctx, ride_on_clr_actor == wall);

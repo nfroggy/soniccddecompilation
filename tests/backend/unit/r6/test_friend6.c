@@ -131,11 +131,6 @@ static void reset_friend6_logs(void) {
     emycol_d_actor = 0;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
 static void init_tsubame(sprite_status *actor, Sint16 x, Sint16 y,
                          Sint8 userflag_h) {
     reset_friend6_state();
@@ -213,8 +208,8 @@ static void test_tsubame_initializes_visible_fields(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 8, actor->sprhsize);
     TEST_ASSERT_TRUE(ctx, actor->patbase == pat_friend0);
     TEST_ASSERT_EQ_INT(ctx, (1943 | 32768), actor->sproffset);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[4]);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[5]);
+    TEST_ASSERT_EQ_INT(ctx, 1, friend6_get_work(actor)->angle);
+    TEST_ASSERT_EQ_INT(ctx, 1, friend6_get_work(actor)->angle_delta);
     TEST_ASSERT_EQ_INT(ctx, 0, actionsub_count);
 }
 
@@ -266,9 +261,9 @@ static void test_tsubame_movie_variant_uses_parent_and_frameouts(
     TEST_ASSERT_EQ_INT(ctx, 1, actor->mstno.b.h);
     TEST_ASSERT_EQ_INT(ctx, 3, actor->sprpri);
 
-    set_actfree_word(actor, 20, 2);
+    friend6_get_work(actor)->movie_parent_index = 2;
     parent->actno = 47;
-    actor->actfree[4] = 124;
+    friend6_get_work(actor)->angle = 124;
 
     friend(actor);
 
@@ -285,7 +280,7 @@ static void test_tsubame_movie_variant_uses_parent_and_frameouts(
     parent = &actwk[2];
     actor->r_no0 = 4;
     actor->userflag.b.h = -128;
-    set_actfree_word(actor, 20, 2);
+    friend6_get_work(actor)->movie_parent_index = 2;
 
     friend(actor);
 
@@ -297,9 +292,9 @@ static void test_tsubame_movie_variant_uses_parent_and_frameouts(
     parent = &actwk[2];
     actor->r_no0 = 4;
     actor->userflag.b.h = -128;
-    set_actfree_word(actor, 20, 2);
+    friend6_get_work(actor)->movie_parent_index = 2;
     parent->actno = 47;
-    parent->actfree[21] = 255;
+    friend6_get_work(parent)->movie_done = 255;
 
     friend(actor);
 
@@ -392,7 +387,7 @@ static void test_pecky_movie_variant_uses_parent_and_frameouts(
     init_pecky(actor, 300, 400, -127);
     TEST_ASSERT_EQ_INT(ctx, 8, actor->r_no0);
 
-    set_actfree_word(actor, 20, 2);
+    friend6_get_work(actor)->movie_parent_index = 2;
     parent->actno = 47;
 
     friend(actor);
@@ -408,7 +403,7 @@ static void test_pecky_movie_variant_uses_parent_and_frameouts(
     parent = &actwk[2];
     actor->userflag.b.h = -127;
     actor->r_no0 = 8;
-    set_actfree_word(actor, 20, 2);
+    friend6_get_work(actor)->movie_parent_index = 2;
 
     friend(actor);
 
@@ -420,9 +415,9 @@ static void test_pecky_movie_variant_uses_parent_and_frameouts(
     parent = &actwk[2];
     actor->userflag.b.h = -127;
     actor->r_no0 = 8;
-    set_actfree_word(actor, 20, 2);
+    friend6_get_work(actor)->movie_parent_index = 2;
     parent->actno = 47;
-    parent->actfree[21] = 255;
+    friend6_get_work(parent)->movie_done = 255;
 
     friend(actor);
 

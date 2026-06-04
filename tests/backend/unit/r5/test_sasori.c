@@ -167,33 +167,6 @@ static void queue_actwkchk(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int offset) {
-    return (Sint16)((Uint16)actor->actfree[offset] |
-                    ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
-static void set_actfree_long(sprite_status *actor, int offset, Sint32 value) {
-    Uint32 bits = (Uint32)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)((bits >> 8) & 255);
-    actor->actfree[offset + 2] = (Uint8)((bits >> 16) & 255);
-    actor->actfree[offset + 3] = (Uint8)(bits >> 24);
-}
-
-static Sint32 get_actfree_long(sprite_status *actor, int offset) {
-    Uint32 bits = (Uint32)actor->actfree[offset] |
-                  ((Uint32)actor->actfree[offset + 1] << 8) |
-                  ((Uint32)actor->actfree[offset + 2] << 16) |
-                  ((Uint32)actor->actfree[offset + 3] << 24);
-    return (Sint32)bits;
-}
-
 static void assert_main_callbacks(test_context *ctx, sprite_status *actor,
                                   Sint16 origin) {
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
@@ -211,10 +184,10 @@ static void setup_moving_main(sprite_status *actor, int tail_index) {
     actor->r_no0 = 4;
     actor->xposi.l = 100 << 16;
     actor->yposi.w.h = 200;
-    set_actfree_word(actor, 0, 100);
-    set_actfree_long(actor, 2, -65536);
-    set_actfree_word(actor, 6, (Sint16)tail_index);
-    set_actfree_word(actor, 8, 3);
+    sasori_get_work(actor)->origin_x = 100;
+    sasori_get_work(actor)->x_speed = -65536;
+    sasori_get_work(actor)->tail_index = (Sint16)tail_index;
+    sasori_get_work(actor)->tail_x_offset = 3;
     actwk[tail_index].actno = 33;
     actwk[0].yposi.w.h = 0;
 }
@@ -264,10 +237,10 @@ static void test_init_records_origin_and_time_variant(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 24, actor->sprhsize);
     TEST_ASSERT_EQ_INT(ctx, 12, actor->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 49, actor->colino);
-    TEST_ASSERT_EQ_INT(ctx, 320, get_actfree_word(actor, 0));
+    TEST_ASSERT_EQ_INT(ctx, 320, sasori_get_work(actor)->origin_x);
     TEST_ASSERT_TRUE(ctx, actor->patbase == pat_sasori_e);
-    TEST_ASSERT_EQ_INT(ctx, -65536, get_actfree_long(actor, 2));
-    TEST_ASSERT_EQ_INT(ctx, 3, get_actfree_word(actor, 8));
+    TEST_ASSERT_EQ_INT(ctx, -65536, sasori_get_work(actor)->x_speed);
+    TEST_ASSERT_EQ_INT(ctx, 3, sasori_get_work(actor)->tail_x_offset);
     TEST_ASSERT_EQ_INT(ctx, 4, actor->actflg);
     TEST_ASSERT_EQ_INT(ctx, 9142, actor->sproffset);
     assert_main_callbacks(ctx, actor, 320);
@@ -281,8 +254,8 @@ static void test_init_records_origin_and_time_variant(test_context *ctx) {
     sasori(actor);
 
     TEST_ASSERT_TRUE(ctx, actor->patbase == pat_sasori_b);
-    TEST_ASSERT_EQ_INT(ctx, -32768, get_actfree_long(actor, 2));
-    TEST_ASSERT_EQ_INT(ctx, 7, get_actfree_word(actor, 8));
+    TEST_ASSERT_EQ_INT(ctx, -32768, sasori_get_work(actor)->x_speed);
+    TEST_ASSERT_EQ_INT(ctx, 7, sasori_get_work(actor)->tail_x_offset);
     assert_main_callbacks(ctx, actor, 64);
 }
 
@@ -297,7 +270,7 @@ static void test_fall_lands_and_initializes_tail(test_context *ctx) {
     actor->userflag.b.h = 1;
     actor->xposi.w.h = 100;
     actor->yposi.w.h = 50;
-    set_actfree_word(actor, 0, 100);
+    sasori_get_work(actor)->origin_x = 100;
     queue_emycol(-3);
     queue_actwkchk2(tail);
 
@@ -305,7 +278,7 @@ static void test_fall_lands_and_initializes_tail(test_context *ctx) {
 
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 48, actor->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 30, get_actfree_word(actor, 6));
+    TEST_ASSERT_EQ_INT(ctx, 30, sasori_get_work(actor)->tail_index);
     TEST_ASSERT_EQ_INT(ctx, 33, tail->actno);
     TEST_ASSERT_EQ_INT(ctx, 1, tail->userflag.b.l);
     TEST_ASSERT_EQ_INT(ctx, 24, tail->sprhs);
@@ -313,7 +286,7 @@ static void test_fall_lands_and_initializes_tail(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 16, tail->sprvsize);
     TEST_ASSERT_TRUE(ctx, tail->patbase == pat_tail);
     TEST_ASSERT_EQ_INT(ctx, 1, tail->patno);
-    TEST_ASSERT_EQ_INT(ctx, 3, get_actfree_word(tail, 0));
+    TEST_ASSERT_EQ_INT(ctx, 3, sasori_get_work(tail)->parent_index);
     TEST_ASSERT_EQ_INT(ctx, 2, tail->sprpri);
     TEST_ASSERT_EQ_INT(ctx, 4, tail->actflg);
     TEST_ASSERT_EQ_INT(ctx, 9142, tail->sproffset);
@@ -327,7 +300,7 @@ static void test_fall_without_ground_or_tail_slot(test_context *ctx) {
     actor->actno = 33;
     actor->r_no0 = 2;
     actor->yposi.w.h = 50;
-    set_actfree_word(actor, 0, 100);
+    sasori_get_work(actor)->origin_x = 100;
     queue_emycol(1);
 
     sasori(actor);
@@ -342,7 +315,7 @@ static void test_fall_without_ground_or_tail_slot(test_context *ctx) {
     actor->actno = 33;
     actor->r_no0 = 2;
     actor->yposi.w.h = 50;
-    set_actfree_word(actor, 0, 100);
+    sasori_get_work(actor)->origin_x = 100;
     queue_emycol(-1);
 
     sasori(actor);
@@ -367,7 +340,7 @@ static void test_move_updates_tail_without_reversal(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 200, actor->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 102, tail->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 184, tail->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, -65536, get_actfree_long(actor, 2));
+    TEST_ASSERT_EQ_INT(ctx, -65536, sasori_get_work(actor)->x_speed);
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
     assert_main_callbacks(ctx, actor, 100);
 }
@@ -378,15 +351,15 @@ static void test_move_reverses_at_range_or_floor_edge(test_context *ctx) {
     reset_sasori_state();
     setup_moving_main(actor, 30);
     actor->xposi.l = 180 << 16;
-    set_actfree_long(actor, 2, 65536);
+    sasori_get_work(actor)->x_speed = 65536;
     actor->actflg = 4;
     actwk[30].actflg = 4;
 
     sasori(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 180, actor->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, -65536, get_actfree_long(actor, 2));
-    TEST_ASSERT_EQ_INT(ctx, -3, get_actfree_word(actor, 8));
+    TEST_ASSERT_EQ_INT(ctx, -65536, sasori_get_work(actor)->x_speed);
+    TEST_ASSERT_EQ_INT(ctx, -3, sasori_get_work(actor)->tail_x_offset);
     TEST_ASSERT_EQ_INT(ctx, 5, actor->actflg);
     TEST_ASSERT_EQ_INT(ctx, 5, actwk[30].actflg);
     TEST_ASSERT_EQ_INT(ctx, 1, actor->cddat);
@@ -395,13 +368,13 @@ static void test_move_reverses_at_range_or_floor_edge(test_context *ctx) {
     reset_sasori_state();
     actor = &actwk[3];
     setup_moving_main(actor, 30);
-    set_actfree_long(actor, 2, 65536);
+    sasori_get_work(actor)->x_speed = 65536;
     queue_emycol(7);
 
     sasori(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, -65536, get_actfree_long(actor, 2));
-    TEST_ASSERT_EQ_INT(ctx, -3, get_actfree_word(actor, 8));
+    TEST_ASSERT_EQ_INT(ctx, -65536, sasori_get_work(actor)->x_speed);
+    TEST_ASSERT_EQ_INT(ctx, -3, sasori_get_work(actor)->tail_x_offset);
 }
 
 static void test_move_player_range_can_wait_or_reverse(test_context *ctx) {
@@ -416,8 +389,8 @@ static void test_move_player_range_can_wait_or_reverse(test_context *ctx) {
     sasori(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, -65536, get_actfree_long(actor, 2));
-    TEST_ASSERT_EQ_INT(ctx, 3, get_actfree_word(actor, 8));
+    TEST_ASSERT_EQ_INT(ctx, -65536, sasori_get_work(actor)->x_speed);
+    TEST_ASSERT_EQ_INT(ctx, 3, sasori_get_work(actor)->tail_x_offset);
 
     reset_sasori_state();
     actor = &actwk[3];
@@ -429,8 +402,8 @@ static void test_move_player_range_can_wait_or_reverse(test_context *ctx) {
     sasori(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 65536, get_actfree_long(actor, 2));
-    TEST_ASSERT_EQ_INT(ctx, -3, get_actfree_word(actor, 8));
+    TEST_ASSERT_EQ_INT(ctx, 65536, sasori_get_work(actor)->x_speed);
+    TEST_ASSERT_EQ_INT(ctx, -3, sasori_get_work(actor)->tail_x_offset);
 
     reset_sasori_state();
     actor = &actwk[3];
@@ -442,12 +415,12 @@ static void test_move_player_range_can_wait_or_reverse(test_context *ctx) {
     sasori(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, -65536, get_actfree_long(actor, 2));
+    TEST_ASSERT_EQ_INT(ctx, -65536, sasori_get_work(actor)->x_speed);
 
     reset_sasori_state();
     actor = &actwk[3];
     setup_moving_main(actor, 30);
-    set_actfree_long(actor, 2, 65536);
+    sasori_get_work(actor)->x_speed = 65536;
     actwk[0].xposi.w.h = 110;
     actwk[0].yposi.w.h = 200;
     queue_emycol(0);
@@ -455,8 +428,8 @@ static void test_move_player_range_can_wait_or_reverse(test_context *ctx) {
     sasori(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 65536, get_actfree_long(actor, 2));
-    TEST_ASSERT_EQ_INT(ctx, 3, get_actfree_word(actor, 8));
+    TEST_ASSERT_EQ_INT(ctx, 65536, sasori_get_work(actor)->x_speed);
+    TEST_ASSERT_EQ_INT(ctx, 3, sasori_get_work(actor)->tail_x_offset);
 }
 
 static void test_waita_and_waitc_move_tail_for_both_directions(
@@ -469,20 +442,20 @@ static void test_waita_and_waitc_move_tail_for_both_directions(
     actor->r_no0 = 6;
     actor->xposi.w.h = 100;
     actor->yposi.w.h = 200;
-    set_actfree_word(actor, 0, 100);
-    set_actfree_long(actor, 2, -65536);
-    set_actfree_word(actor, 6, 30);
-    set_actfree_word(actor, 8, 3);
+    sasori_get_work(actor)->origin_x = 100;
+    sasori_get_work(actor)->x_speed = -65536;
+    sasori_get_work(actor)->tail_index = 30;
+    sasori_get_work(actor)->tail_x_offset = 3;
 
     sasori(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 8, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 29, get_actfree_word(actor, 10));
+    TEST_ASSERT_EQ_INT(ctx, 29, sasori_get_work(actor)->timer);
     TEST_ASSERT_EQ_INT(ctx, 103, tail->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 184, tail->yposi.w.h);
 
     reset_logs();
-    set_actfree_word(actor, 10, 1);
+    sasori_get_work(actor)->timer = 1;
     tail->xposi.w.h = 103;
     tail->yposi.w.h = 184;
 
@@ -494,8 +467,8 @@ static void test_waita_and_waitc_move_tail_for_both_directions(
 
     reset_logs();
     actor->r_no0 = 8;
-    set_actfree_word(actor, 10, 1);
-    set_actfree_long(actor, 2, 65536);
+    sasori_get_work(actor)->timer = 1;
+    sasori_get_work(actor)->x_speed = 65536;
     tail->xposi.w.h = 103;
     tail->yposi.w.h = 184;
 
@@ -507,8 +480,8 @@ static void test_waita_and_waitc_move_tail_for_both_directions(
 
     reset_logs();
     actor->r_no0 = 16;
-    set_actfree_word(actor, 10, 1);
-    set_actfree_long(actor, 2, 65536);
+    sasori_get_work(actor)->timer = 1;
+    sasori_get_work(actor)->x_speed = 65536;
     tail->xposi.w.h = 103;
     tail->yposi.w.h = 184;
 
@@ -526,12 +499,12 @@ static void test_waitb_spawns_projectile_and_handles_skips(test_context *ctx) {
     reset_sasori_state();
     actor->actno = 33;
     actor->r_no0 = 10;
-    set_actfree_word(actor, 0, 100);
+    sasori_get_work(actor)->origin_x = 100;
 
     sasori(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 12, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 9, get_actfree_word(actor, 10));
+    TEST_ASSERT_EQ_INT(ctx, 9, sasori_get_work(actor)->timer);
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
 
     reset_logs();
@@ -541,9 +514,9 @@ static void test_waitb_spawns_projectile_and_handles_skips(test_context *ctx) {
     actor->sprpri = 3;
     actor->xposi.w.h = 100;
     actor->yposi.w.h = 200;
-    set_actfree_word(actor, 0, 100);
-    set_actfree_word(actor, 10, 1);
-    set_actfree_long(actor, 2, -65536);
+    sasori_get_work(actor)->origin_x = 100;
+    sasori_get_work(actor)->timer = 1;
+    sasori_get_work(actor)->x_speed = -65536;
     queue_actwkchk(shot);
 
     sasori(actor);
@@ -556,10 +529,10 @@ static void test_waitb_spawns_projectile_and_handles_skips(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 16, shot->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 178, shot->colino);
     TEST_ASSERT_TRUE(ctx, shot->patbase == pat_tama);
-    TEST_ASSERT_EQ_INT(ctx, 3, get_actfree_word(shot, 0));
+    TEST_ASSERT_EQ_INT(ctx, 3, sasori_get_work(shot)->parent_index);
     TEST_ASSERT_EQ_INT(ctx, 96, shot->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 176, shot->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, -196608, get_actfree_long(shot, 2));
+    TEST_ASSERT_EQ_INT(ctx, -196608, sasori_get_work(shot)->x_speed);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 160, soundset_requests[0]);
 
@@ -570,15 +543,15 @@ static void test_waitb_spawns_projectile_and_handles_skips(test_context *ctx) {
     actor->r_no0 = 12;
     actor->xposi.w.h = 100;
     actor->yposi.w.h = 200;
-    set_actfree_word(actor, 0, 100);
-    set_actfree_word(actor, 10, 1);
-    set_actfree_long(actor, 2, 65536);
+    sasori_get_work(actor)->origin_x = 100;
+    sasori_get_work(actor)->timer = 1;
+    sasori_get_work(actor)->x_speed = 65536;
     queue_actwkchk(shot);
 
     sasori(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 104, shot->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 196608, get_actfree_long(shot, 2));
+    TEST_ASSERT_EQ_INT(ctx, 196608, sasori_get_work(shot)->x_speed);
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
 
     reset_sasori_state();
@@ -586,8 +559,8 @@ static void test_waitb_spawns_projectile_and_handles_skips(test_context *ctx) {
     actor->actno = 33;
     actor->r_no0 = 12;
     actor->userflag.b.h = 1;
-    set_actfree_word(actor, 0, 100);
-    set_actfree_word(actor, 10, 1);
+    sasori_get_work(actor)->origin_x = 100;
+    sasori_get_work(actor)->timer = 1;
 
     sasori(actor);
 
@@ -601,12 +574,12 @@ static void test_waitc_and_waitd_timer_entry_states(test_context *ctx) {
     reset_sasori_state();
     actor->actno = 33;
     actor->r_no0 = 14;
-    set_actfree_word(actor, 0, 100);
+    sasori_get_work(actor)->origin_x = 100;
 
     sasori(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 16, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 29, get_actfree_word(actor, 10));
+    TEST_ASSERT_EQ_INT(ctx, 29, sasori_get_work(actor)->timer);
 
     reset_logs();
     actor->r_no0 = 18;
@@ -614,11 +587,11 @@ static void test_waitc_and_waitd_timer_entry_states(test_context *ctx) {
     sasori(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 20, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 29, get_actfree_word(actor, 10));
+    TEST_ASSERT_EQ_INT(ctx, 29, sasori_get_work(actor)->timer);
 
     reset_logs();
     actor->r_no0 = 20;
-    set_actfree_word(actor, 10, 1);
+    sasori_get_work(actor)->timer = 1;
 
     sasori(actor);
 
@@ -633,7 +606,7 @@ static void test_child_tail_projectile_and_missing_parent_paths(
     reset_sasori_state();
     parent->actno = 33;
     child->userflag.b.l = 1;
-    set_actfree_word(child, 0, 3);
+    sasori_get_work(child)->parent_index = 3;
 
     sasori(child);
 
@@ -645,7 +618,7 @@ static void test_child_tail_projectile_and_missing_parent_paths(
     reset_sasori_state();
     child = &actwk[30];
     child->userflag.b.l = 1;
-    set_actfree_word(child, 0, 3);
+    sasori_get_work(child)->parent_index = 3;
 
     sasori(child);
 
@@ -658,8 +631,8 @@ static void test_child_tail_projectile_and_missing_parent_paths(
     parent->actno = 33;
     child->userflag.b.l = -1;
     child->xposi.l = 100 << 16;
-    set_actfree_word(child, 0, 3);
-    set_actfree_long(child, 2, 196608);
+    sasori_get_work(child)->parent_index = 3;
+    sasori_get_work(child)->x_speed = 196608;
 
     sasori(child);
 

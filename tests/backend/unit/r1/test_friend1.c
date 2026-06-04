@@ -88,44 +88,6 @@ Sint16 emycol_d(sprite_status *pActwk) {
     return emycol_d_result;
 }
 
-static size_t short_alias_offset(int short_index) {
-    return (size_t)short_index * sizeof(Sint16) - offsetof(sprite_status, actfree);
-}
-
-static size_t long_alias_offset(int long_index) {
-    return (size_t)long_index * sizeof(Sint32) - offsetof(sprite_status, actfree);
-}
-
-static void set_actor_short_alias(sprite_status *actor, int short_index,
-                                  Sint16 value) {
-    size_t offset = short_alias_offset(short_index);
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
-static Sint16 actor_short_alias(sprite_status *actor, int short_index) {
-    size_t offset = short_alias_offset(short_index);
-    return (Sint16)((Uint16)actor->actfree[offset] |
-                    ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
-static void set_actor_long_alias(sprite_status *actor, int long_index,
-                                 Sint32 value) {
-    size_t offset = long_alias_offset(long_index);
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint32)value >> 8);
-    actor->actfree[offset + 2] = (Uint8)((Uint32)value >> 16);
-    actor->actfree[offset + 3] = (Uint8)((Uint32)value >> 24);
-}
-
-static Sint32 actor_long_alias(sprite_status *actor, int long_index) {
-    size_t offset = long_alias_offset(long_index);
-    return (Sint32)((Uint32)actor->actfree[offset] |
-                    ((Uint32)actor->actfree[offset + 1] << 8) |
-                    ((Uint32)actor->actfree[offset + 2] << 16) |
-                    ((Uint32)actor->actfree[offset + 3] << 24));
-}
-
 static void reset_friend1_state(void) {
     memset(actwk, 0, sizeof(actwk));
     memset(&stageno, 0, sizeof(stageno));
@@ -185,11 +147,11 @@ static void test_t_init_sets_flicky_fields_and_orbit_origin(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 4, bird->sprpri);
     TEST_ASSERT_EQ_INT(ctx, 8, bird->sprhsize);
     TEST_ASSERT_TRUE(ctx, bird->patbase == pat_friend0);
-    TEST_ASSERT_EQ_INT(ctx, 100, actor_short_alias(bird, 23));
-    TEST_ASSERT_EQ_INT(ctx, 200, actor_short_alias(bird, 24));
+    TEST_ASSERT_EQ_INT(ctx, 100, friend1_work_get(bird)->origin_x);
+    TEST_ASSERT_EQ_INT(ctx, 200, friend1_work_get(bird)->origin_y);
     TEST_ASSERT_EQ_INT(ctx, (1121 | 32768), bird->sproffset);
-    TEST_ASSERT_EQ_INT(ctx, 1, bird->actfree[4]);
-    TEST_ASSERT_EQ_INT(ctx, 1, bird->actfree[5]);
+    TEST_ASSERT_EQ_INT(ctx, 1, friend1_work_get(bird)->orbit_angle);
+    TEST_ASSERT_EQ_INT(ctx, 1, friend1_work_get(bird)->orbit_delta);
 
     reset_friend1_state();
     bird->xposi.w.h = 120;
@@ -209,10 +171,10 @@ static void test_t_move_rolls_animates_and_reverses_at_limits(
     sprite_status *bird = &actwk[3];
 
     reset_friend1_state();
-    set_actor_short_alias(bird, 23, 100);
-    set_actor_short_alias(bird, 24, 200);
-    bird->actfree[4] = 10;
-    bird->actfree[5] = 2;
+    friend1_work_get(bird)->origin_x = 100;
+    friend1_work_get(bird)->origin_y = 200;
+    friend1_work_get(bird)->orbit_angle = 10;
+    friend1_work_get(bird)->orbit_delta = 2;
     sinset_sin = 40;
     sinset_cos = 20;
 
@@ -222,8 +184,8 @@ static void test_t_move_rolls_animates_and_reverses_at_limits(
     TEST_ASSERT_EQ_INT(ctx, 10, sinset_angle);
     TEST_ASSERT_EQ_INT(ctx, 110, bird->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 220, bird->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 12, bird->actfree[4]);
-    TEST_ASSERT_EQ_INT(ctx, 2, bird->actfree[5]);
+    TEST_ASSERT_EQ_INT(ctx, 12, friend1_work_get(bird)->orbit_angle);
+    TEST_ASSERT_EQ_INT(ctx, 2, friend1_work_get(bird)->orbit_delta);
     TEST_ASSERT_TRUE(ctx, patchg_actor == bird);
     TEST_ASSERT_TRUE(ctx, patchg_table == pchg0);
     TEST_ASSERT_TRUE(ctx, actionsub_actor == bird);
@@ -231,15 +193,15 @@ static void test_t_move_rolls_animates_and_reverses_at_limits(
     TEST_ASSERT_EQ_INT(ctx, 100, frameout_s00_x);
 
     reset_friend1_state();
-    set_actor_short_alias(bird, 23, 100);
-    set_actor_short_alias(bird, 24, 200);
-    bird->actfree[4] = 127;
-    bird->actfree[5] = 1;
+    friend1_work_get(bird)->origin_x = 100;
+    friend1_work_get(bird)->origin_y = 200;
+    friend1_work_get(bird)->orbit_angle = 127;
+    friend1_work_get(bird)->orbit_delta = 1;
 
     t_move(bird);
 
-    TEST_ASSERT_EQ_INT(ctx, 127, bird->actfree[4]);
-    TEST_ASSERT_EQ_INT(ctx, -1, (Sint8)bird->actfree[5]);
+    TEST_ASSERT_EQ_INT(ctx, 127, friend1_work_get(bird)->orbit_angle);
+    TEST_ASSERT_EQ_INT(ctx, -1, friend1_work_get(bird)->orbit_delta);
     TEST_ASSERT_EQ_INT(ctx, 1, bird->actflg);
     TEST_ASSERT_EQ_INT(ctx, 1, bird->cddat);
 }
@@ -249,25 +211,25 @@ static void test_t_movie_parent_gates_and_orbit_paths(test_context *ctx) {
     sprite_status *parent = &actwk[46];
 
     reset_friend1_state();
-    set_actor_short_alias(bird, 33, 46);
+    friend1_work_get(bird)->parent_actor = 46;
     parent->actno = 0;
     t_movie(bird);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
     TEST_ASSERT_TRUE(ctx, frameout_actor == bird);
 
     reset_friend1_state();
-    set_actor_short_alias(bird, 33, 46);
+    friend1_work_get(bird)->parent_actor = 46;
     parent->actno = 46;
-    parent->actfree[21] = 1;
+    friend1_work_get(parent)->parent_destroyed = 1;
     t_movie(bird);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
 
     reset_friend1_state();
-    set_actor_short_alias(bird, 23, 160);
-    set_actor_short_alias(bird, 24, 96);
-    set_actor_short_alias(bird, 33, 46);
+    friend1_work_get(bird)->origin_x = 160;
+    friend1_work_get(bird)->origin_y = 96;
+    friend1_work_get(bird)->parent_actor = 46;
     parent->actno = 46;
-    bird->actfree[4] = 124;
+    friend1_work_get(bird)->orbit_angle = 124;
     sinset_sin = 64;
     sinset_cos = 32;
 
@@ -275,17 +237,17 @@ static void test_t_movie_parent_gates_and_orbit_paths(test_context *ctx) {
 
     TEST_ASSERT_EQ_INT(ctx, 164, bird->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 100, bird->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 128, bird->actfree[4]);
+    TEST_ASSERT_EQ_INT(ctx, 128, friend1_work_get(bird)->orbit_angle);
     TEST_ASSERT_EQ_INT(ctx, 1, bird->actflg);
     TEST_ASSERT_EQ_INT(ctx, 1, bird->cddat);
     TEST_ASSERT_EQ_INT(ctx, 0, actionsub_count);
 
     reset_friend1_state();
-    set_actor_short_alias(bird, 23, 160);
-    set_actor_short_alias(bird, 24, 96);
-    set_actor_short_alias(bird, 33, 46);
+    friend1_work_get(bird)->origin_x = 160;
+    friend1_work_get(bird)->origin_y = 96;
+    friend1_work_get(bird)->parent_actor = 46;
     parent->actno = 46;
-    bird->actfree[4] = 8;
+    friend1_work_get(bird)->orbit_angle = 8;
     sinset_sin = 64;
     sinset_cos = 32;
 
@@ -313,10 +275,10 @@ static void test_p_init_sets_ricky_fields_and_movie_variant(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 4, ricky->sprpri);
     TEST_ASSERT_EQ_INT(ctx, 8, ricky->sprhsize);
     TEST_ASSERT_TRUE(ctx, ricky->patbase == pat_friend1);
-    TEST_ASSERT_EQ_INT(ctx, 320, actor_short_alias(ricky, 23));
+    TEST_ASSERT_EQ_INT(ctx, 320, friend1_work_get(ricky)->origin_x);
     TEST_ASSERT_EQ_INT(ctx, 975, ricky->sproffset);
-    TEST_ASSERT_EQ_INT(ctx, 65536, actor_long_alias(ricky, 12));
-    TEST_ASSERT_EQ_INT(ctx, -0x40000, actor_long_alias(ricky, 13));
+    TEST_ASSERT_EQ_INT(ctx, 65536, friend1_work_get(ricky)->x_velocity);
+    TEST_ASSERT_EQ_INT(ctx, -0x40000, friend1_work_get(ricky)->y_velocity);
 
     reset_friend1_state();
     ricky->userflag.b.h = -127;
@@ -333,8 +295,8 @@ static void test_p_move_bounces_on_collision_and_falls_without_collision(
     reset_friend1_state();
     ricky->xposi.l = 100 << 16;
     ricky->yposi.l = 200 << 16;
-    set_actor_long_alias(ricky, 12, 2 << 16);
-    set_actor_long_alias(ricky, 13, -1 << 16);
+    friend1_work_get(ricky)->x_velocity = 2 << 16;
+    friend1_work_get(ricky)->y_velocity = -1 << 16;
     emycol_d_result = 3;
 
     p_move(ricky);
@@ -349,8 +311,8 @@ static void test_p_move_bounces_on_collision_and_falls_without_collision(
     reset_friend1_state();
     ricky->xposi.l = 100 << 16;
     ricky->yposi.l = 200 << 16;
-    set_actor_long_alias(ricky, 12, 2 << 16);
-    set_actor_long_alias(ricky, 13, 1 << 16);
+    friend1_work_get(ricky)->x_velocity = 2 << 16;
+    friend1_work_get(ricky)->y_velocity = 1 << 16;
     emycol_d_result = -5;
 
     p_move(ricky);
@@ -358,8 +320,8 @@ static void test_p_move_bounces_on_collision_and_falls_without_collision(
     TEST_ASSERT_EQ_INT(ctx, 102, ricky->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 196, ricky->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, ricky->patno);
-    TEST_ASSERT_EQ_INT(ctx, -0x40000, actor_long_alias(ricky, 13));
-    TEST_ASSERT_EQ_INT(ctx, -(2 << 16), actor_long_alias(ricky, 12));
+    TEST_ASSERT_EQ_INT(ctx, -0x40000, friend1_work_get(ricky)->y_velocity);
+    TEST_ASSERT_EQ_INT(ctx, -(2 << 16), friend1_work_get(ricky)->x_velocity);
     TEST_ASSERT_EQ_INT(ctx, 1, ricky->actflg);
     TEST_ASSERT_EQ_INT(ctx, 1, ricky->cddat);
 }
@@ -369,21 +331,21 @@ static void test_p_movie_parent_gates_and_animates(test_context *ctx) {
     sprite_status *parent = &actwk[46];
 
     reset_friend1_state();
-    set_actor_short_alias(ricky, 33, 46);
+    friend1_work_get(ricky)->parent_actor = 46;
     parent->actno = 0;
     p_movie(ricky);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
     TEST_ASSERT_TRUE(ctx, frameout_actor == ricky);
 
     reset_friend1_state();
-    set_actor_short_alias(ricky, 33, 46);
+    friend1_work_get(ricky)->parent_actor = 46;
     parent->actno = 46;
-    parent->actfree[21] = 1;
+    friend1_work_get(parent)->parent_destroyed = 1;
     p_movie(ricky);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
 
     reset_friend1_state();
-    set_actor_short_alias(ricky, 33, 46);
+    friend1_work_get(ricky)->parent_actor = 46;
     parent->actno = 46;
     p_movie(ricky);
     TEST_ASSERT_TRUE(ctx, patchg_actor == ricky);

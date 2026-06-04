@@ -75,20 +75,6 @@ static void queue_actor(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
-static Sint32 actfree_long(sprite_status *actor, int offset) {
-    return (Sint32)((Uint32)actor->actfree[offset] |
-                    ((Uint32)actor->actfree[offset + 1] << 8) |
-                    ((Uint32)actor->actfree[offset + 2] << 16) |
-                    ((Uint32)actor->actfree[offset + 3] << 24));
-}
-
-static void set_actfree_long(sprite_status *actor, int offset, Sint32 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint32)value >> 8);
-    actor->actfree[offset + 2] = (Uint8)((Uint32)value >> 16);
-    actor->actfree[offset + 3] = (Uint8)((Uint32)value >> 24);
-}
-
 static void reset_kowasi1_state(void) {
     memset(actwk, 0, sizeof(actwk));
     hitchk_count = 0;
@@ -185,14 +171,15 @@ static void test_m_wait_collision_spawns_all_fragments(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 8, wall->patno);
     TEST_ASSERT_EQ_INT(ctx, 89, wall->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 182, wall->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, -194180, actfree_long(wall, 0));
+    TEST_ASSERT_EQ_INT(ctx, -194180, kowasi1_work_get(wall)->x_velocity);
 
     TEST_ASSERT_EQ_INT(ctx, 53, actwk[40].actno);
     TEST_ASSERT_EQ_INT(ctx, 4, actwk[40].r_no0);
     TEST_ASSERT_EQ_INT(ctx, 9, actwk[40].patno);
     TEST_ASSERT_EQ_INT(ctx, 92, actwk[40].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 200, actwk[40].yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, -252434, actfree_long(&actwk[40], 0));
+    TEST_ASSERT_EQ_INT(ctx, -252434,
+                       kowasi1_work_get(&actwk[40])->x_velocity);
 
     TEST_ASSERT_EQ_INT(ctx, 12, actwk[42].patno);
     TEST_ASSERT_EQ_INT(ctx, 108, actwk[42].xposi.w.h);
@@ -226,7 +213,7 @@ static void test_m_wait_negative_player_speed_flips_fragments(
     m_wait(wall);
 
     TEST_ASSERT_EQ_INT(ctx, -50, actwk[0].xspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 194180, actfree_long(wall, 0));
+    TEST_ASSERT_EQ_INT(ctx, 194180, kowasi1_work_get(wall)->x_velocity);
     TEST_ASSERT_EQ_INT(ctx, 8, wall->patno);
     TEST_ASSERT_EQ_INT(ctx, 10, actwk[42].patno);
     TEST_ASSERT_EQ_INT(ctx, 11, actwk[43].patno);
@@ -260,15 +247,15 @@ static void test_m_down_actions_or_frameouts_by_player_distance(
     fragment->xposi.l = 100 << 16;
     fragment->yposi.l = 200 << 16;
     actwk[0].yposi.w.h = 200;
-    set_actfree_long(fragment, 0, 2 << 16);
-    set_actfree_long(fragment, 4, -1 << 16);
+    kowasi1_work_get(fragment)->x_velocity = 2 << 16;
+    kowasi1_work_get(fragment)->y_velocity = -1 << 16;
 
     m_down(fragment);
 
     TEST_ASSERT_EQ_INT(ctx, 102, fragment->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 199, fragment->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, (Sint32)((-1 << 16) + 16384),
-                       actfree_long(fragment, 4));
+                       kowasi1_work_get(fragment)->y_velocity);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_TRUE(ctx, actionsub_actor == fragment);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_count);

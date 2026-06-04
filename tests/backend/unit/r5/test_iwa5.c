@@ -106,22 +106,6 @@ static void queue_actor(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
-static void set_actfree_long(sprite_status *actor, int offset, Sint32 value) {
-    Uint32 bits = (Uint32)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)((bits >> 8) & 255);
-    actor->actfree[offset + 2] = (Uint8)((bits >> 16) & 255);
-    actor->actfree[offset + 3] = (Uint8)((bits >> 24) & 255);
-}
-
-static Sint32 actfree_long(sprite_status *actor, int offset) {
-    Uint32 bits = (Uint32)actor->actfree[offset] |
-                  ((Uint32)actor->actfree[offset + 1] << 8) |
-                  ((Uint32)actor->actfree[offset + 2] << 16) |
-                  ((Uint32)actor->actfree[offset + 3] << 24);
-    return (Sint32)bits;
-}
-
 static void assert_normal_tail_callbacks(test_context *ctx,
                                          sprite_status *actor) {
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -207,7 +191,7 @@ static void test_fall_solid_floor_returns_or_frames_out(test_context *ctx) {
     rock->r_no0 = 4;
     rock->xposi.l = 100 << 16;
     rock->yposi.l = 100 << 16;
-    set_actfree_long(rock, 4, 65536);
+    iwa5_work_get(rock)->y_velocity = 65536;
     actwk[0].yposi.w.h = 150;
     emycol_d_result = 0;
 
@@ -216,7 +200,7 @@ static void test_fall_solid_floor_returns_or_frames_out(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, emycol_d_count);
     TEST_ASSERT_TRUE(ctx, emycol_d_actor == rock);
     TEST_ASSERT_EQ_INT(ctx, 101 << 16, rock->yposi.l);
-    TEST_ASSERT_EQ_INT(ctx, 81920, actfree_long(rock, 4));
+    TEST_ASSERT_EQ_INT(ctx, 81920, iwa5_work_get(rock)->y_velocity);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_count);
     assert_normal_tail_callbacks(ctx, rock);
 
@@ -246,7 +230,7 @@ static void test_fall_breaks_into_four_fragments(test_context *ctx) {
     rock->colino = 248;
     rock->xposi.l = 100 << 16;
     rock->yposi.l = 200 << 16;
-    set_actfree_long(rock, 4, 0);
+    iwa5_work_get(rock)->y_velocity = 0;
     emycol_d_result = -1;
     for (int i = 0; i < 4; ++i) {
         queue_actor(&actwk[40 + i]);
@@ -268,24 +252,24 @@ static void test_fall_breaks_into_four_fragments(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 4, actwk[40].patno);
     TEST_ASSERT_EQ_INT(ctx, 92, actwk[40].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 192, actwk[40].yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, -65536, actfree_long(&actwk[40], 0));
-    TEST_ASSERT_EQ_INT(ctx, -262144, actfree_long(&actwk[40], 4));
+    TEST_ASSERT_EQ_INT(ctx, -65536, iwa5_work_get(&actwk[40])->x_velocity);
+    TEST_ASSERT_EQ_INT(ctx, -262144, iwa5_work_get(&actwk[40])->y_velocity);
 
     TEST_ASSERT_EQ_INT(ctx, 3, actwk[41].patno);
     TEST_ASSERT_EQ_INT(ctx, 108, actwk[41].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 192, actwk[41].yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 65536, actfree_long(&actwk[41], 0));
+    TEST_ASSERT_EQ_INT(ctx, 65536, iwa5_work_get(&actwk[41])->x_velocity);
 
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[42].patno);
     TEST_ASSERT_EQ_INT(ctx, 92, actwk[42].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 208, actwk[42].yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, -131072, actfree_long(&actwk[42], 0));
+    TEST_ASSERT_EQ_INT(ctx, -131072, iwa5_work_get(&actwk[42])->x_velocity);
 
     TEST_ASSERT_EQ_INT(ctx, 1, actwk[43].patno);
     TEST_ASSERT_EQ_INT(ctx, 108, actwk[43].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 208, actwk[43].yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 131072, actfree_long(&actwk[43], 0));
-    TEST_ASSERT_EQ_INT(ctx, -196608, actfree_long(&actwk[43], 4));
+    TEST_ASSERT_EQ_INT(ctx, 131072, iwa5_work_get(&actwk[43])->x_velocity);
+    TEST_ASSERT_EQ_INT(ctx, -196608, iwa5_work_get(&actwk[43])->y_velocity);
     assert_normal_tail_callbacks(ctx, rock);
 }
 
@@ -319,8 +303,8 @@ static void test_fragment_motion_uses_high_userflag_path(test_context *ctx) {
     fragment->userflag.b.h = -1;
     fragment->xposi.l = 100 << 16;
     fragment->yposi.l = 200 << 16;
-    set_actfree_long(fragment, 0, 2 << 16);
-    set_actfree_long(fragment, 4, -1 << 16);
+    iwa5_work_get(fragment)->x_velocity = 2 << 16;
+    iwa5_work_get(fragment)->y_velocity = -1 << 16;
     actwk[0].yposi.w.h = 200;
 
     iwa5(fragment);
@@ -328,7 +312,7 @@ static void test_fragment_motion_uses_high_userflag_path(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 102, fragment->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 199, fragment->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, (Sint32)((-1 << 16) + 16384),
-                       actfree_long(fragment, 4));
+                       iwa5_work_get(fragment)->y_velocity);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_TRUE(ctx, actionsub_actor == fragment);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_s_count);

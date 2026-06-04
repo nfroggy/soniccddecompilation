@@ -1,4 +1,3 @@
-#include <stddef.h>
 #include <string.h>
 
 #include "support/test_runner.h"
@@ -114,47 +113,6 @@ static void reset_state(void) {
     ridechk_result = 0;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int offset) {
-    Uint16 bits = (Uint16)actor->actfree[offset] |
-                  ((Uint16)actor->actfree[offset + 1] << 8);
-    return (Sint16)bits;
-}
-
-static void set_actfree_long(sprite_status *actor, int offset, Sint32 value) {
-    Uint32 bits = (Uint32)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)((bits >> 8) & 255);
-    actor->actfree[offset + 2] = (Uint8)((bits >> 16) & 255);
-    actor->actfree[offset + 3] = (Uint8)(bits >> 24);
-}
-
-static Sint32 get_actfree_long(sprite_status *actor, int offset) {
-    Uint32 bits = (Uint32)actor->actfree[offset] |
-                  ((Uint32)actor->actfree[offset + 1] << 8) |
-                  ((Uint32)actor->actfree[offset + 2] << 16) |
-                  ((Uint32)actor->actfree[offset + 3] << 24);
-    return (Sint32)bits;
-}
-
-static int legacy_word_actfree_offset(int word_index) {
-    return (word_index * 2) - (int)offsetof(sprite_status, actfree);
-}
-
-static void set_legacy_word(sprite_status *actor, int word_index,
-                            Sint16 value) {
-    set_actfree_word(actor, legacy_word_actfree_offset(word_index), value);
-}
-
-static Sint16 get_legacy_word(sprite_status *actor, int word_index) {
-    return get_actfree_word(actor, legacy_word_actfree_offset(word_index));
-}
-
 static void test_ukidai_patterns_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, pat_ukidai[0] == &pat00);
     TEST_ASSERT_EQ_INT(ctx, 1, pat00.cnt);
@@ -181,7 +139,7 @@ static void test_ukidai_init_rejects_unexpected_water_target(
     TEST_ASSERT_EQ_INT(ctx, 8, platform->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 848, platform->sproffset);
     TEST_ASSERT_TRUE(ctx, platform->patbase == pat_ukidai);
-    TEST_ASSERT_EQ_INT(ctx, 100, get_legacy_word(platform, 29));
+    TEST_ASSERT_EQ_INT(ctx, 100, ukidai_work_get(platform)->origin_x);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
     TEST_ASSERT_TRUE(ctx, frameout_actor == platform);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -325,11 +283,11 @@ static void test_ukidai_move1_right_short_distance_stops_without_moving(
     TEST_ASSERT_EQ_INT(ctx, 116, emycol_r3_x);
     TEST_ASSERT_EQ_INT(ctx, 357, emycol_r3_y);
     TEST_ASSERT_EQ_INT(ctx, 100, platform->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 2, get_actfree_long(platform, 0));
-    TEST_ASSERT_EQ_INT(ctx, 1, get_legacy_word(platform, 25));
-    TEST_ASSERT_EQ_INT(ctx, 16, get_legacy_word(platform, 26));
-    TEST_ASSERT_EQ_INT(ctx, 0, get_legacy_word(platform, 27));
-    TEST_ASSERT_EQ_INT(ctx, 357, get_legacy_word(platform, 28));
+    TEST_ASSERT_EQ_INT(ctx, 2, ukidai_work_get(platform)->collision_side);
+    TEST_ASSERT_EQ_INT(ctx, 1, ukidai_work_get(platform)->step_direction);
+    TEST_ASSERT_EQ_INT(ctx, 16, ukidai_work_get(platform)->probe_x_offset);
+    TEST_ASSERT_EQ_INT(ctx, 0, ukidai_work_get(platform)->remaining_delta);
+    TEST_ASSERT_EQ_INT(ctx, 357, ukidai_work_get(platform)->probe_y);
 }
 
 static void test_ukidai_move1_right_walks_until_collision(test_context *ctx) {
@@ -349,7 +307,7 @@ static void test_ukidai_move1_right_walks_until_collision(test_context *ctx) {
 
     TEST_ASSERT_EQ_INT(ctx, 2, emycol_r3_count);
     TEST_ASSERT_EQ_INT(ctx, 101, platform->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 2, get_legacy_word(platform, 27));
+    TEST_ASSERT_EQ_INT(ctx, 2, ukidai_work_get(platform)->remaining_delta);
 }
 
 static void test_ukidai_move1_left_uses_left_probe_and_collision_break(
@@ -372,10 +330,10 @@ static void test_ukidai_move1_left_uses_left_probe_and_collision_break(
     TEST_ASSERT_EQ_INT(ctx, 91, emycol_l3_x);
     TEST_ASSERT_EQ_INT(ctx, 377, emycol_l3_y);
     TEST_ASSERT_EQ_INT(ctx, 100, platform->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 1, get_actfree_long(platform, 0));
-    TEST_ASSERT_EQ_INT(ctx, -1, get_legacy_word(platform, 25));
-    TEST_ASSERT_EQ_INT(ctx, -16, get_legacy_word(platform, 26));
-    TEST_ASSERT_EQ_INT(ctx, 3, get_legacy_word(platform, 27));
+    TEST_ASSERT_EQ_INT(ctx, 1, ukidai_work_get(platform)->collision_side);
+    TEST_ASSERT_EQ_INT(ctx, -1, ukidai_work_get(platform)->step_direction);
+    TEST_ASSERT_EQ_INT(ctx, -16, ukidai_work_get(platform)->probe_x_offset);
+    TEST_ASSERT_EQ_INT(ctx, 3, ukidai_work_get(platform)->remaining_delta);
 }
 
 TEST_MAIN_BEGIN;

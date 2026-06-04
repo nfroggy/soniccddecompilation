@@ -464,7 +464,7 @@ static void test_scr11a_scroll_moves_right_and_builds_hscroll(
     actwk[0].xposi.w.h = 2200;
     actwk[0].yposi.w.h = 696;
     actwk[0].xspeed.w = 3;
-    actwk[0].actfree[2] = 2;
+    player_work_get(&actwk[0])->status_flags = 2;
 
     scroll();
 

@@ -98,7 +98,7 @@ static void test_gate_open_state_finishes_and_moves_in_same_call(
 
     reset_gate_state();
     actor->r_no0 = 2;
-    actor->actfree[0] = 7;
+    gate_work_get(actor)->target_patno = 7;
     actor->patno = 7;
     actor->actflg = 128;
     ridechk_result = 1;
@@ -120,7 +120,7 @@ static void test_gate_open_state_keeps_waiting_when_pattern_not_done(
 
     reset_gate_state();
     actor->r_no0 = 2;
-    actor->actfree[0] = 7;
+    gate_work_get(actor)->target_patno = 7;
     actor->patno = 6;
     actor->actflg = 0;
 
@@ -179,7 +179,7 @@ static void test_act_init6_uses_short_target_and_public_init10_keeps_target(
     reset_gate_state();
     actor = &actwk[2];
     actor->r_no0 = 8;
-    actor->actfree[0] = 5;
+    gate_work_get(actor)->target_patno = 5;
     actor->patno = 3;
 
     act_init10(actor);

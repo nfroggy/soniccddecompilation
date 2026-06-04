@@ -119,21 +119,6 @@ static void queue_actor(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
-static void set_actor_word(sprite_status *actor, int index, Sint16 value) {
-    int offset = 0;
-
-    if (index == 26) {
-        offset = 6;
-    } else if (index == 28) {
-        offset = 10;
-    } else if (index == 29) {
-        offset = 12;
-    }
-
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
 static void reset_rblk4_state(void) {
     memset(actwk, 0, sizeof(actwk));
     memset(dirstk, 0, sizeof(dirstk));
@@ -185,10 +170,10 @@ static void test_rblk4_initializes_main_and_spawned_actors(test_context *ctx) {
     queue_actor(&actwk[11]);
     rblk4(block);
     TEST_ASSERT_EQ_INT(ctx, 61, actwk[10].actno);
-    TEST_ASSERT_EQ_INT(ctx, 255, actwk[10].actfree[18]);
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[10].actfree[19]);
+    TEST_ASSERT_EQ_INT(ctx, 255, rblk4_work_get(&actwk[10])->role_marker);
+    TEST_ASSERT_EQ_INT(ctx, 0, rblk4_work_get(&actwk[10])->pattern_index);
     TEST_ASSERT_EQ_INT(ctx, 61, actwk[11].actno);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[11].actfree[19]);
+    TEST_ASSERT_EQ_INT(ctx, 1, rblk4_work_get(&actwk[11])->pattern_index);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_TRUE(ctx, actionsub_actor == block);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s_count);
@@ -211,7 +196,7 @@ static void test_rblk4_wait_paths(test_context *ctx) {
 
     reset_rblk4_state();
     block->r_no0 = 2;
-    set_actor_word(block, 26, 10);
+    rblk4_work_get(block)->link_actor_a = 10;
     rblk4_wait(block);
     TEST_ASSERT_EQ_INT(ctx, 0, scdchk_count);
 
@@ -219,8 +204,8 @@ static void test_rblk4_wait_paths(test_context *ctx) {
     block->r_no0 = 2;
     block->xposi.w.h = 100;
     player->xposi.w.h = 200;
-    set_actor_word(block, 26, 10);
-    actwk[10].actfree[20] = 128;
+    rblk4_work_get(block)->link_actor_a = 10;
+    rblk4_work_get(&actwk[10])->contact_flag = 128;
     rblk4_wait(block);
     TEST_ASSERT_EQ_INT(ctx, 0, scdchk_count);
 
@@ -230,8 +215,8 @@ static void test_rblk4_wait_paths(test_context *ctx) {
     block->yposi.w.h = 50;
     player->xposi.w.h = 70;
     player->sprhsize = 0;
-    set_actor_word(block, 26, 10);
-    actwk[10].actfree[20] = 128;
+    rblk4_work_get(block)->link_actor_a = 10;
+    rblk4_work_get(&actwk[10])->contact_flag = 128;
     scdchk_dir_value = 1;
     rblk4_wait(block);
     TEST_ASSERT_EQ_INT(ctx, 1, scdchk_count);
@@ -240,13 +225,13 @@ static void test_rblk4_wait_paths(test_context *ctx) {
 
     reset_rblk4_state();
     block->r_no0 = 2;
-    block->actfree[19] = 2;
+    rblk4_work_get(block)->pattern_index = 2;
     block->xposi.w.h = 100;
     block->yposi.w.h = 50;
     player->xposi.w.h = 120;
     player->sprhsize = 0;
-    set_actor_word(block, 26, 10);
-    actwk[10].actfree[20] = 128;
+    rblk4_work_get(block)->link_actor_a = 10;
+    rblk4_work_get(&actwk[10])->contact_flag = 128;
     rblk4_wait(block);
 
     reset_rblk4_state();
@@ -254,10 +239,10 @@ static void test_rblk4_wait_paths(test_context *ctx) {
     block->xposi.w.h = 100;
     block->yposi.w.h = 50;
     player->xposi.w.h = -1;
-    set_actor_word(block, 26, 10);
-    set_actor_word(block, 28, 11);
-    actwk[10].actfree[20] = 128;
-    actwk[11].actfree[20] = 1;
+    rblk4_work_get(block)->link_actor_a = 10;
+    rblk4_work_get(block)->link_actor_b = 11;
+    rblk4_work_get(&actwk[10])->contact_flag = 128;
+    rblk4_work_get(&actwk[11])->contact_flag = 1;
     rblk4_wait(block);
 }
 
@@ -266,15 +251,15 @@ static void test_rblk4_move_sequence(test_context *ctx) {
 
     reset_rblk4_state();
     block->r_no0 = 4;
-    block->actfree[19] = 0;
-    block->actfree[16] = 2;
+    rblk4_work_get(block)->pattern_index = 0;
+    rblk4_work_get(block)->timer = 2;
     rblk4_move(block);
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
 
     reset_rblk4_state();
     block->r_no0 = 4;
-    block->actfree[19] = 1;
-    block->actfree[16] = 1;
+    rblk4_work_get(block)->pattern_index = 1;
+    rblk4_work_get(block)->timer = 1;
     rblk4_move(block);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 191, soundset_requests[0]);
@@ -282,8 +267,8 @@ static void test_rblk4_move_sequence(test_context *ctx) {
     reset_rblk4_state();
     block->r_no0 = 4;
     block->patno = 6;
-    block->actfree[19] = 0;
-    block->actfree[17] = 3;
+    rblk4_work_get(block)->pattern_index = 0;
+    rblk4_work_get(block)->anim_index = 3;
     rblk4_move(block);
 }
 
@@ -296,7 +281,7 @@ static void test_rblk4_push_sequence(test_context *ctx) {
     block->yposi.w.h = 100;
     block->sprvsize = 64;
     player->sprvsize = 14;
-    block->actfree[16] = 2;
+    rblk4_work_get(block)->timer = 2;
     rblk4_push(block);
 
     reset_rblk4_state();
@@ -305,7 +290,7 @@ static void test_rblk4_push_sequence(test_context *ctx) {
     block->yposi.w.h = 100;
     block->sprvsize = 64;
     player->sprvsize = 14;
-    block->actfree[16] = 1;
+    rblk4_work_get(block)->timer = 1;
     rblk4_push(block);
 
     reset_rblk4_state();
@@ -314,26 +299,26 @@ static void test_rblk4_push_sequence(test_context *ctx) {
     block->yposi.w.h = 100;
     block->sprvsize = 64;
     player->sprvsize = 14;
-    block->actfree[16] = 1;
-    block->actfree[17] = 1;
+    rblk4_work_get(block)->timer = 1;
+    rblk4_work_get(block)->anim_index = 1;
     rblk4_push(block);
 
     reset_rblk4_state();
     block->r_no0 = 6;
-    block->actfree[19] = 2;
+    rblk4_work_get(block)->pattern_index = 2;
     block->xposi.w.h = 320;
     block->yposi.w.h = 100;
     block->sprvsize = 64;
     player->sprvsize = 14;
-    block->actfree[16] = 1;
-    block->actfree[17] = 1;
+    rblk4_work_get(block)->timer = 1;
+    rblk4_work_get(block)->anim_index = 1;
     rblk4_push(block);
 
     reset_rblk4_state();
     block->r_no0 = 6;
     block->patno = 5;
-    block->actfree[19] = 0;
-    block->actfree[17] = 3;
+    rblk4_work_get(block)->pattern_index = 0;
+    rblk4_work_get(block)->anim_index = 3;
     rblk4_push(block);
 }
 
@@ -342,11 +327,11 @@ static void test_rblk4_ride_actor_paths(test_context *ctx) {
     sprite_status *block = &actwk[3];
 
     reset_rblk4_state();
-    child->actfree[18] = 255;
-    child->actfree[19] = 0;
+    rblk4_work_get(child)->role_marker = 255;
+    rblk4_work_get(child)->pattern_index = 0;
     child->cddat = 8;
-    set_actor_word(child, 28, 3);
-    set_actor_word(child, 29, 320);
+    rblk4_work_get(child)->link_actor_b = 3;
+    rblk4_work_get(child)->origin_x = 320;
     block->xposi.w.h = 100;
     block->yposi.w.h = 80;
     block->patno = 0;
@@ -359,58 +344,58 @@ static void test_rblk4_ride_actor_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 320, frameout_s00_x);
 
     reset_rblk4_state();
-    child->actfree[18] = 255;
-    child->actfree[19] = 1;
-    set_actor_word(child, 28, 3);
+    rblk4_work_get(child)->role_marker = 255;
+    rblk4_work_get(child)->pattern_index = 1;
+    rblk4_work_get(child)->link_actor_b = 3;
     block->xposi.w.h = 100;
     block->yposi.w.h = 80;
     block->patno = 0;
     rblk4(child);
 
     reset_rblk4_state();
-    child->actfree[18] = 255;
-    child->actfree[19] = 0;
+    rblk4_work_get(child)->role_marker = 255;
+    rblk4_work_get(child)->pattern_index = 0;
     child->r_no0 = 2;
     child->cddat = 0;
-    set_actor_word(child, 28, 3);
+    rblk4_work_get(child)->link_actor_b = 3;
     block->xposi.w.h = 100;
     block->yposi.w.h = 80;
     block->patno = 1;
     rblk4_ract_move(child);
 
     reset_rblk4_state();
-    child->actfree[19] = 1;
+    rblk4_work_get(child)->pattern_index = 1;
     child->cddat = 0;
-    child->actfree[20] = 99;
-    child->actfree[21] = 99;
-    set_actor_word(child, 28, 3);
+    rblk4_work_get(child)->contact_flag = 99;
+    rblk4_work_get(child)->latch_flag = 99;
+    rblk4_work_get(child)->link_actor_b = 3;
     block->patno = 2;
     block->xposi.w.h = 100;
     block->yposi.w.h = 80;
     rblk4_ract_move(child);
 
     reset_rblk4_state();
-    child->actfree[19] = 1;
+    rblk4_work_get(child)->pattern_index = 1;
     child->cddat = 32;
-    set_actor_word(child, 28, 3);
+    rblk4_work_get(child)->link_actor_b = 3;
     block->patno = 3;
     block->xposi.w.h = 100;
     block->yposi.w.h = 80;
     rblk4_ract_move(child);
 
     reset_rblk4_state();
-    child->actfree[19] = 1;
+    rblk4_work_get(child)->pattern_index = 1;
     child->cddat = 32;
-    child->actfree[21] = 1;
-    set_actor_word(child, 28, 3);
+    rblk4_work_get(child)->latch_flag = 1;
+    rblk4_work_get(child)->link_actor_b = 3;
     block->patno = 0;
     block->xposi.w.h = 100;
     block->yposi.w.h = 80;
     rblk4_ract_move(child);
 
     reset_rblk4_state();
-    child->actfree[19] = 1;
-    set_actor_word(child, 28, 3);
+    rblk4_work_get(child)->pattern_index = 1;
+    rblk4_work_get(child)->link_actor_b = 3;
     block->patno = 4;
     rblk4_ract_move(child);
     TEST_ASSERT_EQ_INT(ctx, 1, ride_on_clr_count);

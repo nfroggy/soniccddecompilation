@@ -165,18 +165,8 @@ static void queue_emycol(Sint16 value) {
     emycol_d_queue[emycol_d_queue_count++] = value;
 }
 
-static void set_actor_word(sprite_status *actor, int index, Sint16 value) {
-    int offset = (index - 23) * 2;
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
-static void set_actor_long(sprite_status *actor, int byte_offset, Sint32 value) {
-    memcpy(&actor->actfree[byte_offset], &value, sizeof(value));
-}
-
 static void set_controller_flag_ptr(sprite_status *actor, Uint8 *flag) {
-    memcpy(&actor->actfree[0], &flag, sizeof(flag));
+    scarab_work_get(actor)->flag_work = flag;
 }
 
 static void reset_scarab_state(void) {
@@ -301,21 +291,21 @@ static void test_controller_move_tracks_child_deletion(test_context *ctx) {
 
     reset_scarab_state();
     set_controller_flag_ptr(ctrl, &flagwork[5]);
-    set_actor_word(ctrl, 25, 10);
-    set_actor_word(ctrl, 26, 11);
+    scarab_work_get(ctrl)->child_enemy_index = 10;
+    scarab_work_get(ctrl)->child_item_index = 11;
     actwk[10].actno = 0;
     actwk[11].actno = 47;
     actwk[11].xspeed.w = 500;
-    set_actor_word(&actwk[11], 27, 12);
-    actwk[12].actfree[2] = 1;
+    scarab_work_get(&actwk[11])->carried_actor_index = 12;
+    player_work_get(&actwk[12])->status_flags = 1;
     c_move(ctrl);
     TEST_ASSERT_EQ_INT(ctx, 1, flagwork[5] & 1);
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[11].xspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[12].actfree[2] & 1);
+    TEST_ASSERT_EQ_INT(ctx, 0, player_work_get(&actwk[12])->status_flags & 1);
 
     reset_scarab_state();
     set_controller_flag_ptr(ctrl, &flagwork[5]);
-    set_actor_word(ctrl, 26, 11);
+    scarab_work_get(ctrl)->child_item_index = 11;
     actwk[11].actno = 0;
     c_move(ctrl);
     TEST_ASSERT_EQ_INT(ctx, 2, flagwork[5] & 2);
@@ -337,25 +327,25 @@ static void test_enemy_wrapper_and_initialization(test_context *ctx) {
     sprite_status *ctrl = &actwk[3];
 
     reset_scarab_state();
-    set_actor_word(enemywk, 23, 3);
+    scarab_work_get(enemywk)->parent_index = 3;
     scarab(enemywk);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
 
     reset_scarab_state();
-    set_actor_word(enemywk, 23, 3);
+    scarab_work_get(enemywk)->parent_index = 3;
     enemywk->userflag.b.l = 1;
     enemy(enemywk);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
 
     reset_scarab_state();
     ctrl->actno = 47;
-    set_actor_word(enemywk, 23, 3);
+    scarab_work_get(enemywk)->parent_index = 3;
     enemywk->userflag.b.l = 1;
     scarab(enemywk);
 
     reset_scarab_state();
     ctrl->actno = 47;
-    set_actor_word(enemywk, 23, 3);
+    scarab_work_get(enemywk)->parent_index = 3;
     enemywk->userflag.b.l = 1;
     enemywk->r_no0 = 2;
     scarab(enemywk);
@@ -363,7 +353,7 @@ static void test_enemy_wrapper_and_initialization(test_context *ctx) {
 
     reset_scarab_state();
     ctrl->actno = 47;
-    set_actor_word(enemywk, 23, 3);
+    scarab_work_get(enemywk)->parent_index = 3;
     enemy_suicide_result = -1;
     enemy(enemywk);
     TEST_ASSERT_EQ_INT(ctx, 1, enemy_suicide_count);
@@ -371,7 +361,7 @@ static void test_enemy_wrapper_and_initialization(test_context *ctx) {
 
     reset_scarab_state();
     ctrl->actno = 47;
-    set_actor_word(enemywk, 23, 3);
+    scarab_work_get(enemywk)->parent_index = 3;
     enemywk->xposi.w.h = 100;
     enemywk->yposi.w.h = 50;
     enemywk->userflag.b.l = 0;
@@ -385,13 +375,13 @@ static void test_enemy_wrapper_and_initialization(test_context *ctx) {
 
     reset_scarab_state();
     ctrl->actno = 47;
-    set_actor_word(enemywk, 23, 3);
+    scarab_work_get(enemywk)->parent_index = 3;
     e_init(enemywk);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s0_count);
 
     reset_scarab_state();
     ctrl->actno = 47;
-    set_actor_word(enemywk, 23, 3);
+    scarab_work_get(enemywk)->parent_index = 3;
     enemywk->xposi.w.h = 100;
     enemywk->yposi.w.h = 50;
     enemywk->userflag.b.h = 1;
@@ -409,19 +399,19 @@ static void test_enemy_move_turn_followers_and_catch(test_context *ctx) {
 
     reset_scarab_state();
     ctrl->actno = 47;
-    set_actor_word(enemywk, 23, 3);
-    set_actor_word(enemywk, 24, 100);
-    set_actor_word(enemywk, 28, 10);
-    set_actor_word(enemywk, 32, 10);
-    set_actor_word(ctrl, 26, 11);
-    set_actor_word(enemywk, 27, 12);
+    scarab_work_get(enemywk)->parent_index = 3;
+    scarab_work_get(enemywk)->origin_x = 100;
+    scarab_work_get(enemywk)->animation_timer = 10;
+    scarab_work_get(enemywk)->shell_actor_index = 10;
+    scarab_work_get(ctrl)->child_item_index = 11;
+    scarab_work_get(enemywk)->carried_actor_index = 12;
     enemywk->xposi.w.h = 100;
     enemywk->yposi.w.h = 80;
     actwk[11].xposi.w.h = 200;
     actwk[11].yposi.w.h = 90;
     actwk[12].xposi.w.h = 220;
     actwk[12].yposi.w.h = 95;
-    set_actor_long(enemywk, 4, 65536);
+    scarab_work_get(enemywk)->x_velocity = 65536;
     emycol_d_result = 0;
     e_move(enemywk);
     TEST_ASSERT_EQ_INT(ctx, 256, actwk[11].xspeed.w);
@@ -429,61 +419,61 @@ static void test_enemy_move_turn_followers_and_catch(test_context *ctx) {
 
     reset_scarab_state();
     ctrl->actno = 47;
-    set_actor_word(enemywk, 23, 3);
-    set_actor_word(enemywk, 24, 100);
-    set_actor_word(enemywk, 28, 10);
-    set_actor_word(enemywk, 32, 10);
+    scarab_work_get(enemywk)->parent_index = 3;
+    scarab_work_get(enemywk)->origin_x = 100;
+    scarab_work_get(enemywk)->animation_timer = 10;
+    scarab_work_get(enemywk)->shell_actor_index = 10;
     enemywk->xposi.w.h = 100;
-    set_actor_long(enemywk, 4, 24576);
+    scarab_work_get(enemywk)->x_velocity = 24576;
     emycol_d_result = 7;
     e_move(enemywk);
 
     reset_scarab_state();
     ctrl->actno = 47;
-    set_actor_word(enemywk, 23, 3);
-    set_actor_word(enemywk, 24, 200);
-    set_actor_word(enemywk, 28, 10);
-    set_actor_word(enemywk, 32, 10);
+    scarab_work_get(enemywk)->parent_index = 3;
+    scarab_work_get(enemywk)->origin_x = 200;
+    scarab_work_get(enemywk)->animation_timer = 10;
+    scarab_work_get(enemywk)->shell_actor_index = 10;
     enemywk->xposi.w.h = 100;
     e_move(enemywk);
     TEST_ASSERT_EQ_INT(ctx, 100, actwk[10].xposi.w.h);
 
     reset_scarab_state();
     ctrl->actno = 47;
-    set_actor_word(enemywk, 23, 3);
-    set_actor_word(enemywk, 24, 0);
-    set_actor_word(enemywk, 28, 10);
-    set_actor_word(enemywk, 32, 10);
+    scarab_work_get(enemywk)->parent_index = 3;
+    scarab_work_get(enemywk)->origin_x = 0;
+    scarab_work_get(enemywk)->animation_timer = 10;
+    scarab_work_get(enemywk)->shell_actor_index = 10;
     enemywk->xposi.w.h = 100;
-    set_actor_long(enemywk, 4, 65536);
+    scarab_work_get(enemywk)->x_velocity = 65536;
     e_move(enemywk);
 
     reset_scarab_state();
-    set_actor_word(enemywk, 28, -1);
-    set_actor_word(enemywk, 23, 3);
-    set_actor_word(enemywk, 32, 10);
+    scarab_work_get(enemywk)->animation_timer = -1;
+    scarab_work_get(enemywk)->parent_index = 3;
+    scarab_work_get(enemywk)->shell_actor_index = 10;
     enemywk->xposi.w.h = 123;
     e_move(enemywk);
     TEST_ASSERT_EQ_INT(ctx, 123, actwk[10].xposi.w.h);
 
     reset_scarab_state();
-    set_actor_word(enemywk, 23, 3);
-    set_actor_word(enemywk, 28, 1);
+    scarab_work_get(enemywk)->parent_index = 3;
+    scarab_work_get(enemywk)->animation_timer = 1;
     enemywk->colicnt = 1;
     e1_check(enemywk);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[0].actfree[2] & 1);
+    TEST_ASSERT_EQ_INT(ctx, 1, player_work_get(&actwk[0])->status_flags & 1);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[0].mstno.b.h);
 
     reset_scarab_state();
-    set_actor_word(enemywk, 23, 3);
-    set_actor_word(enemywk, 28, 1);
+    scarab_work_get(enemywk)->parent_index = 3;
+    scarab_work_get(enemywk)->animation_timer = 1;
     enemywk->colicnt = 1;
     actwk[0].r_no0 = 4;
     e1_check(enemywk);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
 
     reset_scarab_state();
-    set_actor_word(enemywk, 28, -30);
+    scarab_work_get(enemywk)->animation_timer = -30;
     e1_chk_patchg(enemywk);
     TEST_ASSERT_EQ_INT(ctx, 0, patchg_count);
 
@@ -500,31 +490,31 @@ static void test_enemy_keep_and_wait_release_player(test_context *ctx) {
     sprite_status *player = &actwk[0];
 
     reset_scarab_state();
-    set_actor_word(enemywk, 27, 0);
-    set_actor_word(enemywk, 29, 2);
+    scarab_work_get(enemywk)->carried_actor_index = 0;
+    scarab_work_get(enemywk)->hold_timer = 2;
     e1_keep(enemywk);
 
     reset_scarab_state();
-    set_actor_word(enemywk, 27, 0);
-    set_actor_word(enemywk, 29, 1);
-    player->actfree[2] = 1;
+    scarab_work_get(enemywk)->carried_actor_index = 0;
+    scarab_work_get(enemywk)->hold_timer = 1;
+    player_work_get(player)->status_flags = 1;
     enemywk->userflag.b.h = 0;
     enemywk->userflag.b.l = 0;
     e1_keep(enemywk);
 
     reset_scarab_state();
-    set_actor_word(enemywk, 27, 0);
-    set_actor_word(enemywk, 29, 1);
+    scarab_work_get(enemywk)->carried_actor_index = 0;
+    scarab_work_get(enemywk)->hold_timer = 1;
     enemywk->userflag.b.h = 1;
     enemywk->userflag.b.l = 1;
     player->cddat = 1;
     e1_keep(enemywk);
 
     reset_scarab_state();
-    set_actor_word(enemywk, 29, 2);
+    scarab_work_get(enemywk)->hold_timer = 2;
     e1_wait(enemywk);
 
-    set_actor_word(enemywk, 29, 1);
+    scarab_work_get(enemywk)->hold_timer = 1;
     e1_wait(enemywk);
 }
 
@@ -534,7 +524,7 @@ static void test_item_states_and_pickup(test_context *ctx) {
 
     reset_scarab_state();
     item->userflag.b.h = 2;
-    set_actor_word(item, 23, 3);
+    scarab_work_get(item)->parent_index = 3;
     scarab(item);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
 
@@ -542,7 +532,7 @@ static void test_item_states_and_pickup(test_context *ctx) {
     ctrl->actno = 47;
     item->userflag.b.h = 2;
     item->userflag.b.l = 5;
-    set_actor_word(item, 23, 3);
+    scarab_work_get(item)->parent_index = 3;
     emycol_d_result = 3;
     scarab(item);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -552,7 +542,7 @@ static void test_item_states_and_pickup(test_context *ctx) {
     item->userflag.b.h = 2;
     item->r_no0 = 2;
     item->actflg = 0;
-    set_actor_word(item, 23, 3);
+    scarab_work_get(item)->parent_index = 3;
     scarab(item);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_EQ_INT(ctx, 0, patchg_count);
@@ -561,7 +551,7 @@ static void test_item_states_and_pickup(test_context *ctx) {
     item->actflg = 128;
     item->r_no1 = 1;
     item->yspeed.w = 256;
-    set_actor_word(item, 23, 3);
+    scarab_work_get(item)->parent_index = 3;
     emycol_d_result = -5;
     itemmove(item);
     TEST_ASSERT_EQ_INT(ctx, 1, speedset_count);
@@ -569,27 +559,27 @@ static void test_item_states_and_pickup(test_context *ctx) {
 
     reset_scarab_state();
     item->actflg = 128;
-    set_actor_word(item, 23, 3);
+    scarab_work_get(item)->parent_index = 3;
     itemmove(item);
     TEST_ASSERT_EQ_INT(ctx, 1, ride_on_chk_count);
     TEST_ASSERT_EQ_INT(ctx, 25, ride_on_chk_actno_seen[0]);
 
     reset_scarab_state();
     time_stop = 1;
-    set_actor_word(item, 23, 3);
+    scarab_work_get(item)->parent_index = 3;
     itemmove2(item);
     TEST_ASSERT_EQ_INT(ctx, 0, patchg_count);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 
     reset_scarab_state();
-    set_actor_word(item, 23, 3);
+    scarab_work_get(item)->parent_index = 3;
     item->actno = 0;
     itemmove3(item);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s_count);
 
     reset_scarab_state();
-    set_actor_word(item, 23, 3);
-    set_actor_word(ctrl, 25, 4);
+    scarab_work_get(item)->parent_index = 3;
+    scarab_work_get(ctrl)->child_enemy_index = 4;
     item->xposi.w.h = 300;
     item->yposi.w.h = 120;
     item->mstno.b.h = 7;
@@ -606,7 +596,7 @@ static void test_item_states_and_pickup(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
 
     reset_scarab_state();
-    set_actor_word(item, 23, 3);
+    scarab_work_get(item)->parent_index = 3;
     itemget(item);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);

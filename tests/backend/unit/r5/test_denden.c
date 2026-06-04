@@ -132,33 +132,6 @@ static void queue_emycol(Sint16 result) {
     emycol_d_results[emycol_d_result_count++] = result;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int offset) {
-    return (Sint16)((Uint16)actor->actfree[offset] |
-                    ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
-static void set_actfree_long(sprite_status *actor, int offset, Sint32 value) {
-    Uint32 bits = (Uint32)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)((bits >> 8) & 255);
-    actor->actfree[offset + 2] = (Uint8)((bits >> 16) & 255);
-    actor->actfree[offset + 3] = (Uint8)(bits >> 24);
-}
-
-static Sint32 get_actfree_long(sprite_status *actor, int offset) {
-    Uint32 bits = (Uint32)actor->actfree[offset] |
-                  ((Uint32)actor->actfree[offset + 1] << 8) |
-                  ((Uint32)actor->actfree[offset + 2] << 16) |
-                  ((Uint32)actor->actfree[offset + 3] << 24);
-    return (Sint32)bits;
-}
-
 static void assert_tail_callbacks(test_context *ctx, sprite_status *actor,
                                   Sint16 frameout_x) {
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -173,8 +146,8 @@ static void make_moving_actor(sprite_status *actor) {
     actor->r_no0 = 4;
     actor->xposi.l = 100 << 16;
     actor->yposi.l = 200 << 16;
-    set_actfree_word(actor, 0, 100);
-    set_actfree_long(actor, 2, 0);
+    denden_work_get(actor)->origin_x = 100;
+    denden_work_get(actor)->x_velocity = 0;
 }
 
 static void spawn_projectile(sprite_status *parent, sprite_status *child) {
@@ -238,8 +211,8 @@ static void test_init_sets_enemy_fields_and_lands_from_fall(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, emycol_d_actor == actor);
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 96, actor->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 300, get_actfree_word(actor, 0));
-    TEST_ASSERT_EQ_INT(ctx, -16384, get_actfree_long(actor, 2));
+    TEST_ASSERT_EQ_INT(ctx, 300, denden_work_get(actor)->origin_x);
+    TEST_ASSERT_EQ_INT(ctx, -16384, denden_work_get(actor)->x_velocity);
     TEST_ASSERT_EQ_INT(ctx, 4, actor->actflg);
     TEST_ASSERT_EQ_INT(ctx, 3, actor->sprpri);
     TEST_ASSERT_EQ_INT(ctx, 9104, actor->sproffset);
@@ -271,7 +244,7 @@ static void test_fall_state_keeps_waiting_when_floor_is_not_hit(
     actor->r_no0 = 2;
     actor->xposi.w.h = 77;
     actor->yposi.l = 10 << 16;
-    set_actfree_word(actor, 0, 77);
+    denden_work_get(actor)->origin_x = 77;
     queue_emycol(6);
 
     denden(actor);
@@ -320,12 +293,12 @@ static void test_move_reverses_at_range_and_floor_limits(test_context *ctx) {
     actor->actflg = 4;
     actor->cddat = 2;
     actor->xposi.l = 180 << 16;
-    set_actfree_long(actor, 2, 65536);
+    denden_work_get(actor)->x_velocity = 65536;
 
     denden(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 0, emycol_d_count);
-    TEST_ASSERT_EQ_INT(ctx, -65536, get_actfree_long(actor, 2));
+    TEST_ASSERT_EQ_INT(ctx, -65536, denden_work_get(actor)->x_velocity);
     TEST_ASSERT_EQ_INT(ctx, 5, actor->actflg);
     TEST_ASSERT_EQ_INT(ctx, 3, actor->cddat);
     TEST_ASSERT_EQ_INT(ctx, 0, patchg_count);
@@ -335,13 +308,13 @@ static void test_move_reverses_at_range_and_floor_limits(test_context *ctx) {
     make_moving_actor(actor);
     actor->actflg = 1;
     actor->cddat = 1;
-    set_actfree_long(actor, 2, 32768);
+    denden_work_get(actor)->x_velocity = 32768;
     queue_emycol(7);
 
     denden(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 1, emycol_d_count);
-    TEST_ASSERT_EQ_INT(ctx, -32768, get_actfree_long(actor, 2));
+    TEST_ASSERT_EQ_INT(ctx, -32768, denden_work_get(actor)->x_velocity);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->actflg);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->cddat);
     TEST_ASSERT_EQ_INT(ctx, 0, patchg_count);

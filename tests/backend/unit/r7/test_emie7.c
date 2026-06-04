@@ -35,13 +35,6 @@ static Uint8 sinset_angle;
 static Sint16 sinset_sin_result;
 static Sint16 sinset_cos_result;
 
-enum {
-    EMIE7_TIMER_OFFSET = 6,
-    EMIE7_HOME_X_OFFSET = 12,
-    EMIE7_GOAL_FLAG_OFFSET = 14,
-    EMIE7_FALL_FLAG_OFFSET = 18
-};
-
 void actionsub(sprite_status *pActwk);
 void frameout(sprite_status *pActwk);
 Sint32 frameout_s(sprite_status *pActwk);
@@ -105,17 +98,6 @@ void sinset(Uint8 kakudo, Sint16 *sin, Sint16 *cos) {
     sinset_angle = kakudo;
     *sin = sinset_sin_result;
     *cos = sinset_cos_result;
-}
-
-static void write_actfree_s16(sprite_status *actor, int offset, Sint16 value) {
-    memcpy(&actor->actfree[offset], &value, sizeof(value));
-}
-
-static Sint16 read_actfree_s16(sprite_status *actor, int offset) {
-    Sint16 value;
-
-    memcpy(&value, &actor->actfree[offset], sizeof(value));
-    return value;
 }
 
 static void reset_emie7_state(void) {
@@ -203,7 +185,7 @@ static void test_emie7_init_generated_position_preserved(test_context *ctx) {
 
     TEST_ASSERT_EQ_INT(ctx, 300, amy->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 120, amy->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 300, read_actfree_s16(amy, EMIE7_HOME_X_OFFSET));
+    TEST_ASSERT_EQ_INT(ctx, 300, emie7_get_work(amy)->home_x);
 }
 
 static void test_emie7_init_collision_spawns_score_actor_and_timer(
@@ -228,7 +210,7 @@ static void test_emie7_init_collision_spawns_score_actor_and_timer(
     TEST_ASSERT_EQ_INT(ctx, 158, soundset_arg);
     TEST_ASSERT_EQ_INT(ctx, -512, actwk[0].yspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 2, amy->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 600, read_actfree_s16(amy, EMIE7_TIMER_OFFSET));
+    TEST_ASSERT_EQ_INT(ctx, 600, emie7_get_work(amy)->timer);
 }
 
 static void test_emie7_move0_falls_then_enters_chase(test_context *ctx) {
@@ -244,11 +226,11 @@ static void test_emie7_move0_falls_then_enters_chase(test_context *ctx) {
 
     TEST_ASSERT_EQ_INT(ctx, 464, amy->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 0, amy->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, (Uint8)-1, amy->actfree[EMIE7_FALL_FLAG_OFFSET]);
+    TEST_ASSERT_EQ_INT(ctx, (Uint8)-1, emie7_get_work(amy)->stop_flag);
 
     reset_emie7_state();
     amy->r_no0 = 2;
-    amy->actfree[EMIE7_FALL_FLAG_OFFSET] = (Uint8)-1;
+    emie7_get_work(amy)->stop_flag = (Uint8)-1;
     amy->xposi.w.h = 80;
     amy->mstno.b.h = 6;
     actwk[0].xposi.w.h = 100;
@@ -256,7 +238,7 @@ static void test_emie7_move0_falls_then_enters_chase(test_context *ctx) {
     emie7(amy);
 
     TEST_ASSERT_EQ_INT(ctx, 4, amy->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 60, amy->actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 60, emie7_get_work(amy)->daki_delay);
     TEST_ASSERT_EQ_INT(ctx, 0, amy->cddat & 1);
     TEST_ASSERT_EQ_INT(ctx, 6, amy->mstno.b.l);
 }
@@ -266,13 +248,13 @@ static void test_emie7_move1_timer_expires_into_goal_path(test_context *ctx) {
 
     reset_emie7_state();
     amy->r_no0 = 4;
-    write_actfree_s16(amy, EMIE7_TIMER_OFFSET, 1);
+    emie7_get_work(amy)->timer = 1;
 
     emie7(amy);
 
-    TEST_ASSERT_EQ_INT(ctx, (Uint8)-1, amy->actfree[EMIE7_GOAL_FLAG_OFFSET]);
+    TEST_ASSERT_EQ_INT(ctx, (Uint8)-1, emie7_get_work(amy)->goal_flag);
     TEST_ASSERT_EQ_INT(ctx, 0, pltime_f);
-    TEST_ASSERT_EQ_INT(ctx, 1, amy->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 1, emie7_get_work(amy)->goal_started);
     TEST_ASSERT_EQ_INT(ctx, 1, goal_move2_count);
     TEST_ASSERT_TRUE(ctx, goal_move2_actor == amy);
     TEST_ASSERT_EQ_INT(ctx, 0, emycol_d_count);
@@ -285,7 +267,7 @@ static void test_emie7_move1_daki_and_waiting_paths(test_context *ctx) {
     amy->r_no0 = 4;
     amy->xposi.w.h = 100;
     amy->yposi.w.h = 100;
-    amy->actfree[21] = 1;
+    emie7_get_work(amy)->daki_delay = 1;
     actwk[0].xposi.w.h = 114;
     actwk[0].yposi.w.h = 92;
     actwk[0].cddat = 1;
@@ -293,7 +275,7 @@ static void test_emie7_move1_daki_and_waiting_paths(test_context *ctx) {
     emie7(amy);
 
     TEST_ASSERT_EQ_INT(ctx, 10, amy->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 129, amy->actfree[20]);
+    TEST_ASSERT_EQ_INT(ctx, 129, emie7_get_work(amy)->daki_flags);
     TEST_ASSERT_EQ_INT(ctx, 32, amy->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 0, amy->yspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 0, amy->patno);
@@ -303,7 +285,7 @@ static void test_emie7_move1_daki_and_waiting_paths(test_context *ctx) {
     reset_emie7_state();
     amy->r_no0 = 4;
     amy->xposi.w.h = 100;
-    amy->actfree[20] = 4;
+    emie7_get_work(amy)->daki_flags = 4;
     actwk[0].xposi.w.h = 120;
     actwk[0].xspeed.w = 256;
 
@@ -317,7 +299,7 @@ static void test_emie7_move1_daki_and_waiting_paths(test_context *ctx) {
     amy->r_no0 = 4;
     amy->xposi.w.h = 100;
     amy->yposi.w.h = 100;
-    amy->actfree[21] = 1;
+    emie7_get_work(amy)->daki_delay = 1;
     editmode.b.h = 1;
     actwk[0].xposi.w.h = 108;
     actwk[0].yposi.w.h = 92;
@@ -331,7 +313,7 @@ static void test_emie7_move1_daki_and_waiting_paths(test_context *ctx) {
     amy->r_no0 = 4;
     amy->xposi.w.h = 100;
     amy->yposi.w.h = 100;
-    amy->actfree[21] = 1;
+    emie7_get_work(amy)->daki_delay = 1;
     actwk[0].xposi.w.h = 108;
     actwk[0].yposi.w.h = 200;
     actwk[0].cddat = 1;
@@ -344,7 +326,7 @@ static void test_emie7_move1_daki_and_waiting_paths(test_context *ctx) {
     amy->r_no0 = 4;
     amy->xposi.w.h = 100;
     amy->yposi.w.h = 100;
-    amy->actfree[21] = 1;
+    emie7_get_work(amy)->daki_delay = 1;
     actwk[0].xposi.w.h = 108;
     actwk[0].yposi.w.h = 92;
     actwk[0].xspeed.w = -256;
@@ -363,7 +345,7 @@ static void test_emie7_move1_chases_and_respects_left_home_limit(
     amy->r_no0 = 4;
     amy->xposi.w.h = 200;
     amy->yposi.w.h = 100;
-    write_actfree_s16(amy, EMIE7_HOME_X_OFFSET, 300);
+    emie7_get_work(amy)->home_x = 300;
     actwk[0].xposi.w.h = 100;
     emycol_d_result = 3;
 
@@ -381,7 +363,7 @@ static void test_emie7_move1_chases_and_respects_left_home_limit(
     amy->xposi.w.h = 200;
     amy->cddat = 1;
     amy->xspeed.w = -640;
-    write_actfree_s16(amy, EMIE7_HOME_X_OFFSET, 300);
+    emie7_get_work(amy)->home_x = 300;
     actwk[0].xposi.w.h = 100;
 
     emie7(amy);
@@ -398,7 +380,7 @@ static void test_emie7_jump_and_landing_paths(test_context *ctx) {
     amy->r_no0 = 14;
     amy->xposi.w.h = 120;
     amy->cddat = 1;
-    write_actfree_s16(amy, EMIE7_HOME_X_OFFSET, 100);
+    emie7_get_work(amy)->home_x = 100;
 
     emie7(amy);
 
@@ -410,7 +392,7 @@ static void test_emie7_jump_and_landing_paths(test_context *ctx) {
     reset_emie7_state();
     amy->r_no0 = 14;
     amy->xposi.w.h = 80;
-    write_actfree_s16(amy, EMIE7_HOME_X_OFFSET, 100);
+    emie7_get_work(amy)->home_x = 100;
 
     emie7(amy);
 
@@ -420,7 +402,7 @@ static void test_emie7_jump_and_landing_paths(test_context *ctx) {
     reset_emie7_state();
     amy->r_no0 = 14;
     amy->xposi.w.h = 300;
-    write_actfree_s16(amy, EMIE7_HOME_X_OFFSET, 100);
+    emie7_get_work(amy)->home_x = 100;
 
     emie7(amy);
 
@@ -431,7 +413,7 @@ static void test_emie7_jump_and_landing_paths(test_context *ctx) {
     amy->xposi.w.h = 100;
     amy->yposi.w.h = 464;
     amy->yspeed.w = 128;
-    amy->actfree[16] = 240;
+    emie7_get_work(amy)->motion_counter = 240;
 
     emie7(amy);
 
@@ -439,17 +421,17 @@ static void test_emie7_jump_and_landing_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 0, amy->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 0, amy->yspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 4, amy->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, amy->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 0, emie7_get_work(amy)->motion_counter);
 
     reset_emie7_state();
     amy->r_no0 = 8;
     amy->yposi.w.h = 464;
-    amy->actfree[16] = 0;
+    emie7_get_work(amy)->motion_counter = 0;
 
     emie7(amy);
 
     TEST_ASSERT_EQ_INT(ctx, 8, amy->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 16, amy->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 16, emie7_get_work(amy)->motion_counter);
 }
 
 static void test_emie7_daki_and_end_follow_sonic(test_context *ctx) {
@@ -460,7 +442,7 @@ static void test_emie7_daki_and_end_follow_sonic(test_context *ctx) {
     actwk[0].xposi.w.h = 200;
     actwk[0].yposi.w.h = 300;
     actwk[0].cddat = 1;
-    amy->actfree[14] = 0;
+    emie7_get_work(amy)->goal_flag = 0;
 
     emie7(amy);
 
@@ -474,7 +456,7 @@ static void test_emie7_daki_and_end_follow_sonic(test_context *ctx) {
 
     reset_emie7_state();
     amy->r_no0 = 10;
-    amy->actfree[14] = 1;
+    emie7_get_work(amy)->goal_flag = 1;
     actwk[0].xposi.w.h = 200;
     actwk[0].yposi.w.h = 300;
 
@@ -511,8 +493,8 @@ static void test_emie7_heart_spawn_and_animation_wrap(test_context *ctx) {
     amy->xposi.w.h = 100;
     amy->yposi.w.h = 50;
     amy->cddat = 1;
-    amy->actfree[17] = 250;
-    amy->actfree[20] = 1;
+    emie7_get_work(amy)->heart_counter = 250;
+    emie7_get_work(amy)->daki_flags = 1;
 
     emie7(amy);
 
@@ -549,13 +531,13 @@ static void test_heart7_initializes_moves_and_frames_out(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 8, heart->patno);
     TEST_ASSERT_EQ_INT(ctx, -96, heart->yspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 16, heart->xspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 1, heart->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 1, emie7_get_work(heart)->motion_counter);
     TEST_ASSERT_EQ_INT(ctx, 1, sinset_count);
     TEST_ASSERT_EQ_INT(ctx, 0, sinset_angle);
 
     reset_emie7_state();
     heart->r_no0 = 2;
-    heart->actfree[16] = 19;
+    emie7_get_work(heart)->motion_counter = 19;
     heart->patno = 8;
 
     heart7(heart);
@@ -564,7 +546,7 @@ static void test_heart7_initializes_moves_and_frames_out(test_context *ctx) {
 
     reset_emie7_state();
     heart->r_no0 = 2;
-    heart->actfree[16] = 119;
+    emie7_get_work(heart)->motion_counter = 119;
 
     heart7(heart);
 
@@ -573,7 +555,7 @@ static void test_heart7_initializes_moves_and_frames_out(test_context *ctx) {
 
     reset_emie7_state();
     heart->r_no0 = 2;
-    heart->actfree[16] = 109;
+    emie7_get_work(heart)->motion_counter = 109;
     heart->patno = 8;
     heart->xspeed.w = 32;
     heart->yspeed.w = -16;
@@ -583,7 +565,7 @@ static void test_heart7_initializes_moves_and_frames_out(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 9, heart->patno);
     TEST_ASSERT_EQ_INT(ctx, 0, heart->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 0, heart->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 1, heart->actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 1, emie7_get_work(heart)->stop_flag);
 }
 
 TEST_MAIN_BEGIN;

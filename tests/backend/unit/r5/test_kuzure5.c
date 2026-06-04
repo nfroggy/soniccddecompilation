@@ -129,33 +129,6 @@ static void set_ridechk_result(int index, Sint16 value) {
     }
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int offset) {
-    return (Sint16)((Uint16)actor->actfree[offset] |
-                    ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
-static void set_actfree_long(sprite_status *actor, int offset, Sint32 value) {
-    Uint32 bits = (Uint32)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)((bits >> 8) & 255);
-    actor->actfree[offset + 2] = (Uint8)((bits >> 16) & 255);
-    actor->actfree[offset + 3] = (Uint8)(bits >> 24);
-}
-
-static Sint32 get_actfree_long(sprite_status *actor, int offset) {
-    Uint32 bits = (Uint32)actor->actfree[offset] |
-                  ((Uint32)actor->actfree[offset + 1] << 8) |
-                  ((Uint32)actor->actfree[offset + 2] << 16) |
-                  ((Uint32)actor->actfree[offset + 3] << 24);
-    return (Sint32)bits;
-}
-
 static void assert_actionsub_called_for(test_context *ctx,
                                         sprite_status *actor) {
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -180,7 +153,7 @@ static void put_platform_in_break_state(sprite_status *actor, Sint8 pieces,
     actor->userflag.b.h = pieces;
     actor->patno = pieces - 1;
     actor->sprhs = actor->sprhsize = pieces * 8;
-    set_actfree_word(actor, 2, direction);
+    kuzure5_work_get(actor)->break_step = direction;
 }
 
 static void test_patterns_capture_literal_data(test_context *ctx) {
@@ -235,8 +208,8 @@ static void test_main_ini_stage_two_offset_and_ride_from_right(
 
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 17312, actor->sproffset);
-    TEST_ASSERT_EQ_INT(ctx, 8, get_actfree_word(actor, 0));
-    TEST_ASSERT_EQ_INT(ctx, 8, get_actfree_word(actor, 2));
+    TEST_ASSERT_EQ_INT(ctx, 8, kuzure5_work_get(actor)->wait_timer);
+    TEST_ASSERT_EQ_INT(ctx, 8, kuzure5_work_get(actor)->break_step);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 163, soundset_requests[0]);
     assert_actionsub_called_for(ctx, actor);
@@ -255,7 +228,7 @@ static void test_main_check_ride_from_left_sets_negative_break_direction(
     kuzure5(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, -8, get_actfree_word(actor, 2));
+    TEST_ASSERT_EQ_INT(ctx, -8, kuzure5_work_get(actor)->break_step);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     assert_actionsub_called_for(ctx, actor);
     assert_frameout_s_called_for(ctx, actor);
@@ -266,22 +239,22 @@ static void test_main_wait_holds_and_then_advances_to_break(test_context *ctx) {
 
     reset_kuzure5_state();
     actor->r_no0 = 4;
-    set_actfree_word(actor, 0, 2);
+    kuzure5_work_get(actor)->wait_timer = 2;
     set_ridechk_result(0, 1);
 
     kuzure5(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 1, get_actfree_word(actor, 0));
+    TEST_ASSERT_EQ_INT(ctx, 1, kuzure5_work_get(actor)->wait_timer);
     TEST_ASSERT_EQ_INT(ctx, 1, ridechk_count);
     assert_actionsub_called_for(ctx, actor);
 
     reset_logs();
-    set_actfree_word(actor, 0, 0);
+    kuzure5_work_get(actor)->wait_timer = 0;
     kuzure5(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, -1, get_actfree_word(actor, 0));
+    TEST_ASSERT_EQ_INT(ctx, -1, kuzure5_work_get(actor)->wait_timer);
     assert_actionsub_called_for(ctx, actor);
 }
 
@@ -309,7 +282,7 @@ static void test_main_break_spawns_two_parts_and_shrinks_platform(
     TEST_ASSERT_EQ_INT(ctx, 0, actor->patno);
     TEST_ASSERT_EQ_INT(ctx, 8, actor->sprhs);
     TEST_ASSERT_EQ_INT(ctx, 8, actor->sprhsize);
-    TEST_ASSERT_EQ_INT(ctx, 7, get_actfree_word(actor, 0));
+    TEST_ASSERT_EQ_INT(ctx, 7, kuzure5_work_get(actor)->wait_timer);
     TEST_ASSERT_EQ_INT(ctx, 108, actor->xposi.w.h);
     assert_actionsub_called_for(ctx, actor);
 
@@ -317,7 +290,7 @@ static void test_main_break_spawns_two_parts_and_shrinks_platform(
     TEST_ASSERT_EQ_INT(ctx, -1, part0->userflag.b.l);
     TEST_ASSERT_EQ_INT(ctx, 92, part0->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 192, part0->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 4, get_actfree_word(part0, 0));
+    TEST_ASSERT_EQ_INT(ctx, 4, kuzure5_work_get(part0)->wait_timer);
     TEST_ASSERT_EQ_INT(ctx, 8, part0->patno);
     TEST_ASSERT_EQ_INT(ctx, 39, part1->actno);
     TEST_ASSERT_EQ_INT(ctx, -1, part1->userflag.b.l);
@@ -386,19 +359,19 @@ static void test_parts_initialize_and_wait_paths(test_context *ctx) {
     assert_actionsub_called_for(ctx, part);
 
     reset_logs();
-    set_actfree_word(part, 0, 2);
+    kuzure5_work_get(part)->wait_timer = 2;
     kuzure5(part);
 
     TEST_ASSERT_EQ_INT(ctx, 2, part->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 1, get_actfree_word(part, 0));
+    TEST_ASSERT_EQ_INT(ctx, 1, kuzure5_work_get(part)->wait_timer);
     assert_actionsub_called_for(ctx, part);
 
     reset_logs();
-    set_actfree_word(part, 0, 0);
+    kuzure5_work_get(part)->wait_timer = 0;
     kuzure5(part);
 
     TEST_ASSERT_EQ_INT(ctx, 4, part->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, -1, get_actfree_word(part, 0));
+    TEST_ASSERT_EQ_INT(ctx, -1, kuzure5_work_get(part)->wait_timer);
     assert_actionsub_called_for(ctx, part);
 }
 
@@ -414,15 +387,15 @@ static void test_parts_fall_accelerates_caps_and_frames_when_invisible(
 
     kuzure5(part);
 
-    TEST_ASSERT_EQ_INT(ctx, 16384, get_actfree_long(part, 2));
+    TEST_ASSERT_EQ_INT(ctx, 16384, kuzure5_work_get(part)->y_velocity);
     TEST_ASSERT_EQ_INT(ctx, (100 << 16) + 16384, part->yposi.l);
     assert_actionsub_called_for(ctx, part);
 
     reset_logs();
-    set_actfree_long(part, 2, 1441792);
+    kuzure5_work_get(part)->y_velocity = 1441792;
     kuzure5(part);
 
-    TEST_ASSERT_EQ_INT(ctx, 1441792, get_actfree_long(part, 2));
+    TEST_ASSERT_EQ_INT(ctx, 1441792, kuzure5_work_get(part)->y_velocity);
     TEST_ASSERT_EQ_INT(ctx, (100 << 16) + 16384 + 1441792, part->yposi.l);
     assert_actionsub_called_for(ctx, part);
 

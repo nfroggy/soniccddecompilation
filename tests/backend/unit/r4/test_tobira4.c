@@ -1,4 +1,3 @@
-#include <stddef.h>
 #include <string.h>
 
 #include "support/test_runner.h"
@@ -53,30 +52,6 @@ static void reset_state(void) {
     hitchk_result = 0;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int offset) {
-    Uint16 bits = (Uint16)actor->actfree[offset] |
-                  ((Uint16)actor->actfree[offset + 1] << 8);
-    return (Sint16)bits;
-}
-
-static int legacy_word_actfree_offset(int word_index) {
-    return (word_index * 2) - (int)offsetof(sprite_status, actfree);
-}
-
-static void set_legacy_word(sprite_status *actor, int word_index, Sint16 value) {
-    set_actfree_word(actor, legacy_word_actfree_offset(word_index), value);
-}
-
-static Sint16 get_legacy_word(sprite_status *actor, int word_index) {
-    return get_actfree_word(actor, legacy_word_actfree_offset(word_index));
-}
-
 static void assert_entry_callbacks(test_context *ctx, sprite_status *door) {
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_TRUE(ctx, actionsub_actor == door);
@@ -109,13 +84,13 @@ static void test_tobira4_init_captures_position_and_vertical_layout(
     TEST_ASSERT_EQ_INT(ctx, 17472, door->sproffset);
     TEST_ASSERT_EQ_INT(ctx, 2, door->sprpri);
     TEST_ASSERT_TRUE(ctx, door->patbase == tobira4pat);
-    TEST_ASSERT_EQ_INT(ctx, 100, get_legacy_word(door, 29));
-    TEST_ASSERT_EQ_INT(ctx, 200, get_legacy_word(door, 27));
-    TEST_ASSERT_EQ_INT(ctx, 1, door->actfree[6]);
-    TEST_ASSERT_EQ_INT(ctx, 2, door->actfree[7]);
+    TEST_ASSERT_EQ_INT(ctx, 100, tobira4_get_work(door)->origin_x);
+    TEST_ASSERT_EQ_INT(ctx, 200, tobira4_get_work(door)->origin_y);
+    TEST_ASSERT_EQ_INT(ctx, 1, tobira4_get_work(door)->switch_index);
+    TEST_ASSERT_EQ_INT(ctx, 2, tobira4_get_work(door)->door_type);
     TEST_ASSERT_EQ_INT(ctx, 8, door->sprhsize);
     TEST_ASSERT_EQ_INT(ctx, 32, door->sprvsize);
-    TEST_ASSERT_EQ_INT(ctx, 64, door->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 64, tobira4_get_work(door)->open_limit);
     TEST_ASSERT_EQ_INT(ctx, 1, door->patno);
 }
 
@@ -129,11 +104,11 @@ static void test_tobira4_init_captures_wide_layout(test_context *ctx) {
 
     tobira4_init(door);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, door->actfree[6]);
-    TEST_ASSERT_EQ_INT(ctx, 4, door->actfree[7]);
+    TEST_ASSERT_EQ_INT(ctx, 0, tobira4_get_work(door)->switch_index);
+    TEST_ASSERT_EQ_INT(ctx, 4, tobira4_get_work(door)->door_type);
     TEST_ASSERT_EQ_INT(ctx, 8, door->sprhsize);
     TEST_ASSERT_EQ_INT(ctx, 64, door->sprvsize);
-    TEST_ASSERT_EQ_INT(ctx, 128, door->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 128, tobira4_get_work(door)->open_limit);
     TEST_ASSERT_EQ_INT(ctx, 0, door->patno);
 }
 
@@ -146,15 +121,15 @@ static void test_tobira4_move_opens_and_enters_check_state(test_context *ctx) {
     door->yposi.w.h = 200;
     door->userflag.b.h = 0x21;
     tobira4_init(door);
-    door->actfree[16] = 56;
+    tobira4_get_work(door)->open_amount = 56;
     switchflag[1] = 128;
     player->xposi.w.h = 120;
     player->yposi.w.h = 220;
 
     tobira4_move(door);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, door->actfree[18]);
-    TEST_ASSERT_EQ_INT(ctx, 64, door->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 0, tobira4_get_work(door)->closing);
+    TEST_ASSERT_EQ_INT(ctx, 64, tobira4_get_work(door)->open_amount);
     TEST_ASSERT_EQ_INT(ctx, 136, door->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 4, door->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, hitchk_count);
@@ -171,13 +146,13 @@ static void test_tobira4_move_partial_open_overrides_closed_switch(
     door->yposi.w.h = 200;
     door->userflag.b.h = 0x01;
     tobira4_init(door);
-    door->actfree[16] = 8;
+    tobira4_get_work(door)->open_amount = 8;
     switchflag[1] = 0;
 
     tobira4_move(door);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, door->actfree[18]);
-    TEST_ASSERT_EQ_INT(ctx, 16, door->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 0, tobira4_get_work(door)->closing);
+    TEST_ASSERT_EQ_INT(ctx, 16, tobira4_get_work(door)->open_amount);
     TEST_ASSERT_EQ_INT(ctx, 84, door->xposi.w.h);
 }
 
@@ -190,12 +165,12 @@ static void test_tobira4_move_type_four_does_not_enter_check_state(
     door->yposi.w.h = 200;
     door->userflag.b.h = 0x41;
     tobira4_init(door);
-    door->actfree[16] = 120;
+    tobira4_get_work(door)->open_amount = 120;
     switchflag[1] = 128;
 
     tobira4_move(door);
 
-    TEST_ASSERT_EQ_INT(ctx, 128, door->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 128, tobira4_get_work(door)->open_amount);
     TEST_ASSERT_EQ_INT(ctx, 72, door->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 2, door->r_no0);
 }
@@ -210,16 +185,16 @@ static void test_tobira4_close_counts_down_and_returns_to_move(
     door->userflag.b.h = 0x10;
     tobira4_init(door);
     door->r_no0 = 6;
-    door->actfree[16] = 16;
+    tobira4_get_work(door)->open_amount = 16;
 
     tobira4_clse(door);
-    TEST_ASSERT_EQ_INT(ctx, 8, door->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 8, tobira4_get_work(door)->open_amount);
     TEST_ASSERT_EQ_INT(ctx, 108, door->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 6, door->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, hitchk_count);
 
     tobira4_clse(door);
-    TEST_ASSERT_EQ_INT(ctx, 0, door->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 0, tobira4_get_work(door)->open_amount);
     TEST_ASSERT_EQ_INT(ctx, 100, door->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 2, door->r_no0);
 }
@@ -229,41 +204,41 @@ static void test_tobira4_type_helpers_move_from_original_position(
     sprite_status *door = &actwk[5];
 
     reset_state();
-    set_legacy_word(door, 29, 100);
-    set_legacy_word(door, 27, 200);
+    tobira4_get_work(door)->origin_x = 100;
+    tobira4_get_work(door)->origin_y = 200;
 
-    door->actfree[18] = 255;
-    door->actfree[16] = 16;
+    tobira4_get_work(door)->closing = 255;
+    tobira4_get_work(door)->open_amount = 16;
     type1(door);
-    TEST_ASSERT_EQ_INT(ctx, 8, door->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 8, tobira4_get_work(door)->open_amount);
     TEST_ASSERT_EQ_INT(ctx, 92, door->xposi.w.h);
 
-    door->actfree[18] = 0;
-    door->actfree[16] = 4;
-    door->actfree[17] = 20;
+    tobira4_get_work(door)->closing = 0;
+    tobira4_get_work(door)->open_amount = 4;
+    tobira4_get_work(door)->open_limit = 20;
     type2(door);
-    TEST_ASSERT_EQ_INT(ctx, 12, door->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 12, tobira4_get_work(door)->open_amount);
     TEST_ASSERT_EQ_INT(ctx, 112, door->xposi.w.h);
 
-    door->actfree[18] = 0;
-    door->actfree[16] = 60;
-    door->actfree[17] = 64;
+    tobira4_get_work(door)->closing = 0;
+    tobira4_get_work(door)->open_amount = 60;
+    tobira4_get_work(door)->open_limit = 64;
     type3(door);
-    TEST_ASSERT_EQ_INT(ctx, 64, door->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 64, tobira4_get_work(door)->open_amount);
     TEST_ASSERT_EQ_INT(ctx, 136, door->yposi.w.h);
 
-    door->actfree[18] = 255;
-    door->actfree[16] = 4;
+    tobira4_get_work(door)->closing = 255;
+    tobira4_get_work(door)->open_amount = 4;
     type4(door);
-    TEST_ASSERT_EQ_INT(ctx, 0, door->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 0, tobira4_get_work(door)->open_amount);
     TEST_ASSERT_EQ_INT(ctx, 200, door->yposi.w.h);
 
-    door->actfree[7] = 4;
-    door->actfree[18] = 0;
-    door->actfree[16] = 0;
-    door->actfree[17] = 16;
+    tobira4_get_work(door)->door_type = 4;
+    tobira4_get_work(door)->closing = 0;
+    tobira4_get_work(door)->open_amount = 0;
+    tobira4_get_work(door)->open_limit = 16;
     tobira4_cnt(door);
-    TEST_ASSERT_EQ_INT(ctx, 8, door->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 8, tobira4_get_work(door)->open_amount);
     TEST_ASSERT_EQ_INT(ctx, 192, door->yposi.w.h);
 }
 

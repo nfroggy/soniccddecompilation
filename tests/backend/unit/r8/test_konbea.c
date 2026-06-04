@@ -99,9 +99,28 @@ static void queue_actor(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
+static void set_konbea_word(sprite_status *actor, int offset, Sint16 value) {
+    konbea_work *work = konbea_get_work(actor);
+
+    if (actor->userflag.b.h) {
+        switch (offset) {
+        case 2:
+            work->moving.origin_x = value;
+            break;
+        case 4:
+            work->moving.origin_y = value;
+            break;
+        }
+    } else {
+        switch (offset) {
+        case 4:
+            work->straight.origin_x = value;
+            break;
+        case 6:
+            work->straight.origin_y = value;
+            break;
+        }
+    }
 }
 
 static void reset_logs(void) {
@@ -218,7 +237,7 @@ static void test_konbea_a_init_spawns_child_and_child_can_run(
     TEST_ASSERT_EQ_INT(ctx, 1, ridechk_count);
     TEST_ASSERT_TRUE(ctx, ridechk_actor == child);
     TEST_ASSERT_TRUE(ctx, ridechk_player == &actwk[0]);
-    TEST_ASSERT_EQ_INT(ctx, 255, child->actfree[20]);
+    TEST_ASSERT_EQ_INT(ctx, 255, konbea_get_work(child)->straight.riding_flag);
     TEST_ASSERT_EQ_INT(ctx, 4, child->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_s00_count);
@@ -262,7 +281,7 @@ static void test_konbea_a_child_frames_out_when_origin_words_differ(
     queue_actor(child);
     konbea(actor);
 
-    set_actfree_word(child, 4, 101);
+    set_konbea_word(child, 4, 101);
     reset_logs();
 
     konbea(child);
@@ -282,7 +301,7 @@ static void test_konbea_a_child_frames_out_when_origin_words_differ(
     queue_actor(child);
     konbea(actor);
 
-    set_actfree_word(child, 6, 201);
+    set_konbea_word(child, 6, 201);
     reset_logs();
 
     konbea(child);
@@ -326,7 +345,7 @@ static void test_konbea_a_stop_and_move_paths(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, ridechk_actor == actor);
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 5, actor->sprvsize);
-    TEST_ASSERT_EQ_INT(ctx, 255, actor->actfree[20]);
+    TEST_ASSERT_EQ_INT(ctx, 255, konbea_get_work(actor)->straight.riding_flag);
     TEST_ASSERT_EQ_INT(ctx, 0, ride_on_clr_count);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 
@@ -358,13 +377,13 @@ static void test_konbea_a_stop_clears_standing_flag_when_not_riding(
     reset_konbea_state();
     actor->r_no0 = 2;
     actor->xposi.w.h = 100;
-    actor->actfree[20] = 255;
+    konbea_get_work(actor)->straight.riding_flag = 255;
     ridechk_result = 0;
 
     konbea(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 1, ridechk_count);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[20]);
+    TEST_ASSERT_EQ_INT(ctx, 0, konbea_get_work(actor)->straight.riding_flag);
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 0, ride_on_clr_count);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -487,7 +506,7 @@ static void test_konbea_b_child_frames_out_when_origin_words_differ(
     }
     konbea(actor);
 
-    set_actfree_word(child, 2, 101);
+    set_konbea_word(child, 2, 101);
     reset_logs();
 
     konbea(child);
@@ -508,7 +527,7 @@ static void test_konbea_b_child_frames_out_when_origin_words_differ(
     }
     konbea(actor);
 
-    set_actfree_word(child, 4, 201);
+    set_konbea_word(child, 4, 201);
     reset_logs();
 
     konbea(child);

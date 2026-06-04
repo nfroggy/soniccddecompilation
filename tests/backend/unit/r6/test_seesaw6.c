@@ -115,21 +115,6 @@ static void queue_actor(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int offset) {
-    return (Sint16)(actor->actfree[offset] |
-                    ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
-#define SEESAW_PARENT_SLOT 0
-#define SEESAW_LEFT_SLOT 0
-#define SEESAW_RIGHT_SLOT 2
-#define SEESAW_TIMER_SLOT 4
-
 static void test_m_ini_s_copies_visible_parent_state(test_context *ctx) {
     sprite_status *parent = &actwk[4];
     sprite_status *slave_actor = &actwk[9];
@@ -156,10 +141,8 @@ static void test_m_ini_s_copies_visible_parent_state(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 16, slave_actor->sprhsize);
     TEST_ASSERT_EQ_INT(ctx, 8, slave_actor->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 9, slave_actor->patno);
-    TEST_ASSERT_EQ_INT(ctx, 4,
-                       get_actfree_word(slave_actor, SEESAW_PARENT_SLOT));
-    TEST_ASSERT_EQ_INT(ctx, 120,
-                       get_actfree_word(parent, SEESAW_TIMER_SLOT));
+    TEST_ASSERT_EQ_INT(ctx, 4, seesaw6_get_work(slave_actor)->parent_index);
+    TEST_ASSERT_EQ_INT(ctx, 120, seesaw6_get_work(parent)->timer);
 }
 
 static void test_m_init_allocates_two_slaves_and_positions_them(
@@ -185,8 +168,8 @@ static void test_m_init_allocates_two_slaves_and_positions_them(
     TEST_ASSERT_EQ_INT(ctx, 24, parent->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 952, parent->sproffset);
     TEST_ASSERT_TRUE(ctx, parent->patbase == pat_seesaw6);
-    TEST_ASSERT_EQ_INT(ctx, 10, get_actfree_word(parent, SEESAW_LEFT_SLOT));
-    TEST_ASSERT_EQ_INT(ctx, 11, get_actfree_word(parent, SEESAW_RIGHT_SLOT));
+    TEST_ASSERT_EQ_INT(ctx, 10, seesaw6_get_work(parent)->left_slave_index);
+    TEST_ASSERT_EQ_INT(ctx, 11, seesaw6_get_work(parent)->right_slave_index);
     TEST_ASSERT_EQ_INT(ctx, 260, left->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 376, left->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 340, right->xposi.w.h);
@@ -222,26 +205,26 @@ static void test_m_stay_counts_down_and_starts_fall(test_context *ctx) {
     sprite_status *parent = &actwk[4];
 
     reset_seesaw6_state();
-    set_actfree_word(parent, SEESAW_TIMER_SLOT, 61);
+    seesaw6_get_work(parent)->timer = 61;
 
     m_stay(parent);
 
-    TEST_ASSERT_EQ_INT(ctx, 60, get_actfree_word(parent, SEESAW_TIMER_SLOT));
+    TEST_ASSERT_EQ_INT(ctx, 60, seesaw6_get_work(parent)->timer);
     TEST_ASSERT_EQ_INT(ctx, 1, parent->mstno.b.h);
     TEST_ASSERT_EQ_INT(ctx, 0, parent->yspeed.w);
 
-    set_actfree_word(parent, SEESAW_TIMER_SLOT, 0);
+    seesaw6_get_work(parent)->timer = 0;
 
     m_stay(parent);
 
-    TEST_ASSERT_EQ_INT(ctx, -1, get_actfree_word(parent, SEESAW_TIMER_SLOT));
+    TEST_ASSERT_EQ_INT(ctx, -1, seesaw6_get_work(parent)->timer);
     TEST_ASSERT_EQ_INT(ctx, 256, parent->yspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 2, parent->mstno.b.h);
 }
 
 static void setup_parent_with_slaves(sprite_status *parent) {
-    set_actfree_word(parent, SEESAW_LEFT_SLOT, 10);
-    set_actfree_word(parent, SEESAW_RIGHT_SLOT, 11);
+    seesaw6_get_work(parent)->left_slave_index = 10;
+    seesaw6_get_work(parent)->right_slave_index = 11;
     actwk[10].xposi.w.h = 260;
     actwk[10].yposi.w.h = 376;
     actwk[10].sprhsize = 16;
@@ -290,13 +273,13 @@ static void test_m_up_raises_and_then_swaps_slaves(test_context *ctx) {
     parent->yspeed.w = 256;
     parent->mstno.b.h = 2;
     setup_parent_with_slaves(parent);
-    set_actfree_word(parent, SEESAW_TIMER_SLOT, 1);
+    seesaw6_get_work(parent)->timer = 1;
 
     m_up(parent);
 
     TEST_ASSERT_EQ_INT(ctx, 388, parent->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 400, actwk[11].yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 0, get_actfree_word(parent, SEESAW_TIMER_SLOT));
+    TEST_ASSERT_EQ_INT(ctx, 0, seesaw6_get_work(parent)->timer);
     TEST_ASSERT_EQ_INT(ctx, 4, parent->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 2, actionsub_count);
     TEST_ASSERT_TRUE(ctx, actionsub_actors[0] == &actwk[11]);
@@ -306,9 +289,9 @@ static void test_m_up_raises_and_then_swaps_slaves(test_context *ctx) {
 
     TEST_ASSERT_EQ_INT(ctx, 2, parent->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 0, parent->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 120, get_actfree_word(parent, SEESAW_TIMER_SLOT));
-    TEST_ASSERT_EQ_INT(ctx, 11, get_actfree_word(parent, SEESAW_LEFT_SLOT));
-    TEST_ASSERT_EQ_INT(ctx, 10, get_actfree_word(parent, SEESAW_RIGHT_SLOT));
+    TEST_ASSERT_EQ_INT(ctx, 120, seesaw6_get_work(parent)->timer);
+    TEST_ASSERT_EQ_INT(ctx, 11, seesaw6_get_work(parent)->left_slave_index);
+    TEST_ASSERT_EQ_INT(ctx, 10, seesaw6_get_work(parent)->right_slave_index);
     TEST_ASSERT_EQ_INT(ctx, 3, parent->mstno.b.h);
     TEST_ASSERT_EQ_INT(ctx, -1, parent->mstno.b.l);
 
@@ -316,7 +299,7 @@ static void test_m_up_raises_and_then_swaps_slaves(test_context *ctx) {
     parent->r_no0 = 4;
     parent->mstno.b.h = 4;
     setup_parent_with_slaves(parent);
-    set_actfree_word(parent, SEESAW_TIMER_SLOT, 0);
+    seesaw6_get_work(parent)->timer = 0;
 
     m_up(parent);
 
@@ -334,7 +317,7 @@ static void test_m_move_patches_or_enters_up_state_from_ride(
     parent->xposi.w.h = 300;
     parent->yposi.w.h = 400;
     setup_parent_with_slaves(parent);
-    set_actfree_word(parent, SEESAW_TIMER_SLOT, 120);
+    seesaw6_get_work(parent)->timer = 120;
     ridechk_result = 0;
 
     m_move(parent);
@@ -343,7 +326,7 @@ static void test_m_move_patches_or_enters_up_state_from_ride(
     TEST_ASSERT_EQ_INT(ctx, 2, ridechk_count);
     TEST_ASSERT_TRUE(ctx, ridechk_actors[0] == &actwk[11]);
     TEST_ASSERT_TRUE(ctx, ridechk_actors[1] == &actwk[10]);
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[10].actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 0, seesaw6_get_work(&actwk[10])->pressed);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_TRUE(ctx, patchg_actor == parent);
     TEST_ASSERT_TRUE(ctx, patchg_table == seesaw_pchg);
@@ -371,16 +354,16 @@ static void test_m_move_patches_or_enters_up_state_from_ride(
     m_move(parent);
 
     TEST_ASSERT_EQ_INT(ctx, 4, parent->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 3, get_actfree_word(parent, SEESAW_TIMER_SLOT));
+    TEST_ASSERT_EQ_INT(ctx, 3, seesaw6_get_work(parent)->timer);
     TEST_ASSERT_EQ_INT(ctx, 8, parent->patno);
-    TEST_ASSERT_EQ_INT(ctx, 255, actwk[10].actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 255, seesaw6_get_work(&actwk[10])->pressed);
 }
 
 static void test_slave_frames_out_when_parent_is_not_seesaw(test_context *ctx) {
     sprite_status *slave_actor = &actwk[10];
 
     reset_seesaw6_state();
-    set_actfree_word(slave_actor, SEESAW_PARENT_SLOT, 4);
+    seesaw6_get_work(slave_actor)->parent_index = 4;
     actwk[4].actno = 0;
 
     slave(slave_actor);
@@ -415,7 +398,7 @@ static void test_seesaw6_wrapper_dispatches_and_frames(test_context *ctx) {
 
     reset_seesaw6_state();
     parent->userflag.b.h = -1;
-    set_actfree_word(parent, SEESAW_PARENT_SLOT, 4);
+    seesaw6_get_work(parent)->parent_index = 4;
     actwk[4].actno = 0;
 
     seesaw6(parent);

@@ -66,23 +66,6 @@ static void queue_actor(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
-static void set_actor_short_alias(sprite_status *actor, int short_index,
-                                  Sint16 value) {
-    size_t offset = (size_t)short_index * sizeof(Sint16) -
-                    offsetof(sprite_status, actfree);
-
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
-static Sint16 actor_short_alias(sprite_status *actor, int short_index) {
-    size_t offset = (size_t)short_index * sizeof(Sint16) -
-                    offsetof(sprite_status, actfree);
-
-    return (Sint16)((Uint16)actor->actfree[offset] |
-                    ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
 static void reset_beem6_state(void) {
     memset(actwk, 0, sizeof(actwk));
     time_flag = 0;
@@ -187,12 +170,12 @@ static void test_beem6_wait_gates_and_countdown_paths(test_context *ctx) {
     beem6_wait(beam);
 
     TEST_ASSERT_EQ_INT(ctx, 10, beam->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor_short_alias(beam, 31));
+    TEST_ASSERT_EQ_INT(ctx, 0, beem6_get_work(beam)->cycle_timer);
 
     reset_beem6_state();
     beam->userflag.b.h = 1;
     beam->r_no0 = 2;
-    set_actor_short_alias(beam, 31, 2);
+    beem6_get_work(beam)->cycle_timer = 2;
     actwk[0].xposi.w.h = 300;
     actwk[0].yposi.w.h = 400;
 
@@ -200,31 +183,31 @@ static void test_beem6_wait_gates_and_countdown_paths(test_context *ctx) {
 
     TEST_ASSERT_EQ_INT(ctx, 300, beam->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 400, beam->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor_short_alias(beam, 31));
+    TEST_ASSERT_EQ_INT(ctx, 1, beem6_get_work(beam)->cycle_timer);
     TEST_ASSERT_EQ_INT(ctx, 2, beam->r_no0);
 
     reset_beem6_state();
     beam->userflag.b.h = 1;
     beam->r_no0 = 2;
     beam->actflg = 128;
-    set_actor_short_alias(beam, 31, 1);
+    beem6_get_work(beam)->cycle_timer = 1;
 
     beem6_wait(beam);
 
     TEST_ASSERT_EQ_INT(ctx, 4, beam->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 89, actor_short_alias(beam, 26));
+    TEST_ASSERT_EQ_INT(ctx, 89, beem6_get_work(beam)->pre_flash_timer);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 178, soundset_requests[0]);
 
     reset_beem6_state();
     beam->userflag.b.h = 1;
     beam->r_no0 = 2;
-    set_actor_short_alias(beam, 31, 1);
+    beem6_get_work(beam)->cycle_timer = 1;
 
     beem6_wait(beam);
 
     TEST_ASSERT_EQ_INT(ctx, 4, beam->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 89, actor_short_alias(beam, 26));
+    TEST_ASSERT_EQ_INT(ctx, 89, beem6_get_work(beam)->pre_flash_timer);
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
 }
 
@@ -234,33 +217,33 @@ static void test_beem6_wait_sets_delay_for_time_modes(test_context *ctx) {
     reset_beem6_state();
     beam->userflag.b.h = 1;
     beem6_wait(beam);
-    TEST_ASSERT_EQ_INT(ctx, 360, actor_short_alias(beam, 31));
+    TEST_ASSERT_EQ_INT(ctx, 360, beem6_get_work(beam)->cycle_timer);
 
     reset_beem6_state();
     beam->userflag.b.h = 1;
     time_flag = 1;
     beem6_wait(beam);
-    TEST_ASSERT_EQ_INT(ctx, 480, actor_short_alias(beam, 31));
+    TEST_ASSERT_EQ_INT(ctx, 480, beem6_get_work(beam)->cycle_timer);
 
     reset_beem6_state();
     beam->userflag.b.h = 1;
     time_flag = 2;
     beem6_wait(beam);
-    TEST_ASSERT_EQ_INT(ctx, 240, actor_short_alias(beam, 31));
+    TEST_ASSERT_EQ_INT(ctx, 240, beem6_get_work(beam)->cycle_timer);
 
     reset_beem6_state();
     beam->userflag.b.h = 1;
     time_flag = 2;
     generate_flag = 1;
     beem6_wait(beam);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor_short_alias(beam, 31));
+    TEST_ASSERT_EQ_INT(ctx, 0, beem6_get_work(beam)->cycle_timer);
 
     reset_beem6_state();
     beam->userflag.b.h = 1;
     stageno.b.h = -1;
     scra_v_posit.w.h = 1024;
     beem6_wait(beam);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor_short_alias(beam, 31));
+    TEST_ASSERT_EQ_INT(ctx, 0, beem6_get_work(beam)->cycle_timer);
 }
 
 static void test_beem6_move_warning_active_then_beam_active_paths(
@@ -268,51 +251,51 @@ static void test_beem6_move_warning_active_then_beam_active_paths(
     sprite_status *beam = &actwk[3];
 
     reset_beem6_state();
-    beam->actfree[18] = 0;
+    beem6_get_work(beam)->phase = 0;
     beam->r_no0 = 4;
-    set_actor_short_alias(beam, 26, 2);
+    beem6_get_work(beam)->pre_flash_timer = 2;
 
     beem6_move(beam);
 
-    TEST_ASSERT_EQ_INT(ctx, 1, actor_short_alias(beam, 26));
+    TEST_ASSERT_EQ_INT(ctx, 1, beem6_get_work(beam)->pre_flash_timer);
     TEST_ASSERT_EQ_INT(ctx, 0, st6clrchg);
     assert_palette(ctx, colorwk[50], 0, 128, 0, 1, "warning color");
 
     reset_beem6_state();
     beam->r_no0 = 4;
-    set_actor_short_alias(beam, 26, 1);
-    set_actor_short_alias(beam, 31, 2);
+    beem6_get_work(beam)->pre_flash_timer = 1;
+    beem6_get_work(beam)->cycle_timer = 2;
 
     beem6_move(beam);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, actor_short_alias(beam, 26));
-    TEST_ASSERT_EQ_INT(ctx, 1, actor_short_alias(beam, 31));
+    TEST_ASSERT_EQ_INT(ctx, 0, beem6_get_work(beam)->pre_flash_timer);
+    TEST_ASSERT_EQ_INT(ctx, 1, beem6_get_work(beam)->cycle_timer);
     TEST_ASSERT_EQ_INT(ctx, 1, st6clrchg);
     assert_palette(ctx, colorwk[50], 0, 0, 0, 1, "beam channel color");
 
     reset_beem6_state();
     beam->r_no0 = 4;
-    set_actor_short_alias(beam, 31, 1);
+    beem6_get_work(beam)->cycle_timer = 1;
 
     beem6_move(beam);
 
     TEST_ASSERT_EQ_INT(ctx, 2, beam->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 0, st6clrchg);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor_short_alias(beam, 31));
-    TEST_ASSERT_EQ_INT(ctx, 1, beam->actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 0, beem6_get_work(beam)->cycle_timer);
+    TEST_ASSERT_EQ_INT(ctx, 1, beem6_get_work(beam)->phase);
 
     reset_beem6_state();
     beam->r_no0 = 4;
-    beam->actfree[18] = 2;
-    set_actor_short_alias(beam, 31, 1);
-    set_actor_short_alias(beam, 33, 77);
+    beem6_get_work(beam)->phase = 2;
+    beem6_get_work(beam)->cycle_timer = 1;
+    beem6_get_work(beam)->palette_indices_word = 77;
 
     beem6_move(beam);
 
     TEST_ASSERT_EQ_INT(ctx, 2, beam->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 0, st6clrchg);
-    TEST_ASSERT_EQ_INT(ctx, 0, beam->actfree[18]);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor_short_alias(beam, 33));
+    TEST_ASSERT_EQ_INT(ctx, 0, beem6_get_work(beam)->phase);
+    TEST_ASSERT_EQ_INT(ctx, 0, beem6_get_work(beam)->palette_indices_word);
 }
 
 static void test_palette_helpers_cover_time_modes_and_table_wraps(
@@ -355,11 +338,11 @@ static void test_palette_helpers_cover_time_modes_and_table_wraps(
     assert_palette(ctx, colorwk[50], 0, 0, 0, 0, "clrset0 generate skip");
 
     reset_beem6_state();
-    beam->actfree[20] = 13;
-    beam->actfree[21] = 7;
+    beem6_get_work(beam)->palette_index = 13;
+    beem6_get_work(beam)->secondary_palette_index = 7;
     clrset1(beam, 0);
-    TEST_ASSERT_EQ_INT(ctx, 0, beam->actfree[20]);
-    TEST_ASSERT_EQ_INT(ctx, 0, beam->actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 0, beem6_get_work(beam)->palette_index);
+    TEST_ASSERT_EQ_INT(ctx, 0, beem6_get_work(beam)->secondary_palette_index);
     assert_palette(ctx, colorwk[50], 0, 0, 0, 1, "clrset1 wrap main");
     assert_palette(ctx, colorwk[32], 160, 64, 128, 1, "clrset1 wrap sub");
 
@@ -376,7 +359,7 @@ static void test_palette_helpers_cover_time_modes_and_table_wraps(
     assert_palette(ctx, colorwk[61], 64, 64, 32, 1, "clrset1 time2 sub");
 
     reset_beem6_state();
-    beam->actfree[4] = 2;
+    beem6_get_work(beam)->flash_toggle = 2;
     maeclrset(beam, 1);
     assert_palette(ctx, colorwk[51], 0, 0, 0, 1, "maeclrset dark half");
 }
@@ -398,7 +381,7 @@ static void test_beem6_wrapper_dispatches_and_runs_callbacks(test_context *ctx) 
     reset_beem6_state();
     beam->userflag.b.h = 1;
     beam->r_no0 = 4;
-    set_actor_short_alias(beam, 31, 1);
+    beem6_get_work(beam)->cycle_timer = 1;
 
     beem6(beam);
 

@@ -102,13 +102,6 @@ void GetRoundStr(Uint16 StageNo, Uint8 Time_Flag, char *buf);
 #undef blockwk
 #include "src/game.c"
 
-static Sint16 actor_short_alias_from_actfree(const sprite_status *actor,
-                                             size_t actfree_offset) {
-    Sint16 value;
-    memcpy(&value, &actor->actfree[actfree_offset], sizeof(value));
-    return value;
-}
-
 Sint32 stub_SetGrid(Sint32 a, Sint32 b, Sint32 c, Sint32 d) {
     (void)a;
     (void)b;
@@ -452,8 +445,9 @@ static void test_small_helpers_and_flower_setup(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, actwk[0].actno);
     plflag = 1;
     play_act_set();
-    TEST_ASSERT_EQ_INT(ctx, 120,
-                       actor_short_alias_from_actfree(&actwk[0], 6));
+    TEST_ASSERT_EQ_INT(
+        ctx, 120,
+        player_work_get(&actwk[0])->damage_invulnerability_timer);
 
     scdset();
     TEST_ASSERT_TRUE(ctx, scdadr == zone1scd);

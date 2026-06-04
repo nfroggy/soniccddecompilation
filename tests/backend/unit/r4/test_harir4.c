@@ -1,5 +1,4 @@
 #include <string.h>
-#include <stddef.h>
 
 #include "support/test_runner.h"
 #include "src/types.h"
@@ -96,30 +95,6 @@ static void reset_state(void) {
     reset_logs();
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int offset) {
-    Uint16 bits = (Uint16)actor->actfree[offset] |
-                  ((Uint16)actor->actfree[offset + 1] << 8);
-    return (Sint16)bits;
-}
-
-static int legacy_word_actfree_offset(int word_index) {
-    return (word_index * 2) - (int)offsetof(sprite_status, actfree);
-}
-
-static void set_legacy_word(sprite_status *actor, int word_index, Sint16 value) {
-    set_actfree_word(actor, legacy_word_actfree_offset(word_index), value);
-}
-
-static Sint16 get_legacy_word(sprite_status *actor, int word_index) {
-    return get_actfree_word(actor, legacy_word_actfree_offset(word_index));
-}
-
 static void assert_rendered_with_frameout_x(test_context *ctx,
                                             sprite_status *actor,
                                             Sint16 xpos) {
@@ -154,11 +129,11 @@ static void test_harir4_init_sets_flat_spike_defaults(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 928, spike->sproffset);
     TEST_ASSERT_EQ_INT(ctx, 4, spike->sprpri);
     TEST_ASSERT_TRUE(ctx, spike->patbase == harir4pat);
-    TEST_ASSERT_EQ_INT(ctx, 120, get_legacy_word(spike, 29));
-    TEST_ASSERT_EQ_INT(ctx, 200, get_legacy_word(spike, 27));
+    TEST_ASSERT_EQ_INT(ctx, 120, harir4_get_work(spike)->origin_x);
+    TEST_ASSERT_EQ_INT(ctx, 200, harir4_get_work(spike)->origin_y);
     TEST_ASSERT_EQ_INT(ctx, 18, spike->sprhsize);
     TEST_ASSERT_EQ_INT(ctx, 12, spike->sprvsize);
-    TEST_ASSERT_EQ_INT(ctx, 8, spike->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 8, harir4_get_work(spike)->move_offset);
     TEST_ASSERT_EQ_INT(ctx, 208, spike->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, hitchk_count);
     assert_rendered_with_frameout_x(ctx, spike, 120);
@@ -171,11 +146,11 @@ static void test_harir4_init_preserves_existing_frameout_origin(
     reset_state();
     spike->xposi.w.h = 120;
     spike->yposi.w.h = 200;
-    set_legacy_word(spike, 29, 77);
+    harir4_get_work(spike)->origin_x = 77;
 
     harir4_init(spike);
 
-    TEST_ASSERT_EQ_INT(ctx, 77, get_legacy_word(spike, 29));
+    TEST_ASSERT_EQ_INT(ctx, 77, harir4_get_work(spike)->origin_x);
     TEST_ASSERT_EQ_INT(ctx, 1, hitchk_count);
 }
 
@@ -192,7 +167,7 @@ static void test_harir4_init_sets_vertical_spike_without_oscillation(
 
     TEST_ASSERT_EQ_INT(ctx, 1, spike->patno);
     TEST_ASSERT_EQ_INT(ctx, 131, spike->colino);
-    TEST_ASSERT_EQ_INT(ctx, 0, spike->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 0, harir4_get_work(spike)->move_offset);
     TEST_ASSERT_EQ_INT(ctx, 200, spike->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, hitchk_count);
     assert_rendered_with_frameout_x(ctx, spike, 120);
@@ -206,22 +181,22 @@ static void test_harir4_existing_actor_oscillates_down_then_waits(
     spike->r_no0 = 2;
     spike->actflg = 128;
     spike->yposi.w.h = 200;
-    set_legacy_word(spike, 27, 200);
-    spike->actfree[17] = 24;
+    harir4_get_work(spike)->origin_y = 200;
+    harir4_get_work(spike)->move_offset = 24;
 
     harir4(spike);
 
-    TEST_ASSERT_EQ_INT(ctx, 32, spike->actfree[17]);
-    TEST_ASSERT_EQ_INT(ctx, 1, spike->actfree[18]);
-    TEST_ASSERT_EQ_INT(ctx, 60, spike->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 32, harir4_get_work(spike)->move_offset);
+    TEST_ASSERT_EQ_INT(ctx, 1, harir4_get_work(spike)->moving_back);
+    TEST_ASSERT_EQ_INT(ctx, 60, harir4_get_work(spike)->wait_timer);
     TEST_ASSERT_EQ_INT(ctx, 232, spike->yposi.w.h);
     assert_rendered_with_frameout_x(ctx, spike, 0);
 
     reset_logs();
     harir4(spike);
 
-    TEST_ASSERT_EQ_INT(ctx, 59, spike->actfree[16]);
-    TEST_ASSERT_EQ_INT(ctx, 32, spike->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 59, harir4_get_work(spike)->wait_timer);
+    TEST_ASSERT_EQ_INT(ctx, 32, harir4_get_work(spike)->move_offset);
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
 }
 
@@ -231,16 +206,16 @@ static void test_harir4_wait_expiry_plays_visible_sound(test_context *ctx) {
     reset_state();
     spike->r_no0 = 2;
     spike->actflg = 128;
-    set_legacy_word(spike, 27, 100);
-    spike->actfree[16] = 1;
-    spike->actfree[17] = 32;
-    spike->actfree[18] = 1;
+    harir4_get_work(spike)->origin_y = 100;
+    harir4_get_work(spike)->wait_timer = 1;
+    harir4_get_work(spike)->move_offset = 32;
+    harir4_get_work(spike)->moving_back = 1;
 
     harir4(spike);
 
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 183, soundset_request);
-    TEST_ASSERT_EQ_INT(ctx, 24, spike->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 24, harir4_get_work(spike)->move_offset);
     TEST_ASSERT_EQ_INT(ctx, 124, spike->yposi.w.h);
 }
 
@@ -249,15 +224,15 @@ static void test_harir4_oscillation_reaches_top_and_waits(test_context *ctx) {
 
     reset_state();
     spike->r_no0 = 2;
-    set_legacy_word(spike, 27, 100);
-    spike->actfree[17] = 4;
-    spike->actfree[18] = 1;
+    harir4_get_work(spike)->origin_y = 100;
+    harir4_get_work(spike)->move_offset = 4;
+    harir4_get_work(spike)->moving_back = 1;
 
     harir4(spike);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, spike->actfree[17]);
-    TEST_ASSERT_EQ_INT(ctx, 0, spike->actfree[18]);
-    TEST_ASSERT_EQ_INT(ctx, 60, spike->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 0, harir4_get_work(spike)->move_offset);
+    TEST_ASSERT_EQ_INT(ctx, 0, harir4_get_work(spike)->moving_back);
+    TEST_ASSERT_EQ_INT(ctx, 60, harir4_get_work(spike)->wait_timer);
     TEST_ASSERT_EQ_INT(ctx, 100, spike->yposi.w.h);
 }
 
@@ -268,9 +243,9 @@ static void test_harir4_attached_actor_tracks_live_parent(test_context *ctx) {
     reset_state();
     spike->r_no0 = 2;
     spike->userflag.b.h = 1;
-    spike->actfree[14] = 5;
-    spike->actfree[15] = (Uint8)-7;
-    set_legacy_word(spike, 28, 9);
+    harir4_get_work(spike)->ride_x_offset = 5;
+    harir4_get_work(spike)->ride_y_offset = (Uint8)-7;
+    harir4_get_work(spike)->ride_actor_index = 9;
     parent->actno = 77;
     parent->xposi.w.h = 100;
     parent->yposi.w.h = 200;
@@ -280,7 +255,8 @@ static void test_harir4_attached_actor_tracks_live_parent(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 105, spike->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 449, spike->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_count);
-    assert_rendered_with_frameout_x(ctx, spike, get_legacy_word(spike, 29));
+    assert_rendered_with_frameout_x(ctx, spike,
+                                    harir4_get_work(spike)->origin_x);
 }
 
 static void test_harir4_attached_actor_frames_out_when_parent_is_gone(
@@ -290,7 +266,7 @@ static void test_harir4_attached_actor_frames_out_when_parent_is_gone(
     reset_state();
     spike->r_no0 = 2;
     spike->userflag.b.h = 1;
-    set_legacy_word(spike, 28, 9);
+    harir4_get_work(spike)->ride_actor_index = 9;
 
     harir4(spike);
 
@@ -376,7 +352,7 @@ static void test_harir4_ridechk_damage_gates(test_context *ctx) {
     hitchk_result = 1;
     spike->cddat = 8;
     player->r_no0 = 2;
-    set_legacy_word(player, 26, 1);
+    player_work_get(player)->damage_invulnerability_timer = 1;
     harir4_ridechk(spike);
     TEST_ASSERT_EQ_INT(ctx, 0, playdamageset_count);
 }

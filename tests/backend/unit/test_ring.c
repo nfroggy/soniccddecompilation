@@ -315,7 +315,7 @@ static void test_ringinit_caps_layout_count_at_seven(test_context *ctx) {
     ringinit(&actwk[0]);
 
     TEST_ASSERT_EQ_INT(ctx, 6, actwkchk2_count);
-    TEST_ASSERT_EQ_INT(ctx, 7, actwk[6].actfree[10]);
+    TEST_ASSERT_EQ_INT(ctx, 7, ring_work_get(&actwk[6])->ring_counter);
     TEST_ASSERT_EQ_INT(ctx, 196, actwk[6].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 200, actwk[6].yposi.w.h);
 }
@@ -358,7 +358,7 @@ static void test_ringinit_label1_skips_collected_later_ring_with_time_clamps(
     ringinit(&actwk[0]);
 
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk2_count);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[0].actfree[10]);
+    TEST_ASSERT_EQ_INT(ctx, 1, ring_work_get(&actwk[0])->ring_counter);
 
     reset_ring_state();
     time_flag = 130;
@@ -371,7 +371,7 @@ static void test_ringinit_label1_skips_collected_later_ring_with_time_clamps(
     ringinit(&actwk[0]);
 
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk2_count);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[0].actfree[10]);
+    TEST_ASSERT_EQ_INT(ctx, 1, ring_work_get(&actwk[0])->ring_counter);
 }
 
 static void test_ringmove_animates_or_erases_by_camera(test_context *ctx) {
@@ -405,7 +405,7 @@ static void test_ringget_marks_flagwork_and_enters_death_animation(
     actwk[0].sprpri = 2;
     actwk[0].mstno.b.h = 1;
     actwk[0].cdsts = 2;
-    actwk[0].actfree[10] = 3;
+    ring_work_get(&actwk[0])->ring_counter = 3;
     time_flag = 1;
 
     ringget(&actwk[0]);
@@ -425,14 +425,14 @@ static void test_ringget_marks_flagwork_and_enters_death_animation(
 
 static void test_ringget_clamps_time_warp_flag_index(test_context *ctx) {
     reset_ring_state();
-    actwk[0].actfree[10] = 1;
+    ring_work_get(&actwk[0])->ring_counter = 1;
     time_flag = 128;
     time_item = 5;
     ringget(&actwk[0]);
     TEST_ASSERT_EQ_INT(ctx, 1, flagwork[0]);
 
     reset_ring_state();
-    actwk[0].actfree[10] = 1;
+    ring_work_get(&actwk[0])->ring_counter = 1;
     time_flag = 130;
     time_item = -5;
     ringget(&actwk[0]);

@@ -149,16 +149,6 @@ static void queue_actor(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int offset) {
-    return (Sint16)(Uint16)(actor->actfree[offset] |
-                            ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
 static void assert_public_callbacks(test_context *ctx, sprite_status *actor,
                                     int frameout_expected) {
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -211,9 +201,9 @@ static void test_et4_entry_initializes_default_and_waits(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 3, actor->patno);
     TEST_ASSERT_EQ_INT(ctx, 250, actor->colino);
     TEST_ASSERT_EQ_INT(ctx, 184, actor->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 5, get_actfree_word(actor, 0));
-    TEST_ASSERT_EQ_INT(ctx, 200, get_actfree_word(actor, 6));
-    TEST_ASSERT_EQ_INT(ctx, 1, get_actfree_word(actor, 8));
+    TEST_ASSERT_EQ_INT(ctx, 5, et4_work_get(actor)->hover_counter);
+    TEST_ASSERT_EQ_INT(ctx, 200, et4_work_get(actor)->base_y);
+    TEST_ASSERT_EQ_INT(ctx, 1, et4_work_get(actor)->hover_direction);
     TEST_ASSERT_EQ_INT(ctx, 1, hitchk_count);
     TEST_ASSERT_TRUE(ctx, hitchk_actor == actor);
     TEST_ASSERT_TRUE(ctx, hitchk_player == &actwk[0]);
@@ -280,7 +270,7 @@ static void test_m_wait_collision_scores_and_optionally_clears_ride(
     actor->colino = 250;
     actor->colicnt = 5;
     actor->patno = 3;
-    set_actfree_word(actor, 0, 9);
+    et4_work_get(actor)->hover_counter = 9;
     hitchk_result = 0;
 
     et(actor);
@@ -288,7 +278,7 @@ static void test_m_wait_collision_scores_and_optionally_clears_ride(
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->colino);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->colicnt);
-    TEST_ASSERT_EQ_INT(ctx, 0, get_actfree_word(actor, 0));
+    TEST_ASSERT_EQ_INT(ctx, 0, et4_work_get(actor)->hover_counter);
     TEST_ASSERT_EQ_INT(ctx, 7, actor->patno);
     TEST_ASSERT_EQ_INT(ctx, 1, generate_flag);
     TEST_ASSERT_EQ_INT(ctx, 1, scoreup_count);
@@ -317,11 +307,11 @@ static void test_m_die_waits_for_script_tick_then_spawns_fragment(
 
     reset_et4_state();
     prepare_actor_for_die(actor);
-    actor->actfree[0] = 1;
+    et4_work_get(actor)->delay_timer = 1;
 
     m_die(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 2, et4_work_get(actor)->delay_timer);
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
 
     reset_et4_state();
@@ -362,7 +352,7 @@ static void test_m_die_handles_allocation_failure_and_script_end(
     }
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 8, actor->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 8, et4_work_get(actor)->delay_timer);
 }
 
 static void test_m1wait_counts_down_then_restores_origin(test_context *ctx) {
@@ -373,20 +363,20 @@ static void test_m1wait_counts_down_then_restores_origin(test_context *ctx) {
     et(actor);
     reset_et4_logs();
     actor->r_no0 = 6;
-    actor->actfree[0] = 2;
+    et4_work_get(actor)->delay_timer = 2;
     actor->yposi.w.h = 77;
 
     m1wait(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 1, et4_work_get(actor)->delay_timer);
     TEST_ASSERT_EQ_INT(ctx, 77, actor->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
 
     m1wait(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 0, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 0, et4_work_get(actor)->delay_timer);
     TEST_ASSERT_EQ_INT(ctx, 123, actor->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 217, soundset_last);
@@ -398,23 +388,23 @@ static void test_a_hover_moves_every_eight_ticks_and_flips_every_thirty_two(
 
     reset_et4_state();
     actor->yposi.w.h = 100;
-    set_actfree_word(actor, 0, 7);
-    set_actfree_word(actor, 8, 2);
+    et4_work_get(actor)->hover_counter = 7;
+    et4_work_get(actor)->hover_direction = 2;
 
     a_hover(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 8, get_actfree_word(actor, 0));
+    TEST_ASSERT_EQ_INT(ctx, 8, et4_work_get(actor)->hover_counter);
     TEST_ASSERT_EQ_INT(ctx, 102, actor->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 2, get_actfree_word(actor, 8));
+    TEST_ASSERT_EQ_INT(ctx, 2, et4_work_get(actor)->hover_direction);
 
-    set_actfree_word(actor, 0, 31);
-    set_actfree_word(actor, 8, 3);
+    et4_work_get(actor)->hover_counter = 31;
+    et4_work_get(actor)->hover_direction = 3;
 
     a_hover(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 32, get_actfree_word(actor, 0));
+    TEST_ASSERT_EQ_INT(ctx, 32, et4_work_get(actor)->hover_counter);
     TEST_ASSERT_EQ_INT(ctx, 105, actor->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, -3, get_actfree_word(actor, 8));
+    TEST_ASSERT_EQ_INT(ctx, -3, et4_work_get(actor)->hover_direction);
 }
 
 TEST_MAIN_BEGIN;

@@ -73,14 +73,14 @@ static void test_udblk6_chk1_triggers_when_player_is_left_and_near(
     block->xposi.w.h = 200;
     block->yposi.w.h = 300;
     block->r_no0 = 2;
-    block->actfree[18] = 99;
+    udblk6_get_work(block)->direction = 99;
     actwk[0].xposi.w.h = 100;
     actwk[0].yposi.w.h = 200;
 
     udblk6_chk1(block);
 
     TEST_ASSERT_EQ_INT(ctx, 4, block->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, block->actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 0, udblk6_get_work(block)->direction);
     TEST_ASSERT_EQ_INT(ctx, 1, ride_on_chk_count);
     TEST_ASSERT_TRUE(ctx, ride_on_chk_actor == block);
     TEST_ASSERT_TRUE(ctx, ride_on_chk_player == &actwk[0]);
@@ -185,17 +185,17 @@ static void test_udblk6_mov1_initializes_and_finishes_two_phase_motion(
 
     udblk6_mov1(block);
 
-    TEST_ASSERT_EQ_INT(ctx, 64, block->actfree[16]);
-    TEST_ASSERT_EQ_INT(ctx, 0, block->actfree[17]);
-    TEST_ASSERT_EQ_INT(ctx, 0, block->actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 64, udblk6_get_work(block)->phase_timer);
+    TEST_ASSERT_EQ_INT(ctx, 0, udblk6_get_work(block)->phase_index);
+    TEST_ASSERT_EQ_INT(ctx, 0, udblk6_get_work(block)->direction);
     TEST_ASSERT_EQ_INT(ctx, 4, block->r_no0);
 
-    block->actfree[16] = 1;
-    block->actfree[17] = 1;
+    udblk6_get_work(block)->phase_timer = 1;
+    udblk6_get_work(block)->phase_index = 1;
 
     udblk6_mov1(block);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, block->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 2, udblk6_get_work(block)->phase_index);
     TEST_ASSERT_EQ_INT(ctx, 6, block->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 2, ride_on_chk_count);
 }
@@ -210,17 +210,17 @@ static void test_udblk6_mov2_initializes_reverse_and_returns_to_check1(
 
     udblk6_mov2(block);
 
-    TEST_ASSERT_EQ_INT(ctx, 64, block->actfree[16]);
-    TEST_ASSERT_EQ_INT(ctx, 0, block->actfree[17]);
-    TEST_ASSERT_EQ_INT(ctx, 1, block->actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 64, udblk6_get_work(block)->phase_timer);
+    TEST_ASSERT_EQ_INT(ctx, 0, udblk6_get_work(block)->phase_index);
+    TEST_ASSERT_EQ_INT(ctx, 1, udblk6_get_work(block)->direction);
     TEST_ASSERT_EQ_INT(ctx, 8, block->r_no0);
 
-    block->actfree[16] = 1;
-    block->actfree[17] = 1;
+    udblk6_get_work(block)->phase_timer = 1;
+    udblk6_get_work(block)->phase_index = 1;
 
     udblk6_mov2(block);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, block->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 2, udblk6_get_work(block)->phase_index);
     TEST_ASSERT_EQ_INT(ctx, 2, block->r_no0);
 }
 
@@ -231,13 +231,13 @@ static void test_movecnt_applies_visible_speed_and_acceleration(
     reset_udblk6_state();
     block->yposi.l = 300 << 16;
     block->yspeed.w = 5;
-    block->actfree[16] = 1;
+    udblk6_get_work(block)->phase_timer = 1;
 
     movecnt(block);
 
     TEST_ASSERT_EQ_INT(ctx, (300 << 16) + (5 << 8), block->yposi.l);
     TEST_ASSERT_EQ_INT(ctx, 5, block->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 1, block->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 1, udblk6_get_work(block)->phase_index);
 }
 
 static void test_udblk6_entry_dispatches_callbacks(test_context *ctx) {

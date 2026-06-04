@@ -2,6 +2,7 @@
 
 #include "support/callback_log.h"
 #include "support/test_runner.h"
+#include "player_work.h"
 #include "types.h"
 
 bmp_info SprBmp[700];
@@ -126,7 +127,7 @@ static void test_speedset_skips_gravity_for_actfree_8(test_context *ctx) {
     actor.yposi.l = 0x00020000;
     actor.xspeed.w = -2;
     actor.yspeed.w = 100;
-    actor.actfree[2] = 8;
+    player_work_get(&actor)->status_flags = 8;
 
     speedset(&actor);
 
@@ -140,7 +141,7 @@ static void test_speedset_skips_gravity_for_actfree_4(test_context *ctx) {
 
     sprite_status actor = {0};
     actor.yspeed.w = -100;
-    actor.actfree[2] = 4;
+    player_work_get(&actor)->status_flags = 4;
 
     speedset(&actor);
 
@@ -154,7 +155,7 @@ static void test_speedset_keeps_fast_upward_speed_with_actfree_2(
 
     sprite_status actor = {0};
     actor.yspeed.w = -2049;
-    actor.actfree[2] = 2;
+    player_work_get(&actor)->status_flags = 2;
 
     speedset(&actor);
 
@@ -167,7 +168,7 @@ static void test_speedset_adds_gravity_at_upward_threshold(test_context *ctx) {
 
     sprite_status actor = {0};
     actor.yspeed.w = -2048;
-    actor.actfree[2] = 2;
+    player_work_get(&actor)->status_flags = 2;
 
     speedset(&actor);
 
@@ -210,7 +211,7 @@ static void test_speedset2_subtracts_attached_platform_speed(
     sprite_status actor = {0};
     actor.xspeed.w = 4;
     actor.cddat = 8;
-    actor.actfree[19] = 3;
+    player_work_get(&actor)->ride_actor_index = 3;
     actwk[3].actno = 30;
 
     speedset2(&actor);
@@ -224,7 +225,7 @@ static void test_speedset2_adds_attached_platform_speed(test_context *ctx) {
     sprite_status actor = {0};
     actor.xspeed.w = 4;
     actor.cddat = 8;
-    actor.actfree[19] = 3;
+    player_work_get(&actor)->ride_actor_index = 3;
     actwk[3].actno = 30;
     actwk[3].cddat = 1;
 
@@ -239,7 +240,7 @@ static void test_speedset2_ignores_non_platform_attachment(test_context *ctx) {
     sprite_status actor = {0};
     actor.xspeed.w = 4;
     actor.cddat = 8;
-    actor.actfree[19] = 3;
+    player_work_get(&actor)->ride_actor_index = 3;
     actwk[3].actno = 29;
 
     speedset2(&actor);

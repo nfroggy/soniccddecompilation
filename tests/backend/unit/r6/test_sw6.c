@@ -111,8 +111,8 @@ static void test_sw6_press_transition_toggles_switch_and_sprite(
     reset_sw6_state();
     sw->r_no0 = 2;
     sw->actflg = 128;
-    sw->actfree[18] = 5;
-    sw->actfree[20] = 0;
+    sw6_get_work(sw)->switch_index = 5;
+    sw6_get_work(sw)->current_state = 0;
     sw->sprvsize = 8;
     sw->patno = 0;
     sw->yposi.w.h = 20;
@@ -133,8 +133,8 @@ static void test_sw6_held_press_keeps_shape_after_initial_transition(
 
     reset_sw6_state();
     sw->r_no0 = 2;
-    sw->actfree[18] = 6;
-    sw->actfree[20] = 255;
+    sw6_get_work(sw)->switch_index = 6;
+    sw6_get_work(sw)->current_state = 255;
     sw->sprvsize = 4;
     sw->patno = 1;
     sw->yposi.w.h = 24;
@@ -154,8 +154,8 @@ static void test_sw6_release_transition_restores_switch_shape(
 
     reset_sw6_state();
     sw->r_no0 = 2;
-    sw->actfree[18] = 7;
-    sw->actfree[20] = 255;
+    sw6_get_work(sw)->switch_index = 7;
+    sw6_get_work(sw)->current_state = 255;
     sw->sprvsize = 4;
     sw->patno = 1;
     sw->yposi.w.h = 24;

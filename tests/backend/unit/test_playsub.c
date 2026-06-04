@@ -378,7 +378,7 @@ static void test_marker_paths(test_context *ctx) {
     queue_actor(&actwk[40]);
     marker(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[1].r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[1].actfree[4]);
+    TEST_ASSERT_EQ_INT(ctx, 1, marker_get_work(&actwk[1])->activated);
     TEST_ASSERT_EQ_INT(ctx, 19, actwk[40].actno);
     TEST_ASSERT_EQ_INT(ctx, 6, actwk[40].r_no0);
     TEST_ASSERT_EQ_INT(ctx, 100, actwk[40].xposi.w.h);
@@ -393,15 +393,15 @@ static void test_marker_paths(test_context *ctx) {
 
     reset_playsub_state();
     actwk[1].userflag.b.h = 4;
-    actwk[1].actfree[4] = 1;
+    marker_get_work(&actwk[1])->activated = 1;
     marker_move0(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
-    actwk[1].actfree[4] = 0;
+    marker_get_work(&actwk[1])->activated = 0;
     marker_move0(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 0, plflag);
     actwk[1].colicnt = 1;
     marker_move0(&actwk[1]);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[1].actfree[4]);
+    TEST_ASSERT_EQ_INT(ctx, 1, marker_get_work(&actwk[1])->activated);
     TEST_ASSERT_EQ_INT(ctx, 4, markerno);
     TEST_ASSERT_EQ_INT(ctx, 1, plflag);
     TEST_ASSERT_EQ_INT(ctx, 174, soundset_requests[0]);
@@ -413,17 +413,17 @@ static void test_marker_paths(test_context *ctx) {
     queue_actor(&actwk[40]);
     marker_init(&actwk[1]);
     marker_move1(&actwk[40]);
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[40].actfree[4]);
-    actwk[1].actfree[4] = 1;
+    TEST_ASSERT_EQ_INT(ctx, 0, marker_get_work(&actwk[40])->activated);
+    marker_get_work(&actwk[1])->activated = 1;
     sinset_sin = 128;
     sinset_cos = 0;
     marker_move1(&actwk[40]);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[40].actfree[4]);
-    TEST_ASSERT_EQ_INT(ctx, 8, actwk[40].actfree[10]);
+    TEST_ASSERT_EQ_INT(ctx, 1, marker_get_work(&actwk[40])->activated);
+    TEST_ASSERT_EQ_INT(ctx, 8, marker_get_work(&actwk[40])->angle);
     TEST_ASSERT_EQ_INT(ctx, 54, actwk[40].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 76, actwk[40].yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 8, sinset_angle);
-    actwk[40].actfree[10] = 248;
+    marker_get_work(&actwk[40])->angle = 248;
     marker_move1(&actwk[40]);
     TEST_ASSERT_EQ_INT(ctx, 6, actwk[40].r_no0);
 
@@ -435,13 +435,13 @@ static void test_marker_paths(test_context *ctx) {
     actwk[1].r_no0 = 2;
     actwk[1].colicnt = 1;
     marker(&actwk[1]);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[1].actfree[4]);
+    TEST_ASSERT_EQ_INT(ctx, 1, marker_get_work(&actwk[1])->activated);
 
     reset_playsub_state();
     actwk[1].r_no0 = 4;
-    actwk[1].actfree[4] = 1;
+    marker_get_work(&actwk[1])->activated = 1;
     marker(&actwk[1]);
-    TEST_ASSERT_EQ_INT(ctx, 8, actwk[1].actfree[10]);
+    TEST_ASSERT_EQ_INT(ctx, 8, marker_get_work(&actwk[1])->angle);
 
     reset_playsub_state();
     actwk[1].r_no0 = 6;
@@ -464,8 +464,7 @@ static void test_test_act_tensuu_and_bakuha(test_context *ctx) {
 
     reset_playsub_state();
     scra_h_posit.w.h = 128;
-    actwk[1].actfree[6] = 0;
-    actwk[1].actfree[7] = 4;
+    test_act_get_work(&actwk[1])->screen_x_swapped = 1024;
     test_move(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
 
@@ -924,9 +923,9 @@ static void test_remaining_state_dispatch_paths(test_context *ctx) {
     playposiwk[0] = 777;
     playposiwk[1] = 888;
     actwk[1].mstno.b.h = 1;
-    actwk[1].actfree[6] = 20;
+    muteki_get_work(&actwk[1])->history_offset = 20;
     muteki_sub(&actwk[1]);
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[1].actfree[6]);
+    TEST_ASSERT_EQ_INT(ctx, 0, muteki_get_work(&actwk[1])->history_offset);
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[1].sproffset);
 
     reset_playsub_state();

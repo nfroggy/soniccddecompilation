@@ -304,7 +304,7 @@ static void test_shut_move_frames_out_when_all_blocks_are_cleared(
     reset_shut_state();
     door->r_no0 = 4;
     door->xposi.w.h = 104;
-    door->actfree[2] = 16;
+    shut_get_work(door)->counter = 16;
 
     shut(door);
 
@@ -466,7 +466,7 @@ static void test_kaiten_move0_ride_hit_latched_returns(test_context *ctx) {
     loop->r_no0 = 2;
     loop->xposi.w.h = 96;
     loop->yposi.w.h = 256;
-    loop->actfree[2] = 1;
+    shut_get_work(loop)->counter = 1;
     actwk[0].xposi.w.h = 96;
     actwk[0].yposi.w.h = 512;
     ridechk_result = 1;
@@ -595,7 +595,7 @@ static void test_kaiten_bou0_advances_when_player_is_spinning(
 
     reset_shut_state();
     loop->r_no0 = 8;
-    loop->actfree[3] = 20;
+    shut_get_work(loop)->angle = 20;
     actwk[0].mstno.b.h = 51;
     actwk[0].yposi.w.h = 512;
 
@@ -613,7 +613,7 @@ static void test_kaiten_bou1_restores_saved_angle_when_player_stops(
 
     reset_shut_state();
     loop->r_no0 = 10;
-    loop->actfree[4] = 88;
+    shut_get_work(loop)->return_angle = 88;
     actwk[0].mstno.b.h = 50;
     actwk[0].yposi.w.h = 512;
     sinset_cos_result = 128;
@@ -634,7 +634,7 @@ static void test_kaiten_bou1_uses_angle_with_stubbed_sine_table(
 
     reset_shut_state();
     loop->r_no0 = 10;
-    loop->actfree[3] = 20;
+    shut_get_work(loop)->angle = 20;
     actwk[0].mstno.b.h = 51;
     actwk[0].cddat = 0;
     prio_flag = 0;
@@ -656,7 +656,7 @@ static void test_kaiten_bou1_subtracts_angle_for_front_clockwise(
 
     reset_shut_state();
     loop->r_no0 = 10;
-    loop->actfree[3] = 20;
+    shut_get_work(loop)->angle = 20;
     actwk[0].mstno.b.h = 51;
     actwk[0].cddat = 0;
     actwk[0].yposi.w.h = 512;
@@ -677,7 +677,7 @@ static void test_kaiten_bou1_subtracts_angle_for_back_counterclockwise(
 
     reset_shut_state();
     loop->r_no0 = 10;
-    loop->actfree[3] = 20;
+    shut_get_work(loop)->angle = 20;
     actwk[0].mstno.b.h = 51;
     actwk[0].cddat = 1;
     actwk[0].yposi.w.h = 512;
@@ -721,3 +721,4 @@ TEST_MAIN_BEGIN;
     test_kaiten_bou1_subtracts_angle_for_front_clockwise(&ctx);
     test_kaiten_bou1_subtracts_angle_for_back_counterclockwise(&ctx);
 TEST_MAIN_END
+

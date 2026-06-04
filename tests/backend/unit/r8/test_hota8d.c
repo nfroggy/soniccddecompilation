@@ -68,9 +68,9 @@ static void queue_actor(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
+static void set_hota8d_word(sprite_status *actor, int offset, Sint16 value) {
+    if (offset == 10)
+        hota8d_work_get(actor)->linked_actor_index = value;
 }
 
 static void reset_logs(void) {
@@ -147,13 +147,13 @@ static void test_hota8d_initial_setup_and_movement_paths(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, actor->patbase == hotaru8pat);
     TEST_ASSERT_EQ_INT(ctx, 8, actor->sprhsize);
     TEST_ASSERT_EQ_INT(ctx, 8, actor->sprvsize);
-    TEST_ASSERT_EQ_INT(ctx, 60, actor->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 60, hota8d_work_get(actor)->timer);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->userflag.b.h);
     assert_actionsub_called_for(ctx, actor);
 
     reset_logs();
     actor->r_no0 = 4;
-    actor->actfree[1] = 1;
+    hota8d_work_get(actor)->phase_flags = 1;
     actor->xposi.w.h = 3000;
     actor->yposi.w.h = 300;
     actwk[0].xposi.w.h = 3104;
@@ -161,17 +161,17 @@ static void test_hota8d_initial_setup_and_movement_paths(test_context *ctx) {
     hotaru8(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 2, hota8d_work_get(actor)->phase_flags);
     TEST_ASSERT_EQ_INT(ctx, 832, actor->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 352, actor->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 32, actor->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 32, hota8d_work_get(actor)->sub_timer);
 
     reset_logs();
     actor->xposi.l = 100 << 16;
     actor->yposi.l = 200 << 16;
     actor->xspeed.w = 2;
     actor->yspeed.w = -3;
-    actor->actfree[17] = 7;
+    hota8d_work_get(actor)->sub_timer = 7;
     queue_actor(shadow);
 
     hotaru8(actor);
@@ -189,20 +189,20 @@ static void test_hota8d_spin_setup_and_idle_edge_paths(test_context *ctx) {
 
     reset_hota8d_state();
     actor->r_no0 = 2;
-    actor->actfree[16] = 1;
+    hota8d_work_get(actor)->timer = 1;
     actor->userflag.b.h = 5;
 
     hotaru8(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, actor->mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 5, actor->actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 5, hota8d_work_get(actor)->phase_flags);
     assert_patchg_called_for(ctx, actor);
     assert_actionsub_called_for(ctx, actor);
 
     reset_logs();
     actor->r_no0 = 4;
-    actor->actfree[1] = 0;
+    hota8d_work_get(actor)->phase_flags = 0;
     actor->xposi.w.h = 3066;
     actor->yposi.w.h = 357;
     gametimer.w = 10;
@@ -211,13 +211,13 @@ static void test_hota8d_spin_setup_and_idle_edge_paths(test_context *ctx) {
     hotaru8(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 1, hota8d_work_get(actor)->phase_flags);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->yspeed.w);
 
     reset_logs();
     actor->r_no0 = 6;
-    actor->actfree[17] = 1;
+    hota8d_work_get(actor)->sub_timer = 1;
     actor->xspeed.w = 1;
     actor->yspeed.w = 1;
 
@@ -235,7 +235,7 @@ static void test_hota8d_zanzou_allocation_failure_and_attack_cycle(
 
     reset_hota8d_state();
     actor->r_no0 = 6;
-    actor->actfree[17] = 3;
+    hota8d_work_get(actor)->sub_timer = 3;
 
     hotaru8(actor);
 
@@ -245,17 +245,17 @@ static void test_hota8d_zanzou_allocation_failure_and_attack_cycle(
 
     reset_logs();
     actor->r_no0 = 8;
-    actor->actfree[18] = 31;
+    hota8d_work_get(actor)->sequence_index = 31;
 
     hotaru8(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 10, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 0, hota8d_work_get(actor)->sequence_index);
 
     reset_logs();
     actor->r_no0 = 10;
-    actor->actfree[18] = 1;
-    actor->actfree[21] = 255;
+    hota8d_work_get(actor)->sequence_index = 1;
+    hota8d_work_get(actor)->beam_accumulator = 255;
     actor->xposi.w.h = 111;
     actor->yposi.w.h = 222;
     queue_actor(beam);
@@ -270,7 +270,7 @@ static void test_hota8d_zanzou_allocation_failure_and_attack_cycle(
 
     reset_logs();
     actor->r_no0 = 12;
-    actor->actfree[18] = 1;
+    hota8d_work_get(actor)->sequence_index = 1;
 
     hotaru8(actor);
 
@@ -309,10 +309,10 @@ static void test_hota8d_attack_beam_and_shadow_paths(test_context *ctx) {
 
     hotaru8(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 19, actor->actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 19, hota8d_work_get(actor)->sequence_index);
     TEST_ASSERT_EQ_INT(ctx, 2, actor->mstno.b.h);
     TEST_ASSERT_EQ_INT(ctx, 11, actor->colino);
-    TEST_ASSERT_EQ_INT(ctx, 64, actor->actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 64, hota8d_work_get(actor)->beam_accumulator);
     assert_patchg_called_for(ctx, actor);
     assert_actionsub_called_for(ctx, actor);
 
@@ -337,8 +337,8 @@ static void test_hota8d_attack_beam_and_shadow_paths(test_context *ctx) {
 
     TEST_ASSERT_EQ_INT(ctx, 4, beam->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 108, beam->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 0, beam->actfree[16]);
-    TEST_ASSERT_EQ_INT(ctx, 0, beam->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 0, hota8d_work_get(beam)->timer);
+    TEST_ASSERT_EQ_INT(ctx, 0, hota8d_work_get(beam)->sub_timer);
     assert_patchg_called_for(ctx, beam);
 
     reset_logs();
@@ -348,7 +348,7 @@ static void test_hota8d_attack_beam_and_shadow_paths(test_context *ctx) {
 
     TEST_ASSERT_EQ_INT(ctx, 2, shadow->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 4, shadow->sprpri);
-    TEST_ASSERT_EQ_INT(ctx, 23, shadow->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 23, hota8d_work_get(shadow)->timer);
     assert_patchg_called_for(ctx, shadow);
     assert_actionsub_called_for(ctx, shadow);
 }
@@ -360,19 +360,19 @@ static void test_hota8d_beam_and_shadow_completion_paths(test_context *ctx) {
     reset_hota8d_state();
     beam->userflag.b.h = -1;
     beam->r_no0 = 4;
-    beam->actfree[16] = 0;
-    beam->actfree[17] = 1;
+    hota8d_work_get(beam)->timer = 0;
+    hota8d_work_get(beam)->sub_timer = 1;
 
     hotaru8(beam);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, beam->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 2, hota8d_work_get(beam)->timer);
     TEST_ASSERT_EQ_INT(ctx, 9, beam->mstno.b.h);
     TEST_ASSERT_EQ_INT(ctx, 0, patchg_count);
     assert_actionsub_called_for(ctx, beam);
 
     reset_logs();
-    beam->actfree[16] = 1;
-    beam->actfree[17] = 1;
+    hota8d_work_get(beam)->timer = 1;
+    hota8d_work_get(beam)->sub_timer = 1;
 
     hotaru8(beam);
 
@@ -383,7 +383,7 @@ static void test_hota8d_beam_and_shadow_completion_paths(test_context *ctx) {
     reset_logs();
     shadow->userflag.b.h = -3;
     shadow->r_no0 = 2;
-    shadow->actfree[16] = 1;
+    hota8d_work_get(shadow)->timer = 1;
 
     hotaru8(shadow);
 
@@ -423,7 +423,7 @@ static void test_hota8d_room_controller_visible_paths(test_context *ctx) {
 
     reset_logs();
     room->r_no0 = 4;
-    room->actfree[16] = 16;
+    hota8d_work_get(room)->timer = 16;
     queue_actor(hotaru);
 
     hotaru8(room);
@@ -431,11 +431,11 @@ static void test_hota8d_room_controller_visible_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 57, hotaru->actno);
     TEST_ASSERT_EQ_INT(ctx, 3040, hotaru->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 400, hotaru->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 60, room->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 60, hota8d_work_get(room)->timer);
     TEST_ASSERT_EQ_INT(ctx, 6, room->r_no0);
 
     hotaru->actno = 0;
-    room->actfree[16] = 1;
+    hota8d_work_get(room)->timer = 1;
     reset_logs();
     queue_actor(hotaru_left);
     queue_actor(hotaru_right);
@@ -463,7 +463,7 @@ static void test_hota8d_room_controller_visible_paths(test_context *ctx) {
 
     hotaru8(room);
 
-    TEST_ASSERT_EQ_INT(ctx, 255, door->actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 255, hota8d_work_get(door)->beam_accumulator);
     TEST_ASSERT_EQ_INT(ctx, 63, eggman->actno);
     TEST_ASSERT_EQ_INT(ctx, 3840, eggman->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 316, eggman->yposi.w.h);
@@ -515,26 +515,26 @@ static void test_hota8d_room_controller_wait_and_failure_paths(
     TEST_ASSERT_EQ_INT(ctx, 106, scra_vline);
 
     room->r_no0 = 4;
-    room->actfree[16] = 0;
-    room->actfree[17] = 2;
+    hota8d_work_get(room)->timer = 0;
+    hota8d_work_get(room)->sub_timer = 2;
     hotaru8(room);
 
-    TEST_ASSERT_EQ_INT(ctx, 1, room->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 1, hota8d_work_get(room)->sub_timer);
     TEST_ASSERT_EQ_INT(ctx, 4, room->r_no0);
 
-    room->actfree[16] = 16;
-    room->actfree[17] = 7;
+    hota8d_work_get(room)->timer = 16;
+    hota8d_work_get(room)->sub_timer = 7;
     reset_logs();
     hotaru8(room);
 
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
-    TEST_ASSERT_EQ_INT(ctx, 0, room->actfree[16]);
-    TEST_ASSERT_EQ_INT(ctx, 0, room->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 0, hota8d_work_get(room)->timer);
+    TEST_ASSERT_EQ_INT(ctx, 0, hota8d_work_get(room)->sub_timer);
     TEST_ASSERT_EQ_INT(ctx, 4, room->r_no0);
 
     reset_logs();
-    room->actfree[16] = 16;
-    room->actfree[17] = 0;
+    hota8d_work_get(room)->timer = 16;
+    hota8d_work_get(room)->sub_timer = 0;
     queue_actor(hotaru);
     hotaru8(room);
     TEST_ASSERT_EQ_INT(ctx, 6, room->r_no0);
@@ -543,7 +543,7 @@ static void test_hota8d_room_controller_wait_and_failure_paths(
     TEST_ASSERT_EQ_INT(ctx, 6, room->r_no0);
 
     hotaru->actno = 0;
-    room->actfree[16] = 1;
+    hota8d_work_get(room)->timer = 1;
     reset_logs();
     hotaru8(room);
 
@@ -551,7 +551,7 @@ static void test_hota8d_room_controller_wait_and_failure_paths(
     TEST_ASSERT_EQ_INT(ctx, 6, room->r_no0);
 
     reset_logs();
-    room->actfree[16] = 1;
+    hota8d_work_get(room)->timer = 1;
     queue_actor(hotaru_left);
     queue_actor(hotaru_right);
     hotaru8(room);
@@ -579,7 +579,7 @@ static void test_hota8d_room_controller_wait_and_failure_paths(
 
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_count);
-    TEST_ASSERT_EQ_INT(ctx, 255, door->actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 255, hota8d_work_get(door)->beam_accumulator);
 }
 
 static void test_hota8d_remaining_countdown_and_setup_edges(test_context *ctx) {
@@ -587,13 +587,13 @@ static void test_hota8d_remaining_countdown_and_setup_edges(test_context *ctx) {
 
     reset_hota8d_state();
     actor->r_no0 = 2;
-    actor->actfree[16] = 2;
+    hota8d_work_get(actor)->timer = 2;
     actor->userflag.b.h = 5;
 
     hotaru8(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 1, hota8d_work_get(actor)->timer);
     TEST_ASSERT_EQ_INT(ctx, 4, actor->mstno.b.h);
     TEST_ASSERT_EQ_INT(ctx, 5, actor->userflag.b.h);
     assert_patchg_called_for(ctx, actor);
@@ -601,7 +601,7 @@ static void test_hota8d_remaining_countdown_and_setup_edges(test_context *ctx) {
 
     reset_hota8d_state();
     actor->r_no0 = 4;
-    actor->actfree[1] = 1;
+    hota8d_work_get(actor)->phase_flags = 1;
     actor->xposi.w.h = 3000;
     actor->yposi.w.h = 300;
     gametimer.w = 1;
@@ -610,14 +610,14 @@ static void test_hota8d_remaining_countdown_and_setup_edges(test_context *ctx) {
     hotaru8(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 2, hota8d_work_get(actor)->phase_flags);
     TEST_ASSERT_EQ_INT(ctx, 456, actor->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 608, actor->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 32, actor->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 32, hota8d_work_get(actor)->sub_timer);
 
     reset_hota8d_state();
     actor->r_no0 = 4;
-    actor->actfree[1] = 1;
+    hota8d_work_get(actor)->phase_flags = 1;
     actor->xposi.w.h = 3060;
     actor->yposi.w.h = 360;
     gametimer.w = 127;
@@ -626,10 +626,10 @@ static void test_hota8d_remaining_countdown_and_setup_edges(test_context *ctx) {
     hotaru8(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 2, hota8d_work_get(actor)->phase_flags);
     TEST_ASSERT_EQ_INT(ctx, 984, actor->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, -64, actor->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 32, actor->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 32, hota8d_work_get(actor)->sub_timer);
 }
 
 static void test_hota8d_remaining_attack_and_beam_edges(test_context *ctx) {
@@ -646,12 +646,12 @@ static void test_hota8d_remaining_attack_and_beam_edges(test_context *ctx) {
         clrtblD[i] = samples[i];
     }
     actor->r_no0 = 8;
-    actor->actfree[18] = 0;
+    hota8d_work_get(actor)->sequence_index = 0;
 
     hotaru8(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 8, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 1, hota8d_work_get(actor)->sequence_index);
     assert_patchg_called_for(ctx, actor);
     assert_actionsub_called_for(ctx, actor);
     for (int i = 0; i < 12; ++i) {
@@ -660,26 +660,26 @@ static void test_hota8d_remaining_attack_and_beam_edges(test_context *ctx) {
 
     reset_hota8d_state();
     actor->r_no0 = 10;
-    actor->actfree[18] = 1;
-    actor->actfree[21] = 192;
+    hota8d_work_get(actor)->sequence_index = 1;
+    hota8d_work_get(actor)->beam_accumulator = 192;
 
     hotaru8(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 12, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 0, hota8d_work_get(actor)->sequence_index);
     assert_patchg_called_for(ctx, actor);
     assert_actionsub_called_for(ctx, actor);
 
     reset_hota8d_state();
     actor->r_no0 = 12;
-    actor->actfree[18] = 0;
+    hota8d_work_get(actor)->sequence_index = 0;
     actor->mstno.b.h = 7;
 
     hotaru8(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 12, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 15, actor->actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 15, hota8d_work_get(actor)->sequence_index);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->mstno.b.h);
     assert_patchg_called_for(ctx, actor);
     assert_actionsub_called_for(ctx, actor);
@@ -687,13 +687,13 @@ static void test_hota8d_remaining_attack_and_beam_edges(test_context *ctx) {
     reset_hota8d_state();
     beam->userflag.b.h = -1;
     beam->r_no0 = 4;
-    beam->actfree[16] = 2;
-    beam->actfree[17] = 0;
+    hota8d_work_get(beam)->timer = 2;
+    hota8d_work_get(beam)->sub_timer = 0;
 
     hotaru8(beam);
 
-    TEST_ASSERT_EQ_INT(ctx, 1, beam->actfree[16]);
-    TEST_ASSERT_EQ_INT(ctx, 0, beam->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 1, hota8d_work_get(beam)->timer);
+    TEST_ASSERT_EQ_INT(ctx, 0, hota8d_work_get(beam)->sub_timer);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_count);
     assert_patchg_called_for(ctx, beam);
     assert_actionsub_called_for(ctx, beam);
@@ -713,14 +713,14 @@ static void test_hota8d_remaining_room_controller_edges(test_context *ctx) {
     }
     room->userflag.b.h = -2;
     room->r_no0 = 4;
-    room->actfree[16] = 0;
-    room->actfree[17] = 0;
+    hota8d_work_get(room)->timer = 0;
+    hota8d_work_get(room)->sub_timer = 0;
 
     hotaru8(room);
 
     TEST_ASSERT_EQ_INT(ctx, 4, room->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 2, room->actfree[16]);
-    TEST_ASSERT_EQ_INT(ctx, 64, room->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 2, hota8d_work_get(room)->timer);
+    TEST_ASSERT_EQ_INT(ctx, 64, hota8d_work_get(room)->sub_timer);
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
     for (int i = 0; i < 12; ++i) {
         assert_palette_eq(ctx, 52 + i, samples[i]);
@@ -729,14 +729,14 @@ static void test_hota8d_remaining_room_controller_edges(test_context *ctx) {
     reset_hota8d_state();
     room->userflag.b.h = -2;
     room->r_no0 = 6;
-    room->actfree[16] = 2;
-    set_actfree_word(room, 10, 31);
+    hota8d_work_get(room)->timer = 2;
+    set_hota8d_word(room, 10, 31);
     actwk[31].actno = 0;
 
     hotaru8(room);
 
     TEST_ASSERT_EQ_INT(ctx, 6, room->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 1, room->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 1, hota8d_work_get(room)->timer);
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
 
     reset_hota8d_state();

@@ -138,11 +138,6 @@ static void reset_movie3_logs(void) {
     memset(soundset_requests, 0, sizeof(soundset_requests));
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
 static void init_projector(sprite_status *actor) {
     reset_movie3_state();
     actor->actno = 56;
@@ -357,7 +352,7 @@ static void test_movie_child_frameouts_when_parent_missing_or_destroying(
 
     reset_movie3_state();
     child->userflag.b.h = -1;
-    set_actfree_word(child, 20, 2);
+    movie3_get_work(child)->parent_index = 2;
     parent->actno = 0;
 
     movie(child);
@@ -369,9 +364,9 @@ static void test_movie_child_frameouts_when_parent_missing_or_destroying(
     child = &actwk[5];
     parent = &actwk[2];
     child->userflag.b.h = 1;
-    set_actfree_word(child, 20, 2);
+    movie3_get_work(child)->parent_index = 2;
     parent->actno = 56;
-    parent->actfree[21] = 255;
+    movie3_get_work(parent)->destroyed_flag = 255;
 
     movie(child);
 
@@ -386,7 +381,7 @@ static void test_movie_child_initializes_negative_and_positive_shapes(
 
     reset_movie3_state();
     child->userflag.b.h = -1;
-    set_actfree_word(child, 20, 2);
+    movie3_get_work(child)->parent_index = 2;
     parent->actno = 56;
 
     movie(child);
@@ -396,7 +391,7 @@ static void test_movie_child_initializes_negative_and_positive_shapes(
     child = &actwk[5];
     parent = &actwk[2];
     child->userflag.b.h = 1;
-    set_actfree_word(child, 20, 2);
+    movie3_get_work(child)->parent_index = 2;
     parent->actno = 56;
 
     movie(child);
@@ -410,7 +405,7 @@ static void test_movie_child_moves_with_patch_animation(test_context *ctx) {
     reset_movie3_state();
     child->userflag.b.h = 1;
     child->r_no0 = 2;
-    set_actfree_word(child, 20, 2);
+    movie3_get_work(child)->parent_index = 2;
     parent->actno = 56;
 
     movie(child);

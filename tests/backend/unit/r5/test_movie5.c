@@ -121,17 +121,6 @@ static void reset_movie5_state(void) {
     reset_logs();
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int offset) {
-    return (Sint16)((Uint16)actor->actfree[offset] |
-                    ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
 static void init_projector(sprite_status *actor) {
     reset_movie5_state();
     actor->actno = 44;
@@ -213,7 +202,7 @@ static void test_movie_initializes_and_spawns_four_children(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 379, actwk[32].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 193, actwk[32].yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, -1, actwk[32].userflag.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 2, get_actfree_word(&actwk[32], 20));
+    TEST_ASSERT_EQ_INT(ctx, 2, movie5_work_get(&actwk[32])->parent_actor);
 
     TEST_ASSERT_EQ_INT(ctx, 44, actwk[33].actno);
     TEST_ASSERT_EQ_INT(ctx, 312, actwk[33].xposi.w.h);
@@ -286,7 +275,7 @@ static void test_collision_enters_destruction_and_clears_ride(
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, actor->patno);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 1, movie5_work_get(actor)->parent_destroyed);
     TEST_ASSERT_EQ_INT(ctx, 1, hitchk_count);
     TEST_ASSERT_EQ_INT(ctx, 1, ride_on_clr_count);
     TEST_ASSERT_TRUE(ctx, ride_on_clr_actor == actor);
@@ -374,7 +363,7 @@ static void test_child_frameouts_when_parent_missing_or_destroying(
 
     reset_movie5_state();
     child->userflag.b.h = -1;
-    set_actfree_word(child, 20, 2);
+    movie5_work_get(child)->parent_actor = 2;
     parent->actno = 0;
 
     movie(child);
@@ -386,9 +375,9 @@ static void test_child_frameouts_when_parent_missing_or_destroying(
     child = &actwk[5];
     parent = &actwk[2];
     child->userflag.b.h = 1;
-    set_actfree_word(child, 20, 2);
+    movie5_work_get(child)->parent_actor = 2;
     parent->actno = 44;
-    parent->actfree[21] = 255;
+    movie5_work_get(parent)->parent_destroyed = 255;
 
     movie(child);
 
@@ -403,7 +392,7 @@ static void test_child_initializes_negative_and_positive_shapes(
 
     reset_movie5_state();
     child->userflag.b.h = -1;
-    set_actfree_word(child, 20, 2);
+    movie5_work_get(child)->parent_actor = 2;
     parent->actno = 44;
 
     movie(child);
@@ -424,7 +413,7 @@ static void test_child_initializes_negative_and_positive_shapes(
     child = &actwk[5];
     parent = &actwk[2];
     child->userflag.b.h = 1;
-    set_actfree_word(child, 20, 2);
+    movie5_work_get(child)->parent_actor = 2;
     parent->actno = 44;
 
     movie(child);
@@ -444,7 +433,7 @@ static void test_child_moves_with_patch_animation(test_context *ctx) {
     reset_movie5_state();
     child->userflag.b.h = 1;
     child->r_no0 = 2;
-    set_actfree_word(child, 20, 2);
+    movie5_work_get(child)->parent_actor = 2;
     parent->actno = 44;
 
     movie(child);

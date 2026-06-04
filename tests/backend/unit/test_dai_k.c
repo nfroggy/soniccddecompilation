@@ -213,8 +213,8 @@ static void assert_k_move_visible_radius(test_context *ctx, Sint16 player_start,
     platform->xposi.w.h = 1000;
     player->xposi.w.h = player_start;
     player->r_no0 = 0;
-    player->actfree[2] = 1;
-    player->actfree[15] = initial_radius;
+    player_work_get(player)->status_flags = 1;
+    player_work_get(player)->orbit_radius = initial_radius;
     ride_on_chk_result = 1;
     sinset_cos = 256;
     swdata.b.h = input;
@@ -243,9 +243,9 @@ static void test_dai_k_move_increments_radius_on_64_step_angle(
     platform->actflg = 128;
     platform->xposi.w.h = 1000;
     player->r_no0 = 0;
-    player->actfree[1] = 56;
-    player->actfree[2] = 1;
-    player->actfree[15] = 10;
+    player_work_get(player)->special_angle = 56;
+    player_work_get(player)->status_flags = 1;
+    player_work_get(player)->orbit_radius = 10;
     ride_on_chk_result = 1;
     sinset_cos = 256;
 
@@ -264,7 +264,7 @@ static void test_dai_k_move_keeps_existing_orbit_when_player_state_is_late(
     platform->r_no0 = 2;
     platform->actflg = 128;
     player->r_no0 = 6;
-    player->actfree[2] = 1;
+    player_work_get(player)->status_flags = 1;
     ride_on_chk_result = 1;
 
     dai_k_move(platform);

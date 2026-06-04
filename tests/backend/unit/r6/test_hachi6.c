@@ -103,17 +103,6 @@ static void queue_actor(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
-static void set_actor_word(sprite_status *actor, int index, Sint16 value) {
-    int offset = (index - 23) * 2;
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
-static void set_actor_long(sprite_status *actor, int index, Sint32 value) {
-    int offset = index * 4 - 46;
-    memcpy(&actor->actfree[offset], &value, sizeof(value));
-}
-
 static void place_player_near(sprite_status *actor, Sint16 x_delta,
                               Sint16 y_delta) {
     actwk[0].xposi.w.h = actor->xposi.w.h + x_delta;
@@ -173,9 +162,9 @@ static void test_hachi6_move1_checks_player_and_timer(test_context *ctx) {
     actor->xposi.w.h = 300;
     actor->yposi.w.h = 80;
     actor->r_no0 = 4;
-    set_actor_long(actor, 12, -65536);
-    set_actor_word(actor, 23, 5);
-    set_actor_word(actor, 27, 1);
+    hachi6_get_work(actor)->x_speed = -65536;
+    hachi6_get_work(actor)->timer = 5;
+    hachi6_get_work(actor)->shot_cooldown = 1;
     place_player_near(actor, 0, 0);
 
     act_move1(actor);
@@ -189,8 +178,8 @@ static void test_hachi6_move1_checks_player_and_timer(test_context *ctx) {
     reset_hachi6_state();
     actor->r_no0 = 4;
     actor->userflag.b.h = 1;
-    set_actor_long(actor, 12, -32768);
-    set_actor_word(actor, 23, 1);
+    hachi6_get_work(actor)->x_speed = -32768;
+    hachi6_get_work(actor)->timer = 1;
     act_move1(actor);
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
 }
@@ -205,8 +194,8 @@ static void test_hachi6_act_check_flips_when_player_is_behind(
     actor->actflg = 1;
     actor->cddat = 1;
     actor->r_no0 = 4;
-    set_actor_long(actor, 12, -65536);
-    set_actor_word(actor, 23, 5);
+    hachi6_get_work(actor)->x_speed = -65536;
+    hachi6_get_work(actor)->timer = 5;
     place_player_near(actor, -20, 0);
 
     act_move1(actor);
@@ -220,8 +209,8 @@ static void test_hachi6_act_check_flips_when_player_is_behind(
     actor->xposi.w.h = 300;
     actor->yposi.w.h = 80;
     actor->r_no0 = 4;
-    set_actor_long(actor, 12, -65536);
-    set_actor_word(actor, 23, 5);
+    hachi6_get_work(actor)->x_speed = -65536;
+    hachi6_get_work(actor)->timer = 5;
     place_player_near(actor, 0, 97);
     act_move1(actor);
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
@@ -236,13 +225,13 @@ static void test_hachi6_reverse_sequence(test_context *ctx) {
 
     reset_hachi6_state();
     actor->r_no0 = 6;
-    set_actor_long(actor, 12, -65536);
+    hachi6_get_work(actor)->x_speed = -65536;
     act_rev(actor);
     TEST_ASSERT_EQ_INT(ctx, 8, actor->r_no0);
     act_rev1(actor);
     TEST_ASSERT_EQ_INT(ctx, 8, actor->r_no0);
 
-    set_actor_word(actor, 23, 0);
+    hachi6_get_work(actor)->timer = 0;
     act_rev1(actor);
     TEST_ASSERT_EQ_INT(ctx, 10, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, actor->actflg);
@@ -250,7 +239,7 @@ static void test_hachi6_reverse_sequence(test_context *ctx) {
 
     act_rev2(actor);
     TEST_ASSERT_EQ_INT(ctx, 10, actor->r_no0);
-    set_actor_word(actor, 23, 0);
+    hachi6_get_work(actor)->timer = 0;
     act_rev2(actor);
     TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
 }
@@ -266,12 +255,12 @@ static void test_hachi6_shot_sequence_spawns_projectile(test_context *ctx) {
     actor->xposi.w.h = 300;
     actor->yposi.w.h = 80;
     actor->r_no0 = 12;
-    set_actor_word(actor, 26, 8);
+    hachi6_get_work(actor)->shot_x_offset = 8;
 
     act_shot(actor);
     TEST_ASSERT_EQ_INT(ctx, 14, actor->r_no0);
 
-    set_actor_word(actor, 23, 0);
+    hachi6_get_work(actor)->timer = 0;
     act_shot1(actor);
     TEST_ASSERT_EQ_INT(ctx, 16, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, actor->mstno.b.h);
@@ -283,7 +272,7 @@ static void test_hachi6_shot_sequence_spawns_projectile(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 84, actor->yposi.w.h);
 
     queue_actor(shot);
-    set_actor_word(actor, 23, 0);
+    hachi6_get_work(actor)->timer = 0;
     act_shot2(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 18, actor->r_no0);
@@ -302,11 +291,11 @@ static void test_hachi6_shot_sequence_spawns_projectile(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 160, soundset_requests[0]);
 
-    set_actor_word(actor, 23, 2);
+    hachi6_get_work(actor)->timer = 2;
     act_shot3(actor);
     TEST_ASSERT_EQ_INT(ctx, 18, actor->r_no0);
 
-    set_actor_word(actor, 23, 0);
+    hachi6_get_work(actor)->timer = 0;
     act_shot3(actor);
     TEST_ASSERT_EQ_INT(ctx, 2, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->mstno.b.h);
@@ -327,12 +316,12 @@ static void test_hachi6_shot2_handles_wait_failure_and_left_facing(
     actor->xposi.w.h = 300;
     actor->yposi.w.h = 80;
     actor->r_no0 = 16;
-    set_actor_word(actor, 23, 2);
+    hachi6_get_work(actor)->timer = 2;
     act_shot2(actor);
     TEST_ASSERT_EQ_INT(ctx, 16, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
 
-    set_actor_word(actor, 23, 0);
+    hachi6_get_work(actor)->timer = 0;
     act_shot2(actor);
     TEST_ASSERT_EQ_INT(ctx, 18, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
@@ -344,7 +333,7 @@ static void test_hachi6_shot2_handles_wait_failure_and_left_facing(
     actor->yposi.w.h = 80;
     actor->r_no0 = 16;
     queue_actor(shot);
-    set_actor_word(actor, 23, 0);
+    hachi6_get_work(actor)->timer = 0;
     act_shot2(actor);
     TEST_ASSERT_EQ_INT(ctx, 293, shot->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
@@ -366,14 +355,14 @@ static void test_hachi6_tama_dispatch_and_lifecycle(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 4, shot->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, shot->patno);
 
-    set_actor_long(shot, 12, -0x20000);
-    set_actor_long(shot, 13, 0x20000);
+    hachi6_get_work(shot)->x_speed = -0x20000;
+    hachi6_get_work(shot)->y_speed = 0x20000;
     tama(shot);
     TEST_ASSERT_EQ_INT(ctx, -2, shot->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 2, shot->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 4, shot->r_no0);
 
-    set_actor_word(shot, 23, 0);
+    hachi6_get_work(shot)->timer = 0;
     tam_move2(shot);
     TEST_ASSERT_EQ_INT(ctx, 6, shot->r_no0);
 
@@ -387,8 +376,8 @@ static void test_hachi6_tama_dispatch_and_lifecycle(test_context *ctx) {
     shot->r_no0 = 6;
     shot->userflag.b.h = -1;
     shot->actflg = 128;
-    set_actor_long(shot, 12, 0x20000);
-    set_actor_long(shot, 13, 0x20000);
+    hachi6_get_work(shot)->x_speed = 0x20000;
+    hachi6_get_work(shot)->y_speed = 0x20000;
     tama(shot);
     TEST_ASSERT_EQ_INT(ctx, 2, shot->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 2, shot->yposi.w.h);

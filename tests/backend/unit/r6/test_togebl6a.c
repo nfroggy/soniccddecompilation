@@ -98,11 +98,6 @@ static void reset_togebl6a_logs(void) {
     sinset_angle = 0;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
 static void queue_all_options(sprite_status *opt0, sprite_status *opt1,
                               sprite_status *opt2, sprite_status *opt3,
                               sprite_status *opt4, sprite_status *opt5) {
@@ -273,9 +268,9 @@ static void test_togebl6a_option_initializes_and_moves_existing_position(
     reset_togebl6a_state();
     parent->actno = 45;
     opt->userflag.b.h = -1;
-    set_actfree_word(opt, 20, 2);
-    set_actfree_word(opt, 2, 12);
-    set_actfree_word(opt, 6, 34);
+    togeball6a_get_work(opt)->parent_index = 2;
+    togeball6a_get_work(opt)->target_x = 12;
+    togeball6a_get_work(opt)->target_y = 34;
 
     togeball(opt);
 
@@ -298,7 +293,7 @@ static void test_togebl6a_option_frameouts_when_parent_is_gone(
     reset_togebl6a_state();
     opt->userflag.b.h = -1;
     opt->r_no0 = 2;
-    set_actfree_word(opt, 20, 2);
+    togeball6a_get_work(opt)->parent_index = 2;
 
     togeball(opt);
 

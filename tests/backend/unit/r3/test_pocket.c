@@ -96,11 +96,6 @@ static void queue_actor(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
 static void reset_pocket_state(void) {
     memset(actwk, 0, sizeof(actwk));
     time_flag = 0;
@@ -263,7 +258,7 @@ static void test_pocket_move00_spawns_linked_actor_or_frames_out(
 
     a_move00(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 64, actwk[0].actfree[2]);
+    TEST_ASSERT_EQ_INT(ctx, 64, player_work_get(&actwk[0])->status_flags);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_count);
 
@@ -282,14 +277,14 @@ static void test_pocket_scripted_reward_sequence(test_context *ctx) {
 
     reset_pocket_state();
     actor->r_no0 = 6;
-    set_actfree_word(actor, 6, 7);
+    pocket_get_work(actor)->bonus_remaining = 7;
 
     a_move1(actor);
 
-    set_actfree_word(actor, 0, 0);
+    pocket_get_work(actor)->timer = 0;
     a_move2(actor);
 
-    set_actfree_word(actor, 0, 0);
+    pocket_get_work(actor)->timer = 0;
     a_move3(actor);
     TEST_ASSERT_EQ_INT(ctx, 1, scoreup_count);
     TEST_ASSERT_EQ_INT(ctx, 10, scoreup_values[0]);
@@ -297,14 +292,14 @@ static void test_pocket_scripted_reward_sequence(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, tensuu0_actor == actor);
     TEST_ASSERT_EQ_INT(ctx, 0, tensuu0_userflag);
 
-    set_actfree_word(actor, 0, 0);
+    pocket_get_work(actor)->timer = 0;
     a_move4(actor);
     TEST_ASSERT_EQ_INT(ctx, 2, scoreup_count);
 
-    set_actfree_word(actor, 0, 0);
+    pocket_get_work(actor)->timer = 0;
     a_move5(actor);
 
-    set_actfree_word(actor, 0, 0);
+    pocket_get_work(actor)->timer = 0;
     a_move6(actor);
 }
 
@@ -316,7 +311,7 @@ static void test_pocket_reward_sequence_skips_scoring_when_empty(
     actor->r_no0 = 10;
 
     a_move3(actor);
-    set_actfree_word(actor, 0, 0);
+    pocket_get_work(actor)->timer = 0;
     a_move4(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 0, scoreup_count);
@@ -330,35 +325,35 @@ static void test_pocket_scripted_states_wait_while_timers_are_positive(
     reset_pocket_state();
 
     actor->r_no0 = 6;
-    set_actfree_word(actor, 0, 1);
+    pocket_get_work(actor)->timer = 1;
     a_move1(actor);
 
     actor->r_no0 = 8;
-    set_actfree_word(actor, 0, 1);
+    pocket_get_work(actor)->timer = 1;
     a_move2(actor);
 
     actor->r_no0 = 10;
-    set_actfree_word(actor, 0, 1);
+    pocket_get_work(actor)->timer = 1;
     a_move3(actor);
 
     actor->r_no0 = 12;
-    set_actfree_word(actor, 0, 1);
+    pocket_get_work(actor)->timer = 1;
     a_move4(actor);
 
     actor->r_no0 = 14;
-    set_actfree_word(actor, 0, 1);
+    pocket_get_work(actor)->timer = 1;
     a_move5(actor);
 
     actor->r_no0 = 16;
-    set_actfree_word(actor, 0, 1);
+    pocket_get_work(actor)->timer = 1;
     a_move6(actor);
 
     actor->r_no0 = 18;
-    set_actfree_word(actor, 0, 1);
+    pocket_get_work(actor)->timer = 1;
     a_move7(actor);
 
     actor->r_no0 = 20;
-    set_actfree_word(actor, 0, 1);
+    pocket_get_work(actor)->timer = 1;
     a_move8(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
@@ -373,18 +368,18 @@ static void test_pocket_release_clears_player_flags_and_recycles(
 
     reset_pocket_state();
     actor->r_no0 = 18;
-    actor->actfree[20] = 255;
-    actwk[0].actfree[2] = 255;
+    pocket_get_work(actor)->active = 255;
+    player_work_get(&actwk[0])->status_flags = 255;
     child->r_no0 = 2;
-    set_actfree_word(actor, 2, 5);
+    pocket_get_work(actor)->child_index = 5;
 
     a_move7(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 190, actwk[0].actfree[2]);
+    TEST_ASSERT_EQ_INT(ctx, 190, player_work_get(&actwk[0])->status_flags);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 159, soundset_requests[0]);
 
-    set_actfree_word(actor, 0, 0);
+    pocket_get_work(actor)->timer = 0;
     a_move8(actor);
 
 }
@@ -395,12 +390,12 @@ static void test_pocket_release_without_capture_keeps_player_flags(
 
     reset_pocket_state();
     actor->r_no0 = 18;
-    actor->actfree[20] = 0;
-    actwk[0].actfree[2] = 255;
+    pocket_get_work(actor)->active = 0;
+    player_work_get(&actwk[0])->status_flags = 255;
 
     a_move7(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 255, actwk[0].actfree[2]);
+    TEST_ASSERT_EQ_INT(ctx, 255, player_work_get(&actwk[0])->status_flags);
 }
 
 static void test_pocket_positive_init_and_linked_move_paths(test_context *ctx) {
@@ -418,7 +413,7 @@ static void test_pocket_positive_init_and_linked_move_paths(test_context *ctx) {
     reset_pocket_state();
     actor = &actwk[3];
     actor->r_no0 = 2;
-    set_actfree_word(actor, 4, 5);
+    pocket_get_work(actor)->parent_index = 5;
     actwk[5].actno = 47;
 
     pocket(actor);

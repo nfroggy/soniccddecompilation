@@ -1,6 +1,7 @@
 #include <string.h>
 
 #include "support/test_runner.h"
+#include "player_work.h"
 #include "types.h"
 
 sprite_status actwk[128];
@@ -125,7 +126,7 @@ static void test_ride_on_clr_rejects_nonmatching_state(test_context *ctx) {
     player->cddat = 0;
     TEST_ASSERT_EQ_INT(ctx, -1, ride_on_clr(platform, player));
     player->cddat = 8;
-    player->actfree[19] = 3;
+    player_work_get(player)->ride_actor_index = 3;
     TEST_ASSERT_EQ_INT(ctx, -1, ride_on_clr(platform, player));
 }
 
@@ -137,10 +138,10 @@ static void test_ride_on_clr_clears_matching_ride_state(test_context *ctx) {
     setup_platform_and_player(&platform, &player);
     platform->cddat = 8 | 32;
     player->cddat = 8;
-    player->actfree[19] = 5;
-    player->actfree[0] = 1;
-    player->actfree[2] = 3;
-    player->actfree[14] = 99;
+    player_work_get(player)->ride_actor_index = 5;
+    player_work_get(player)->spin_dash_counter = 1;
+    player_work_get(player)->status_flags = 3;
+    player_work_get(player)->jump_lock = 99;
 
     TEST_ASSERT_EQ_INT(ctx, 0, ride_on_clr(platform, player));
 
@@ -156,20 +157,20 @@ static void test_ride_on_clr_preserves_special_player_flags(test_context *ctx) {
     setup_platform_and_player(&platform, &player);
     platform->cddat = 8;
     player->cddat = 8;
-    player->actfree[19] = 5;
-    player->actfree[2] = 64 | 1;
+    player_work_get(player)->ride_actor_index = 5;
+    player_work_get(player)->status_flags = 64 | 1;
     ride_on_clr(platform, player);
 
     platform->cddat = 8;
     player->cddat = 8;
-    player->actfree[19] = 5;
-    player->actfree[2] = 1;
+    player_work_get(player)->ride_actor_index = 5;
+    player_work_get(player)->status_flags = 1;
     player->mstno.b.h = 23;
     ride_on_clr(platform, player);
 
     platform->cddat = 8;
     player->cddat = 8;
-    player->actfree[19] = 5;
+    player_work_get(player)->ride_actor_index = 5;
     player->mstno.b.h = 43;
     ride_on_clr(platform, player);
 }
@@ -201,7 +202,7 @@ static void test_ride_on_set_uses_chibi_size_and_clears_prior_platform(
     setup_platform_and_player(&platform, &player);
     chibi_flag = 1;
     player->cddat = 4 | 8;
-    player->actfree[19] = 7;
+    player_work_get(player)->ride_actor_index = 7;
     actwk[7].cddat = 8 | 32;
     player->yposi.w.h = 100;
 
@@ -219,7 +220,7 @@ static void test_ride_on_set_returns_for_same_platform_and_special_cases(
     setup_platform_and_player(&platform, &player);
     platform->cddat = 8;
     player->cddat = 8;
-    player->actfree[19] = 5;
+    player_work_get(player)->ride_actor_index = 5;
     TEST_ASSERT_EQ_INT(ctx, -1, ride_on_set(platform, player));
 
     reset_ridechk_state();
@@ -247,10 +248,10 @@ static void test_hitchk_rejects_early_conditions(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 0, hitchk(platform, player));
 
     player->mstno.b.h = 0;
-    player->actfree[2] = 64;
+    player_work_get(player)->status_flags = 64;
     TEST_ASSERT_EQ_INT(ctx, 0, hitchk(platform, player));
 
-    player->actfree[2] = 0;
+    player_work_get(player)->status_flags = 0;
     player->r_no0 = 6;
     TEST_ASSERT_EQ_INT(ctx, 0, hitchk(platform, player));
 

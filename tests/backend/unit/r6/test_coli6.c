@@ -70,8 +70,7 @@ static void queue_actor(sprite_status *actor) {
 }
 
 static void set_player_invincibility_timer(sprite_status *player, Uint16 value) {
-    player->actfree[6] = (Uint8)value;
-    player->actfree[7] = (Uint8)(value >> 8);
+    player_work_get(player)->damage_invulnerability_timer = value;
 }
 
 static void reset_coli6_state(void) {
@@ -116,7 +115,7 @@ static void test_pcol_scans_active_collision_slots(test_context *ctx) {
     sprite_status *enemy = &actwk[32];
 
     reset_coli6_state();
-    player->actfree[2] = 64;
+    player_work_get(player)->status_flags = 64;
     TEST_ASSERT_EQ_INT(ctx, 0, pcol(player));
 
     reset_coli6_state();

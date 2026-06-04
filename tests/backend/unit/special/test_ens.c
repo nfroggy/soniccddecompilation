@@ -202,12 +202,12 @@ static void test_bara_ring_initializes_from_player_and_animates(
     TEST_ASSERT_EQ_INT(ctx, 1, ring->exeno);
     TEST_ASSERT_EQ_INT(ctx, 59279, ring->sprcolor);
     TEST_ASSERT_TRUE(ctx, ring->pattbl == mpitem);
-    TEST_ASSERT_EQ_INT(ctx, 4, ring->actfree[2]);
+    TEST_ASSERT_EQ_INT(ctx, 4, special_enemy_get_work(ring)->pattern);
     TEST_ASSERT_EQ_INT(ctx, 4, patinit_pattern);
     TEST_ASSERT_TRUE(ctx, patinit_actor == ring);
     TEST_ASSERT_EQ_INT(ctx, 210, ring->sx_posi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 180, ring->sy_posi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 45, ring->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 45, special_enemy_get_work(ring)->timer_low);
     TEST_ASSERT_EQ_INT(ctx, 1, pmflag);
     TEST_ASSERT_TRUE(ctx, ring->sx_speed.l > 0);
     TEST_ASSERT_EQ_INT(ctx, -10, ring->sy_speed.w.h);
@@ -232,12 +232,12 @@ static void test_bara_ring_wrapper_runs_move_state(test_context *ctx) {
 
     reset_ens_state();
     ring->exeno = 1;
-    ring->actfree[0] = 2;
+    special_enemy_get_work(ring)->timer_low = 2;
     ring->sy_posi.l = 300 << 16;
 
     bara_ring(ring);
 
-    TEST_ASSERT_EQ_INT(ctx, 1, ring->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 1, special_enemy_get_work(ring)->timer_low);
     TEST_ASSERT_TRUE(ctx, patset_actor == ring);
 }
 
@@ -245,7 +245,7 @@ static void test_bara_ring_move_counts_down_and_bounces(test_context *ctx) {
     sprite_status_sp *ring = &actwk[12];
 
     reset_ens_state();
-    ring->actfree[0] = 1;
+    special_enemy_get_work(ring)->timer_low = 1;
     ring->sx_speed.l = 0x00020000;
     ring->sy_speed.l = 0x00010000;
     ring->sx_posi.l = 100 << 16;
@@ -264,13 +264,13 @@ static void test_bara_ring_move_applies_gravity_before_bounce_height(
     sprite_status_sp *ring = &actwk[12];
 
     reset_ens_state();
-    ring->actfree[0] = 2;
+    special_enemy_get_work(ring)->timer_low = 2;
     ring->sy_speed.l = 0x00010000;
     ring->sy_posi.l = 300 << 16;
 
     b_ring01(ring);
 
-    TEST_ASSERT_EQ_INT(ctx, 1, ring->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 1, special_enemy_get_work(ring)->timer_low);
     TEST_ASSERT_EQ_INT(ctx, 301, ring->sy_posi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 3, ring->sy_speed.w.h);
     TEST_ASSERT_EQ_INT(ctx, 0, ring->actflg & 1);
@@ -280,20 +280,20 @@ static void test_item_ring_initializes_sound_and_rises(test_context *ctx) {
     sprite_status_sp *item = &actwk[16];
 
     reset_ens_state();
-    item->actfree[1] = 3;
+    special_enemy_get_work(item)->subtype = 3;
 
     item_ring(item);
 
     TEST_ASSERT_EQ_INT(ctx, 1, item->exeno);
     TEST_ASSERT_EQ_INT(ctx, 34703, item->sprcolor);
-    TEST_ASSERT_EQ_INT(ctx, 3, item->actfree[2]);
-    TEST_ASSERT_EQ_INT(ctx, 16, item->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 3, special_enemy_get_work(item)->pattern);
+    TEST_ASSERT_EQ_INT(ctx, 16, special_enemy_get_work(item)->timer_low);
     TEST_ASSERT_EQ_INT(ctx, -16, item->sy_speed.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, key_set_count);
     TEST_ASSERT_EQ_INT(ctx, 149, key_set_value);
     TEST_ASSERT_TRUE(ctx, patset_actor == item);
 
-    item->actfree[0] = 1;
+    special_enemy_get_work(item)->timer_low = 1;
     i_ring01(item);
 
     TEST_ASSERT_EQ_INT(ctx, 1, item->actflg & 1);
@@ -306,12 +306,12 @@ static void test_item_ring_wrapper_runs_move_state(test_context *ctx) {
 
     reset_ens_state();
     item->exeno = 1;
-    item->actfree[0] = 2;
+    special_enemy_get_work(item)->timer_low = 2;
     item->sy_speed.w.h = -4;
 
     item_ring(item);
 
-    TEST_ASSERT_EQ_INT(ctx, 1, item->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 1, special_enemy_get_work(item)->timer_low);
     TEST_ASSERT_EQ_INT(ctx, -4, item->sy_posi.w.h);
     TEST_ASSERT_TRUE(ctx, patset_actor == item);
 }
@@ -330,7 +330,7 @@ static void test_press_blinks_by_timer_bit(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 208, press_actor->sy_posi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 0, press_actor->actflg & 4);
 
-    press_actor->actfree[0] = 15;
+    special_enemy_get_work(press_actor)->timer_low = 15;
     press01(press_actor);
     TEST_ASSERT_EQ_INT(ctx, 4, press_actor->actflg & 4);
 }
@@ -340,11 +340,11 @@ static void test_press_wrapper_runs_existing_blink_state(test_context *ctx) {
 
     reset_ens_state();
     press_actor->exeno = 1;
-    press_actor->actfree[0] = 1;
+    special_enemy_get_work(press_actor)->timer_low = 1;
 
     press(press_actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, press_actor->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 2, special_enemy_get_work(press_actor)->timer_low);
     TEST_ASSERT_EQ_INT(ctx, 0, press_actor->actflg & 4);
     TEST_ASSERT_TRUE(ctx, patset_actor == press_actor);
 }
@@ -458,8 +458,8 @@ static void test_title_obi_wrapper_dispatches_later_states(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 4, obi->exeno);
 
     obi->exeno = 4;
-    obi->actfree[0] = 1;
-    obi->actfree[1] = 0;
+    special_enemy_get_work(obi)->timer_low = 1;
+    special_enemy_get_work(obi)->subtype = 0;
     title_obi(obi);
     TEST_ASSERT_EQ_INT(ctx, 1, obi->actflg & 1);
 }
@@ -522,8 +522,7 @@ static void test_shadow_and_player_shadow_follow_sources(test_context *ctx) {
     actwk[3].x_posi.w.h = 200;
     actwk[3].y_posi.w.h = 220;
     actwk[3].z_posi.w.h = 640;
-    shadow->actfree[4] = 3;
-    shadow->actfree[5] = 0;
+    special_enemy_get_work(shadow)->linked_actor_index = 3;
     shadow->actflg = 4;
 
     kage(shadow);
@@ -546,7 +545,7 @@ static void test_shadow_existing_state_clears_source_hidden_flag(
     actwk[3].y_posi.w.h = 230;
     actwk[3].actflg = 4;
     shadow->exeno = 1;
-    shadow->actfree[4] = 3;
+    special_enemy_get_work(shadow)->linked_actor_index = 3;
 
     kage01(shadow);
 
@@ -590,8 +589,8 @@ static void test_ufo_initial_creates_stage_ufo_and_shadow_pairs(
 
     TEST_ASSERT_EQ_INT(ctx, 6, ufoleft);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[32].actno);
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[32].actfree[18]);
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[32].actfree[19]);
+    TEST_ASSERT_EQ_INT(ctx, 0, special_enemy_get_work(&actwk[32])->ufo_type);
+    TEST_ASSERT_EQ_INT(ctx, 0, special_enemy_get_work(&actwk[32])->ufo_direction);
     TEST_ASSERT_EQ_INT(ctx, 5, actwk[40].actno);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[37].actno);
     TEST_ASSERT_EQ_INT(ctx, 5, actwk[45].actno);
@@ -613,8 +612,8 @@ static void test_tufo_initial_respects_time_gate_and_existing_actor(
     actwk[39].actno = 0;
     tufo_initial();
     TEST_ASSERT_EQ_INT(ctx, 3, actwk[39].actno);
-    TEST_ASSERT_EQ_INT(ctx, 2, actwk[39].actfree[18]);
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[39].actfree[19]);
+    TEST_ASSERT_EQ_INT(ctx, 2, special_enemy_get_work(&actwk[39])->ufo_type);
+    TEST_ASSERT_EQ_INT(ctx, 0, special_enemy_get_work(&actwk[39])->ufo_direction);
     TEST_ASSERT_EQ_INT(ctx, 5, actwk[47].actno);
 }
 
@@ -633,7 +632,7 @@ static void test_ufo0_initializes_moves_and_hides_during_start(
     TEST_ASSERT_EQ_INT(ctx, 58432, ufo->sprcolor);
     TEST_ASSERT_TRUE(ctx, ufo->pattbl == mpufox);
     TEST_ASSERT_EQ_INT(ctx, 680, ufo->z_posi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 1, ufo->actfree[20]);
+    TEST_ASSERT_EQ_INT(ctx, 1, special_enemy_get_work(ufo)->flash_timer);
     TEST_ASSERT_EQ_INT(ctx, 4, ufo->actflg & 4);
     TEST_ASSERT_TRUE(ctx, zbuf_set_actor == ufo);
     TEST_ASSERT_TRUE(ctx, scal_actor == ufo);
@@ -645,12 +644,12 @@ static void test_ufo0_wrapper_runs_explosion_state(test_context *ctx) {
 
     reset_ens_state();
     ufo->exeno = 2;
-    ufo->actfree[0] = 2;
-    ufo->actfree[1] = 1;
+    special_enemy_get_work(ufo)->timer_low = 2;
+    special_enemy_get_work(ufo)->subtype = 1;
 
     ufo0(ufo);
 
-    TEST_ASSERT_EQ_INT(ctx, 1, ufo->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 1, special_enemy_get_work(ufo)->timer_low);
     TEST_ASSERT_EQ_INT(ctx, 0, ufo->actflg & 1);
 }
 
@@ -679,7 +678,7 @@ static void test_timeufo_initializes_moves_and_requests_sound(test_context *ctx)
     TEST_ASSERT_EQ_INT(ctx, 33856, tufo->sprcolor);
     TEST_ASSERT_TRUE(ctx, tufo->pattbl == tpufox);
     TEST_ASSERT_EQ_INT(ctx, 580, tufo->z_posi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 1, tufo->actfree[20]);
+    TEST_ASSERT_EQ_INT(ctx, 1, special_enemy_get_work(tufo)->flash_timer);
     TEST_ASSERT_EQ_INT(ctx, 188, key_set_value);
     TEST_ASSERT_TRUE(ctx, zbuf_set_actor == tufo);
     TEST_ASSERT_TRUE(ctx, scal_actor == tufo);
@@ -694,8 +693,7 @@ static void test_ufo_and_timeufo_refresh_route_when_counter_expires(
     stagenm = 0;
     u_init(0, ufo);
     ufo00(ufo);
-    ufo->actfree[16] = 1;
-    ufo->actfree[17] = 0;
+    special_enemy_get_work(ufo)->movement_count = 1;
 
     ufo01(ufo);
 
@@ -704,8 +702,7 @@ static void test_ufo_and_timeufo_refresh_route_when_counter_expires(
     reset_ens_state();
     tufo_initial();
     tufo00(tufo);
-    tufo->actfree[16] = 1;
-    tufo->actfree[17] = 0;
+    special_enemy_get_work(tufo)->movement_count = 1;
 
     tufo01(tufo);
 
@@ -718,8 +715,8 @@ static void test_timeufo_wrapper_runs_explosion_state_and_stop_guard(
 
     reset_ens_state();
     tufo->exeno = 2;
-    tufo->actfree[0] = 1;
-    tufo->actfree[1] = 0;
+    special_enemy_get_work(tufo)->timer_low = 1;
+    special_enemy_get_work(tufo)->subtype = 0;
 
     timeufo(tufo);
 
@@ -760,7 +757,7 @@ static void test_ufo_collision_switches_to_reward_state(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, ring_add_count);
     TEST_ASSERT_EQ_INT(ctx, 6, ring_add_value);
     TEST_ASSERT_EQ_INT(ctx, 4, actwk[16].actno);
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[16].actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 0, special_enemy_get_work(&actwk[16])->subtype);
 }
 
 static void test_ufo_collision_type_one_sets_player_timer(test_context *ctx) {
@@ -779,7 +776,7 @@ static void test_ufo_collision_type_one_sets_player_timer(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 0, time_stop);
     TEST_ASSERT_EQ_INT(ctx, 20, rufo_getnm);
     TEST_ASSERT_EQ_INT(ctx, 0, ring_add_count);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[16].actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 1, special_enemy_get_work(&actwk[16])->subtype);
 }
 
 static void test_timeufo_collision_adds_time_and_spawns_item_ring(
@@ -799,7 +796,7 @@ static void test_timeufo_collision_adds_time_and_spawns_item_ring(
     TEST_ASSERT_EQ_INT(ctx, 2, tufo->exeno);
     TEST_ASSERT_EQ_INT(ctx, 40, spe_time.l);
     TEST_ASSERT_EQ_INT(ctx, 4, actwk[16].actno);
-    TEST_ASSERT_EQ_INT(ctx, 3, actwk[16].actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 3, special_enemy_get_work(&actwk[16])->subtype);
 }
 
 static void test_ufo02_and_tufo02_spawn_explosions_while_falling(
@@ -810,9 +807,9 @@ static void test_ufo02_and_tufo02_spawn_explosions_while_falling(
     reset_ens_state();
     ufo->sx_posi.w.h = 200;
     ufo->sy_posi.w.h = 220;
-    ufo->actfree[0] = 2;
-    ufo->actfree[1] = 0;
-    ufo->actfree[3] = 0;
+    special_enemy_get_work(ufo)->timer_low = 2;
+    special_enemy_get_work(ufo)->subtype = 0;
+    special_enemy_get_work(ufo)->direction = 0;
     queue_random(7);
 
     ufo02(ufo);
@@ -826,9 +823,9 @@ static void test_ufo02_and_tufo02_spawn_explosions_while_falling(
     reset_ens_state();
     tufo->sx_posi.w.h = 180;
     tufo->sy_posi.w.h = 210;
-    tufo->actfree[0] = 2;
-    tufo->actfree[1] = 0;
-    tufo->actfree[3] = 1;
+    special_enemy_get_work(tufo)->timer_low = 2;
+    special_enemy_get_work(tufo)->subtype = 0;
+    special_enemy_get_work(tufo)->direction = 1;
     queue_random(5);
 
     tufo02(tufo);
@@ -847,8 +844,8 @@ static void test_ufo_explosion_states_cover_timer_and_allocator_failures(
     int i;
 
     reset_ens_state();
-    ufo->actfree[0] = 1;
-    ufo->actfree[1] = 0;
+    special_enemy_get_work(ufo)->timer_low = 1;
+    special_enemy_get_work(ufo)->subtype = 0;
     ufo02(ufo);
     TEST_ASSERT_EQ_INT(ctx, 1, ufo->actflg & 1);
 
@@ -856,14 +853,14 @@ static void test_ufo_explosion_states_cover_timer_and_allocator_failures(
     for (i = 24; i < 31; ++i) {
         actwk[i].actno = 12;
     }
-    ufo->actfree[0] = 2;
-    ufo->actfree[1] = 0;
+    special_enemy_get_work(ufo)->timer_low = 2;
+    special_enemy_get_work(ufo)->subtype = 0;
     ufo02(ufo);
     TEST_ASSERT_EQ_INT(ctx, 12, actwk[24].actno);
 
     reset_ens_state();
-    tufo->actfree[0] = 1;
-    tufo->actfree[1] = 0;
+    special_enemy_get_work(tufo)->timer_low = 1;
+    special_enemy_get_work(tufo)->subtype = 0;
     tufo02(tufo);
     TEST_ASSERT_EQ_INT(ctx, 1, tufo->actflg & 1);
 
@@ -871,8 +868,8 @@ static void test_ufo_explosion_states_cover_timer_and_allocator_failures(
     for (i = 24; i < 31; ++i) {
         actwk[i].actno = 12;
     }
-    tufo->actfree[0] = 2;
-    tufo->actfree[1] = 0;
+    special_enemy_get_work(tufo)->timer_low = 2;
+    special_enemy_get_work(tufo)->subtype = 0;
     tufo02(tufo);
     TEST_ASSERT_EQ_INT(ctx, 12, actwk[24].actno);
 }
@@ -905,7 +902,7 @@ static void test_ptset_ufo_updates_pattern_and_can_return_when_unchanged(
 
     ptset_ufo(ufo);
 
-    TEST_ASSERT_EQ_INT(ctx, 5, ufo->actfree[2]);
+    TEST_ASSERT_EQ_INT(ctx, 5, special_enemy_get_work(ufo)->pattern);
     TEST_ASSERT_EQ_INT(ctx, 1, patinit1_count);
     TEST_ASSERT_EQ_INT(ctx, 5, patinit1_pattern);
 
@@ -914,7 +911,7 @@ static void test_ptset_ufo_updates_pattern_and_can_return_when_unchanged(
 
     dstns_value = 2000;
     ptset_ufo(ufo);
-    TEST_ASSERT_EQ_INT(ctx, 9, ufo->actfree[2]);
+    TEST_ASSERT_EQ_INT(ctx, 9, special_enemy_get_work(ufo)->pattern);
 }
 
 TEST_MAIN_BEGIN;

@@ -102,16 +102,39 @@ static void queue_actwkchk2(sprite_status *actor) {
     actwkchk2_queue[actwkchk2_queue_count++] = actor;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
+static void set_nokogiri_word(sprite_status *actor, int offset, Sint16 value) {
+    nokogiri_work *work = nokogiri_get_work(actor);
+
+    switch (offset) {
+    case 0:
+        if (actor->userflag.b.l == -1)
+            work->parent_index = value;
+        else
+            work->timer = value;
+        break;
+    case 10:
+        work->frame_count = value;
+        break;
+    case 12:
+        work->origin_x = value;
+        break;
+    case 14:
+        work->sound_counter = value;
+        break;
+    }
 }
 
-static void set_actfree_long(sprite_status *actor, int offset, Sint32 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint32)value >> 8);
-    actor->actfree[offset + 2] = (Uint8)((Uint32)value >> 16);
-    actor->actfree[offset + 3] = (Uint8)((Uint32)value >> 24);
+static void set_nokogiri_long(sprite_status *actor, int offset, Sint32 value) {
+    nokogiri_work *work = nokogiri_get_work(actor);
+
+    switch (offset) {
+    case 2:
+        work->x_step = value;
+        break;
+    case 6:
+        work->y_step = value;
+        break;
+    }
 }
 
 static void assert_outer_callbacks(test_context *ctx, sprite_status *actor,
@@ -232,11 +255,11 @@ static void test_nokogiri_open_timer_paths(test_context *ctx) {
     body->r_no0 = 2;
     body->xposi.l = 100 << 16;
     body->yposi.l = 200 << 16;
-    set_actfree_long(body, 2, 65536);
-    set_actfree_long(body, 6, -65536);
-    set_actfree_word(body, 0, 2);
-    set_actfree_word(body, 10, 5);
-    set_actfree_word(body, 12, 77);
+    set_nokogiri_long(body, 2, 65536);
+    set_nokogiri_long(body, 6, -65536);
+    set_nokogiri_word(body, 0, 2);
+    set_nokogiri_word(body, 10, 5);
+    set_nokogiri_word(body, 12, 77);
 
     nokogiri(body);
 
@@ -247,8 +270,8 @@ static void test_nokogiri_open_timer_paths(test_context *ctx) {
     body->xposi.l = 100 << 16;
     body->yposi.l = 200 << 16;
     body->mstno.b.h = 4;
-    set_actfree_word(body, 0, 1);
-    set_actfree_word(body, 10, 2);
+    set_nokogiri_word(body, 0, 1);
+    set_nokogiri_word(body, 10, 2);
 
     nokogiri(body);
 
@@ -259,8 +282,8 @@ static void test_nokogiri_open_timer_paths(test_context *ctx) {
     body->xposi.l = 100 << 16;
     body->yposi.l = 200 << 16;
     body->mstno.b.h = 5;
-    set_actfree_word(body, 0, 1);
-    set_actfree_word(body, 10, 1);
+    set_nokogiri_word(body, 0, 1);
+    set_nokogiri_word(body, 10, 1);
 
     nokogiri(body);
 
@@ -273,8 +296,8 @@ static void test_nokogiri_opend_close_and_closed_timer_paths(
 
     reset_nokogiri_state();
     body->r_no0 = 4;
-    set_actfree_word(body, 0, 2);
-    set_actfree_word(body, 12, 66);
+    set_nokogiri_word(body, 0, 2);
+    set_nokogiri_word(body, 12, 66);
 
     nokogiri(body);
 
@@ -282,7 +305,7 @@ static void test_nokogiri_opend_close_and_closed_timer_paths(
 
     reset_logs();
     body->r_no0 = 4;
-    set_actfree_word(body, 0, 1);
+    set_nokogiri_word(body, 0, 1);
 
     nokogiri(body);
 
@@ -293,10 +316,10 @@ static void test_nokogiri_opend_close_and_closed_timer_paths(
     body->xposi.l = 100 << 16;
     body->yposi.l = 200 << 16;
     body->mstno.b.h = 7;
-    set_actfree_long(body, 2, 65536);
-    set_actfree_long(body, 6, -65536);
-    set_actfree_word(body, 0, 1);
-    set_actfree_word(body, 10, 2);
+    set_nokogiri_long(body, 2, 65536);
+    set_nokogiri_long(body, 6, -65536);
+    set_nokogiri_word(body, 0, 1);
+    set_nokogiri_word(body, 10, 2);
 
     nokogiri(body);
 
@@ -307,8 +330,8 @@ static void test_nokogiri_opend_close_and_closed_timer_paths(
     body->xposi.l = 100 << 16;
     body->yposi.l = 200 << 16;
     body->mstno.b.h = 6;
-    set_actfree_word(body, 0, 1);
-    set_actfree_word(body, 10, 1);
+    set_nokogiri_word(body, 0, 1);
+    set_nokogiri_word(body, 10, 1);
 
     nokogiri(body);
 
@@ -316,7 +339,7 @@ static void test_nokogiri_opend_close_and_closed_timer_paths(
 
     reset_logs();
     body->r_no0 = 8;
-    set_actfree_word(body, 0, 2);
+    set_nokogiri_word(body, 0, 2);
 
     nokogiri(body);
 
@@ -324,7 +347,7 @@ static void test_nokogiri_opend_close_and_closed_timer_paths(
 
     reset_logs();
     body->r_no0 = 8;
-    set_actfree_word(body, 0, 1);
+    set_nokogiri_word(body, 0, 1);
 
     nokogiri(body);
 
@@ -342,7 +365,7 @@ static void test_nokogiri_soundset_is_gated_by_visible_flag_and_counter(
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
 
     actor.actflg = 128;
-    set_actfree_word(&actor, 14, 30);
+    set_nokogiri_word(&actor, 14, 30);
     _soundset(&actor);
 
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
@@ -360,7 +383,7 @@ static void test_nokogiri_bar_initializes_when_parent_is_alive(
     reset_nokogiri_state();
     actwk[3].actno = 39;
     bar_actor->userflag.b.l = -1;
-    set_actfree_word(bar_actor, 0, 3);
+    set_nokogiri_word(bar_actor, 0, 3);
 
     nokogiri(bar_actor);
 
@@ -377,7 +400,7 @@ static void test_nokogiri_bar_existing_actor_calls_actionsub(
     actwk[3].actno = 39;
     bar_actor->userflag.b.l = -1;
     bar_actor->r_no0 = 2;
-    set_actfree_word(bar_actor, 0, 3);
+    set_nokogiri_word(bar_actor, 0, 3);
 
     nokogiri(bar_actor);
 
@@ -394,7 +417,7 @@ static void test_nokogiri_bar_frames_out_when_parent_is_missing(
     reset_nokogiri_state();
     actwk[3].actno = 0;
     bar_actor->userflag.b.l = -1;
-    set_actfree_word(bar_actor, 0, 3);
+    set_nokogiri_word(bar_actor, 0, 3);
 
     nokogiri(bar_actor);
 

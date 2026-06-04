@@ -250,7 +250,7 @@ static void test_item_collision_preserves_bumper_behaviors(test_context *ctx) {
 
     reset_coli7_state();
     item->colino = 65;
-    player->actfree[6] = 90;
+    player_work_get(player)->damage_invulnerability_timer = 90;
     TEST_ASSERT_EQ_INT(ctx, -1, pcolitem(player, item));
 
     reset_coli7_state();
@@ -331,7 +331,7 @@ static void test_player_damage_and_death_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 0, jumpcolsub_count);
 
     reset_coli7_state();
-    player->actfree[6] = 1;
+    player_work_get(player)->damage_invulnerability_timer = 1;
     TEST_ASSERT_EQ_INT(ctx, -1, pcole(player, enemy));
     TEST_ASSERT_EQ_INT(ctx, 0, jumpcolsub_count);
 

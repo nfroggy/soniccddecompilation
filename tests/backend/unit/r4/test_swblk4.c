@@ -1,4 +1,3 @@
-#include <stddef.h>
 #include <string.h>
 
 #include "support/test_runner.h"
@@ -113,31 +112,6 @@ static void queue_actwkchk2(sprite_status *actor) {
     actwkchk2_queue[actwkchk2_queue_count++] = actor;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int offset) {
-    Uint16 bits = (Uint16)actor->actfree[offset] |
-                  ((Uint16)actor->actfree[offset + 1] << 8);
-    return (Sint16)bits;
-}
-
-static int legacy_word_actfree_offset(int word_index) {
-    return (word_index * 2) - (int)offsetof(sprite_status, actfree);
-}
-
-static void set_legacy_word(sprite_status *actor, int word_index,
-                            Sint16 value) {
-    set_actfree_word(actor, legacy_word_actfree_offset(word_index), value);
-}
-
-static Sint16 get_legacy_word(sprite_status *actor, int word_index) {
-    return get_actfree_word(actor, legacy_word_actfree_offset(word_index));
-}
-
 static void test_swblk4_patterns_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, switchr4pat[0] == &switchr4_pat0);
     TEST_ASSERT_TRUE(ctx, switchr4pat[1] == &switchr4_pat1);
@@ -171,7 +145,7 @@ static void test_switchr4_init_pressed_by_player(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1290, sw->sproffset);
     TEST_ASSERT_EQ_INT(ctx, 3, sw->sprpri);
     TEST_ASSERT_TRUE(ctx, sw->patbase == switchr4pat);
-    TEST_ASSERT_EQ_INT(ctx, 100, get_legacy_word(sw, 29));
+    TEST_ASSERT_EQ_INT(ctx, 100, swblk4_get_work(sw)->origin_x);
     TEST_ASSERT_EQ_INT(ctx, 14, sw->sprhsize);
     TEST_ASSERT_EQ_INT(ctx, 5, sw->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 1, sw->userflag.b.h);
@@ -195,7 +169,7 @@ static void test_switchr4_move_clears_when_player_is_outside(test_context *ctx) 
     sw->yposi.w.h = 100;
     sw->sprhsize = 14;
     sw->sprvsize = 5;
-    set_legacy_word(sw, 29, 100);
+    swblk4_get_work(sw)->origin_x = 100;
     player->xposi.w.h = 200;
     player->yposi.w.h = 76;
     player->sprvsize = 16;
@@ -229,10 +203,10 @@ static void test_switchr4_follows_ride_actor_offset(test_context *ctx) {
     sw->r_no0 = 2;
     sw->sprhsize = 14;
     sw->sprvsize = 5;
-    sw->actfree[14] = (Uint8)-7;
-    sw->actfree[15] = 9;
-    set_legacy_word(sw, 28, 30);
-    set_legacy_word(sw, 29, 77);
+    swblk4_get_work(sw)->follow_dx = (Uint8)-7;
+    swblk4_get_work(sw)->follow_dy = 9;
+    swblk4_get_work(sw)->linked_block_index = 30;
+    swblk4_get_work(sw)->origin_x = 77;
     ride->xposi.w.h = 400;
     ride->yposi.w.h = 500;
 
@@ -261,29 +235,29 @@ static void test_swblkr4_init_spawns_block_and_switch(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 17514, block->sproffset);
     TEST_ASSERT_EQ_INT(ctx, 3, block->sprpri);
     TEST_ASSERT_TRUE(ctx, block->patbase == swblkr4pat);
-    TEST_ASSERT_EQ_INT(ctx, 100, get_legacy_word(block, 29));
-    TEST_ASSERT_EQ_INT(ctx, 200, get_legacy_word(block, 27));
+    TEST_ASSERT_EQ_INT(ctx, 100, swblk4_get_work(block)->origin_x);
+    TEST_ASSERT_EQ_INT(ctx, 200, swblk4_get_work(block)->origin_y);
     TEST_ASSERT_EQ_INT(ctx, 116, block->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 16, block->sprhsize);
     TEST_ASSERT_EQ_INT(ctx, 64, block->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 1, block->patno);
-    TEST_ASSERT_EQ_INT(ctx, 20, get_legacy_word(block, 28));
-    TEST_ASSERT_EQ_INT(ctx, 21, get_legacy_word(block, 26));
+    TEST_ASSERT_EQ_INT(ctx, 20, swblk4_get_work(block)->linked_block_index);
+    TEST_ASSERT_EQ_INT(ctx, 21, swblk4_get_work(block)->switch_index);
     TEST_ASSERT_EQ_INT(ctx, 8, block->yspeed.w);
 
     TEST_ASSERT_EQ_INT(ctx, 48, child->actno);
-    TEST_ASSERT_EQ_INT(ctx, 1, child->actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 1, swblk4_get_work(child)->is_secondary);
     TEST_ASSERT_EQ_INT(ctx, 84, child->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 232, child->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 5, get_legacy_word(child, 28));
+    TEST_ASSERT_EQ_INT(ctx, 5, swblk4_get_work(child)->linked_block_index);
     TEST_ASSERT_EQ_INT(ctx, 2, child->patno);
     TEST_ASSERT_EQ_INT(ctx, 0, child->yspeed.w);
 
     TEST_ASSERT_EQ_INT(ctx, 49, sw->actno);
-    TEST_ASSERT_EQ_INT(ctx, 5, get_legacy_word(sw, 28));
-    TEST_ASSERT_EQ_INT(ctx, 188, sw->actfree[15]);
-    TEST_ASSERT_EQ_INT(ctx, 100, get_legacy_word(sw, 29));
-    TEST_ASSERT_EQ_INT(ctx, 200, get_legacy_word(sw, 27));
+    TEST_ASSERT_EQ_INT(ctx, 5, swblk4_get_work(sw)->linked_block_index);
+    TEST_ASSERT_EQ_INT(ctx, 188, swblk4_get_work(sw)->follow_dy);
+    TEST_ASSERT_EQ_INT(ctx, 100, swblk4_get_work(sw)->origin_x);
+    TEST_ASSERT_EQ_INT(ctx, 200, swblk4_get_work(sw)->origin_y);
     TEST_ASSERT_EQ_INT(ctx, 2, actwkchk2_count);
     TEST_ASSERT_TRUE(ctx, actwkchk2_source == block);
     TEST_ASSERT_EQ_INT(ctx, 1, ride_on_chk_count);
@@ -325,8 +299,8 @@ static void test_swblkr4_child_follows_or_frames_with_parent(test_context *ctx) 
 
     reset_state();
     child->r_no0 = 2;
-    child->actfree[18] = 1;
-    set_legacy_word(child, 28, 5);
+    swblk4_get_work(child)->is_secondary = 1;
+    swblk4_get_work(child)->linked_block_index = 5;
     parent->actno = 48;
     parent->xposi.w.h = 200;
     parent->yposi.w.h = 300;
@@ -340,8 +314,8 @@ static void test_swblkr4_child_follows_or_frames_with_parent(test_context *ctx) 
 
     reset_state();
     child->r_no0 = 2;
-    child->actfree[18] = 1;
-    set_legacy_word(child, 28, 5);
+    swblk4_get_work(child)->is_secondary = 1;
+    swblk4_get_work(child)->linked_block_index = 5;
     parent->actno = 47;
 
     swblkr4(child);
@@ -360,8 +334,8 @@ static void test_swblkr4_move_collision_and_switch_speed_limits(
     reset_state();
     block->yspeed.w = -128;
     block->yposi.w.h = 300;
-    set_legacy_word(block, 28, 20);
-    set_legacy_word(block, 26, 21);
+    swblk4_get_work(block)->linked_block_index = 20;
+    swblk4_get_work(block)->switch_index = 21;
     child->actno = 48;
     sw->actno = 49;
     sw->userflag.b.h = 1;
@@ -381,8 +355,8 @@ static void test_swblkr4_move_collision_and_switch_speed_limits(
 
     reset_state();
     block->yspeed.w = 128;
-    set_legacy_word(block, 28, 20);
-    set_legacy_word(block, 26, 21);
+    swblk4_get_work(block)->linked_block_index = 20;
+    swblk4_get_work(block)->switch_index = 21;
     child->actno = 48;
     sw->actno = 49;
     sw->userflag.b.h = 0;
@@ -405,14 +379,14 @@ static void test_swblkr4_move_returns_for_secondary_or_missing_switch(
     sprite_status *block = &actwk[5];
 
     reset_state();
-    block->actfree[18] = 1;
+    swblk4_get_work(block)->is_secondary = 1;
     swblkr4_move(block);
     TEST_ASSERT_EQ_INT(ctx, 0, emycol_d_count);
     TEST_ASSERT_EQ_INT(ctx, 0, emycol_u_count);
 
     reset_state();
-    set_legacy_word(block, 28, 20);
-    set_legacy_word(block, 26, 21);
+    swblk4_get_work(block)->linked_block_index = 20;
+    swblk4_get_work(block)->switch_index = 21;
     actwk[20].actno = 0;
     actwk[21].actno = 48;
     block->yspeed.w = 40;
@@ -428,7 +402,7 @@ static void test_swblkr4_entry_frames_out_when_origin_offscreen(
 
     reset_state();
     block->r_no0 = 2;
-    set_legacy_word(block, 29, 1024);
+    swblk4_get_work(block)->origin_x = 1024;
     scra_h_posit.w.h = 0;
 
     swblkr4(block);

@@ -378,9 +378,9 @@ static void test_sonic_state_machine_and_animation(test_context *ctx) {
     sonic_act(&actor);
     TEST_ASSERT_EQ_INT(ctx, 2, actor.r_no0);
     TEST_ASSERT_EQ_INT(ctx, 248, actor.yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 240, actor.actfree[8]);
+    TEST_ASSERT_EQ_INT(ctx, 240, warp_get_work(&actor)->timer);
 
-    actor.actfree[8] = 1;
+    warp_get_work(&actor)->timer = 1;
     sonic_act(&actor);
     TEST_ASSERT_EQ_INT(ctx, 3, actor.r_no0);
 
@@ -411,22 +411,22 @@ static void test_atom_initializes_moves_and_frames_out(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, actor.r_no0);
     TEST_ASSERT_EQ_INT(ctx, 272, actor.xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 392, actor.yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 44, actor.actfree[8]);
+    TEST_ASSERT_EQ_INT(ctx, 44, warp_get_work(&actor)->timer);
     TEST_ASSERT_EQ_INT(ctx, 32768, actor.sproffset);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_calls);
 
-    actor.actfree[8] = 1;
+    warp_get_work(&actor)->timer = 1;
     atom(&actor);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor.actfree[8]);
+    TEST_ASSERT_EQ_INT(ctx, 0, warp_get_work(&actor)->timer);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_calls);
 
     actor.patno = 4;
     actor.r_no0 = 1;
-    actor.actfree[8] = 2;
+    warp_get_work(&actor)->timer = 2;
     gmtime1 = 1;
     atom(&actor);
     TEST_ASSERT_EQ_INT(ctx, 0, actor.patno);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor.actfree[8]);
+    TEST_ASSERT_EQ_INT(ctx, 1, warp_get_work(&actor)->timer);
 
     actor.r_no0 = 2;
     atom(&actor);

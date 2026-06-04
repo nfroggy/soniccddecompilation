@@ -80,22 +80,6 @@ static void reset_hari5f_logs(void) {
     emycol_d3_y = 0;
 }
 
-static void set_actfree_long(sprite_status *actor, Sint32 value) {
-    Uint32 bits = (Uint32)value;
-    actor->actfree[0] = (Uint8)(bits & 255);
-    actor->actfree[1] = (Uint8)((bits >> 8) & 255);
-    actor->actfree[2] = (Uint8)((bits >> 16) & 255);
-    actor->actfree[3] = (Uint8)((bits >> 24) & 255);
-}
-
-static Sint32 get_actfree_long(sprite_status *actor) {
-    Uint32 bits = (Uint32)actor->actfree[0] |
-                  ((Uint32)actor->actfree[1] << 8) |
-                  ((Uint32)actor->actfree[2] << 16) |
-                  ((Uint32)actor->actfree[3] << 24);
-    return (Sint32)bits;
-}
-
 static void assert_tail_callbacks(test_context *ctx, sprite_status *actor) {
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_TRUE(ctx, actionsub_actor == actor);
@@ -188,7 +172,7 @@ static void test_fall_on_solid_floor_clears_air_flag_and_accelerates(test_contex
     actor.yposi.w.h = 100;
     actor.sprvsize = 24;
     actor.yposi.l = 100 << 16;
-    set_actfree_long(&actor, 65536);
+    hari5f_work_get(&actor)->y_velocity = 65536;
     emycol_d3_result = 5;
 
     hari5f(&actor);
@@ -197,9 +181,9 @@ static void test_fall_on_solid_floor_clears_air_flag_and_accelerates(test_contex
     TEST_ASSERT_TRUE(ctx, emycol_d3_actor == &actor);
     TEST_ASSERT_EQ_INT(ctx, 33, emycol_d3_x);
     TEST_ASSERT_EQ_INT(ctx, 76, emycol_d3_y);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor.actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 0, hari5f_work_get(&actor)->previous_collision);
     TEST_ASSERT_EQ_INT(ctx, (101 << 16), actor.yposi.l);
-    TEST_ASSERT_EQ_INT(ctx, 81920, get_actfree_long(&actor));
+    TEST_ASSERT_EQ_INT(ctx, 81920, hari5f_work_get(&actor)->y_velocity);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_count);
     assert_tail_callbacks(ctx, &actor);
 }
@@ -213,15 +197,15 @@ static void test_fall_in_open_air_sets_air_flag_and_accelerates(test_context *ct
     actor.yposi.w.h = 90;
     actor.sprvsize = 16;
     actor.yposi.l = 90 << 16;
-    set_actfree_long(&actor, 16384);
+    hari5f_work_get(&actor)->y_velocity = 16384;
     emycol_d3_result = -1;
 
     hari5f(&actor);
 
     TEST_ASSERT_EQ_INT(ctx, 1, emycol_d3_count);
-    TEST_ASSERT_EQ_INT(ctx, 255, actor.actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 255, hari5f_work_get(&actor)->previous_collision);
     TEST_ASSERT_EQ_INT(ctx, (90 << 16) + 16384, actor.yposi.l);
-    TEST_ASSERT_EQ_INT(ctx, 32768, get_actfree_long(&actor));
+    TEST_ASSERT_EQ_INT(ctx, 32768, hari5f_work_get(&actor)->y_velocity);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_count);
     assert_tail_callbacks(ctx, &actor);
 }
@@ -233,8 +217,8 @@ static void test_fall_lands_after_air_flag_frames_out_before_motion(test_context
     actor.r_no0 = 4;
     actor.actflg = 128;
     actor.yposi.l = 75 << 16;
-    actor.actfree[21] = 128;
-    set_actfree_long(&actor, 49152);
+    hari5f_work_get(&actor)->previous_collision = 128;
+    hari5f_work_get(&actor)->y_velocity = 49152;
     emycol_d3_result = 0;
 
     hari5f(&actor);
@@ -242,9 +226,9 @@ static void test_fall_lands_after_air_flag_frames_out_before_motion(test_context
     TEST_ASSERT_EQ_INT(ctx, 1, emycol_d3_count);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
     TEST_ASSERT_TRUE(ctx, frameout_actor == &actor);
-    TEST_ASSERT_EQ_INT(ctx, 128, actor.actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 128, hari5f_work_get(&actor)->previous_collision);
     TEST_ASSERT_EQ_INT(ctx, 75 << 16, actor.yposi.l);
-    TEST_ASSERT_EQ_INT(ctx, 49152, get_actfree_long(&actor));
+    TEST_ASSERT_EQ_INT(ctx, 49152, hari5f_work_get(&actor)->y_velocity);
     assert_tail_callbacks(ctx, &actor);
 }
 

@@ -48,18 +48,6 @@ static void reset_gaitou73_state(void) {
     actwkchk2_result = 0;
 }
 
-static Sint16 actor_word(sprite_status *actor, int index) {
-    int offset = (index - 23) * 2;
-    return (Sint16)(actor->actfree[offset] |
-                    ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
-static void set_actor_word(sprite_status *actor, int index, Sint16 value) {
-    int offset = (index - 23) * 2;
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
 static void test_gaitou73_tables_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, gaitou73_pat[0] == &pat0);
     TEST_ASSERT_TRUE(ctx, gaitou73_pat[1] == &pat1);
@@ -82,10 +70,10 @@ static void test_gaitou73_base_initializes_and_allocates_child(test_context *ctx
 
     gaitou73(base);
 
-    TEST_ASSERT_EQ_INT(ctx, 9, actor_word(base, 25));
+    TEST_ASSERT_EQ_INT(ctx, 9, gaitou73_work_get(base)->partner_actor);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk2_count);
     TEST_ASSERT_TRUE(ctx, actwkchk2_actor == base);
-    TEST_ASSERT_EQ_INT(ctx, 4, actor_word(child, 25));
+    TEST_ASSERT_EQ_INT(ctx, 4, gaitou73_work_get(child)->partner_actor);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_TRUE(ctx, actionsub_actor == base);
 }
@@ -99,7 +87,7 @@ static void test_gaitou73_base_handles_child_allocation_failure(
 
     gaitou73(base);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, actor_word(base, 25));
+    TEST_ASSERT_EQ_INT(ctx, 0, gaitou73_work_get(base)->partner_actor);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk2_count);
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[9].actno);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -129,8 +117,8 @@ static void test_gaitou73_base_move_selects_short_pattern_near_scroll(
 
     gaitou73(base);
 
-    TEST_ASSERT_EQ_INT(ctx, 496, actor_word(base, 26));
-    TEST_ASSERT_EQ_INT(ctx, 350, actor_word(base, 27));
+    TEST_ASSERT_EQ_INT(ctx, 496, gaitou73_work_get(base)->cached_x);
+    TEST_ASSERT_EQ_INT(ctx, 350, gaitou73_work_get(base)->cached_y);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 }
 
@@ -145,8 +133,8 @@ static void test_gaitou73_base_move_selects_tall_pattern_when_above_scroll(
 
     gaitou73(base);
 
-    TEST_ASSERT_EQ_INT(ctx, 496, actor_word(base, 26));
-    TEST_ASSERT_EQ_INT(ctx, 236, actor_word(base, 27));
+    TEST_ASSERT_EQ_INT(ctx, 496, gaitou73_work_get(base)->cached_x);
+    TEST_ASSERT_EQ_INT(ctx, 236, gaitou73_work_get(base)->cached_y);
 }
 
 static void test_gaitou73_horizontal_scroll_wraps_after_segment_48(
@@ -160,7 +148,7 @@ static void test_gaitou73_horizontal_scroll_wraps_after_segment_48(
 
     gaitou73(base);
 
-    TEST_ASSERT_EQ_INT(ctx, 576, actor_word(base, 26));
+    TEST_ASSERT_EQ_INT(ctx, 576, gaitou73_work_get(base)->cached_x);
 }
 
 static void test_gaitou73_child_follows_base_cached_position(test_context *ctx) {
@@ -169,9 +157,9 @@ static void test_gaitou73_child_follows_base_cached_position(test_context *ctx) 
 
     reset_gaitou73_state();
     child->r_no0 = 4;
-    set_actor_word(child, 25, 4);
-    set_actor_word(base, 26, 444);
-    set_actor_word(base, 27, 555);
+    gaitou73_work_get(child)->partner_actor = 4;
+    gaitou73_work_get(base)->cached_x = 444;
+    gaitou73_work_get(base)->cached_y = 555;
 
     gaitou73(child);
 

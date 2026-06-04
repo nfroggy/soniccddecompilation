@@ -106,17 +106,6 @@ static void queue_actor(sprite_status *actor) {
     actwkchk2_queue[actwkchk2_queue_count++] = actor;
 }
 
-static void set_actor_word(sprite_status *actor, int index, Sint16 value) {
-    int offset = (index - 23) * 2;
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
-static void set_actor_long(sprite_status *actor, int index, Sint32 value) {
-    int offset = index * 4 - 46;
-    memcpy(&actor->actfree[offset], &value, sizeof(value));
-}
-
 static void place_player_near(sprite_status *actor, Sint16 x_delta,
                               Sint16 y_delta) {
     actwk[0].xposi.w.h = actor->xposi.w.h + x_delta;
@@ -197,19 +186,19 @@ static void test_minomusi_wait_checks_player_window(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 2, body_actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 9, body_actor->patno);
 
-    set_actor_word(body_actor, 23, 1);
+    minomusi_get_work(body_actor)->timer = 1;
     place_player_near(body_actor, 0, 39);
     body_wait1(body_actor);
     TEST_ASSERT_EQ_INT(ctx, 0, body_actor->r_no0);
 
     body_actor->r_no0 = 4;
-    set_actor_word(body_actor, 23, 1);
+    minomusi_get_work(body_actor)->timer = 1;
     place_player_near(body_actor, -168, 40);
     body_wait1(body_actor);
     TEST_ASSERT_EQ_INT(ctx, 6, body_actor->r_no0);
 
     body_actor->r_no0 = 4;
-    set_actor_word(body_actor, 23, 1);
+    minomusi_get_work(body_actor)->timer = 1;
     place_player_near(body_actor, 168, 40);
     body_wait1(body_actor);
     TEST_ASSERT_EQ_INT(ctx, 2, body_actor->r_no0);
@@ -220,8 +209,8 @@ static void test_minomusi_down_and_up_motion(test_context *ctx) {
 
     reset_minomusi_state();
     body_actor->yposi.w.h = 100;
-    set_actor_word(body_actor, 28, 100);
-    set_actor_word(body_actor, 29, 116);
+    minomusi_get_work(body_actor)->top_y = 100;
+    minomusi_get_work(body_actor)->bottom_y = 116;
     body_actor->r_no0 = 6;
 
     body_down(body_actor);
@@ -248,7 +237,7 @@ static void test_minomusi_down_and_up_motion(test_context *ctx) {
     body_actor->r_no0 = 10;
     body_actor->userflag.b.h = 1;
     body_actor->yposi.w.h = 116;
-    set_actor_word(body_actor, 28, 100);
+    minomusi_get_work(body_actor)->top_y = 100;
     body_up(body_actor);
     TEST_ASSERT_EQ_INT(ctx, 114, body_actor->yposi.w.h);
 }
@@ -314,7 +303,7 @@ static void test_minomusi_stay_variant_and_countdown_paths(test_context *ctx) {
 
     reset_minomusi_state();
     body_actor->r_no0 = 16;
-    set_actor_word(body_actor, 23, 1);
+    minomusi_get_work(body_actor)->timer = 1;
     body_stay1(body_actor);
     TEST_ASSERT_EQ_INT(ctx, 10, body_actor->r_no0);
 
@@ -332,7 +321,7 @@ static void test_minomusi_hari_dispatches_by_parent_pattern(test_context *ctx) {
     reset_minomusi_state();
     body_actor->patcnt = 0;
     spike_actor->userflag.b.l = 1;
-    set_actor_word(spike_actor, 30, 8);
+    minomusi_get_work(spike_actor)->parent_index = 8;
     minomusi(spike_actor);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_TRUE(ctx, actionsub_actor == spike_actor);
@@ -350,9 +339,9 @@ static void test_minomusi_ito_tracks_parent_and_frames_out(test_context *ctx) {
     reset_minomusi_state();
     body_actor->actno = 51;
     body_actor->yposi.w.h = 140;
-    set_actor_word(body_actor, 28, 100);
+    minomusi_get_work(body_actor)->top_y = 100;
     string_actor->userflag.b.l = -1;
-    set_actor_word(string_actor, 30, 8);
+    minomusi_get_work(string_actor)->parent_index = 8;
 
     minomusi(string_actor);
     TEST_ASSERT_EQ_INT(ctx, 2, string_actor->patno);

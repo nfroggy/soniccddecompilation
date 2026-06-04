@@ -119,33 +119,6 @@ static void reset_friend5_state(void) {
     reset_logs();
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int offset) {
-    return (Sint16)((Uint16)actor->actfree[offset] |
-                    ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
-static void set_actfree_long(sprite_status *actor, int offset, Sint32 value) {
-    Uint32 bits = (Uint32)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)((bits >> 8) & 255);
-    actor->actfree[offset + 2] = (Uint8)((bits >> 16) & 255);
-    actor->actfree[offset + 3] = (Uint8)(bits >> 24);
-}
-
-static Sint32 get_actfree_long(sprite_status *actor, int offset) {
-    Uint32 bits = (Uint32)actor->actfree[offset] |
-                  ((Uint32)actor->actfree[offset + 1] << 8) |
-                  ((Uint32)actor->actfree[offset + 2] << 16) |
-                  ((Uint32)actor->actfree[offset + 3] << 24);
-    return (Sint32)bits;
-}
-
 static void init_flicky(sprite_status *actor, Sint16 x, Sint16 y) {
     reset_friend5_state();
     actor->xposi.w.h = x;
@@ -227,10 +200,10 @@ static void test_flicky_init_normal_and_movie_variants(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 8, actor->sprhsize);
     TEST_ASSERT_TRUE(ctx, actor->patbase == pat_friend0);
     TEST_ASSERT_EQ_INT(ctx, (1210 | 32768), actor->sproffset);
-    TEST_ASSERT_EQ_INT(ctx, 100, get_actfree_word(actor, 0));
-    TEST_ASSERT_EQ_INT(ctx, 200, get_actfree_word(actor, 2));
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[4]);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[5]);
+    TEST_ASSERT_EQ_INT(ctx, 100, friend5_get_work(actor)->base_x);
+    TEST_ASSERT_EQ_INT(ctx, 200, friend5_get_work(actor)->base_y);
+    TEST_ASSERT_EQ_INT(ctx, 1, friend5_get_work(actor)->angle);
+    TEST_ASSERT_EQ_INT(ctx, 1, friend5_get_work(actor)->angle_delta);
 
     reset_friend5_state();
     actor->userflag.b.h = -128;
@@ -260,7 +233,7 @@ static void test_flicky_move_rolls_patches_and_wraps_direction(
     TEST_ASSERT_EQ_INT(ctx, 1, sinset_angle);
     TEST_ASSERT_EQ_INT(ctx, 132, actor->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 216, actor->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->actfree[4]);
+    TEST_ASSERT_EQ_INT(ctx, 2, friend5_get_work(actor)->angle);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_TRUE(ctx, patchg_actor == actor);
     TEST_ASSERT_TRUE(ctx, patchg_table == pchg0);
@@ -271,13 +244,13 @@ static void test_flicky_move_rolls_patches_and_wraps_direction(
     TEST_ASSERT_EQ_INT(ctx, 100, frameout_s00_x);
 
     reset_logs();
-    actor->actfree[4] = 127;
-    actor->actfree[5] = 1;
+    friend5_get_work(actor)->angle = 127;
+    friend5_get_work(actor)->angle_delta = 1;
 
     friend(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 127, actor->actfree[4]);
-    TEST_ASSERT_EQ_INT(ctx, 255, actor->actfree[5]);
+    TEST_ASSERT_EQ_INT(ctx, 127, friend5_get_work(actor)->angle);
+    TEST_ASSERT_EQ_INT(ctx, -1, friend5_get_work(actor)->angle_delta);
     TEST_ASSERT_EQ_INT(ctx, 4, actor->actflg);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->cddat);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
@@ -291,7 +264,7 @@ static void test_flicky_movie_liveness_and_spin_paths(test_context *ctx) {
     actor->userflag.b.h = -128;
     actor->xposi.w.h = 100;
     actor->yposi.w.h = 200;
-    set_actfree_word(actor, 20, 7);
+    friend5_get_work(actor)->movie_parent_index = 7;
     movie_actor->actno = 44;
     friend(actor);
     reset_logs();
@@ -304,24 +277,24 @@ static void test_flicky_movie_liveness_and_spin_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_count);
 
     reset_logs();
-    actor->actfree[4] = 124;
+    friend5_get_work(actor)->angle = 124;
     friend(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 128, actor->actfree[4]);
+    TEST_ASSERT_EQ_INT(ctx, 128, friend5_get_work(actor)->angle);
     TEST_ASSERT_EQ_INT(ctx, (5 ^ 1), actor->actflg);
     TEST_ASSERT_EQ_INT(ctx, (1 ^ 1), actor->cddat);
     TEST_ASSERT_EQ_INT(ctx, 0, patchg_count);
     TEST_ASSERT_EQ_INT(ctx, 0, actionsub_count);
 
     reset_logs();
-    movie_actor->actfree[21] = 1;
+    friend5_get_work(movie_actor)->movie_done = 1;
     friend(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
     TEST_ASSERT_TRUE(ctx, frameout_actor == actor);
 
     reset_logs();
-    movie_actor->actfree[21] = 0;
+    friend5_get_work(movie_actor)->movie_done = 0;
     movie_actor->actno = 0;
     friend(actor);
 
@@ -350,9 +323,9 @@ static void test_ricky_init_normal_and_movie_variants(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 8, actor->sprhsize);
     TEST_ASSERT_TRUE(ctx, actor->patbase == pat_friend1);
     TEST_ASSERT_EQ_INT(ctx, 1210, actor->sproffset);
-    TEST_ASSERT_EQ_INT(ctx, 300, get_actfree_word(actor, 0));
-    TEST_ASSERT_EQ_INT(ctx, 65536, get_actfree_long(actor, 2));
-    TEST_ASSERT_EQ_INT(ctx, -262144, get_actfree_long(actor, 6));
+    TEST_ASSERT_EQ_INT(ctx, 300, friend5_get_work(actor)->base_x);
+    TEST_ASSERT_EQ_INT(ctx, 65536, friend5_get_work(actor)->x_speed);
+    TEST_ASSERT_EQ_INT(ctx, -262144, friend5_get_work(actor)->y_speed);
 
     reset_friend5_state();
     actor->userflag.b.h = -127;
@@ -381,7 +354,7 @@ static void test_ricky_move_arc_animation_and_landing(test_context *ctx) {
     assert_action_frameout_s(ctx, actor);
 
     reset_logs();
-    set_actfree_long(actor, 6, 0);
+    friend5_get_work(actor)->y_speed = 0;
 
     friend(actor);
 
@@ -392,15 +365,15 @@ static void test_ricky_move_arc_animation_and_landing(test_context *ctx) {
     emycol_d_result = -3;
     actor->actflg = 4;
     actor->cddat = 0;
-    set_actfree_long(actor, 2, 65536);
+    friend5_get_work(actor)->x_speed = 65536;
 
     friend(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 1, emycol_d_count);
     TEST_ASSERT_EQ_INT(ctx, 5, actor->actflg);
     TEST_ASSERT_EQ_INT(ctx, 1, actor->cddat);
-    TEST_ASSERT_EQ_INT(ctx, -65536, get_actfree_long(actor, 2));
-    TEST_ASSERT_EQ_INT(ctx, -262144, get_actfree_long(actor, 6));
+    TEST_ASSERT_EQ_INT(ctx, -65536, friend5_get_work(actor)->x_speed);
+    TEST_ASSERT_EQ_INT(ctx, -262144, friend5_get_work(actor)->y_speed);
     assert_action_frameout_s(ctx, actor);
 }
 
@@ -410,7 +383,7 @@ static void test_ricky_movie_liveness_and_patch_path(test_context *ctx) {
 
     reset_friend5_state();
     actor->userflag.b.h = -127;
-    set_actfree_word(actor, 20, 7);
+    friend5_get_work(actor)->movie_parent_index = 7;
     movie_actor->actno = 44;
 
     friend(actor);
@@ -425,7 +398,7 @@ static void test_ricky_movie_liveness_and_patch_path(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, actionsub_actor == actor);
 
     reset_logs();
-    movie_actor->actfree[21] = 1;
+    friend5_get_work(movie_actor)->movie_done = 1;
 
     friend(actor);
 
@@ -433,7 +406,7 @@ static void test_ricky_movie_liveness_and_patch_path(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, frameout_actor == actor);
 
     reset_logs();
-    movie_actor->actfree[21] = 0;
+    friend5_get_work(movie_actor)->movie_done = 0;
     movie_actor->actno = 0;
 
     friend(actor);

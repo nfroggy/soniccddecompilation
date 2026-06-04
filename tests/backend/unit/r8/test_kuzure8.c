@@ -110,16 +110,14 @@ static void set_ridechk_results(Sint16 first, Sint16 second) {
     ridechk_result_count = 2;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
+static void set_kuzure8_word(sprite_status *actor, int offset, Sint16 value) {
+    if (offset == 0)
+        kuzure8_get_work(actor)->timer = value;
 }
 
-static void set_actfree_long(sprite_status *actor, int offset, Sint32 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint32)value >> 8);
-    actor->actfree[offset + 2] = (Uint8)((Uint32)value >> 16);
-    actor->actfree[offset + 3] = (Uint8)((Uint32)value >> 24);
+static void set_kuzure8_long(sprite_status *actor, int offset, Sint32 value) {
+    if (offset == 2)
+        kuzure8_get_work(actor)->fall_speed = value;
 }
 
 static void reset_logs(void) {
@@ -370,7 +368,7 @@ static void test_kuzure8_parts_wait_holds_until_timer_expires(
     part->userflag.b.l = -1;
     kuzure8(part);
     reset_logs();
-    set_actfree_word(part, 0, 2);
+    set_kuzure8_word(part, 0, 2);
 
     kuzure8(part);
 
@@ -391,7 +389,7 @@ static void test_kuzure8_parts_fall_accelerates_and_caps(test_context *ctx) {
     assert_actionsub_called_for(ctx, part);
 
     reset_logs();
-    set_actfree_long(part, 2, 1441792);
+    set_kuzure8_long(part, 2, 1441792);
     kuzure8(part);
 
     assert_actionsub_called_for(ctx, part);

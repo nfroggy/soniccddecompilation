@@ -50,9 +50,17 @@ static void reset_shoot_state(void) {
     memset(soundset_requests, 0, sizeof(soundset_requests));
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
+static void set_shooter_word(sprite_status *actor, int offset, Sint16 value) {
+    shooter_work *work = shooter_get_work(actor);
+
+    switch (offset) {
+    case 12:
+        work->target_x = value;
+        break;
+    case 14:
+        work->target_y = value;
+        break;
+    }
 }
 
 static void test_shoot_tables_capture_route_lengths_and_points(
@@ -205,14 +213,14 @@ static void test_shooterinit_captures_player_and_starts_route(
     TEST_ASSERT_EQ_INT(ctx, 16, shoot->sprhsize);
     TEST_ASSERT_EQ_INT(ctx, 4, shoot->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[0].r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 129, actwk[0].actfree[2]);
+    TEST_ASSERT_EQ_INT(ctx, 129, player_work_get(&actwk[0])->status_flags);
     TEST_ASSERT_EQ_INT(ctx, 7, actwk[0].sproffset);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[0].mstno.b.h);
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].yspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 100, actwk[0].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 200, actwk[0].yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 0, shoot->actfree[8]);
+    TEST_ASSERT_EQ_INT(ctx, 0, shooter_get_work(shoot)->entry_timer);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 145, soundset_requests[0]);
 }
@@ -235,7 +243,7 @@ static void test_shootermove_rejects_outside_and_busy_player(
 
     actwk[0].xposi.w.h = 100;
     actwk[0].yposi.w.h = 200;
-    actwk[0].actfree[2] = 1;
+    player_work_get(&actwk[0])->status_flags = 1;
 
     shootermove(shoot);
 
@@ -286,7 +294,7 @@ static void test_shootermove_captures_player_without_jump_state(
 
     TEST_ASSERT_EQ_INT(ctx, 4, shoot->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[0].r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 129, actwk[0].actfree[2]);
+    TEST_ASSERT_EQ_INT(ctx, 129, player_work_get(&actwk[0])->status_flags);
     TEST_ASSERT_EQ_INT(ctx, 3, actwk[0].sproffset);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[0].cddat);
     TEST_ASSERT_EQ_INT(ctx, 0, shoot->cddat);
@@ -306,7 +314,7 @@ static void test_shootermove3_advances_fixed_point_and_resets_at_end(
 
     shooterinit(shoot);
 
-    shoot->actfree[4] = 2;
+    shooter_get_work(shoot)->move_timer_high = 2;
     actwk[0].xspeed.w = 3;
     actwk[0].yspeed.w = -4;
     actwk[0].xposi.l = 100 << 16;
@@ -314,20 +322,20 @@ static void test_shootermove3_advances_fixed_point_and_resets_at_end(
 
     shootermove3(shoot);
 
-    TEST_ASSERT_EQ_INT(ctx, 1, shoot->actfree[4]);
+    TEST_ASSERT_EQ_INT(ctx, 1, shooter_get_work(shoot)->move_timer_high);
     TEST_ASSERT_EQ_INT(ctx, (100 << 16) + 768, actwk[0].xposi.l);
     TEST_ASSERT_EQ_INT(ctx, (200 << 16) - 1024, actwk[0].yposi.l);
 
-    shoot->actfree[4] = 0;
-    shoot->actfree[16] = 20;
-    shoot->actfree[17] = 20;
-    actwk[0].actfree[2] = 129;
+    shooter_get_work(shoot)->move_timer_high = 0;
+    shooter_get_work(shoot)->move_index = 20;
+    shooter_get_work(shoot)->move_limit = 20;
+    player_work_get(&actwk[0])->status_flags = 129;
     actwk[0].yposi.w.h = 4096;
 
     shootermove3(shoot);
 
     TEST_ASSERT_EQ_INT(ctx, 0, shoot->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].actfree[2]);
+    TEST_ASSERT_EQ_INT(ctx, 0, player_work_get(&actwk[0])->status_flags);
     TEST_ASSERT_EQ_INT(ctx, 1744, actwk[0].yposi.w.h);
 }
 
@@ -354,10 +362,10 @@ static void test_shootermove2_and_route_advance_set_next_segment(
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 145, soundset_requests[0]);
 
-    shoot->actfree[4] = 0;
+    shooter_get_work(shoot)->move_timer_high = 0;
     shootermove3(shoot);
 
-    TEST_ASSERT_EQ_INT(ctx, 4, shoot->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 4, shooter_get_work(shoot)->move_index);
     TEST_ASSERT_EQ_INT(ctx, 896, actwk[0].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1744, actwk[0].yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].xspeed.w);
@@ -456,7 +464,7 @@ static void test_shooter_wrapper_time_and_dispatch_edges(test_context *ctx) {
 
     reset_shoot_state();
     shoot->r_no0 = 6;
-    shoot->actfree[4] = 2;
+    shooter_get_work(shoot)->move_timer_high = 2;
     actwk[0].xposi.l = 100 << 16;
     actwk[0].yposi.l = 200 << 16;
     actwk[0].xspeed.w = 1;
@@ -464,7 +472,7 @@ static void test_shooter_wrapper_time_and_dispatch_edges(test_context *ctx) {
 
     shooter(shoot);
 
-    TEST_ASSERT_EQ_INT(ctx, 1, shoot->actfree[4]);
+    TEST_ASSERT_EQ_INT(ctx, 1, shooter_get_work(shoot)->move_timer_high);
     TEST_ASSERT_EQ_INT(ctx, (100 << 16) + 256, actwk[0].xposi.l);
     TEST_ASSERT_EQ_INT(ctx, (200 << 16) + 512, actwk[0].yposi.l);
 }
@@ -487,7 +495,7 @@ static void test_shooter_wrapper_dispatches_init_and_wait_cases(
 
     TEST_ASSERT_EQ_INT(ctx, 4, shoot->r_no0);
     TEST_ASSERT_TRUE(ctx, shoot->patbase == bariapat);
-    TEST_ASSERT_EQ_INT(ctx, 129, actwk[0].actfree[2]);
+    TEST_ASSERT_EQ_INT(ctx, 129, player_work_get(&actwk[0])->status_flags);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
 
     reset_shoot_state();
@@ -501,7 +509,7 @@ static void test_shooter_wrapper_dispatches_init_and_wait_cases(
     shooter(shoot);
 
     TEST_ASSERT_EQ_INT(ctx, 4, shoot->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 129, actwk[0].actfree[2]);
+    TEST_ASSERT_EQ_INT(ctx, 129, player_work_get(&actwk[0])->status_flags);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
 }
 
@@ -539,8 +547,8 @@ static void test_shooterspdset_x_dominant_and_negative_delta_paths(
 
     TEST_ASSERT_EQ_INT(ctx, 4096, actwk[0].xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 12, shoot->actfree[4]);
-    TEST_ASSERT_EQ_INT(ctx, 64, shoot->actfree[5]);
+    TEST_ASSERT_EQ_INT(ctx, 12, shooter_get_work(shoot)->move_timer_high);
+    TEST_ASSERT_EQ_INT(ctx, 64, shooter_get_work(shoot)->move_timer_low);
 
     reset_shoot_state();
     shoot = &actwk[3];
@@ -555,8 +563,8 @@ static void test_shooterspdset_x_dominant_and_negative_delta_paths(
 
     TEST_ASSERT_EQ_INT(ctx, -2730, actwk[0].xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, -4096, actwk[0].yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 9, shoot->actfree[4]);
-    TEST_ASSERT_EQ_INT(ctx, 192, shoot->actfree[5]);
+    TEST_ASSERT_EQ_INT(ctx, 9, shooter_get_work(shoot)->move_timer_high);
+    TEST_ASSERT_EQ_INT(ctx, 192, shooter_get_work(shoot)->move_timer_low);
 }
 
 static void test_shooterspdset_direct_sign_and_division_edges(
@@ -567,43 +575,43 @@ static void test_shooterspdset_direct_sign_and_division_edges(
     actwk[0].xposi.w.h = 100;
     actwk[0].yposi.w.h = 100;
     actwk[0].mspeed.w = -4096;
-    set_actfree_word(shoot, 12, 101);
-    set_actfree_word(shoot, 14, 150);
+    set_shooter_word(shoot, 12, 101);
+    set_shooter_word(shoot, 14, 150);
 
     shooterspdset(shoot);
 
     TEST_ASSERT_EQ_INT(ctx, -81, actwk[0].xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, -4096, actwk[0].yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 3, shoot->actfree[4]);
-    TEST_ASSERT_EQ_INT(ctx, 32, shoot->actfree[5]);
+    TEST_ASSERT_EQ_INT(ctx, 3, shooter_get_work(shoot)->move_timer_high);
+    TEST_ASSERT_EQ_INT(ctx, 32, shooter_get_work(shoot)->move_timer_low);
 
     reset_shoot_state();
     actwk[0].xposi.w.h = 100;
     actwk[0].yposi.w.h = 100;
     actwk[0].mspeed.w = 4096;
-    set_actfree_word(shoot, 12, 200);
-    set_actfree_word(shoot, 14, 110);
+    set_shooter_word(shoot, 12, 200);
+    set_shooter_word(shoot, 14, 110);
 
     shooterspdset(shoot);
 
     TEST_ASSERT_EQ_INT(ctx, 4096, actwk[0].xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 409, actwk[0].yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 6, shoot->actfree[4]);
-    TEST_ASSERT_EQ_INT(ctx, 64, shoot->actfree[5]);
+    TEST_ASSERT_EQ_INT(ctx, 6, shooter_get_work(shoot)->move_timer_high);
+    TEST_ASSERT_EQ_INT(ctx, 64, shooter_get_work(shoot)->move_timer_low);
 
     reset_shoot_state();
     actwk[0].xposi.w.h = 100;
     actwk[0].yposi.w.h = 100;
     actwk[0].mspeed.w = -4096;
-    set_actfree_word(shoot, 12, 200);
-    set_actfree_word(shoot, 14, 100);
+    set_shooter_word(shoot, 12, 200);
+    set_shooter_word(shoot, 14, 100);
 
     shooterspdset(shoot);
 
     TEST_ASSERT_EQ_INT(ctx, -4096, actwk[0].xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 6, shoot->actfree[4]);
-    TEST_ASSERT_EQ_INT(ctx, 64, shoot->actfree[5]);
+    TEST_ASSERT_EQ_INT(ctx, 6, shooter_get_work(shoot)->move_timer_high);
+    TEST_ASSERT_EQ_INT(ctx, 64, shooter_get_work(shoot)->move_timer_low);
 }
 
 TEST_MAIN_BEGIN;
@@ -624,3 +632,4 @@ test_mspd_set_keeps_or_reduces_scripted_speed(&ctx);
 test_shooterspdset_x_dominant_and_negative_delta_paths(&ctx);
 test_shooterspdset_direct_sign_and_division_edges(&ctx);
 TEST_MAIN_END
+

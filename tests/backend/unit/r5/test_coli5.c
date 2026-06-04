@@ -71,8 +71,7 @@ static void queue_actor(sprite_status *actor) {
 
 static void set_player_invincibility_timer(sprite_status *player,
                                            Uint16 value) {
-    player->actfree[6] = (Uint8)value;
-    player->actfree[7] = (Uint8)(value >> 8);
+    player_work_get(player)->damage_invulnerability_timer = value;
 }
 
 static void reset_coli5_state(void) {

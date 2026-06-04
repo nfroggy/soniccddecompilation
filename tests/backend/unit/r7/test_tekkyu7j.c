@@ -75,26 +75,6 @@ static void reset_tekkyu7j_logs(void) {
     actwkchk_count = 0;
 }
 
-static Sint16 actor_word(sprite_status *actor, int index) {
-    int offset = (index - 23) * 2;
-    return (Sint16)(actor->actfree[offset] |
-                    ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
-static void set_actor_word(sprite_status *actor, int index, Sint16 value) {
-    int offset = (index - 23) * 2;
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
-static void set_actor_long(sprite_status *actor, int index, Sint32 value) {
-    int offset = index * 4 - 46;
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint32)value >> 8);
-    actor->actfree[offset + 2] = (Uint8)((Uint32)value >> 16);
-    actor->actfree[offset + 3] = (Uint8)((Uint32)value >> 24);
-}
-
 static void test_tekkyu7j_tables_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, pat_tekkyu7j[0] == &tekkyu7j_pat0);
     TEST_ASSERT_TRUE(ctx, pat_tekkyu7j[1] == &tekkyu7j_pat1);
@@ -124,7 +104,7 @@ static void test_launcher_initializes_and_counts_down(test_context *ctx) {
 
     tekkyu7j(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 149, actor_word(actor, 23));
+    TEST_ASSERT_EQ_INT(ctx, 149, tekkyu7j_get_work(actor)->launcher_timer);
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_TRUE(ctx, actionsub_actor == actor);
@@ -143,11 +123,11 @@ static void test_launcher_spawns_child_when_timer_reaches_zero(
     actor->userflag.b.h = 3;
     actor->xposi.w.h = 300;
     actor->yposi.w.h = 120;
-    set_actor_word(actor, 23, 1);
+    tekkyu7j_get_work(actor)->launcher_timer = 1;
 
     tekkyu7j(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 150, actor_word(actor, 23));
+    TEST_ASSERT_EQ_INT(ctx, 150, tekkyu7j_get_work(actor)->launcher_timer);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s_count);
@@ -160,12 +140,12 @@ static void test_launcher_allocation_failure_only_resets_timer(
 
     reset_tekkyu7j_state();
     actor->r_no0 = 2;
-    set_actor_word(actor, 23, 1);
+    tekkyu7j_get_work(actor)->launcher_timer = 1;
     actwkchk_result = -1;
 
     tekkyu7j(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 150, actor_word(actor, 23));
+    TEST_ASSERT_EQ_INT(ctx, 150, tekkyu7j_get_work(actor)->launcher_timer);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s_count);
@@ -182,8 +162,8 @@ static void test_child_init_uses_vertical_even_direction(test_context *ctx) {
 
     tekkyu7j(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 31, actor_word(actor, 25));
-    TEST_ASSERT_EQ_INT(ctx, 200, actor_word(actor, 24));
+    TEST_ASSERT_EQ_INT(ctx, 31, tekkyu7j_get_work(actor)->phase_timer);
+    TEST_ASSERT_EQ_INT(ctx, 200, tekkyu7j_get_work(actor)->origin_position);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_s_count);
 }
@@ -210,7 +190,7 @@ static void test_child_init_covers_positive_and_horizontal_directions(
 
     tekkyu7j(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 100, actor_word(actor, 24));
+    TEST_ASSERT_EQ_INT(ctx, 100, tekkyu7j_get_work(actor)->origin_position);
 }
 
 static void test_child_move_waits_then_enters_stop(test_context *ctx) {
@@ -219,19 +199,19 @@ static void test_child_move_waits_then_enters_stop(test_context *ctx) {
     reset_tekkyu7j_state();
     actor->userflag.b.l = -1;
     actor->r_no0 = 2;
-    actor->actfree[0] = 1;
+    tekkyu7j_get_work(actor)->axis_is_vertical = 1;
     actor->yposi.w.h = 200;
-    set_actor_word(actor, 25, 2);
-    set_actor_long(actor, 13, 1 << 16);
+    tekkyu7j_get_work(actor)->phase_timer = 2;
+    tekkyu7j_get_work(actor)->speed = 1 << 16;
 
     tekkyu7j(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 1, actor_word(actor, 25));
+    TEST_ASSERT_EQ_INT(ctx, 1, tekkyu7j_get_work(actor)->phase_timer);
 
     reset_tekkyu7j_logs();
     tekkyu7j(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 30, actor_word(actor, 25));
+    TEST_ASSERT_EQ_INT(ctx, 30, tekkyu7j_get_work(actor)->phase_timer);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 }
 
@@ -242,11 +222,11 @@ static void test_child_stop_waits_then_enters_jump(test_context *ctx) {
     actor->userflag.b.l = -1;
     actor->userflag.b.h = 0;
     actor->r_no0 = 4;
-    set_actor_word(actor, 25, 2);
+    tekkyu7j_get_work(actor)->phase_timer = 2;
 
     tekkyu7j(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 1, actor_word(actor, 25));
+    TEST_ASSERT_EQ_INT(ctx, 1, tekkyu7j_get_work(actor)->phase_timer);
 
     reset_tekkyu7j_logs();
     tekkyu7j(actor);
@@ -262,12 +242,12 @@ static void test_child_jump_moves_vertically_without_frameout_when_side_matches(
     reset_tekkyu7j_state();
     actor->userflag.b.l = -1;
     actor->r_no0 = 6;
-    actor->actfree[0] = 1;
-    actor->actfree[21] = 0;
+    tekkyu7j_get_work(actor)->axis_is_vertical = 1;
+    tekkyu7j_get_work(actor)->initial_side = 0;
     actor->yposi.w.h = 200;
-    set_actor_word(actor, 24, 200);
-    set_actor_long(actor, 13, 1 << 16);
-    set_actor_long(actor, 14, 0);
+    tekkyu7j_get_work(actor)->origin_position = 200;
+    tekkyu7j_get_work(actor)->speed = 1 << 16;
+    tekkyu7j_get_work(actor)->acceleration = 0;
 
     tekkyu7j(actor);
 
@@ -282,12 +262,12 @@ static void test_child_jump_frameouts_when_vertical_side_changes(
     reset_tekkyu7j_state();
     actor->userflag.b.l = -1;
     actor->r_no0 = 6;
-    actor->actfree[0] = 1;
-    actor->actfree[21] = 0;
+    tekkyu7j_get_work(actor)->axis_is_vertical = 1;
+    tekkyu7j_get_work(actor)->initial_side = 0;
     actor->yposi.w.h = 200;
-    set_actor_word(actor, 24, 200);
-    set_actor_long(actor, 13, -1 << 16);
-    set_actor_long(actor, 14, 0);
+    tekkyu7j_get_work(actor)->origin_position = 200;
+    tekkyu7j_get_work(actor)->speed = -1 << 16;
+    tekkyu7j_get_work(actor)->acceleration = 0;
 
     tekkyu7j(actor);
 
@@ -303,12 +283,12 @@ static void test_child_jump_moves_horizontally_and_frameouts_on_mismatch(
     reset_tekkyu7j_state();
     actor->userflag.b.l = -1;
     actor->r_no0 = 6;
-    actor->actfree[0] = 0;
-    actor->actfree[21] = 255;
+    tekkyu7j_get_work(actor)->axis_is_vertical = 0;
+    tekkyu7j_get_work(actor)->initial_side = 255;
     actor->xposi.w.h = 200;
-    set_actor_word(actor, 24, 200);
-    set_actor_long(actor, 13, 1 << 16);
-    set_actor_long(actor, 14, 0);
+    tekkyu7j_get_work(actor)->origin_position = 200;
+    tekkyu7j_get_work(actor)->speed = 1 << 16;
+    tekkyu7j_get_work(actor)->acceleration = 0;
 
     tekkyu7j(actor);
 

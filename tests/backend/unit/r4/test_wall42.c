@@ -1,4 +1,3 @@
-#include <stddef.h>
 #include <string.h>
 
 #include "support/test_runner.h"
@@ -56,30 +55,6 @@ static void reset_state(void) {
     hitchk_result = 0;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int offset) {
-    Uint16 bits = (Uint16)actor->actfree[offset] |
-                  ((Uint16)actor->actfree[offset + 1] << 8);
-    return (Sint16)bits;
-}
-
-static int legacy_word_actfree_offset(int word_index) {
-    return (word_index * 2) - (int)offsetof(sprite_status, actfree);
-}
-
-static void set_legacy_word(sprite_status *actor, int word_index, Sint16 value) {
-    set_actfree_word(actor, legacy_word_actfree_offset(word_index), value);
-}
-
-static Sint16 get_legacy_word(sprite_status *actor, int word_index) {
-    return get_actfree_word(actor, legacy_word_actfree_offset(word_index));
-}
-
 static int flag_index_for(sprite_status *actor) {
     return (int)((Uint16)actor->cdsts * 3 + (Uint16)time_flag);
 }
@@ -119,7 +94,7 @@ static void test_wall42_init_sets_flag_and_wait_state(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 64, wall->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 17514, wall->sproffset);
     TEST_ASSERT_TRUE(ctx, wall->patbase == pat_wall42);
-    TEST_ASSERT_EQ_INT(ctx, 60, get_legacy_word(wall, 23));
+    TEST_ASSERT_EQ_INT(ctx, 60, wall42_work_get(wall)->timer);
     assert_actionsub_only(ctx, wall);
     TEST_ASSERT_EQ_INT(ctx, 0, hitchk_count);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_count);
@@ -151,11 +126,11 @@ static void test_wall42_wait_counts_down_and_calls_hitchk(test_context *ctx) {
 
     reset_state();
     wall->r_no0 = 2;
-    set_legacy_word(wall, 23, 2);
+    wall42_work_get(wall)->timer = 2;
 
     wall42(wall);
 
-    TEST_ASSERT_EQ_INT(ctx, 1, get_legacy_word(wall, 23));
+    TEST_ASSERT_EQ_INT(ctx, 1, wall42_work_get(wall)->timer);
     TEST_ASSERT_EQ_INT(ctx, 2, wall->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, hitchk_count);
     TEST_ASSERT_TRUE(ctx, hitchk_actor == wall);
@@ -168,12 +143,12 @@ static void test_wall42_wait_minus_one_starts_move_timer(test_context *ctx) {
 
     reset_state();
     wall->r_no0 = 2;
-    set_legacy_word(wall, 23, -1);
+    wall42_work_get(wall)->timer = -1;
 
     wall42(wall);
 
     TEST_ASSERT_EQ_INT(ctx, 4, wall->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 383, get_legacy_word(wall, 23));
+    TEST_ASSERT_EQ_INT(ctx, 383, wall42_work_get(wall)->timer);
     TEST_ASSERT_EQ_INT(ctx, 1, hitchk_count);
 }
 
@@ -185,7 +160,7 @@ static void test_wall42_move_pushes_player_and_advances_wall(
     reset_state();
     wall->r_no0 = 4;
     wall->xposi.l = 100 << 16;
-    set_legacy_word(wall, 23, 2);
+    wall42_work_get(wall)->timer = 2;
     hitchk_result = 1;
 
     wall42(wall);
@@ -194,7 +169,7 @@ static void test_wall42_move_pushes_player_and_advances_wall(
     TEST_ASSERT_EQ_INT(ctx, 0, player->mspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 100, wall->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, -32768, wall->xposi.w.l);
-    TEST_ASSERT_EQ_INT(ctx, 1, get_legacy_word(wall, 23));
+    TEST_ASSERT_EQ_INT(ctx, 1, wall42_work_get(wall)->timer);
     TEST_ASSERT_EQ_INT(ctx, 4, wall->r_no0);
     assert_actionsub_only(ctx, wall);
 }
@@ -204,12 +179,12 @@ static void test_wall42_move_timer_minus_one_enters_stop(test_context *ctx) {
 
     reset_state();
     wall->r_no0 = 4;
-    set_legacy_word(wall, 23, -1);
+    wall42_work_get(wall)->timer = -1;
 
     wall42(wall);
 
     TEST_ASSERT_EQ_INT(ctx, 6, wall->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, -2, get_legacy_word(wall, 23));
+    TEST_ASSERT_EQ_INT(ctx, -2, wall42_work_get(wall)->timer);
     TEST_ASSERT_EQ_INT(ctx, 1, hitchk_count);
     assert_actionsub_only(ctx, wall);
 }

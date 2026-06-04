@@ -173,18 +173,6 @@ void DLL_meminit(char ***pBufTbl, void **pFuncTbl) {
 }
 void int_union_add(int_union *p, Sint32 add) { p->l += add; }
 
-static void set_word_index(sprite_status *actor, int index, Sint16 value) {
-    int offset = (index - 23) * 2;
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
-static Sint16 get_word_index(sprite_status *actor, int index) {
-    int offset = (index - 23) * 2;
-    return (Sint16)((Uint16)actor->actfree[offset] |
-                    ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
 static void queue_spawn(sprite_status *actor) {
     spawn_queue[spawn_queue_count++] = actor;
 }
@@ -250,7 +238,7 @@ static void reset_boss7_state(void) {
     playdieset_count = 0;
 }
 
-static void test_boss7_speed_helpers_use_indexed_actfree_words(
+static void test_boss7_speed_helpers_use_work_fields(
     test_context *ctx) {
     sprite_status *actor = &actwk[4];
 
@@ -259,8 +247,8 @@ static void test_boss7_speed_helpers_use_indexed_actfree_words(
     actor->yposi.l = 0;
     actor->xspeed.w = 1;
     actor->yspeed.w = 2;
-    set_word_index(actor, 26, 10);
-    set_word_index(actor, 27, -5);
+    boss7_get_work(actor)->accel_x = 10;
+    boss7_get_work(actor)->accel_y = -5;
 
     hari_spdadd(actor);
 
@@ -271,9 +259,9 @@ static void test_boss7_speed_helpers_use_indexed_actfree_words(
 
     reset_boss7_state();
     actor->xspeed.w = 100;
-    set_word_index(actor, 26, 10);
-    set_word_index(actor, 27, 5);
-    set_word_index(actor, 28, 105);
+    boss7_get_work(actor)->accel_x = 10;
+    boss7_get_work(actor)->accel_y = 5;
+    boss7_get_work(actor)->max_xspeed = 105;
 
     add_spd3(actor);
 
@@ -282,9 +270,9 @@ static void test_boss7_speed_helpers_use_indexed_actfree_words(
 
     reset_boss7_state();
     actor->xspeed.w = -100;
-    set_word_index(actor, 26, -10);
-    set_word_index(actor, 27, 5);
-    set_word_index(actor, 28, -105);
+    boss7_get_work(actor)->accel_x = -10;
+    boss7_get_work(actor)->accel_y = 5;
+    boss7_get_work(actor)->max_xspeed = -105;
 
     add_spd3(actor);
 
@@ -292,7 +280,7 @@ static void test_boss7_speed_helpers_use_indexed_actfree_words(
     TEST_ASSERT_EQ_INT(ctx, 5, actor->yspeed.w);
 }
 
-static void timer_hit(sprite_status *actor) { actor->actfree[12] = 99; }
+static void timer_hit(sprite_status *actor) { boss7_get_work(actor)->attack_mode = 99; }
 
 static void test_boss7_timer_helpers_advance_event_state(test_context *ctx) {
     sprite_status *actor = &actwk[4];
@@ -300,41 +288,41 @@ static void test_boss7_timer_helpers_advance_event_state(test_context *ctx) {
     void (*events[2])(sprite_status *) = {timer_hit, timer_hit};
 
     reset_boss7_state();
-    set_word_index(actor, 23, 1);
+    boss7_get_work(actor)->timer = 1;
 
     w_timer(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, get_word_index(actor, 23));
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[3]);
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->timer);
+    TEST_ASSERT_EQ_INT(ctx, 1, boss7_get_work(actor)->step);
 
     reset_boss7_state();
-    actor->actfree[1] = 1;
+    boss7_get_work(actor)->byte_timer = 1;
 
     b_timer(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[1]);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[3]);
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->byte_timer);
+    TEST_ASSERT_EQ_INT(ctx, 1, boss7_get_work(actor)->step);
 
     reset_boss7_state();
-    set_word_index(actor, 23, 0);
+    boss7_get_work(actor)->timer = 0;
 
     event_timer(actor, timers, events);
 
-    TEST_ASSERT_EQ_INT(ctx, 1, get_word_index(actor, 23));
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[3]);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[12]);
+    TEST_ASSERT_EQ_INT(ctx, 1, boss7_get_work(actor)->timer);
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->step);
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->attack_mode);
 
     event_timer(actor, timers, events);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, get_word_index(actor, 23));
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[3]);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[12]);
+    TEST_ASSERT_EQ_INT(ctx, 2, boss7_get_work(actor)->timer);
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->step);
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->attack_mode);
 
     event_timer(actor, timers, events);
 
-    TEST_ASSERT_EQ_INT(ctx, 3, get_word_index(actor, 23));
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[3]);
-    TEST_ASSERT_EQ_INT(ctx, 99, actor->actfree[12]);
+    TEST_ASSERT_EQ_INT(ctx, 3, boss7_get_work(actor)->timer);
+    TEST_ASSERT_EQ_INT(ctx, 1, boss7_get_work(actor)->step);
+    TEST_ASSERT_EQ_INT(ctx, 99, boss7_get_work(actor)->attack_mode);
 }
 
 static void test_boss7_spawn_helpers_create_child_actors(test_context *ctx) {
@@ -349,7 +337,7 @@ static void test_boss7_spawn_helpers_create_child_actors(test_context *ctx) {
 
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk2_count);
     TEST_ASSERT_EQ_INT(ctx, 48, actwk[10].actno);
-    TEST_ASSERT_EQ_INT(ctx, 4, get_word_index(&actwk[10], 25));
+    TEST_ASSERT_EQ_INT(ctx, 4, boss7_get_work(&actwk[10])->parent_index);
 
     reset_boss7_state();
     actor->xposi.w.h = 300;
@@ -359,7 +347,7 @@ static void test_boss7_spawn_helpers_create_child_actors(test_context *ctx) {
     make_msnc(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 47, actwk[11].actno);
-    TEST_ASSERT_EQ_INT(ctx, 11, get_word_index(actor, 25));
+    TEST_ASSERT_EQ_INT(ctx, 11, boss7_get_work(actor)->parent_index);
     TEST_ASSERT_EQ_INT(ctx, 3120, actwk[11].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 461, actwk[11].yposi.w.h);
 
@@ -389,8 +377,8 @@ static void test_boss7_effect_spawn_helpers_capture_positions(
 
     TEST_ASSERT_EQ_INT(ctx, 46, actwk[10].actno);
     TEST_ASSERT_EQ_INT(ctx, 1, actwk[10].userflag.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 2, get_word_index(&actwk[10], 29));
-    TEST_ASSERT_EQ_INT(ctx, 16, get_word_index(&actwk[10], 30));
+    TEST_ASSERT_EQ_INT(ctx, 2, boss7_get_work(&actwk[10])->x_offset);
+    TEST_ASSERT_EQ_INT(ctx, 16, boss7_get_work(&actwk[10])->y_offset);
 
     reset_boss7_state();
     actor->xposi.w.h = 300;
@@ -409,7 +397,7 @@ static void test_boss7_effect_spawn_helpers_capture_positions(
     reset_boss7_state();
     actor->xposi.w.h = 300;
     actor->yposi.w.h = 400;
-    set_word_index(actor, 31, 20);
+    boss7_get_work(actor)->owner_index = 20;
     actwk[20].xspeed.w = -700;
     queue_spawn(&actwk[12]);
 
@@ -434,10 +422,10 @@ static void test_boss7_beam_and_bara_spawn_sequences(test_context *ctx) {
 
     TEST_ASSERT_EQ_INT(ctx, 4, actwkchk2_count);
     TEST_ASSERT_EQ_INT(ctx, 46, actwk[10].actno);
-    TEST_ASSERT_EQ_INT(ctx, 0, get_word_index(&actwk[10], 29));
-    TEST_ASSERT_EQ_INT(ctx, 52, get_word_index(&actwk[10], 30));
-    TEST_ASSERT_EQ_INT(ctx, 2, get_word_index(&actwk[11], 29));
-    TEST_ASSERT_EQ_INT(ctx, 32, get_word_index(&actwk[11], 30));
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(&actwk[10])->x_offset);
+    TEST_ASSERT_EQ_INT(ctx, 52, boss7_get_work(&actwk[10])->y_offset);
+    TEST_ASSERT_EQ_INT(ctx, 2, boss7_get_work(&actwk[11])->x_offset);
+    TEST_ASSERT_EQ_INT(ctx, 32, boss7_get_work(&actwk[11])->y_offset);
     TEST_ASSERT_EQ_INT(ctx, 1, actwk[13].userflag.b.l);
 
     reset_boss7_state();
@@ -466,8 +454,8 @@ static void test_boss7_public_initializers_set_render_state(
 
     reset_boss7_state();
     pPlayerwk = &actwk[0];
-    set_word_index(actor, 25, 5);
-    actwk[5].actfree[15] = 128;
+    boss7_get_work(actor)->parent_index = 5;
+    boss7_get_work(&actwk[5])->goal_state = 128;
 
     msnc(actor);
 
@@ -485,7 +473,7 @@ static void test_boss7_public_initializers_set_render_state(
     actwk[3].mstno.b.h = 10;
     actwk[3].xposi.w.h = 1234;
     actwk[3].yposi.w.h = 456;
-    set_word_index(actor, 25, 3);
+    boss7_get_work(actor)->parent_index = 3;
 
     msnc_ele(actor);
 
@@ -529,7 +517,7 @@ static void test_boss7_beam_public_paths_follow_parent_state(
     sprite_status *parent = &actwk[4];
 
     reset_boss7_state();
-    set_word_index(beam, 25, 4);
+    boss7_get_work(beam)->parent_index = 4;
 
     egg7beam(beam);
 
@@ -538,7 +526,7 @@ static void test_boss7_beam_public_paths_follow_parent_state(
 
     reset_boss7_state();
     parent->actno = 1;
-    set_word_index(beam, 25, 4);
+    boss7_get_work(beam)->parent_index = 4;
 
     egg7beam(beam);
 
@@ -550,15 +538,15 @@ static void test_boss7_beam_public_paths_follow_parent_state(
 
     reset_boss7_state();
     parent->actno = 1;
-    parent->actfree[2] = 32 | 64;
+    boss7_get_work(parent)->flags = 32 | 64;
     parent->cddat = 1;
     parent->xposi.w.h = 500;
     parent->yposi.w.h = 600;
     beam->r_no0 = 2;
     beam->userflag.b.l = 1;
-    set_word_index(beam, 25, 4);
-    set_word_index(beam, 29, 12);
-    set_word_index(beam, 30, -3);
+    boss7_get_work(beam)->parent_index = 4;
+    boss7_get_work(beam)->x_offset = 12;
+    boss7_get_work(beam)->y_offset = -3;
     queue_spawn(&actwk[20]);
     queue_spawn(&actwk[21]);
 
@@ -568,7 +556,7 @@ static void test_boss7_beam_public_paths_follow_parent_state(
     TEST_ASSERT_EQ_INT(ctx, 2, beam->colicnt);
     TEST_ASSERT_EQ_INT(ctx, 488, beam->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 597, beam->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 32 | 64, beam->actfree[2] & (32 | 64));
+    TEST_ASSERT_EQ_INT(ctx, 32 | 64, boss7_get_work(beam)->flags & (32 | 64));
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_EQ_INT(ctx, 2, actwkchk2_count);
@@ -582,11 +570,11 @@ static void test_boss7_jet_and_fragment_public_paths(test_context *ctx) {
 
     reset_boss7_state();
     parent->actno = 1;
-    parent->actfree[2] = 8;
+    boss7_get_work(parent)->flags = 8;
     parent->cddat = 1;
     parent->xposi.w.h = 500;
     parent->yposi.w.h = 600;
-    set_word_index(actor, 25, 4);
+    boss7_get_work(actor)->parent_index = 4;
 
     egg7jet(actor);
 
@@ -656,8 +644,8 @@ static void test_boss7_egg_demo_transition_helpers(test_context *ctx) {
     snc_wait(actor);
 
     TEST_ASSERT_EQ_INT(ctx, -1536, actor->xspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 0, get_word_index(actor, 26));
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[3]);
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->accel_x);
+    TEST_ASSERT_EQ_INT(ctx, 1, boss7_get_work(actor)->step);
     TEST_ASSERT_EQ_INT(ctx, 1, actor->cddat & 1);
     TEST_ASSERT_EQ_INT(ctx, 2880, scralim_left);
     TEST_ASSERT_EQ_INT(ctx, 2880, scralim_n_left);
@@ -673,8 +661,8 @@ static void test_boss7_egg_demo_transition_helpers(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 2840, actor->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1536, actor->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->cddat & 1);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[3]);
-    TEST_ASSERT_EQ_INT(ctx, 120, get_word_index(actor, 23));
+    TEST_ASSERT_EQ_INT(ctx, 1, boss7_get_work(actor)->step);
+    TEST_ASSERT_EQ_INT(ctx, 120, boss7_get_work(actor)->timer);
 
     reset_boss7_state();
     actor->xposi.w.h = 3300;
@@ -684,21 +672,21 @@ static void test_boss7_egg_demo_transition_helpers(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 3240, actor->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, -1536, actor->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 1, actor->cddat & 1);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[3]);
-    TEST_ASSERT_EQ_INT(ctx, 120, get_word_index(actor, 23));
+    TEST_ASSERT_EQ_INT(ctx, 1, boss7_get_work(actor)->step);
+    TEST_ASSERT_EQ_INT(ctx, 120, boss7_get_work(actor)->timer);
 
     reset_boss7_state();
     actor->xposi.w.h = 3100;
-    actor->actfree[2] = 8;
+    boss7_get_work(actor)->flags = 8;
 
     r_l2(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 3104, actor->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->xspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 0, get_word_index(actor, 26));
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[3]);
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->accel_x);
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->step);
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[2] & 8);
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->flags & 8);
 }
 
 static void test_boss7_beam_flag_helpers(test_context *ctx) {
@@ -708,31 +696,31 @@ static void test_boss7_beam_flag_helpers(test_context *ctx) {
 
     beam_on(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 32 | 64, actor->actfree[2] & (32 | 64));
+    TEST_ASSERT_EQ_INT(ctx, 32 | 64, boss7_get_work(actor)->flags & (32 | 64));
 
     beam_on2(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 64, actor->actfree[2] & (32 | 64));
+    TEST_ASSERT_EQ_INT(ctx, 64, boss7_get_work(actor)->flags & (32 | 64));
 
     beam_off(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[2] & (32 | 64));
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->flags & (32 | 64));
 
     move_start(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 8, actor->actfree[2] & 8);
+    TEST_ASSERT_EQ_INT(ctx, 8, boss7_get_work(actor)->flags & 8);
     TEST_ASSERT_EQ_INT(ctx, -512, actor->xspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 0, get_word_index(actor, 26));
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->accel_x);
 
     actor->cddat = 1;
     beam_next(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 16 | 64, actor->actfree[2] & (16 | 32 | 64));
-    TEST_ASSERT_EQ_INT(ctx, 512, get_word_index(actor, 28));
-    TEST_ASSERT_EQ_INT(ctx, 2, get_word_index(actor, 26));
+    TEST_ASSERT_EQ_INT(ctx, 16 | 64, boss7_get_work(actor)->flags & (16 | 32 | 64));
+    TEST_ASSERT_EQ_INT(ctx, 512, boss7_get_work(actor)->max_xspeed);
+    TEST_ASSERT_EQ_INT(ctx, 2, boss7_get_work(actor)->accel_x);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->xspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 0, get_word_index(actor, 27));
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->accel_y);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->cddat & 1);
 }
 
@@ -757,13 +745,13 @@ static void test_boss7_goal_transition_helpers(test_context *ctx) {
 
     goal_chk_snc_win(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 129, pEggman->actfree[15]);
+    TEST_ASSERT_EQ_INT(ctx, 129, boss7_get_work(pEggman)->goal_state);
     TEST_ASSERT_EQ_INT(ctx, 128, bossflag & 128);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 187, soundset_values[0]);
     TEST_ASSERT_EQ_INT(ctx, 15944, actor->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 18, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[3]);
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->step);
     TEST_ASSERT_EQ_INT(ctx, 10, actwkchk2_count);
 
     reset_boss7_state();
@@ -771,15 +759,15 @@ static void test_boss7_goal_transition_helpers(test_context *ctx) {
     pPlayerwk = &actwk[0];
     pPlayerwk->actno = 1;
     pPlayerwk->xposi.w.h = 17000;
-    actor->actfree[2] = 32;
+    boss7_get_work(actor)->flags = 32;
 
     goal_chk_msnc_win(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 16016, actor->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 130, pEggman->actfree[15]);
+    TEST_ASSERT_EQ_INT(ctx, 130, boss7_get_work(pEggman)->goal_state);
     TEST_ASSERT_EQ_INT(ctx, 15944, pPlayerwk->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 16, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[2] & 32);
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->flags & 32);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
 }
 
@@ -787,44 +775,44 @@ static void test_boss7_egg_goal_sequence_helpers(test_context *ctx) {
     sprite_status *actor = &actwk[4];
 
     reset_boss7_state();
-    actor->actfree[2] = 32 | 16 | 64;
-    actor->actfree[14] = 128 | 7;
+    boss7_get_work(actor)->flags = 32 | 16 | 64;
+    boss7_get_work(actor)->hscroll_state = 128 | 7;
 
     egg7_goal_snc_win(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 64, actor->actfree[2] & (16 | 32 | 64));
-    TEST_ASSERT_EQ_INT(ctx, 7, actor->actfree[14]);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->actfree[3]);
-    TEST_ASSERT_EQ_INT(ctx, 30, get_word_index(actor, 23));
+    TEST_ASSERT_EQ_INT(ctx, 64, boss7_get_work(actor)->flags & (16 | 32 | 64));
+    TEST_ASSERT_EQ_INT(ctx, 7, boss7_get_work(actor)->hscroll_state);
+    TEST_ASSERT_EQ_INT(ctx, 2, boss7_get_work(actor)->step);
+    TEST_ASSERT_EQ_INT(ctx, 30, boss7_get_work(actor)->timer);
 
-    actor->actfree[2] = 64;
-    set_word_index(actor, 23, 119);
+    boss7_get_work(actor)->flags = 64;
+    boss7_get_work(actor)->timer = 119;
 
     egg7_goal0(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 3, actor->actfree[3]);
-    TEST_ASSERT_EQ_INT(ctx, 30, get_word_index(actor, 23));
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[2] & 64);
+    TEST_ASSERT_EQ_INT(ctx, 3, boss7_get_work(actor)->step);
+    TEST_ASSERT_EQ_INT(ctx, 30, boss7_get_work(actor)->timer);
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->flags & 64);
     TEST_ASSERT_EQ_INT(ctx, 512, actor->yspeed.w);
 
-    actor->actfree[3] = 5;
+    boss7_get_work(actor)->step = 5;
     actor->yposi.w.h = 400;
     actor->yspeed.w = 0;
 
     egg7_goal1(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 6, actor->actfree[3]);
+    TEST_ASSERT_EQ_INT(ctx, 6, boss7_get_work(actor)->step);
     TEST_ASSERT_EQ_INT(ctx, 1536, actor->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 60, get_word_index(actor, 23));
+    TEST_ASSERT_EQ_INT(ctx, 60, boss7_get_work(actor)->timer);
 
-    actor->actfree[3] = 7;
+    boss7_get_work(actor)->step = 7;
     actor->xposi.w.h = 16224;
 
     egg7_goal2(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 8, actor->actfree[3]);
-    TEST_ASSERT_EQ_INT(ctx, 60, get_word_index(actor, 23));
+    TEST_ASSERT_EQ_INT(ctx, 8, boss7_get_work(actor)->step);
+    TEST_ASSERT_EQ_INT(ctx, 60, boss7_get_work(actor)->timer);
 
     reset_boss7_state();
     actor->xposi.w.h = 15800;
@@ -834,7 +822,7 @@ static void test_boss7_egg_goal_sequence_helpers(test_context *ctx) {
 
     TEST_ASSERT_EQ_INT(ctx, 1, sub_sync_count);
     TEST_ASSERT_EQ_INT(ctx, 32, sub_sync_values[0]);
-    TEST_ASSERT_EQ_INT(ctx, 3, actor->actfree[14]);
+    TEST_ASSERT_EQ_INT(ctx, 3, boss7_get_work(actor)->hscroll_state);
     TEST_ASSERT_EQ_INT(ctx, 1, genecolor_count);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
     TEST_ASSERT_EQ_INT(ctx, 1, QuickReturn);
@@ -851,17 +839,17 @@ static void test_boss7_msnc_demo1_player_pose_branches(test_context *ctx) {
 
     msnc_demo1(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[3]);
+    TEST_ASSERT_EQ_INT(ctx, 1, boss7_get_work(actor)->step);
     TEST_ASSERT_EQ_INT(ctx, 1, actor->mstno.b.h);
 
     reset_boss7_state();
     pPlayerwk = &actwk[0];
     pPlayerwk->cddat = 2;
-    actor->actfree[3] = 9;
+    boss7_get_work(actor)->step = 9;
 
     msnc_demo1(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[3]);
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->step);
 
     reset_boss7_state();
     pPlayerwk = &actwk[0];
@@ -872,7 +860,7 @@ static void test_boss7_msnc_demo1_player_pose_branches(test_context *ctx) {
     msnc_demo1(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 1, actor->mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[3]);
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->step);
 
     actor->patcnt = 7;
     pPlayerwk->cddat = 0;
@@ -880,7 +868,7 @@ static void test_boss7_msnc_demo1_player_pose_branches(test_context *ctx) {
     msnc_demo1(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 0, actor->mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[3]);
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->step);
 }
 
 static void test_boss7_msnc_demo2_transition_helpers(test_context *ctx) {
@@ -891,7 +879,7 @@ static void test_boss7_msnc_demo2_transition_helpers(test_context *ctx) {
     msnc_demo2_ini(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 2, actor->mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[3]);
+    TEST_ASSERT_EQ_INT(ctx, 1, boss7_get_work(actor)->step);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->patno);
 
     actor->patno = 6;
@@ -899,14 +887,14 @@ static void test_boss7_msnc_demo2_transition_helpers(test_context *ctx) {
     kamae_anime(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 3, actor->mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->actfree[3]);
-    TEST_ASSERT_EQ_INT(ctx, 120, get_word_index(actor, 23));
+    TEST_ASSERT_EQ_INT(ctx, 2, boss7_get_work(actor)->step);
+    TEST_ASSERT_EQ_INT(ctx, 120, boss7_get_work(actor)->timer);
 
     fire_start(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 3, actor->actfree[3]);
+    TEST_ASSERT_EQ_INT(ctx, 3, boss7_get_work(actor)->step);
     TEST_ASSERT_EQ_INT(ctx, 4, actor->mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 150, get_word_index(actor, 23));
+    TEST_ASSERT_EQ_INT(ctx, 150, boss7_get_work(actor)->timer);
 
     reset_boss7_state();
     pEggman = &actwk[5];
@@ -914,22 +902,22 @@ static void test_boss7_msnc_demo2_transition_helpers(test_context *ctx) {
 
     door_open(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 130, pEggman->actfree[14]);
+    TEST_ASSERT_EQ_INT(ctx, 130, boss7_get_work(pEggman)->hscroll_state);
     TEST_ASSERT_EQ_INT(ctx, 128, bossflag & 128);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[3]);
-    TEST_ASSERT_EQ_INT(ctx, 60, get_word_index(actor, 23));
+    TEST_ASSERT_EQ_INT(ctx, 1, boss7_get_work(actor)->step);
+    TEST_ASSERT_EQ_INT(ctx, 60, boss7_get_work(actor)->timer);
     TEST_ASSERT_EQ_INT(ctx, 1, sub_sync_count);
     TEST_ASSERT_EQ_INT(ctx, 31, sub_sync_values[0]);
 
     reset_boss7_state();
-    actor->actfree[3] = 7;
+    boss7_get_work(actor)->step = 7;
 
     msnc_demo2(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 32, actor->actfree[2] & 32);
+    TEST_ASSERT_EQ_INT(ctx, 32, boss7_get_work(actor)->flags & 32);
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 5, actor->mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 640, get_word_index(actor, 28));
+    TEST_ASSERT_EQ_INT(ctx, 640, boss7_get_work(actor)->max_xspeed);
 }
 
 static void test_boss7_msnc_egg_check_paths(test_context *ctx) {
@@ -937,7 +925,7 @@ static void test_boss7_msnc_egg_check_paths(test_context *ctx) {
 
     reset_boss7_state();
     pEggman = &actwk[5];
-    actor->actfree[2] = 32;
+    boss7_get_work(actor)->flags = 32;
     actor->xposi.w.h = 13600;
     actor->xspeed.w = 100;
     pEggman->xposi.w.h = 13550;
@@ -946,28 +934,28 @@ static void test_boss7_msnc_egg_check_paths(test_context *ctx) {
     msnc_egg_chk(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 900, actor->xspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 8, get_word_index(actor, 26));
-    TEST_ASSERT_EQ_INT(ctx, 1536, get_word_index(actor, 28));
+    TEST_ASSERT_EQ_INT(ctx, 8, boss7_get_work(actor)->accel_x);
+    TEST_ASSERT_EQ_INT(ctx, 1536, boss7_get_work(actor)->max_xspeed);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->r_no0);
 
     reset_boss7_state();
     pEggman = &actwk[5];
-    actor->actfree[2] = 32;
+    boss7_get_work(actor)->flags = 32;
     actor->xposi.w.h = 13000;
     actor->xspeed.w = 100;
     pEggman->xposi.w.h = 12950;
     pEggman->xspeed.w = 900;
-    actor->actfree[3] = 7;
-    set_word_index(actor, 32, 12);
+    boss7_get_work(actor)->step = 7;
+    boss7_get_work(actor)->close_counter = 12;
 
     msnc_egg_chk(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 900, actor->xspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 8, get_word_index(actor, 26));
-    TEST_ASSERT_EQ_INT(ctx, 1536, get_word_index(actor, 28));
+    TEST_ASSERT_EQ_INT(ctx, 8, boss7_get_work(actor)->accel_x);
+    TEST_ASSERT_EQ_INT(ctx, 1536, boss7_get_work(actor)->max_xspeed);
     TEST_ASSERT_EQ_INT(ctx, 12, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[3]);
-    TEST_ASSERT_EQ_INT(ctx, 0, get_word_index(actor, 32));
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->step);
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->close_counter);
 }
 
 static void test_boss7_goal_check_dispatch_paths(test_context *ctx) {
@@ -981,7 +969,7 @@ static void test_boss7_goal_check_dispatch_paths(test_context *ctx) {
     goal_chk(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 16016, actor->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 130, pEggman->actfree[15]);
+    TEST_ASSERT_EQ_INT(ctx, 130, boss7_get_work(pEggman)->goal_state);
     TEST_ASSERT_EQ_INT(ctx, 16, actor->r_no0);
 
     reset_boss7_state();
@@ -992,11 +980,11 @@ static void test_boss7_goal_check_dispatch_paths(test_context *ctx) {
 
     goal_chk(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 1, pEggman->actfree[15]);
+    TEST_ASSERT_EQ_INT(ctx, 1, boss7_get_work(pEggman)->goal_state);
     TEST_ASSERT_EQ_INT(ctx, 128, bossflag & 128);
     TEST_ASSERT_EQ_INT(ctx, 187, soundset_values[0]);
-    TEST_ASSERT_EQ_INT(ctx, 2048, get_word_index(actor, 28));
-    TEST_ASSERT_EQ_INT(ctx, 16, get_word_index(actor, 26));
+    TEST_ASSERT_EQ_INT(ctx, 2048, boss7_get_work(actor)->max_xspeed);
+    TEST_ASSERT_EQ_INT(ctx, 16, boss7_get_work(actor)->accel_x);
 }
 
 static void test_boss7_msnc_quickreturn_skips_render_work(test_context *ctx) {
@@ -1004,11 +992,11 @@ static void test_boss7_msnc_quickreturn_skips_render_work(test_context *ctx) {
 
     reset_boss7_state();
     pPlayerwk = &actwk[0];
-    set_word_index(actor, 25, 5);
-    actwk[5].actfree[15] = 128;
+    boss7_get_work(actor)->parent_index = 5;
+    boss7_get_work(&actwk[5])->goal_state = 128;
     actor->r_no0 = 18;
-    actor->actfree[3] = 1;
-    set_word_index(actor, 23, 240);
+    boss7_get_work(actor)->step = 1;
+    boss7_get_work(actor)->timer = 240;
 
     msnc(actor);
 
@@ -1034,39 +1022,39 @@ static void test_boss7_msnc_low_move_selects_high_low_and_boost_modes(
 
     TEST_ASSERT_EQ_INT(ctx, 8, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 6, actor->mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 1, get_word_index(actor, 30));
-    TEST_ASSERT_EQ_INT(ctx, 1, get_word_index(actor, 31));
-    TEST_ASSERT_EQ_INT(ctx, 1, get_word_index(actor, 32));
-    TEST_ASSERT_EQ_INT(ctx, -1024, get_word_index(actor, 26));
-    TEST_ASSERT_EQ_INT(ctx, 1024, get_word_index(actor, 28));
+    TEST_ASSERT_EQ_INT(ctx, 1, boss7_get_work(actor)->y_offset);
+    TEST_ASSERT_EQ_INT(ctx, 1, boss7_get_work(actor)->owner_index);
+    TEST_ASSERT_EQ_INT(ctx, 1, boss7_get_work(actor)->close_counter);
+    TEST_ASSERT_EQ_INT(ctx, -1024, boss7_get_work(actor)->accel_x);
+    TEST_ASSERT_EQ_INT(ctx, 1024, boss7_get_work(actor)->max_xspeed);
 
     reset_boss7_state();
     pPlayerwk = &actwk[0];
     pEggman = &actwk[5];
     actor->xposi.w.h = 1000;
     pPlayerwk->xposi.w.h = 1500;
-    set_word_index(actor, 30, 29);
+    boss7_get_work(actor)->y_offset = 29;
 
     msnc_low_move(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 5, actor->mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, -1, get_word_index(actor, 31));
-    TEST_ASSERT_EQ_INT(ctx, -640, get_word_index(actor, 26));
-    TEST_ASSERT_EQ_INT(ctx, 640, get_word_index(actor, 28));
+    TEST_ASSERT_EQ_INT(ctx, -1, boss7_get_work(actor)->owner_index);
+    TEST_ASSERT_EQ_INT(ctx, -640, boss7_get_work(actor)->accel_x);
+    TEST_ASSERT_EQ_INT(ctx, 640, boss7_get_work(actor)->max_xspeed);
 
     reset_boss7_state();
     pPlayerwk = &actwk[0];
     pEggman = &actwk[5];
     actor->xposi.w.h = 14000;
     pPlayerwk->xposi.w.h = 13900;
-    actor->actfree[12] = 2;
-    set_word_index(actor, 33, 1);
+    boss7_get_work(actor)->attack_mode = 2;
+    boss7_get_work(actor)->boost_timer = 1;
 
     msnc_low_move(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[12]);
-    TEST_ASSERT_EQ_INT(ctx, 0, get_word_index(actor, 33));
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->attack_mode);
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->boost_timer);
 }
 
 static void test_boss7_msnc_attack_move_helpers(test_context *ctx) {
@@ -1080,50 +1068,50 @@ static void test_boss7_msnc_attack_move_helpers(test_context *ctx) {
     msnc_atc_move(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 10, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[3]);
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->step);
 
     reset_boss7_state();
     pPlayerwk = &actwk[0];
     pEggman = &actwk[5];
     actor->xposi.w.h = 14000;
     pPlayerwk->xposi.w.h = 13000;
-    set_word_index(actor, 30, 29);
+    boss7_get_work(actor)->y_offset = 29;
 
     msnc_atc_move(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->actfree[12]);
-    TEST_ASSERT_EQ_INT(ctx, 240, get_word_index(actor, 33));
+    TEST_ASSERT_EQ_INT(ctx, 2, boss7_get_work(actor)->attack_mode);
+    TEST_ASSERT_EQ_INT(ctx, 240, boss7_get_work(actor)->boost_timer);
 
     reset_boss7_state();
     pPlayerwk = &actwk[0];
     pEggman = &actwk[5];
     actor->xposi.w.h = 14000;
-    actor->actfree[2] = 64;
+    boss7_get_work(actor)->flags = 64;
     pPlayerwk->xposi.w.h = 14100;
-    set_word_index(actor, 30, 29);
+    boss7_get_work(actor)->y_offset = 29;
 
     msnc_atc_move(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[12]);
-    TEST_ASSERT_EQ_INT(ctx, 240, get_word_index(actor, 33));
+    TEST_ASSERT_EQ_INT(ctx, 1, boss7_get_work(actor)->attack_mode);
+    TEST_ASSERT_EQ_INT(ctx, 240, boss7_get_work(actor)->boost_timer);
 
     reset_boss7_state();
     pPlayerwk = &actwk[0];
     pPlayerwk->xposi.w.h = 1500;
     actor->xposi.w.h = 1000;
-    actor->actfree[3] = 1;
-    set_word_index(actor, 23, 60);
+    boss7_get_work(actor)->step = 1;
+    boss7_get_work(actor)->timer = 60;
 
     msnc_act_next(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 12, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 64, actor->actfree[2] & 64);
+    TEST_ASSERT_EQ_INT(ctx, 64, boss7_get_work(actor)->flags & 64);
 
     pPlayerwk->xposi.w.h = 500;
     msnc_act_next(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 14, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[2] & 64);
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->flags & 64);
 }
 
 static void test_boss7_msnc_attack_event_helpers(test_context *ctx) {
@@ -1136,8 +1124,8 @@ static void test_boss7_msnc_attack_event_helpers(test_context *ctx) {
 
     msnc_f_atc_tobi(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 8, get_word_index(actor, 26));
-    TEST_ASSERT_EQ_INT(ctx, 1536, get_word_index(actor, 28));
+    TEST_ASSERT_EQ_INT(ctx, 8, boss7_get_work(actor)->accel_x);
+    TEST_ASSERT_EQ_INT(ctx, 1536, boss7_get_work(actor)->max_xspeed);
     TEST_ASSERT_EQ_INT(ctx, 8, actor->mstno.b.h);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 202, soundset_values[0]);
@@ -1162,8 +1150,8 @@ static void test_boss7_msnc_attack_event_helpers(test_context *ctx) {
 
     msnc_b_atc_atack(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, -8, get_word_index(actor, 26));
-    TEST_ASSERT_EQ_INT(ctx, 512, get_word_index(actor, 28));
+    TEST_ASSERT_EQ_INT(ctx, -8, boss7_get_work(actor)->accel_x);
+    TEST_ASSERT_EQ_INT(ctx, 512, boss7_get_work(actor)->max_xspeed);
     TEST_ASSERT_EQ_INT(ctx, 10, actor->mstno.b.h);
     TEST_ASSERT_EQ_INT(ctx, 48, actwk[20].actno);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
@@ -1192,20 +1180,20 @@ static void test_boss7_msnc_win_and_lose_sequences(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 11, actor->mstno.b.h);
     TEST_ASSERT_EQ_INT(ctx, 16016, actor->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 460, actor->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[3]);
+    TEST_ASSERT_EQ_INT(ctx, 1, boss7_get_work(actor)->step);
     TEST_ASSERT_EQ_INT(ctx, 15944, pPlayerwk->xposi.w.h);
 
     msnc_win(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->actfree[3]);
-    TEST_ASSERT_EQ_INT(ctx, 30, actor->actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 2, boss7_get_work(actor)->step);
+    TEST_ASSERT_EQ_INT(ctx, 30, boss7_get_work(actor)->byte_timer);
 
-    actor->actfree[1] = 1;
+    boss7_get_work(actor)->byte_timer = 1;
 
     msnc_win(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 3, actor->actfree[3]);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 3, boss7_get_work(actor)->step);
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->byte_timer);
 
     msnc_win(actor);
 
@@ -1219,14 +1207,14 @@ static void test_boss7_msnc_win_and_lose_sequences(test_context *ctx) {
     msnc_lose(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 1, scoreup_count);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[3]);
+    TEST_ASSERT_EQ_INT(ctx, 1, boss7_get_work(actor)->step);
     TEST_ASSERT_EQ_INT(ctx, 13, actor->mstno.b.h);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->xspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 0, get_word_index(actor, 26));
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->accel_x);
     TEST_ASSERT_EQ_INT(ctx, -1240, actor->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 40, get_word_index(actor, 27));
+    TEST_ASSERT_EQ_INT(ctx, 40, boss7_get_work(actor)->accel_y);
     TEST_ASSERT_EQ_INT(ctx, 46, actwk[20].actno);
-    TEST_ASSERT_EQ_INT(ctx, 1, get_word_index(actor, 23));
+    TEST_ASSERT_EQ_INT(ctx, 1, boss7_get_work(actor)->timer);
 }
 
 static void test_boss7_egg_demo_wrappers_and_move_paths(test_context *ctx) {
@@ -1238,21 +1226,21 @@ static void test_boss7_egg_demo_wrappers_and_move_paths(test_context *ctx) {
 
     egg7_demo1(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[3]);
+    TEST_ASSERT_EQ_INT(ctx, 1, boss7_get_work(actor)->step);
     TEST_ASSERT_EQ_INT(ctx, -1536, actor->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 1, actor->cddat & 1);
 
     reset_boss7_state();
     pPlayerwk = &actwk[0];
-    set_word_index(actor, 25, 6);
+    boss7_get_work(actor)->parent_index = 6;
     actor->xposi.w.h = 2700;
-    set_word_index(actor, 23, 120);
+    boss7_get_work(actor)->timer = 120;
 
     egg7_demo2(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 2816, actor->xposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[3]);
-    TEST_ASSERT_EQ_INT(ctx, 121, get_word_index(actor, 23));
+    TEST_ASSERT_EQ_INT(ctx, 1, boss7_get_work(actor)->step);
+    TEST_ASSERT_EQ_INT(ctx, 121, boss7_get_work(actor)->timer);
     TEST_ASSERT_EQ_INT(ctx, 4, actwk[6].r_no0);
 
     reset_boss7_state();
@@ -1264,11 +1252,11 @@ static void test_boss7_egg_demo_wrappers_and_move_paths(test_context *ctx) {
 
     egg7_move(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->actfree[2] & 4);
-    TEST_ASSERT_EQ_INT(ctx, 240, get_word_index(actor, 31));
+    TEST_ASSERT_EQ_INT(ctx, 4, boss7_get_work(actor)->flags & 4);
+    TEST_ASSERT_EQ_INT(ctx, 240, boss7_get_work(actor)->owner_index);
     TEST_ASSERT_EQ_INT(ctx, 256, actor->xspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 768, get_word_index(actor, 28));
-    TEST_ASSERT_EQ_INT(ctx, 2, get_word_index(actor, 26));
+    TEST_ASSERT_EQ_INT(ctx, 768, boss7_get_work(actor)->max_xspeed);
+    TEST_ASSERT_EQ_INT(ctx, 2, boss7_get_work(actor)->accel_x);
 
     reset_boss7_state();
     actor->xposi.w.h = 16000;
@@ -1279,7 +1267,7 @@ static void test_boss7_egg_demo_wrappers_and_move_paths(test_context *ctx) {
 
     TEST_ASSERT_EQ_INT(ctx, 15952, actor->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 8, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[3]);
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->step);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->yspeed.w);
 }
@@ -1288,23 +1276,23 @@ static void test_boss7_egg_goal_dispatcher_paths(test_context *ctx) {
     sprite_status *actor = &actwk[4];
 
     reset_boss7_state();
-    actor->actfree[15] = 1;
-    actor->actfree[2] = 32 | 16;
-    actor->actfree[14] = 128 | 5;
+    boss7_get_work(actor)->goal_state = 1;
+    boss7_get_work(actor)->flags = 32 | 16;
+    boss7_get_work(actor)->hscroll_state = 128 | 5;
 
     egg7_goal(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->actfree[3]);
-    TEST_ASSERT_EQ_INT(ctx, 30, get_word_index(actor, 23));
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[2] & (32 | 16));
-    TEST_ASSERT_EQ_INT(ctx, 5, actor->actfree[14]);
+    TEST_ASSERT_EQ_INT(ctx, 2, boss7_get_work(actor)->step);
+    TEST_ASSERT_EQ_INT(ctx, 30, boss7_get_work(actor)->timer);
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->flags & (32 | 16));
+    TEST_ASSERT_EQ_INT(ctx, 5, boss7_get_work(actor)->hscroll_state);
 
     reset_boss7_state();
-    actor->actfree[15] = 2;
+    boss7_get_work(actor)->goal_state = 2;
 
     egg7_goal(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[3]);
+    TEST_ASSERT_EQ_INT(ctx, 1, boss7_get_work(actor)->step);
 }
 
 static void test_boss7_remaining_small_branch_paths(test_context *ctx) {
@@ -1313,33 +1301,33 @@ static void test_boss7_remaining_small_branch_paths(test_context *ctx) {
     reset_boss7_state();
     pPlayerwk = &actwk[0];
     pPlayerwk->cddat = 6;
-    actor->actfree[3] = 1;
+    boss7_get_work(actor)->step = 1;
 
     msnc_demo1(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[3]);
+    TEST_ASSERT_EQ_INT(ctx, 1, boss7_get_work(actor)->step);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->mstno.b.h);
 
     reset_boss7_state();
     pEggman = &actwk[5];
-    actor->actfree[2] = 32;
+    boss7_get_work(actor)->flags = 32;
     actor->xposi.w.h = 1000;
     pEggman->xposi.w.h = 800;
 
     msnc_egg_chk(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 0, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, get_word_index(actor, 26));
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->accel_x);
 
     reset_boss7_state();
     pEggman = &actwk[5];
     pPlayerwk = &actwk[0];
-    pEggman->actfree[15] = 1;
+    boss7_get_work(pEggman)->goal_state = 1;
     actor->xposi.w.h = 15944;
 
     goal_chk(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 129, pEggman->actfree[15]);
+    TEST_ASSERT_EQ_INT(ctx, 129, boss7_get_work(pEggman)->goal_state);
     TEST_ASSERT_EQ_INT(ctx, 18, actor->r_no0);
 }
 
@@ -1349,7 +1337,7 @@ static void test_boss7_more_msnc_movement_branches(test_context *ctx) {
     reset_boss7_state();
     pPlayerwk = &actwk[0];
     pEggman = &actwk[5];
-    pEggman->actfree[15] = 1;
+    boss7_get_work(pEggman)->goal_state = 1;
 
     msnc_low_move(actor);
 
@@ -1361,31 +1349,31 @@ static void test_boss7_more_msnc_movement_branches(test_context *ctx) {
     pEggman = &actwk[5];
     actor->xposi.w.h = 1000;
     pPlayerwk->xposi.w.h = 900;
-    set_word_index(actor, 31, -3);
+    boss7_get_work(actor)->owner_index = -3;
 
     msnc_low_move(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[2] & 64);
-    TEST_ASSERT_EQ_INT(ctx, 1, get_word_index(actor, 31));
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->flags & 64);
+    TEST_ASSERT_EQ_INT(ctx, 1, boss7_get_work(actor)->owner_index);
 
     reset_boss7_state();
     pPlayerwk = &actwk[0];
     pEggman = &actwk[5];
     actor->xposi.w.h = 1000;
     pPlayerwk->xposi.w.h = 1000;
-    set_word_index(actor, 31, -5);
+    boss7_get_work(actor)->owner_index = -5;
 
     msnc_low_move(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 1, get_word_index(actor, 31));
-    TEST_ASSERT_EQ_INT(ctx, 0, get_word_index(actor, 32));
+    TEST_ASSERT_EQ_INT(ctx, 1, boss7_get_work(actor)->owner_index);
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->close_counter);
 
     reset_boss7_state();
     pPlayerwk = &actwk[0];
     pEggman = &actwk[5];
     actor->xposi.w.h = 1000;
     pPlayerwk->xposi.w.h = 1050;
-    set_word_index(actor, 32, 49);
+    boss7_get_work(actor)->close_counter = 49;
 
     msnc_low_move(actor);
 
@@ -1394,21 +1382,21 @@ static void test_boss7_more_msnc_movement_branches(test_context *ctx) {
     reset_boss7_state();
     pPlayerwk = &actwk[0];
     GL_d5 = 10;
-    set_word_index(actor, 31, -121);
+    boss7_get_work(actor)->owner_index = -121;
 
     msnc_normal_move(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 10, actor->r_no0);
 
     reset_boss7_state();
-    actor->actfree[12] = 1;
+    boss7_get_work(actor)->attack_mode = 1;
     msnc_low_set(actor);
-    TEST_ASSERT_EQ_INT(ctx, 1280, get_word_index(actor, 28));
+    TEST_ASSERT_EQ_INT(ctx, 1280, boss7_get_work(actor)->max_xspeed);
 
     reset_boss7_state();
-    actor->actfree[12] = 2;
+    boss7_get_work(actor)->attack_mode = 2;
     msnc_low_set(actor);
-    TEST_ASSERT_EQ_INT(ctx, 426, get_word_index(actor, 28));
+    TEST_ASSERT_EQ_INT(ctx, 426, boss7_get_work(actor)->max_xspeed);
 }
 
 static void test_boss7_wrapper_attack_and_child_branches(test_context *ctx) {
@@ -1458,12 +1446,12 @@ static void test_boss7_wrapper_attack_and_child_branches(test_context *ctx) {
     reset_boss7_state();
     pMsnc = &actwk[5];
     pMsnc->mstno.b.h = 10;
-    actor->actfree[1] = 4;
+    boss7_get_work(actor)->byte_timer = 4;
     actor->patno = 1;
 
     msnc_ele_01(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->byte_timer);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->patno);
 }
 
@@ -1472,7 +1460,7 @@ static void test_boss7_egg_scroll_beam_and_height_branches(test_context *ctx) {
 
     reset_boss7_state();
     pPlayerwk = &actwk[0];
-    actor->actfree[2] = 16;
+    boss7_get_work(actor)->flags = 16;
     actor->xposi.w.h = 1000;
     pPlayerwk->actno = 1;
     pPlayerwk->xposi.w.h = 1010;
@@ -1484,7 +1472,7 @@ static void test_boss7_egg_scroll_beam_and_height_branches(test_context *ctx) {
 
     reset_boss7_state();
     pPlayerwk = &actwk[0];
-    actor->actfree[14] = 128 | 1;
+    boss7_get_work(actor)->hscroll_state = 128 | 1;
     actor->xposi.w.h = 16000;
     pPlayerwk->xposi.w.h = 15800;
 
@@ -1495,11 +1483,11 @@ static void test_boss7_egg_scroll_beam_and_height_branches(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 24, scra_hline);
     TEST_ASSERT_EQ_INT(ctx, 2880, scralim_right);
 
-    actor->actfree[14] = 2;
+    boss7_get_work(actor)->hscroll_state = 2;
     egg7_hscr(actor);
     TEST_ASSERT_EQ_INT(ctx, 15776, scralim_right);
 
-    actor->actfree[14] = 3;
+    boss7_get_work(actor)->hscroll_state = 3;
     scr_dir_tbl[2] = 1234;
     egg7_hscr(actor);
     TEST_ASSERT_EQ_INT(ctx, 1234, scralim_right);
@@ -1533,61 +1521,61 @@ static void test_boss7_beam_variant_and_failure_paths(test_context *ctx) {
     reset_boss7_state();
     parent->actno = 1;
     beam->userflag.b.h = 1;
-    set_word_index(beam, 25, 4);
+    boss7_get_work(beam)->parent_index = 4;
 
     egg7beam(beam);
 
     TEST_ASSERT_EQ_INT(ctx, 4, beam->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 15, beam->actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 15, boss7_get_work(beam)->byte_timer);
     TEST_ASSERT_TRUE(ctx, beam->patbase == bakupat);
 
     reset_boss7_state();
     parent->actno = 1;
     beam->userflag.b.h = 2;
-    set_word_index(beam, 25, 4);
+    boss7_get_work(beam)->parent_index = 4;
 
     egg7beam(beam);
 
     TEST_ASSERT_EQ_INT(ctx, 6, beam->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 30, beam->actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 30, boss7_get_work(beam)->byte_timer);
 
     reset_boss7_state();
     parent->actno = 1;
     parent->xposi.w.h = 100;
     parent->yposi.w.h = 200;
     beam->r_no0 = 2;
-    beam->actfree[1] = 3;
-    beam->actfree[0] = 4;
-    set_word_index(beam, 25, 4);
-    set_word_index(beam, 29, 5);
-    set_word_index(beam, 30, 6);
-    set_word_index(beam, 23, 99);
+    boss7_get_work(beam)->byte_timer = 3;
+    boss7_get_work(beam)->timer_low = 4;
+    boss7_get_work(beam)->parent_index = 4;
+    boss7_get_work(beam)->x_offset = 5;
+    boss7_get_work(beam)->y_offset = 6;
+    boss7_get_work(beam)->timer = 99;
 
     egg7beam(beam);
 
     TEST_ASSERT_EQ_INT(ctx, 105, beam->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 206, beam->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 0, get_word_index(beam, 23));
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(beam)->timer);
     TEST_ASSERT_EQ_INT(ctx, 0, patchg_count);
 
     reset_boss7_state();
     parent->actno = 1;
-    parent->actfree[2] = 64;
+    boss7_get_work(parent)->flags = 64;
     beam->r_no0 = 4;
-    beam->actfree[1] = 1;
-    set_word_index(beam, 25, 4);
+    boss7_get_work(beam)->byte_timer = 1;
+    boss7_get_work(beam)->parent_index = 4;
 
     egg7beam(beam);
 
     TEST_ASSERT_EQ_INT(ctx, 6, beam->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 15, beam->actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 15, boss7_get_work(beam)->byte_timer);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
 
     reset_boss7_state();
     parent->actno = 1;
     beam->r_no0 = 6;
-    beam->actfree[1] = 1;
-    set_word_index(beam, 25, 4);
+    boss7_get_work(beam)->byte_timer = 1;
+    boss7_get_work(beam)->parent_index = 4;
 
     egg7beam(beam);
 
@@ -1609,11 +1597,11 @@ static void test_boss7_more_jet_and_fragment_paths(test_context *ctx) {
 
     reset_boss7_state();
     parent->actno = 1;
-    parent->actfree[2] = 8;
+    boss7_get_work(parent)->flags = 8;
     parent->xposi.w.h = 500;
     parent->yposi.w.h = 600;
     actor->userflag.b.h = 1;
-    set_word_index(actor, 25, 4);
+    boss7_get_work(actor)->parent_index = 4;
 
     egg7jet(actor);
 
@@ -1622,7 +1610,7 @@ static void test_boss7_more_jet_and_fragment_paths(test_context *ctx) {
 
     reset_boss7_state();
     actor->r_no0 = 2;
-    set_word_index(actor, 25, 4);
+    boss7_get_work(actor)->parent_index = 4;
 
     egg7jet(actor);
 
@@ -1642,17 +1630,17 @@ static void test_boss7_final_edge_branches(test_context *ctx) {
     sprite_status *actor = &actwk[4];
 
     reset_boss7_state();
-    set_word_index(actor, 33, 3);
-    set_word_index(actor, 30, 30);
+    boss7_get_work(actor)->boost_timer = 3;
+    boss7_get_work(actor)->y_offset = 30;
 
     baisoku_mode(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, get_word_index(actor, 33));
+    TEST_ASSERT_EQ_INT(ctx, 2, boss7_get_work(actor)->boost_timer);
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
 
     reset_boss7_state();
     GL_d5 = -1;
-    set_word_index(actor, 31, -121);
+    boss7_get_work(actor)->owner_index = -121;
 
     msnc_normal_move(actor);
 
@@ -1669,7 +1657,7 @@ static void test_boss7_final_edge_branches(test_context *ctx) {
 
     reset_boss7_state();
     actor->r_no0 = 8;
-    actor->actfree[3] = 9;
+    boss7_get_work(actor)->step = 9;
     pPlayerwk = &actwk[0];
 
     egg7(actor);
@@ -1701,13 +1689,13 @@ static void test_boss7_final_edge_branches(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 3200, actor->xposi.w.h);
 
     reset_boss7_state();
-    actor->actfree[2] = 64;
-    set_word_index(actor, 23, 19);
+    boss7_get_work(actor)->flags = 64;
+    boss7_get_work(actor)->timer = 19;
 
     egg7_goal0(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[2] & 64);
-    TEST_ASSERT_EQ_INT(ctx, 20, get_word_index(actor, 23));
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->flags & 64);
+    TEST_ASSERT_EQ_INT(ctx, 20, boss7_get_work(actor)->timer);
 
     reset_boss7_state();
     generate_flag = 1;
@@ -1734,14 +1722,14 @@ static void test_boss7_last_two_branch_lines(test_context *ctx) {
     reset_boss7_state();
     pPlayerwk = &actwk[0];
     actor->sprhsize = 36;
-    actor->actfree[2] = 4;
+    boss7_get_work(actor)->flags = 4;
     actor->xposi.w.h = 1000;
     pPlayerwk->xposi.w.h = 4000;
 
     egg7_spdset(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 4, actor->actfree[2] & 4);
-    TEST_ASSERT_EQ_INT(ctx, 0, get_word_index(actor, 31));
+    TEST_ASSERT_EQ_INT(ctx, 4, boss7_get_work(actor)->flags & 4);
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->owner_index);
 }
 
 static void test_boss7_speed_height_and_collision_edge_branches(
@@ -1754,31 +1742,31 @@ static void test_boss7_speed_height_and_collision_edge_branches(
     actor->sprhsize = 1;
     actor->xposi.w.h = 100;
     scra_h_posit.w.h = 1000;
-    actor->actfree[2] = 4;
-    set_word_index(actor, 31, 2);
+    boss7_get_work(actor)->flags = 4;
+    boss7_get_work(actor)->owner_index = 2;
 
     egg7_spdset(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 1, get_word_index(actor, 31));
-    TEST_ASSERT_EQ_INT(ctx, 1536, get_word_index(actor, 28));
-    TEST_ASSERT_EQ_INT(ctx, 4, get_word_index(actor, 26));
+    TEST_ASSERT_EQ_INT(ctx, 1, boss7_get_work(actor)->owner_index);
+    TEST_ASSERT_EQ_INT(ctx, 1536, boss7_get_work(actor)->max_xspeed);
+    TEST_ASSERT_EQ_INT(ctx, 4, boss7_get_work(actor)->accel_x);
 
-    set_word_index(actor, 31, 0);
+    boss7_get_work(actor)->owner_index = 0;
     egg7_spdset(actor);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[2] & 4);
+    TEST_ASSERT_EQ_INT(ctx, 0, boss7_get_work(actor)->flags & 4);
 
     pPlayerwk->xposi.w.h = 13000;
     egg7_maxspdset(actor, -1);
-    TEST_ASSERT_EQ_INT(ctx, 1088, get_word_index(actor, 28));
-    TEST_ASSERT_EQ_INT(ctx, 8, get_word_index(actor, 26));
+    TEST_ASSERT_EQ_INT(ctx, 1088, boss7_get_work(actor)->max_xspeed);
+    TEST_ASSERT_EQ_INT(ctx, 8, boss7_get_work(actor)->accel_x);
 
     pPlayerwk->xposi.w.h = 1000;
     egg7_maxspdset(actor, -1);
-    TEST_ASSERT_EQ_INT(ctx, 512, get_word_index(actor, 28));
-    TEST_ASSERT_EQ_INT(ctx, 2, get_word_index(actor, 26));
+    TEST_ASSERT_EQ_INT(ctx, 512, boss7_get_work(actor)->max_xspeed);
+    TEST_ASSERT_EQ_INT(ctx, 2, boss7_get_work(actor)->accel_x);
 
     reset_boss7_state();
-    actor->actfree[2] = 16;
+    boss7_get_work(actor)->flags = 16;
     pPlayerwk = &actwk[0];
     pPlayerwk->actno = 0;
     egg_beamchk(actor);
@@ -1816,29 +1804,29 @@ static void test_boss7_more_beam_and_spawn_edges(test_context *ctx) {
 
     reset_boss7_state();
     parent->actno = 1;
-    parent->actfree[2] = 64;
+    boss7_get_work(parent)->flags = 64;
     beam->r_no0 = 2;
     beam->userflag.b.l = 1;
-    beam->actfree[1] = 2;
-    beam->actfree[0] = 3;
-    set_word_index(beam, 25, 4);
+    boss7_get_work(beam)->byte_timer = 2;
+    boss7_get_work(beam)->timer_low = 3;
+    boss7_get_work(beam)->parent_index = 4;
 
     egg7beam(beam);
 
-    TEST_ASSERT_EQ_INT(ctx, 1, beam->actfree[1]);
-    TEST_ASSERT_EQ_INT(ctx, 2, beam->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 1, boss7_get_work(beam)->byte_timer);
+    TEST_ASSERT_EQ_INT(ctx, 2, boss7_get_work(beam)->timer_low);
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk2_count);
 
     reset_boss7_state();
     parent->actno = 1;
-    parent->actfree[2] = 64;
+    boss7_get_work(parent)->flags = 64;
     beam->r_no0 = 6;
-    beam->actfree[1] = 2;
-    set_word_index(beam, 25, 4);
+    boss7_get_work(beam)->byte_timer = 2;
+    boss7_get_work(beam)->parent_index = 4;
 
     egg7beam(beam);
 
-    TEST_ASSERT_EQ_INT(ctx, 1, beam->actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 1, boss7_get_work(beam)->byte_timer);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_count);
 
@@ -1847,8 +1835,8 @@ static void test_boss7_more_beam_and_spawn_edges(test_context *ctx) {
 
     /* Use the first actor as a jet whose parent exists but is not emitting. */
     actwk[8].r_no0 = 2;
-    set_word_index(&actwk[8], 25, 4);
-    parent->actfree[2] = 0;
+    boss7_get_work(&actwk[8])->parent_index = 4;
+    boss7_get_work(parent)->flags = 0;
     egg7jet(&actwk[8]);
 
     TEST_ASSERT_EQ_INT(ctx, 0, patchg_count);
@@ -1865,7 +1853,7 @@ static void test_boss7_more_beam_and_spawn_edges(test_context *ctx) {
 }
 
 TEST_MAIN_BEGIN;
-    test_boss7_speed_helpers_use_indexed_actfree_words(&ctx);
+    test_boss7_speed_helpers_use_work_fields(&ctx);
     test_boss7_timer_helpers_advance_event_state(&ctx);
     test_boss7_spawn_helpers_create_child_actors(&ctx);
     test_boss7_effect_spawn_helpers_capture_positions(&ctx);

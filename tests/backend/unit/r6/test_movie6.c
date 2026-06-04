@@ -296,7 +296,7 @@ static void test_movie6_die_clears_ride_and_starts_bursts(test_context *ctx) {
 
     TEST_ASSERT_EQ_INT(ctx, 6, movie_actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 1, movie_actor->patno);
-    TEST_ASSERT_EQ_INT(ctx, 255, movie_actor->actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 255, movie6_get_work(movie_actor)->destroyed_flag);
     TEST_ASSERT_EQ_INT(ctx, 1, ride_on_clr_count);
     TEST_ASSERT_TRUE(ctx, ride_on_clr_actor == movie_actor);
     TEST_ASSERT_EQ_INT(ctx, 24, burst->actno);
@@ -359,7 +359,7 @@ static void test_movie6_final_wait_sets_projector_flag_and_dies(
 
     reset_movie6_state();
     movie_actor->r_no0 = 8;
-    movie_actor->actfree[0] = 1;
+    movie6_get_work(movie_actor)->wait_timer = 1;
 
     m1wait(movie_actor);
 
@@ -454,7 +454,7 @@ static void test_movie6_sub_frames_out_when_parent_missing_or_dying(
     movie_actor->actno = 47;
     init_movie_with_children(movie_actor, child, &actwk[21], &actwk[22],
                              &actwk[23]);
-    movie_actor->actfree[21] = 1;
+    movie6_get_work(movie_actor)->destroyed_flag = 1;
 
     sub(child);
 

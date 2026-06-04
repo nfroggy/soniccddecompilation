@@ -83,31 +83,6 @@ static void queue_actwkchk(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int offset) {
-    Uint16 bits = (Uint16)actor->actfree[offset] |
-                  ((Uint16)actor->actfree[offset + 1] << 8);
-    return (Sint16)bits;
-}
-
-static int legacy_word_actfree_offset(int word_index) {
-    return (word_index * 2) - (int)offsetof(sprite_status, actfree);
-}
-
-static void set_legacy_word(sprite_status *actor, int word_index,
-                            Sint16 value) {
-    set_actfree_word(actor, legacy_word_actfree_offset(word_index), value);
-}
-
-static Sint16 get_legacy_word(sprite_status *actor, int word_index) {
-    return get_actfree_word(actor, legacy_word_actfree_offset(word_index));
-}
-
 static void test_baneiwa_patterns_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, baneiwapat[0] == &pat0);
     TEST_ASSERT_EQ_INT(ctx, 1, pat0.cnt);
@@ -138,8 +113,8 @@ static void test_baneiwa_init_spawns_child_and_draws_master(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 72, child->actno);
     TEST_ASSERT_EQ_INT(ctx, 132, child->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 200, child->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 1, child->actfree[18]);
-    TEST_ASSERT_EQ_INT(ctx, 5, get_legacy_word(child, 28));
+    TEST_ASSERT_EQ_INT(ctx, 1, baneiwa_work_get(child)->is_child);
+    TEST_ASSERT_EQ_INT(ctx, 5, baneiwa_work_get(child)->parent_actor);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_TRUE(ctx, actionsub_actor == master);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s_count);
@@ -167,8 +142,8 @@ static void test_baneiwa_child_entry_validates_parent(test_context *ctx) {
     sprite_status *master = &actwk[5];
 
     reset_state();
-    child->actfree[18] = 1;
-    set_legacy_word(child, 28, 5);
+    baneiwa_work_get(child)->is_child = 1;
+    baneiwa_work_get(child)->parent_actor = 5;
     master->actno = 72;
 
     baneiwa(child);
@@ -179,8 +154,8 @@ static void test_baneiwa_child_entry_validates_parent(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_s_count);
 
     reset_state();
-    child->actfree[18] = 1;
-    set_legacy_word(child, 28, 5);
+    baneiwa_work_get(child)->is_child = 1;
+    baneiwa_work_get(child)->parent_actor = 5;
     master->actno = 0;
 
     baneiwa(child);
@@ -197,9 +172,9 @@ static void test_baneiwa_move_starts_main_motion_segment(test_context *ctx) {
 
     baneiwa_move(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 128, actor->actfree[16]);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[17]);
-    TEST_ASSERT_EQ_INT(ctx, -4, get_legacy_word(actor, 33));
+    TEST_ASSERT_EQ_INT(ctx, 128, baneiwa_work_get(actor)->move_timer);
+    TEST_ASSERT_EQ_INT(ctx, 0, baneiwa_work_get(actor)->move_index);
+    TEST_ASSERT_EQ_INT(ctx, -4, baneiwa_work_get(actor)->acceleration);
     TEST_ASSERT_EQ_INT(ctx, 512, actor->yspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 1, ride_on_chk_count);
     TEST_ASSERT_TRUE(ctx, ride_on_chk_actor == actor);
@@ -210,13 +185,13 @@ static void test_baneiwa_move_inverts_table_for_child(test_context *ctx) {
     sprite_status *actor = &actwk[5];
 
     reset_state();
-    actor->actfree[18] = 1;
-    actor->actfree[17] = 2;
+    baneiwa_work_get(actor)->is_child = 1;
+    baneiwa_work_get(actor)->move_index = 2;
 
     baneiwa_move(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 128, actor->actfree[16]);
-    TEST_ASSERT_EQ_INT(ctx, -4, get_legacy_word(actor, 33));
+    TEST_ASSERT_EQ_INT(ctx, 128, baneiwa_work_get(actor)->move_timer);
+    TEST_ASSERT_EQ_INT(ctx, -4, baneiwa_work_get(actor)->acceleration);
     TEST_ASSERT_EQ_INT(ctx, 512, actor->yspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 1, ride_on_chk_count);
 }
@@ -226,14 +201,14 @@ static void test_baneiwa_move_active_timer_negative_speed_checks_before(
     sprite_status *actor = &actwk[5];
 
     reset_state();
-    actor->actfree[16] = 2;
+    baneiwa_work_get(actor)->move_timer = 2;
     actor->yposi.l = 100 << 16;
     actor->yspeed.w = -16;
-    set_legacy_word(actor, 33, 4);
+    baneiwa_work_get(actor)->acceleration = 4;
 
     baneiwa_move(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 1, baneiwa_work_get(actor)->move_timer);
     TEST_ASSERT_EQ_INT(ctx, 99, actor->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, -12, actor->yspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 1, ride_on_chk_count);
@@ -245,28 +220,28 @@ static void test_baneiwa_move_active_timer_advances_or_wraps_segment(
     sprite_status *actor = &actwk[5];
 
     reset_state();
-    actor->actfree[16] = 1;
-    actor->actfree[17] = 1;
+    baneiwa_work_get(actor)->move_timer = 1;
+    baneiwa_work_get(actor)->move_index = 1;
     actor->yspeed.w = 0;
-    set_legacy_word(actor, 33, 4);
+    baneiwa_work_get(actor)->acceleration = 4;
 
     baneiwa_move(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[16]);
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 0, baneiwa_work_get(actor)->move_timer);
+    TEST_ASSERT_EQ_INT(ctx, 2, baneiwa_work_get(actor)->move_index);
     TEST_ASSERT_EQ_INT(ctx, 4, actor->yspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 1, ride_on_chk_count);
 
     reset_state();
-    actor->actfree[16] = 1;
-    actor->actfree[17] = 3;
+    baneiwa_work_get(actor)->move_timer = 1;
+    baneiwa_work_get(actor)->move_index = 3;
     actor->yspeed.w = 0;
-    set_legacy_word(actor, 33, 4);
+    baneiwa_work_get(actor)->acceleration = 4;
 
     baneiwa_move(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[16]);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 0, baneiwa_work_get(actor)->move_timer);
+    TEST_ASSERT_EQ_INT(ctx, 0, baneiwa_work_get(actor)->move_index);
     TEST_ASSERT_EQ_INT(ctx, 4, actor->yspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 1, ride_on_chk_count);
 }

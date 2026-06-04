@@ -1,4 +1,3 @@
-#include <stddef.h>
 #include <string.h>
 
 #include "support/test_runner.h"
@@ -180,23 +179,6 @@ Sint32 random(void) {
     if (random_index < 15) {
         ++random_index;
     }
-    return value;
-}
-
-static size_t short_alias_offset(int short_index) {
-    return (size_t)short_index * sizeof(Sint16) -
-           offsetof(sprite_status, actfree);
-}
-
-static void set_actor_u16(sprite_status *actor, int short_index, Uint16 value) {
-    memcpy(&actor->actfree[short_alias_offset(short_index)], &value,
-           sizeof(value));
-}
-
-static Sint16 actor_s16(sprite_status *actor, int short_index) {
-    Sint16 value;
-    memcpy(&value, &actor->actfree[short_alias_offset(short_index)],
-           sizeof(value));
     return value;
 }
 
@@ -386,7 +368,7 @@ static void test_playsave_marker_and_bakuha(test_context *ctx) {
     queue_actor(&actwk[40]);
     marker(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[1].r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[1].actfree[4]);
+    TEST_ASSERT_EQ_INT(ctx, 1, marker_get_work(&actwk[1])->activated);
     TEST_ASSERT_EQ_INT(ctx, 19, actwk[40].actno);
     TEST_ASSERT_EQ_INT(ctx, 6, actwk[40].r_no0);
     TEST_ASSERT_EQ_INT(ctx, 100, actwk[40].xposi.w.h);
@@ -401,15 +383,15 @@ static void test_playsave_marker_and_bakuha(test_context *ctx) {
 
     reset_playsub4_state();
     actwk[1].userflag.b.h = 4;
-    actwk[1].actfree[4] = 1;
+    marker_get_work(&actwk[1])->activated = 1;
     marker_move0(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
-    actwk[1].actfree[4] = 0;
+    marker_get_work(&actwk[1])->activated = 0;
     marker_move0(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
     actwk[1].colicnt = 1;
     marker_move0(&actwk[1]);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[1].actfree[4]);
+    TEST_ASSERT_EQ_INT(ctx, 1, marker_get_work(&actwk[1])->activated);
     TEST_ASSERT_EQ_INT(ctx, 4, markerno);
     TEST_ASSERT_EQ_INT(ctx, 1, plflag);
     TEST_ASSERT_EQ_INT(ctx, 174, soundset_requests[0]);
@@ -420,15 +402,15 @@ static void test_playsave_marker_and_bakuha(test_context *ctx) {
     queue_actor(&actwk[40]);
     marker_init(&actwk[1]);
     marker_move1(&actwk[40]);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[40].actfree[4]);
-    actwk[1].actfree[4] = 1;
+    TEST_ASSERT_EQ_INT(ctx, 1, marker_get_work(&actwk[40])->activated);
+    marker_get_work(&actwk[1])->activated = 1;
     sinset_sin = 128;
     sinset_cos = 0;
     marker_move1(&actwk[40]);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[40].actfree[4]);
+    TEST_ASSERT_EQ_INT(ctx, 1, marker_get_work(&actwk[40])->activated);
     TEST_ASSERT_EQ_INT(ctx, 54, actwk[40].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 76, actwk[40].yposi.w.h);
-    actwk[40].actfree[10] = 248;
+    marker_get_work(&actwk[40])->angle = 248;
     marker_move1(&actwk[40]);
     TEST_ASSERT_EQ_INT(ctx, 8, actwk[40].r_no0);
 
@@ -438,17 +420,17 @@ static void test_playsave_marker_and_bakuha(test_context *ctx) {
     queue_actor(&actwk[40]);
     marker_init(&actwk[1]);
     marker_move1(&actwk[40]);
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[40].actfree[4]);
+    TEST_ASSERT_EQ_INT(ctx, 0, marker_get_work(&actwk[40])->activated);
 
     reset_playsub4_state();
     actwk[1].r_no0 = 2;
     actwk[1].colicnt = 1;
     marker(&actwk[1]);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[1].actfree[4]);
+    TEST_ASSERT_EQ_INT(ctx, 1, marker_get_work(&actwk[1])->activated);
     actwk[1].r_no0 = 4;
-    actwk[1].actfree[4] = 1;
+    marker_get_work(&actwk[1])->activated = 1;
     marker(&actwk[1]);
-    TEST_ASSERT_EQ_INT(ctx, 8, actwk[1].actfree[10]);
+    TEST_ASSERT_EQ_INT(ctx, 8, marker_get_work(&actwk[1])->angle);
     actwk[1].r_no0 = 6;
     marker(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 3, actionsub_count);
@@ -465,7 +447,7 @@ static void test_playsave_marker_and_bakuha(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, -125, actwk[40].userflag.b.h);
     reset_playsub4_state();
     queue_actor(&actwk[41]);
-    actwk[1].actfree[21] = 6;
+    playsub4_score_get_work(&actwk[1])->score_index = 6;
     test_act(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 28, actwk[41].actno);
     TEST_ASSERT_EQ_INT(ctx, -125, actwk[41].userflag.b.h);
@@ -622,11 +604,11 @@ static void test_flower_exit_and_barrier(test_context *ctx) {
     playposiwk[12] = 321;
     playposiwk[13] = 654;
     actwk[1].mstno.b.h = 1;
-    actwk[1].actfree[6] = 20;
+    muteki_get_work(&actwk[1])->history_offset = 20;
     muteki_sub(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 321, actwk[1].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 654, actwk[1].yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[1].actfree[6]);
+    TEST_ASSERT_EQ_INT(ctx, 0, muteki_get_work(&actwk[1])->history_offset);
 
     reset_playsub4_state();
     plsubchg_flag = 8;
@@ -679,7 +661,7 @@ static void test_air_bubble_wave_and_bou(test_context *ctx) {
     queue_actor(&actwk[40]);
     random_values[0] = 7;
     random_values[1] = 99;
-    set_actor_u16(&actwk[1], 29, 1);
+    plawa_get_work(&actwk[1])->spawn_state = 1;
     plawamaster_jump2(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 33, actwk[40].actno);
     TEST_ASSERT_EQ_INT(ctx, 1006, actwk[40].xposi.w.h);
@@ -693,8 +675,8 @@ static void test_air_bubble_wave_and_bou(test_context *ctx) {
     queue_actor(&actwk[40]);
     random_values[0] = 3;
     random_values[1] = 55;
-    set_actor_u16(&actwk[1], 24, 120);
-    set_actor_u16(&actwk[1], 29, 1);
+    plawa_get_work(&actwk[1])->drowning_timer = 120;
+    plawa_get_work(&actwk[1])->spawn_state = 1;
     plawamaster_jump2(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 994, actwk[40].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1188, actwk[40].yposi.w.h);
@@ -704,8 +686,8 @@ static void test_air_bubble_wave_and_bou(test_context *ctx) {
     actwk[0].r_no0 = 0;
     actwk[0].cddat = 64;
     pl_air = 1;
-    actwk[1].actfree[8] = 1;
-    set_actor_u16(&actwk[1], 30, 0);
+    plawa_get_work(&actwk[1])->warning_timer = 1;
+    plawa_get_work(&actwk[1])->bubble_timer = 0;
     queue_actor(&actwk[40]);
     plawamaster(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 0, pl_air);
@@ -720,40 +702,40 @@ static void test_air_bubble_wave_and_bou(test_context *ctx) {
     plawamaster(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
     actwk[0].cddat = 64;
-    set_actor_u16(&actwk[1], 30, 2);
+    plawa_get_work(&actwk[1])->bubble_timer = 2;
     plawamaster(&actwk[1]);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor_s16(&actwk[1], 30));
+    TEST_ASSERT_EQ_INT(ctx, 1, plawa_get_work(&actwk[1])->bubble_timer);
 
     reset_playsub4_state();
     actwk[0].r_no0 = 0;
     actwk[0].cddat = 64;
     pl_air = 0;
-    set_actor_u16(&actwk[1], 30, 0);
+    plawa_get_work(&actwk[1])->bubble_timer = 0;
     plawamaster(&actwk[1]);
-    TEST_ASSERT_EQ_INT(ctx, 129, actwk[0].actfree[2]);
+    TEST_ASSERT_EQ_INT(ctx, 129, player_work_get(&actwk[0])->status_flags);
     TEST_ASSERT_EQ_INT(ctx, 1, scroll_start.b.h);
     TEST_ASSERT_EQ_INT(ctx, 1, jumpcolsub_count);
     TEST_ASSERT_EQ_INT(ctx, 182, soundset_requests[1]);
 
     reset_playsub4_state();
-    set_actor_u16(&actwk[1], 24, 2);
+    plawa_get_work(&actwk[1])->drowning_timer = 2;
     actwk[0].yspeed.w = 16;
     plawamaster(&actwk[1]);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor_s16(&actwk[1], 24));
+    TEST_ASSERT_EQ_INT(ctx, 1, plawa_get_work(&actwk[1])->drowning_timer);
     TEST_ASSERT_EQ_INT(ctx, 1, speedset2_count);
-    set_actor_u16(&actwk[1], 24, 1);
+    plawa_get_work(&actwk[1])->drowning_timer = 1;
     plawamaster(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 6, actwk[0].r_no0);
 
     reset_playsub4_state();
-    set_actor_u16(&actwk[1], 29, 0);
+    plawa_get_work(&actwk[1])->spawn_state = 0;
     plawamaster_jump(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
-    set_actor_u16(&actwk[1], 29, 1);
-    set_actor_u16(&actwk[1], 31, 1);
+    plawa_get_work(&actwk[1])->spawn_state = 1;
+    plawa_get_work(&actwk[1])->jump_timer = 1;
     plawamaster_jump(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
-    set_actor_u16(&actwk[1], 31, 0);
+    plawa_get_work(&actwk[1])->jump_timer = 0;
     queue_actor(&actwk[40]);
     plawamaster_jump(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk_count);
@@ -766,21 +748,21 @@ static void test_air_bubble_wave_and_bou(test_context *ctx) {
     actwk[0].yposi.w.h = 1200;
     pl_air = 8;
     queue_actor(&actwk[40]);
-    actwk[1].actfree[12] = 128;
-    actwk[1].actfree[10] = 1;
+    plawa_get_work(&actwk[1])->spawn_flags = 128;
+    plawa_get_work(&actwk[1])->spawn_counter = 1;
     random_values[0] = 0;
     plawamaster_jump2(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 8192, actwk[40].sproffset);
     TEST_ASSERT_EQ_INT(ctx, 4, actwk[40].userflag.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 28, actor_s16(&actwk[40], 30));
+    TEST_ASSERT_EQ_INT(ctx, 28, plawa_get_work(&actwk[40])->bubble_timer);
 
     reset_playsub4_state();
     actwk[0].xposi.w.h = 1000;
     actwk[0].yposi.w.h = 1200;
     pl_air = 8;
     queue_actor(&actwk[40]);
-    actwk[1].actfree[12] = 128 | 64;
-    actwk[1].actfree[10] = 1;
+    plawa_get_work(&actwk[1])->spawn_flags = 128 | 64;
+    plawa_get_work(&actwk[1])->spawn_counter = 1;
     random_values[0] = 0;
     plawamaster_jump2(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 6, actwk[40].userflag.b.h);
@@ -789,8 +771,8 @@ static void test_air_bubble_wave_and_bou(test_context *ctx) {
     actwk[0].xposi.w.h = 1000;
     actwk[0].yposi.w.h = 1200;
     queue_actor(&actwk[40]);
-    actwk[1].actfree[12] = 128 | 64;
-    actwk[1].actfree[10] = 0;
+    plawa_get_work(&actwk[1])->spawn_flags = 128 | 64;
+    plawa_get_work(&actwk[1])->spawn_counter = 0;
     random_values[0] = 0;
     random_values[1] = 1;
     plawamaster_jump2(&actwk[1]);
@@ -801,8 +783,8 @@ static void test_air_bubble_wave_and_bou(test_context *ctx) {
     actwk[0].yposi.w.h = 1200;
     pl_air = 10;
     queue_actor(&actwk[40]);
-    actwk[1].actfree[12] = 128;
-    actwk[1].actfree[10] = 0;
+    plawa_get_work(&actwk[1])->spawn_flags = 128;
+    plawa_get_work(&actwk[1])->spawn_counter = 0;
     random_values[0] = 0;
     random_values[1] = 1;
     plawamaster_jump2(&actwk[1]);
@@ -847,10 +829,10 @@ static void test_air_bubble_wave_and_bou(test_context *ctx) {
     actwk[1].yposi.w.h = 200;
     watercoliflag = 1;
     actwk[1].actflg = 0;
-    set_actor_u16(&actwk[1], 26, 50);
+    plawa_get_work(&actwk[1])->origin_x = 50;
     awasintbl[2] = 4;
     plawamove2(&actwk[1]);
-    TEST_ASSERT_EQ_INT(ctx, 54, actor_s16(&actwk[1], 26));
+    TEST_ASSERT_EQ_INT(ctx, 54, plawa_get_work(&actwk[1])->origin_x);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
 
     reset_playsub4_state();
@@ -866,26 +848,26 @@ static void test_air_bubble_wave_and_bou(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
     reset_playsub4_state();
     pl_air = 12;
-    set_actor_u16(&actwk[1], 30, 1);
+    plawa_get_work(&actwk[1])->bubble_timer = 1;
     actwk[1].mstno.b.h = 9;
     plawamove5(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 16, actwk[1].r_no0);
     TEST_ASSERT_EQ_INT(ctx, 15, actwk[1].mstno.b.h);
     reset_playsub4_state();
     pl_air = 12;
-    set_actor_u16(&actwk[1], 30, 2);
+    plawa_get_work(&actwk[1])->bubble_timer = 2;
     actwk[1].actflg = 128;
     plawamove5(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
 
     reset_playsub4_state();
-    set_actor_u16(&actwk[1], 30, 1);
+    plawa_get_work(&actwk[1])->bubble_timer = 1;
     actwk[1].mstno.b.h = 1;
     scra_h_posit.w.h = 10;
     scra_v_posit.w.h = 20;
     plawasub(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 12, actwk[1].r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 15, actor_s16(&actwk[1], 30));
+    TEST_ASSERT_EQ_INT(ctx, 15, plawa_get_work(&actwk[1])->bubble_timer);
 
     reset_playsub4_state();
     scra_h_posit.w.h = 100;
@@ -896,9 +878,9 @@ static void test_air_bubble_wave_and_bou(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 202, actwk[1].yposi.w.h);
     wave_move(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 356, actwk[1].xposi.w.h);
-    actwk[1].actfree[0] = 3;
+    wave_get_work(&actwk[1])->frame_counter = 3;
     wave_move(&actwk[1]);
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[1].actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 0, wave_get_work(&actwk[1])->frame_counter);
 
     reset_playsub4_state();
     actwk[0].xposi.w.h = 100;
@@ -908,13 +890,13 @@ static void test_air_bubble_wave_and_bou(test_context *ctx) {
     actwk[1].yposi.w.h = 100;
     bou_init(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 4, actwk[1].r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[0].actfree[2] & 1);
+    TEST_ASSERT_EQ_INT(ctx, 1, player_work_get(&actwk[0])->status_flags & 1);
     TEST_ASSERT_EQ_INT(ctx, 76, actwk[0].xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 17, actwk[0].mstno.b.h);
-    set_actor_u16(&actwk[1], 23, 1);
+    bou_get_work(&actwk[1])->hold_timer = 1;
     bou_move1(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 6, actwk[1].r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actwk[0].actfree[2] & 1);
+    TEST_ASSERT_EQ_INT(ctx, 0, player_work_get(&actwk[0])->status_flags & 1);
 
     reset_playsub4_state();
     actwk[0].xposi.w.h = 100;
@@ -923,13 +905,13 @@ static void test_air_bubble_wave_and_bou(test_context *ctx) {
     actwk[1].yposi.w.h = 100;
     actwk[1].userflag.b.h = 1;
     bou_move0(&actwk[1]);
-    TEST_ASSERT_EQ_INT(ctx, 60, actor_s16(&actwk[1], 23));
-    set_actor_u16(&actwk[1], 23, 2);
+    TEST_ASSERT_EQ_INT(ctx, 60, bou_get_work(&actwk[1])->hold_timer);
+    bou_get_work(&actwk[1])->hold_timer = 2;
     swdata1.b.h = 1;
     actwk[0].yposi.w.h = 70;
     bou_move1(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 76, actwk[0].yposi.w.h);
-    set_actor_u16(&actwk[1], 23, 2);
+    bou_get_work(&actwk[1])->hold_timer = 2;
     swdata1.b.h = 2;
     actwk[0].yposi.w.h = 130;
     bou_move1(&actwk[1]);

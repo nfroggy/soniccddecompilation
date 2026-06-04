@@ -1,4 +1,3 @@
-#include <stddef.h>
 #include <string.h>
 
 #include "support/test_runner.h"
@@ -92,46 +91,6 @@ static void reset_callbacks(void) {
     memset(soundset_requests, 0, sizeof(soundset_requests));
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int offset) {
-    Uint16 bits = (Uint16)actor->actfree[offset] |
-                  ((Uint16)actor->actfree[offset + 1] << 8);
-    return (Sint16)bits;
-}
-
-static int legacy_word_actfree_offset(int word_index) {
-    return (word_index * 2) - (int)offsetof(sprite_status, actfree);
-}
-
-static int legacy_byte_actfree_offset(int byte_index) {
-    return byte_index - (int)offsetof(sprite_status, actfree);
-}
-
-static void set_legacy_word(sprite_status *actor, int word_index, Sint16 value) {
-    set_actfree_word(actor, legacy_word_actfree_offset(word_index), value);
-}
-
-static Sint16 get_legacy_word(sprite_status *actor, int word_index) {
-    return get_actfree_word(actor, legacy_word_actfree_offset(word_index));
-}
-
-static void set_link_offset_x(sprite_status *actor, Sint8 value) {
-    actor->actfree[legacy_byte_actfree_offset(60)] = (Uint8)value;
-}
-
-static void set_link_offset_y(sprite_status *actor, Sint8 value) {
-    actor->actfree[legacy_byte_actfree_offset(61)] = (Uint8)value;
-}
-
-static Sint8 get_link_offset_y(sprite_status *actor) {
-    return (Sint8)actor->actfree[legacy_byte_actfree_offset(61)];
-}
-
 static void assert_action_and_hitch(test_context *ctx, sprite_status *actor) {
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
     TEST_ASSERT_TRUE(ctx, actionsub_actor == actor);
@@ -168,9 +127,9 @@ static void test_sw4_initializes_and_clears_switch_when_not_pressed(
     TEST_ASSERT_EQ_INT(ctx, 10, sw->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 1290, sw->sproffset);
     TEST_ASSERT_TRUE(ctx, sw->patbase == pat_sw);
-    TEST_ASSERT_EQ_INT(ctx, 3, get_legacy_word(sw, 32));
-    TEST_ASSERT_EQ_INT(ctx, 0, sw->actfree[20]);
-    TEST_ASSERT_EQ_INT(ctx, 0, sw->actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 3, sw4_get_work(sw)->switch_index);
+    TEST_ASSERT_EQ_INT(ctx, 0, sw4_get_work(sw)->previous_state);
+    TEST_ASSERT_EQ_INT(ctx, 0, sw4_get_work(sw)->current_state);
     TEST_ASSERT_EQ_INT(ctx, 127, switchflag[3]);
     assert_action_and_hitch(ctx, sw);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_s_count);
@@ -187,13 +146,13 @@ static void test_sw4_press_transition_sets_flags_sprite_and_sound(
     sw->actflg = 128;
     sw->yposi.w.h = 100;
     sw->sprvsize = 10;
-    set_legacy_word(sw, 32, 4);
+    sw4_get_work(sw)->switch_index = 4;
     player->sprvsize = 5;
     hitchk_result = 1;
 
     sw4(sw);
 
-    TEST_ASSERT_EQ_INT(ctx, 255, sw->actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 255, sw4_get_work(sw)->current_state);
     TEST_ASSERT_EQ_INT(ctx, 224, switchflag[4]);
     TEST_ASSERT_EQ_INT(ctx, 94, player->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 104, sw->yposi.w.h);
@@ -213,13 +172,13 @@ static void test_sw4_press_without_visible_flag_is_silent(test_context *ctx) {
     sw->r_no0 = 2;
     sw->yposi.w.h = 40;
     sw->sprvsize = 6;
-    set_legacy_word(sw, 32, 2);
+    sw4_get_work(sw)->switch_index = 2;
     player->sprvsize = 3;
     hitchk_result = 1;
 
     sw4(sw);
 
-    TEST_ASSERT_EQ_INT(ctx, 255, sw->actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 255, sw4_get_work(sw)->current_state);
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 44, sw->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 0, sw->patno + 1 - 2);
@@ -235,16 +194,16 @@ static void test_sw4_release_transition_restores_sprite_and_player(
     sw->yposi.w.h = 104;
     sw->sprvsize = 6;
     sw->patno = 1;
-    sw->actfree[21] = 255;
-    set_legacy_word(sw, 32, 4);
+    sw4_get_work(sw)->current_state = 255;
+    sw4_get_work(sw)->switch_index = 4;
     switchflag[4] = 255;
     player->yposi.w.h = 90;
     hitchk_result = 0;
 
     sw4(sw);
 
-    TEST_ASSERT_EQ_INT(ctx, 255, sw->actfree[20]);
-    TEST_ASSERT_EQ_INT(ctx, 0, sw->actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 255, sw4_get_work(sw)->previous_state);
+    TEST_ASSERT_EQ_INT(ctx, 0, sw4_get_work(sw)->current_state);
     TEST_ASSERT_EQ_INT(ctx, 127, switchflag[4]);
     TEST_ASSERT_EQ_INT(ctx, 82, player->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 100, sw->yposi.w.h);
@@ -263,7 +222,7 @@ static void test_sw4_hosei_zero_result_does_not_press_switch(
     sw->r_no0 = 2;
     sw->yposi.w.h = 14;
     sw->sprvsize = 8;
-    set_legacy_word(sw, 32, 6);
+    sw4_get_work(sw)->switch_index = 6;
     switchflag[6] = 255;
     player->sprvsize = 7;
     hitchk_result = 1;
@@ -271,7 +230,7 @@ static void test_sw4_hosei_zero_result_does_not_press_switch(
     sw4(sw);
 
     TEST_ASSERT_EQ_INT(ctx, 0, player->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 0, sw->actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 0, sw4_get_work(sw)->current_state);
     TEST_ASSERT_EQ_INT(ctx, 127, switchflag[6]);
     TEST_ASSERT_EQ_INT(ctx, 0, sw->patno);
     TEST_ASSERT_EQ_INT(ctx, 8, sw->sprvsize);
@@ -285,13 +244,13 @@ static void test_sw4_linked_actor_follows_parent_and_stays_onscreen(
     reset_state();
     sw->r_no0 = 2;
     sw->xposi.w.h = 100;
-    set_legacy_word(sw, 28, 10);
-    set_legacy_word(sw, 32, 1);
-    set_link_offset_x(sw, 5);
-    set_link_offset_y(sw, -3);
+    sw4_get_work(sw)->parent_index = 10;
+    sw4_get_work(sw)->switch_index = 1;
+    sw4_get_work(sw)->linked_x_offset = 5;
+    sw4_get_work(sw)->linked_y_offset = -3;
     parent->xposi.w.h = 300;
     parent->yposi.w.h = 400;
-    set_legacy_word(parent, 29, 256);
+    sw4_get_parent_work(parent)->origin_x = 256;
     scra_h_posit.w.h = 128;
 
     sw4(sw);
@@ -312,29 +271,29 @@ static void test_sw4_linked_press_and_release_adjust_stored_y_offset(
     reset_state();
     sw->r_no0 = 2;
     sw->sprvsize = 10;
-    set_legacy_word(sw, 28, 10);
-    set_legacy_word(sw, 32, 1);
-    set_link_offset_y(sw, 0);
+    sw4_get_work(sw)->parent_index = 10;
+    sw4_get_work(sw)->switch_index = 1;
+    sw4_get_work(sw)->linked_y_offset = 0;
     parent->xposi.w.h = 100;
     parent->yposi.w.h = 100;
-    set_legacy_word(parent, 29, 256);
+    sw4_get_parent_work(parent)->origin_x = 256;
     actwk[0].sprvsize = 5;
     hitchk_result = 1;
 
     sw4(sw);
 
-    TEST_ASSERT_EQ_INT(ctx, 4, get_link_offset_y(sw));
-    TEST_ASSERT_EQ_INT(ctx, 255, sw->actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 4, sw4_get_work(sw)->linked_y_offset);
+    TEST_ASSERT_EQ_INT(ctx, 255, sw4_get_work(sw)->current_state);
 
     reset_callbacks();
-    sw->actfree[21] = 255;
+    sw4_get_work(sw)->current_state = 255;
     sw->sprvsize = 6;
     hitchk_result = 0;
 
     sw4(sw);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, get_link_offset_y(sw));
-    TEST_ASSERT_EQ_INT(ctx, 0, sw->actfree[21]);
+    TEST_ASSERT_EQ_INT(ctx, 0, sw4_get_work(sw)->linked_y_offset);
+    TEST_ASSERT_EQ_INT(ctx, 0, sw4_get_work(sw)->current_state);
 }
 
 static void test_sw4_linked_actor_frames_out_when_parent_offscreen(
@@ -344,9 +303,9 @@ static void test_sw4_linked_actor_frames_out_when_parent_offscreen(
 
     reset_state();
     sw->r_no0 = 2;
-    set_legacy_word(sw, 28, 10);
-    set_legacy_word(sw, 32, 1);
-    set_legacy_word(parent, 29, 1024);
+    sw4_get_work(sw)->parent_index = 10;
+    sw4_get_work(sw)->switch_index = 1;
+    sw4_get_parent_work(parent)->origin_x = 1024;
     scra_h_posit.w.h = 0;
 
     sw4(sw);

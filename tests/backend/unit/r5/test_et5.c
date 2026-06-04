@@ -149,16 +149,6 @@ static void queue_actor(sprite_status *actor) {
     actwkchk_queue[actwkchk_queue_count++] = actor;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int offset) {
-    return (Sint16)(Uint16)(actor->actfree[offset] |
-                            ((Uint16)actor->actfree[offset + 1] << 8));
-}
-
 static void assert_public_callbacks(test_context *ctx, sprite_status *actor,
                                     int frameout_expected) {
     TEST_ASSERT_EQ_INT(ctx, 1, actionsub_count);
@@ -202,9 +192,9 @@ static void test_et5_entry_initializes_default_and_waits(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 3, actor->patno);
     TEST_ASSERT_EQ_INT(ctx, 250, actor->colino);
     TEST_ASSERT_EQ_INT(ctx, 184, actor->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 5, get_actfree_word(actor, 0));
-    TEST_ASSERT_EQ_INT(ctx, 200, get_actfree_word(actor, 6));
-    TEST_ASSERT_EQ_INT(ctx, 1, get_actfree_word(actor, 8));
+    TEST_ASSERT_EQ_INT(ctx, 5, et5_work_get(actor)->hover_counter);
+    TEST_ASSERT_EQ_INT(ctx, 200, et5_work_get(actor)->base_y);
+    TEST_ASSERT_EQ_INT(ctx, 1, et5_work_get(actor)->hover_direction);
     TEST_ASSERT_EQ_INT(ctx, 1, hitchk_count);
     TEST_ASSERT_TRUE(ctx, hitchk_actor == actor);
     TEST_ASSERT_TRUE(ctx, hitchk_player == &actwk[0]);
@@ -275,7 +265,7 @@ static void test_m_wait_collision_scores_and_clears_ride(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 4, actor->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->colino);
     TEST_ASSERT_EQ_INT(ctx, 0, actor->colicnt);
-    TEST_ASSERT_EQ_INT(ctx, 0, get_actfree_word(actor, 0));
+    TEST_ASSERT_EQ_INT(ctx, 0, et5_work_get(actor)->hover_counter);
     TEST_ASSERT_EQ_INT(ctx, 7, actor->patno);
     TEST_ASSERT_EQ_INT(ctx, 1, generate_flag);
     TEST_ASSERT_EQ_INT(ctx, 1, scoreup_count);
@@ -295,14 +285,14 @@ static void test_m_die_waits_for_script_tick_then_spawns_fragment(
     reset_et5_state();
     initialize_breaking_et(actor);
     reset_et5_logs();
-    actor->actfree[0] = 1;
+    et5_work_get(actor)->delay_timer = 1;
 
     m_die(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 2, actor->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 2, et5_work_get(actor)->delay_timer);
     TEST_ASSERT_EQ_INT(ctx, 0, actwkchk_count);
 
-    actor->actfree[0] = 0;
+    et5_work_get(actor)->delay_timer = 0;
     queue_actor(fragment);
 
     m_die(actor);
@@ -324,7 +314,7 @@ static void test_m_die_handles_allocation_failure_and_script_end(
     reset_et5_state();
     initialize_breaking_et(actor);
     reset_et5_logs();
-    actor->actfree[0] = 0;
+    et5_work_get(actor)->delay_timer = 0;
 
     m_die(actor);
 
@@ -339,12 +329,12 @@ static void test_m_die_handles_allocation_failure_and_script_end(
         queue_actor(&actwk[10 + i]);
     }
     for (i = 0; i < 42 && actor->r_no0 == 4; ++i) {
-        actor->actfree[0] = (Uint8)i;
+        et5_work_get(actor)->delay_timer = (Uint8)i;
         m_die(actor);
     }
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 8, actor->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 8, et5_work_get(actor)->delay_timer);
     TEST_ASSERT_EQ_INT(ctx, 21, actwkchk_count);
 }
 
@@ -353,21 +343,21 @@ static void test_m1wait_counts_down_then_restores_origin(test_context *ctx) {
 
     reset_et5_state();
     actor->r_no0 = 6;
-    actor->actfree[0] = 2;
+    et5_work_get(actor)->delay_timer = 2;
     actor->yposi.w.h = 77;
-    set_actfree_word(actor, 6, 123);
+    et5_work_get(actor)->base_y = 123;
 
     m1wait(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 1, actor->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 1, et5_work_get(actor)->delay_timer);
     TEST_ASSERT_EQ_INT(ctx, 77, actor->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
 
     m1wait(actor);
 
     TEST_ASSERT_EQ_INT(ctx, 0, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, actor->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 0, et5_work_get(actor)->delay_timer);
     TEST_ASSERT_EQ_INT(ctx, 123, actor->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 217, soundset_last);
@@ -384,17 +374,17 @@ static void test_et5_entry_dispatches_die_and_reset_states(test_context *ctx) {
         queue_actor(&actwk[10 + i]);
     }
     for (i = 0; i < 42 && actor->r_no0 == 4; ++i) {
-        actor->actfree[0] = (Uint8)i;
+        et5_work_get(actor)->delay_timer = (Uint8)i;
         et(actor);
         reset_et5_logs();
     }
 
     TEST_ASSERT_EQ_INT(ctx, 6, actor->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 8, actor->actfree[0]);
+    TEST_ASSERT_EQ_INT(ctx, 8, et5_work_get(actor)->delay_timer);
 
-    actor->actfree[0] = 1;
+    et5_work_get(actor)->delay_timer = 1;
     actor->yposi.w.h = 77;
-    set_actfree_word(actor, 6, 123);
+    et5_work_get(actor)->base_y = 123;
 
     et(actor);
 
@@ -411,23 +401,23 @@ static void test_a_hover_moves_every_eight_ticks_and_flips_every_thirty_two(
 
     reset_et5_state();
     actor->yposi.w.h = 100;
-    set_actfree_word(actor, 0, 7);
-    set_actfree_word(actor, 8, 2);
+    et5_work_get(actor)->hover_counter = 7;
+    et5_work_get(actor)->hover_direction = 2;
 
     a_hover(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 8, get_actfree_word(actor, 0));
+    TEST_ASSERT_EQ_INT(ctx, 8, et5_work_get(actor)->hover_counter);
     TEST_ASSERT_EQ_INT(ctx, 102, actor->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 2, get_actfree_word(actor, 8));
+    TEST_ASSERT_EQ_INT(ctx, 2, et5_work_get(actor)->hover_direction);
 
-    set_actfree_word(actor, 0, 31);
-    set_actfree_word(actor, 8, 3);
+    et5_work_get(actor)->hover_counter = 31;
+    et5_work_get(actor)->hover_direction = 3;
 
     a_hover(actor);
 
-    TEST_ASSERT_EQ_INT(ctx, 32, get_actfree_word(actor, 0));
+    TEST_ASSERT_EQ_INT(ctx, 32, et5_work_get(actor)->hover_counter);
     TEST_ASSERT_EQ_INT(ctx, 105, actor->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, -3, get_actfree_word(actor, 8));
+    TEST_ASSERT_EQ_INT(ctx, -3, et5_work_get(actor)->hover_direction);
 }
 
 TEST_MAIN_BEGIN;

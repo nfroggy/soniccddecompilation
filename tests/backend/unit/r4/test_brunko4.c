@@ -1,4 +1,3 @@
-#include <stddef.h>
 #include <string.h>
 
 #include "support/test_runner.h"
@@ -119,31 +118,6 @@ static void queue_actwkchk2(sprite_status *actor) {
     actwkchk2_queue[actwkchk2_queue_count++] = actor;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int offset) {
-    Uint16 bits = (Uint16)actor->actfree[offset] |
-                  ((Uint16)actor->actfree[offset + 1] << 8);
-    return (Sint16)bits;
-}
-
-static int legacy_word_actfree_offset(int word_index) {
-    return (word_index * 2) - (int)offsetof(sprite_status, actfree);
-}
-
-static void set_legacy_word(sprite_status *actor, int word_index,
-                            Sint16 value) {
-    set_actfree_word(actor, legacy_word_actfree_offset(word_index), value);
-}
-
-static Sint16 get_legacy_word(sprite_status *actor, int word_index) {
-    return get_actfree_word(actor, legacy_word_actfree_offset(word_index));
-}
-
 static void test_brunko4_patterns_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, brunko4pat[0] == &pat0);
     TEST_ASSERT_TRUE(ctx, brunko4pat[1] == &pat1);
@@ -178,10 +152,10 @@ static void test_brunko4_init_spawns_chain_links(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 832, master->sproffset);
     TEST_ASSERT_EQ_INT(ctx, 32, master->sprhsize);
     TEST_ASSERT_EQ_INT(ctx, 10, master->sprvsize);
-    TEST_ASSERT_EQ_INT(ctx, 191, master->actfree[16]);
-    TEST_ASSERT_EQ_INT(ctx, 128, master->actfree[17]);
-    TEST_ASSERT_EQ_INT(ctx, 100, get_legacy_word(master, 29));
-    TEST_ASSERT_EQ_INT(ctx, 200, get_legacy_word(master, 27));
+    TEST_ASSERT_EQ_INT(ctx, 191, brunko4_get_work(master)->angle_high);
+    TEST_ASSERT_EQ_INT(ctx, 128, brunko4_get_work(master)->angle_low);
+    TEST_ASSERT_EQ_INT(ctx, 100, brunko4_get_work(master)->origin_x);
+    TEST_ASSERT_EQ_INT(ctx, 200, brunko4_get_work(master)->origin_y);
     TEST_ASSERT_EQ_INT(ctx, 100, master->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 200, master->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 6, actwkchk_count);
@@ -192,13 +166,13 @@ static void test_brunko4_init_spawns_chain_links(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 0, frameout_count);
 
     TEST_ASSERT_EQ_INT(ctx, 41, actwk[20].actno);
-    TEST_ASSERT_EQ_INT(ctx, 6, actwk[20].actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 6, brunko4_get_work(&actwk[20])->link_id);
     TEST_ASSERT_EQ_INT(ctx, 1, actwk[20].patno);
-    TEST_ASSERT_EQ_INT(ctx, 100, get_legacy_word(&actwk[20], 29));
-    TEST_ASSERT_EQ_INT(ctx, 200, get_legacy_word(&actwk[20], 27));
+    TEST_ASSERT_EQ_INT(ctx, 100, brunko4_get_work(&actwk[20])->origin_x);
+    TEST_ASSERT_EQ_INT(ctx, 200, brunko4_get_work(&actwk[20])->origin_y);
     TEST_ASSERT_EQ_INT(ctx, 7, actwk[20].userflag.b.h);
     TEST_ASSERT_EQ_INT(ctx, 41, actwk[25].actno);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[25].actfree[18]);
+    TEST_ASSERT_EQ_INT(ctx, 1, brunko4_get_work(&actwk[25])->link_id);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[25].patno);
 }
 
@@ -223,10 +197,10 @@ static void test_brunko4_init_platform_spawns_helper(test_context *ctx) {
     reset_state();
     platform->xposi.w.h = 100;
     platform->yposi.w.h = 200;
-    platform->actfree[18] = 6;
+    brunko4_get_work(platform)->link_id = 6;
     platform->userflag.b.h = 0x37;
-    set_legacy_word(platform, 29, 100);
-    set_legacy_word(platform, 27, 200);
+    brunko4_get_work(platform)->origin_x = 100;
+    brunko4_get_work(platform)->origin_y = 200;
     queue_actwkchk2(helper);
 
     brunko_init(platform);
@@ -234,9 +208,9 @@ static void test_brunko4_init_platform_spawns_helper(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk2_count);
     TEST_ASSERT_TRUE(ctx, actwkchk2_source == platform);
     TEST_ASSERT_EQ_INT(ctx, 39, helper->actno);
-    TEST_ASSERT_EQ_INT(ctx, 20, get_legacy_word(helper, 28));
-    TEST_ASSERT_EQ_INT(ctx, 240, helper->actfree[15]);
-    TEST_ASSERT_EQ_INT(ctx, 16, helper->actfree[14]);
+    TEST_ASSERT_EQ_INT(ctx, 20, brunko4_get_work(helper)->helper_parent_index);
+    TEST_ASSERT_EQ_INT(ctx, -16, brunko4_get_work(helper)->helper_x_offset);
+    TEST_ASSERT_EQ_INT(ctx, 16, brunko4_get_work(helper)->helper_y_offset);
     TEST_ASSERT_EQ_INT(ctx, 7, helper->userflag.b.h);
 }
 
@@ -250,10 +224,10 @@ static void test_brunko4_platform_move_sets_speed_and_player_y(
     platform->xposi.w.h = 100;
     platform->yposi.w.h = 200;
     platform->sprvsize = 10;
-    platform->actfree[16] = 192;
-    platform->actfree[18] = 6;
-    set_legacy_word(platform, 29, 100);
-    set_legacy_word(platform, 27, 200);
+    brunko4_get_work(platform)->angle_high = 192;
+    brunko4_get_work(platform)->link_id = 6;
+    brunko4_get_work(platform)->origin_x = 100;
+    brunko4_get_work(platform)->origin_y = 200;
     player->sprvsize = 16;
     player->yposi.w.h = 999;
     ridechk_result = 1;
@@ -281,10 +255,10 @@ static void test_brunko4_platform_move_without_ride_leaves_player_y(
     platform->xposi.w.h = 100;
     platform->yposi.w.h = 200;
     platform->sprvsize = 10;
-    platform->actfree[16] = 192;
-    platform->actfree[18] = 6;
-    set_legacy_word(platform, 29, 100);
-    set_legacy_word(platform, 27, 200);
+    brunko4_get_work(platform)->angle_high = 192;
+    brunko4_get_work(platform)->link_id = 6;
+    brunko4_get_work(platform)->origin_x = 100;
+    brunko4_get_work(platform)->origin_y = 200;
     player->sprvsize = 16;
     player->yposi.w.h = 999;
 
@@ -297,16 +271,16 @@ static void test_brunko4_userflag_16_advances_angle_forward(test_context *ctx) {
     sprite_status *link = &actwk[20];
 
     reset_state();
-    link->actfree[16] = 192;
-    link->actfree[18] = 1;
+    brunko4_get_work(link)->angle_high = 192;
+    brunko4_get_work(link)->link_id = 1;
     link->userflag.b.h = 16;
-    set_legacy_word(link, 29, 100);
-    set_legacy_word(link, 27, 200);
+    brunko4_get_work(link)->origin_x = 100;
+    brunko4_get_work(link)->origin_y = 200;
 
     brunko4_posiset(link);
 
-    TEST_ASSERT_EQ_INT(ctx, 193, link->actfree[16]);
-    TEST_ASSERT_EQ_INT(ctx, 0, link->actfree[17]);
+    TEST_ASSERT_EQ_INT(ctx, 193, brunko4_get_work(link)->angle_high);
+    TEST_ASSERT_EQ_INT(ctx, 0, brunko4_get_work(link)->angle_low);
     TEST_ASSERT_EQ_INT(ctx, 193, sinset_angle);
     TEST_ASSERT_EQ_INT(ctx, 120, link->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 210, link->yposi.w.h);
@@ -318,10 +292,10 @@ static void test_brunko4_entry_frames_out_when_origin_offscreen(
 
     reset_state();
     link->r_no0 = 2;
-    link->actfree[18] = 1;
-    link->actfree[16] = 192;
-    set_legacy_word(link, 29, 1024);
-    set_legacy_word(link, 27, 200);
+    brunko4_get_work(link)->link_id = 1;
+    brunko4_get_work(link)->angle_high = 192;
+    brunko4_get_work(link)->origin_x = 1024;
+    brunko4_get_work(link)->origin_y = 200;
     scra_h_posit.w.h = 128;
 
     brunko4(link);

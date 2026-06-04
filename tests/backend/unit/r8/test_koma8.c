@@ -150,9 +150,17 @@ static void queue_actwkchk2(sprite_status *actor) {
     actwkchk2_queue[actwkchk2_queue_count++] = actor;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
+static void set_koma8_word(sprite_status *actor, int offset, Sint16 value) {
+    koma8_work *work = koma8_get_work(actor);
+
+    switch (offset) {
+    case 12:
+        work->origin_x = value;
+        break;
+    case 16:
+        work->travel_range = value;
+        break;
+    }
 }
 
 static void set_emycol_d_results(Sint16 first, Sint16 second) {
@@ -255,7 +263,7 @@ static void test_koma8_fall_continues_until_ground_collision(test_context *ctx) 
     actor->r_no0 = 2;
     actor->xposi.w.h = 100;
     actor->yposi.w.h = 200;
-    set_actfree_word(actor, 12, 100);
+    set_koma8_word(actor, 12, 100);
     emycol_d_results[0] = 3;
     emycol_d_result_count = 1;
 
@@ -268,7 +276,7 @@ static void test_koma8_fall_continues_until_ground_collision(test_context *ctx) 
     reset_logs();
     actor->yposi.w.h = 201;
     actor->r_no0 = 2;
-    set_actfree_word(actor, 12, 100);
+    set_koma8_word(actor, 12, 100);
     emycol_d_results[0] = -2;
     emycol_d_result_count = 1;
 
@@ -286,8 +294,8 @@ static void test_koma8_move2_reverses_when_forward_wall_is_close(
     actor->xspeed.w = 256;
     actor->xposi.w.h = 110;
     actor->yposi.w.h = 200;
-    set_actfree_word(actor, 12, 100);
-    set_actfree_word(actor, 16, 80);
+    set_koma8_word(actor, 12, 100);
+    set_koma8_word(actor, 16, 80);
     emycol_r_result = 6;
 
     koma8(actor);
@@ -307,8 +315,8 @@ static void test_koma8_move2_reverses_when_backward_wall_is_close(
     actor->r_no0 = 4;
     actor->xspeed.w = -256;
     actor->xposi.w.h = 90;
-    set_actfree_word(actor, 12, 100);
-    set_actfree_word(actor, 16, 80);
+    set_koma8_word(actor, 12, 100);
+    set_koma8_word(actor, 16, 80);
     emycol_l_result = 6;
 
     koma8(actor);
@@ -327,8 +335,8 @@ static void test_koma8_move2_reverses_at_horizontal_range_limit(
     actor->r_no0 = 4;
     actor->xspeed.w = 256;
     actor->xposi.w.h = 180;
-    set_actfree_word(actor, 12, 100);
-    set_actfree_word(actor, 16, 80);
+    set_koma8_word(actor, 12, 100);
+    set_koma8_word(actor, 16, 80);
     emycol_r_result = 7;
 
     koma8(actor);
@@ -339,8 +347,8 @@ static void test_koma8_move2_reverses_at_horizontal_range_limit(
     reset_logs();
     actor->xspeed.w = -256;
     actor->xposi.w.h = 20;
-    set_actfree_word(actor, 12, 100);
-    set_actfree_word(actor, 16, 80);
+    set_koma8_word(actor, 12, 100);
+    set_koma8_word(actor, 16, 80);
     emycol_l_result = 7;
 
     koma8(actor);
@@ -357,8 +365,8 @@ static void test_koma8_move2_reverses_on_steep_floor_offsets(
     actor->r_no0 = 4;
     actor->xspeed.w = 256;
     actor->xposi.w.h = 110;
-    set_actfree_word(actor, 12, 100);
-    set_actfree_word(actor, 16, 80);
+    set_koma8_word(actor, 12, 100);
+    set_koma8_word(actor, 16, 80);
     emycol_r_result = 7;
     emycol_d_results[0] = -8;
     emycol_d_result_count = 1;
@@ -370,8 +378,8 @@ static void test_koma8_move2_reverses_on_steep_floor_offsets(
     reset_logs();
     actor->xspeed.w = 256;
     actor->xposi.w.h = 110;
-    set_actfree_word(actor, 12, 100);
-    set_actfree_word(actor, 16, 80);
+    set_koma8_word(actor, 12, 100);
+    set_koma8_word(actor, 16, 80);
     emycol_r_result = 7;
     emycol_d_results[0] = 8;
     emycol_d_result_count = 1;
@@ -390,8 +398,8 @@ static void test_koma8_move2_follows_gentle_floor_without_reversing(
     actor->xspeed.w = 256;
     actor->xposi.w.h = 110;
     actor->yposi.w.h = 200;
-    set_actfree_word(actor, 12, 100);
-    set_actfree_word(actor, 16, 80);
+    set_koma8_word(actor, 12, 100);
+    set_koma8_word(actor, 16, 80);
     emycol_r_result = 7;
     emycol_d_results[0] = 7;
     emycol_d_result_count = 1;

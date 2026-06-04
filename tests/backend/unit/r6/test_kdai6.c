@@ -173,7 +173,7 @@ static void test_kdai6_sub2_uses_timer_low_byte_and_scaled_sine(
 
     TEST_ASSERT_EQ_INT(ctx, 0xfe, sinset_angle);
     TEST_ASSERT_EQ_INT(ctx, 20, offset);
-    TEST_ASSERT_EQ_INT(ctx, 1, platform->actfree[16]);
+    TEST_ASSERT_EQ_INT(ctx, 1, kdai6_get_work(platform)->wobble_counter);
 }
 
 static void test_kdai6_moves_each_direction_from_origin(test_context *ctx) {
@@ -290,9 +290,9 @@ static void test_kdai6_move_with_ride_initializes_player_and_rotates(
     TEST_ASSERT_EQ_INT(ctx, 1, player->cddat);
     TEST_ASSERT_EQ_INT(ctx, 253, player->actflg);
     TEST_ASSERT_EQ_INT(ctx, 45, player->mstno.b.h);
-    TEST_ASSERT_EQ_INT(ctx, 132, player->actfree[1]);
-    TEST_ASSERT_EQ_INT(ctx, 1, player->actfree[2]);
-    TEST_ASSERT_EQ_INT(ctx, 36, player->actfree[15]);
+    TEST_ASSERT_EQ_INT(ctx, 132, player_work_get(player)->special_angle);
+    TEST_ASSERT_EQ_INT(ctx, 1, player_work_get(player)->status_flags);
+    TEST_ASSERT_EQ_INT(ctx, 36, player_work_get(player)->orbit_radius);
     TEST_ASSERT_EQ_INT(ctx, 152, player->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 2, sinset_count);
     TEST_ASSERT_EQ_INT(ctx, 132, sinset_angle);
@@ -307,9 +307,9 @@ static void test_kdai6_move_ride_preserves_existing_spin_and_skips_fast_player(
 
     reset_kdai6_state();
     init_platform(platform, 100, 200);
-    player->actfree[1] = 33;
-    player->actfree[2] = 1;
-    player->actfree[15] = 9;
+    player_work_get(player)->special_angle = 33;
+    player_work_get(player)->status_flags = 1;
+    player_work_get(player)->orbit_radius = 9;
     player->r_no0 = 6;
     ridechk_result = 1;
     reset_kdai6_logs();
@@ -317,9 +317,9 @@ static void test_kdai6_move_ride_preserves_existing_spin_and_skips_fast_player(
     kdai6_move(platform);
 
     TEST_ASSERT_EQ_INT(ctx, 1, ridechk_count);
-    TEST_ASSERT_EQ_INT(ctx, 33, player->actfree[1]);
-    TEST_ASSERT_EQ_INT(ctx, 1, player->actfree[2]);
-    TEST_ASSERT_EQ_INT(ctx, 9, player->actfree[15]);
+    TEST_ASSERT_EQ_INT(ctx, 33, player_work_get(player)->special_angle);
+    TEST_ASSERT_EQ_INT(ctx, 1, player_work_get(player)->status_flags);
+    TEST_ASSERT_EQ_INT(ctx, 9, player_work_get(player)->orbit_radius);
     TEST_ASSERT_EQ_INT(ctx, 1, sinset_count);
 }
 
@@ -361,32 +361,32 @@ static void test_kaiten_play_uses_swdata1_and_swdata2(test_context *ctx) {
 
     reset_kdai6_state();
     platform->xposi.w.h = 100;
-    player->actfree[1] = 60;
-    player->actfree[15] = 5;
+    player_work_get(player)->special_angle = 60;
+    player_work_get(player)->orbit_radius = 5;
     player->actno = 1;
     swdata1.w = 0x1200;
     sinset_cos = 256;
 
     kaiten_play(platform);
 
-    TEST_ASSERT_EQ_INT(ctx, 64, player->actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 64, player_work_get(player)->special_angle);
     TEST_ASSERT_EQ_INT(ctx, 105, player->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 1, player->patcnt);
-    TEST_ASSERT_EQ_INT(ctx, 6, player->actfree[15]);
+    TEST_ASSERT_EQ_INT(ctx, 6, player_work_get(player)->orbit_radius);
     TEST_ASSERT_EQ_INT(ctx, 0x1200, swdata.w);
 
     reset_kdai6_state();
     platform = &actwk[8];
     player = &actwk[0];
     platform->xposi.w.h = 100;
-    player->actfree[1] = 0;
-    player->actfree[15] = 7;
+    player_work_get(player)->special_angle = 0;
+    player_work_get(player)->orbit_radius = 7;
     player->actno = 2;
     swdata2.w = 0x3400;
 
     kaiten_play(platform);
 
-    TEST_ASSERT_EQ_INT(ctx, 4, player->actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 4, player_work_get(player)->special_angle);
     TEST_ASSERT_EQ_INT(ctx, 107, player->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 0, player->patcnt);
     TEST_ASSERT_EQ_INT(ctx, 0x3400, swdata.w);
@@ -400,44 +400,44 @@ static void test_k_move_adjusts_distance_for_all_direction_bits(
     reset_kdai6_state();
     platform->xposi.w.h = 100;
     player->xposi.w.h = 90;
-    player->actfree[15] = 3;
+    player_work_get(player)->orbit_radius = 3;
     swdata.b.h = 4;
     k_move(platform);
-    TEST_ASSERT_EQ_INT(ctx, 4, player->actfree[15]);
+    TEST_ASSERT_EQ_INT(ctx, 4, player_work_get(player)->orbit_radius);
 
     player->xposi.w.h = 90;
-    player->actfree[15] = 3;
+    player_work_get(player)->orbit_radius = 3;
     swdata.b.h = 8;
     k_move(platform);
-    TEST_ASSERT_EQ_INT(ctx, 2, player->actfree[15]);
+    TEST_ASSERT_EQ_INT(ctx, 2, player_work_get(player)->orbit_radius);
 
     player->xposi.w.h = 90;
-    player->actfree[15] = 0;
-    player->actfree[17] = 128;
+    player_work_get(player)->orbit_radius = 0;
+    player_work_get(player)->erase_timer = 32768;
     swdata.b.h = 8;
     k_move(platform);
-    TEST_ASSERT_EQ_INT(ctx, 0, player->actfree[15]);
+    TEST_ASSERT_EQ_INT(ctx, 0, player_work_get(player)->orbit_radius);
 
     reset_kdai6_state();
     platform = &actwk[8];
     player = &actwk[0];
     platform->xposi.w.h = 100;
     player->xposi.w.h = 110;
-    player->actfree[15] = 3;
+    player_work_get(player)->orbit_radius = 3;
     swdata.b.h = 8;
     k_move(platform);
-    TEST_ASSERT_EQ_INT(ctx, 4, player->actfree[15]);
+    TEST_ASSERT_EQ_INT(ctx, 4, player_work_get(player)->orbit_radius);
 
-    player->actfree[15] = 3;
+    player_work_get(player)->orbit_radius = 3;
     swdata.b.h = 4;
     k_move(platform);
-    TEST_ASSERT_EQ_INT(ctx, 2, player->actfree[15]);
+    TEST_ASSERT_EQ_INT(ctx, 2, player_work_get(player)->orbit_radius);
 
-    player->actfree[15] = 0;
-    player->actfree[17] = 128;
+    player_work_get(player)->orbit_radius = 0;
+    player_work_get(player)->erase_timer = 32768;
     swdata.b.h = 4;
     k_move(platform);
-    TEST_ASSERT_EQ_INT(ctx, 0, player->actfree[15]);
+    TEST_ASSERT_EQ_INT(ctx, 0, player_work_get(player)->orbit_radius);
 }
 
 static void test_jumpchk_d_no_input_returns_without_changes(test_context *ctx) {
@@ -445,11 +445,11 @@ static void test_jumpchk_d_no_input_returns_without_changes(test_context *ctx) {
     sprite_status *player = &actwk[0];
 
     reset_kdai6_state();
-    player->actfree[2] = 7;
+    player_work_get(player)->status_flags = 7;
 
     jumpchk_d(platform);
 
-    TEST_ASSERT_EQ_INT(ctx, 7, player->actfree[2]);
+    TEST_ASSERT_EQ_INT(ctx, 7, player_work_get(player)->status_flags);
     TEST_ASSERT_EQ_INT(ctx, 0, sinset_count);
     TEST_ASSERT_EQ_INT(ctx, 0, player->cddat);
 }
@@ -460,7 +460,7 @@ static void test_jumpchk_d_launches_normal_player(test_context *ctx) {
 
     reset_kdai6_state();
     swdata.b.l = 112;
-    player->actfree[2] = 9;
+    player_work_get(player)->status_flags = 9;
     player->direc.b.h = 64;
     player->yposi.w.h = 200;
     sinset_sin = 128;
@@ -468,13 +468,13 @@ static void test_jumpchk_d_launches_normal_player(test_context *ctx) {
 
     jumpchk_d(platform);
 
-    TEST_ASSERT_EQ_INT(ctx, 0, player->actfree[2]);
+    TEST_ASSERT_EQ_INT(ctx, 0, player_work_get(player)->status_flags);
     TEST_ASSERT_EQ_INT(ctx, 0, sinset_angle);
     TEST_ASSERT_EQ_INT(ctx, 1664, player->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 832, player->yspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 6, player->cddat);
-    TEST_ASSERT_EQ_INT(ctx, 1, player->actfree[18]);
-    TEST_ASSERT_EQ_INT(ctx, 0, player->actfree[14]);
+    TEST_ASSERT_EQ_INT(ctx, 1, player_work_get(player)->jump_started);
+    TEST_ASSERT_EQ_INT(ctx, 0, player_work_get(player)->jump_lock);
     TEST_ASSERT_EQ_INT(ctx, 14, player->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 7, player->sprhs);
     TEST_ASSERT_EQ_INT(ctx, 205, player->yposi.w.h);

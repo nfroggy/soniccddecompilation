@@ -310,7 +310,7 @@ static void test_t_item_init_flag_and_collection_paths(test_context *ctx) {
     actwk[1].colicnt = 1;
     t_item_move0(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[1].r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 60, actwk[1].actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 60, time_item_get_work(&actwk[1])->collection_timer);
     TEST_ASSERT_EQ_INT(ctx, -1, time_item);
     TEST_ASSERT_EQ_INT(ctx, 119, sub_sync_requests[0]);
     TEST_ASSERT_EQ_INT(ctx, 1, flagwork[7]);
@@ -323,13 +323,13 @@ static void test_t_item_init_flag_and_collection_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 118, sub_sync_requests[0]);
 
     reset_item_state();
-    actwk[1].actfree[1] = 2;
+    time_item_get_work(&actwk[1])->collection_timer = 2;
     t_item_move1(&actwk[1]);
-    TEST_ASSERT_EQ_INT(ctx, 1, actwk[1].actfree[1]);
+    TEST_ASSERT_EQ_INT(ctx, 1, time_item_get_work(&actwk[1])->collection_timer);
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
 
     reset_item_state();
-    actwk[1].actfree[1] = 1;
+    time_item_get_work(&actwk[1])->collection_timer = 1;
     actwk[1].userflag.b.h = 9;
     t_item_move1(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 2, actwk[1].r_no0);
@@ -364,7 +364,7 @@ static void test_t_item_init_flag_and_collection_paths(test_context *ctx) {
     reset_item_state();
     actwk[1].userflag.b.h = 8;
     actwk[1].r_no0 = 4;
-    actwk[1].actfree[1] = 1;
+    time_item_get_work(&actwk[1])->collection_timer = 1;
     item(&actwk[1]);
     TEST_ASSERT_EQ_INT(ctx, 6, actwk[1].r_no0);
 

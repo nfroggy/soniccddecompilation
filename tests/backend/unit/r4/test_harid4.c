@@ -1,4 +1,3 @@
-#include <stddef.h>
 #include <string.h>
 
 #include "support/test_runner.h"
@@ -99,60 +98,6 @@ static void queue_actwkchk2(sprite_status *actor) {
     actwkchk2_queue[actwkchk2_queue_count++] = actor;
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    Uint16 bits = (Uint16)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)(bits >> 8);
-}
-
-static Sint16 get_actfree_word(sprite_status *actor, int offset) {
-    Uint16 bits = (Uint16)actor->actfree[offset] |
-                  ((Uint16)actor->actfree[offset + 1] << 8);
-    return (Sint16)bits;
-}
-
-static void set_actfree_long(sprite_status *actor, int offset, Sint32 value) {
-    Uint32 bits = (Uint32)value;
-    actor->actfree[offset] = (Uint8)(bits & 255);
-    actor->actfree[offset + 1] = (Uint8)((bits >> 8) & 255);
-    actor->actfree[offset + 2] = (Uint8)((bits >> 16) & 255);
-    actor->actfree[offset + 3] = (Uint8)(bits >> 24);
-}
-
-static Sint32 get_actfree_long(sprite_status *actor, int offset) {
-    Uint32 bits = (Uint32)actor->actfree[offset] |
-                  ((Uint32)actor->actfree[offset + 1] << 8) |
-                  ((Uint32)actor->actfree[offset + 2] << 16) |
-                  ((Uint32)actor->actfree[offset + 3] << 24);
-    return (Sint32)bits;
-}
-
-static int legacy_word_actfree_offset(int word_index) {
-    return (word_index * 2) - (int)offsetof(sprite_status, actfree);
-}
-
-static int legacy_long_actfree_offset(int long_index) {
-    return (long_index * 4) - (int)offsetof(sprite_status, actfree);
-}
-
-static void set_legacy_word(sprite_status *actor, int word_index,
-                            Sint16 value) {
-    set_actfree_word(actor, legacy_word_actfree_offset(word_index), value);
-}
-
-static Sint16 get_legacy_word(sprite_status *actor, int word_index) {
-    return get_actfree_word(actor, legacy_word_actfree_offset(word_index));
-}
-
-static void set_legacy_long(sprite_status *actor, int long_index,
-                            Sint32 value) {
-    set_actfree_long(actor, legacy_long_actfree_offset(long_index), value);
-}
-
-static Sint32 get_legacy_long(sprite_status *actor, int long_index) {
-    return get_actfree_long(actor, legacy_long_actfree_offset(long_index));
-}
-
 static void test_harid4_patterns_capture_literal_data(test_context *ctx) {
     TEST_ASSERT_TRUE(ctx, pat_harid4[0] == &pat00);
     TEST_ASSERT_TRUE(ctx, pat_harid4[1] == &pat01);
@@ -186,8 +131,8 @@ static void test_harid4_init_above_water_spawns_child(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 64, spike->sprvsize);
     TEST_ASSERT_EQ_INT(ctx, 928, spike->sproffset);
     TEST_ASSERT_TRUE(ctx, spike->patbase == pat_harid4);
-    TEST_ASSERT_EQ_INT(ctx, 12288, get_legacy_long(spike, 14));
-    TEST_ASSERT_EQ_INT(ctx, 20, get_legacy_word(spike, 32));
+    TEST_ASSERT_EQ_INT(ctx, 12288, harid4_work_get(spike)->acceleration);
+    TEST_ASSERT_EQ_INT(ctx, 20, harid4_work_get(spike)->child_actor);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk2_count);
     TEST_ASSERT_TRUE(ctx, actwkchk2_source == spike);
 
@@ -195,7 +140,7 @@ static void test_harid4_init_above_water_spawns_child(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, -1, child->userflag.b.h);
     TEST_ASSERT_EQ_INT(ctx, 100, child->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 248, child->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 5, get_legacy_word(child, 33));
+    TEST_ASSERT_EQ_INT(ctx, 5, harid4_work_get(child)->parent_actor);
     TEST_ASSERT_EQ_INT(ctx, 176, child->colino);
     TEST_ASSERT_EQ_INT(ctx, 4, child->actflg);
     TEST_ASSERT_EQ_INT(ctx, 3, child->sprpri);
@@ -223,7 +168,7 @@ static void test_harid4_init_below_water_uses_slow_acceleration(
 
     act_init(spike);
 
-    TEST_ASSERT_EQ_INT(ctx, 4096, get_legacy_long(spike, 14));
+    TEST_ASSERT_EQ_INT(ctx, 4096, harid4_work_get(spike)->acceleration);
     TEST_ASSERT_EQ_INT(ctx, 1, actwkchk2_count);
 }
 
@@ -249,7 +194,7 @@ static void test_harid4_child_entry_frames_when_parent_missing(
 
     reset_state();
     child->userflag.b.h = -1;
-    set_legacy_word(child, 33, 5);
+    harid4_work_get(child)->parent_actor = 5;
     parent->actno = 0;
 
     harid4(child);
@@ -261,7 +206,7 @@ static void test_harid4_child_entry_frames_when_parent_missing(
 
     reset_state();
     child->userflag.b.h = -1;
-    set_legacy_word(child, 33, 5);
+    harid4_work_get(child)->parent_actor = 5;
     parent->actno = 50;
 
     harid4(child);
@@ -295,7 +240,7 @@ static void test_harid4_wait_detection_edges(test_context *ctx) {
 
     TEST_ASSERT_EQ_INT(ctx, 2, spike->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 256, spike->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 20, get_legacy_word(spike, 27));
+    TEST_ASSERT_EQ_INT(ctx, 20, harid4_work_get(spike)->timer);
 }
 
 static void test_harid4_slide_updates_parent_and_child(test_context *ctx) {
@@ -306,17 +251,17 @@ static void test_harid4_slide_updates_parent_and_child(test_context *ctx) {
     spike->r_no0 = 4;
     spike->yposi.l = 200 << 16;
     child->yposi.l = 248 << 16;
-    set_legacy_word(spike, 32, 20);
-    set_legacy_word(spike, 27, 0);
-    set_actfree_long(spike, 0, 65536);
+    harid4_work_get(spike)->child_actor = 20;
+    harid4_work_get(spike)->timer = 0;
+    harid4_work_get(spike)->y_velocity = 65536;
 
     act_slide(spike);
 
     TEST_ASSERT_EQ_INT(ctx, 6, spike->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 201, spike->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 249, child->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 0, get_actfree_long(spike, 0));
-    TEST_ASSERT_EQ_INT(ctx, 30, get_legacy_word(spike, 27));
+    TEST_ASSERT_EQ_INT(ctx, 0, harid4_work_get(spike)->y_velocity);
+    TEST_ASSERT_EQ_INT(ctx, 30, harid4_work_get(spike)->timer);
 }
 
 static void test_harid4_slide1_counts_down_then_advances(test_context *ctx) {
@@ -324,12 +269,12 @@ static void test_harid4_slide1_counts_down_then_advances(test_context *ctx) {
 
     reset_state();
     spike->r_no0 = 6;
-    set_legacy_word(spike, 27, 1);
+    harid4_work_get(spike)->timer = 1;
 
     act_slide1(spike);
 
     TEST_ASSERT_EQ_INT(ctx, 6, spike->r_no0);
-    TEST_ASSERT_EQ_INT(ctx, 0, get_legacy_word(spike, 27));
+    TEST_ASSERT_EQ_INT(ctx, 0, harid4_work_get(spike)->timer);
 
     act_slide1(spike);
 
@@ -344,9 +289,9 @@ static void test_harid4_down_hits_floor_and_removes_child(test_context *ctx) {
     spike->r_no0 = 8;
     spike->yposi.l = 200 << 16;
     child->yposi.l = 248 << 16;
-    set_legacy_word(spike, 32, 20);
-    set_actfree_long(spike, 0, 65536);
-    set_legacy_long(spike, 14, 4096);
+    harid4_work_get(spike)->child_actor = 20;
+    harid4_work_get(spike)->y_velocity = 65536;
+    harid4_work_get(spike)->acceleration = 4096;
     emycol_d_result = -3;
 
     act_down(spike);
@@ -355,15 +300,15 @@ static void test_harid4_down_hits_floor_and_removes_child(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 198, spike->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 249, child->yposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 0, spike->yspeed.w);
-    TEST_ASSERT_EQ_INT(ctx, 2097152, get_actfree_long(spike, 4));
+    TEST_ASSERT_EQ_INT(ctx, 2097152, harid4_work_get(spike)->stop_distance);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
     TEST_ASSERT_TRUE(ctx, frameout_actor == child);
 
     reset_state();
     spike->r_no0 = 8;
-    set_legacy_word(spike, 32, 20);
-    set_actfree_long(spike, 0, 65536);
-    set_legacy_long(spike, 14, 4096);
+    harid4_work_get(spike)->child_actor = 20;
+    harid4_work_get(spike)->y_velocity = 65536;
+    harid4_work_get(spike)->acceleration = 4096;
     emycol_d_result = 2;
 
     act_down(spike);
@@ -378,14 +323,14 @@ static void test_harid4_down1_and_stop_are_stable(test_context *ctx) {
     reset_state();
     spike->r_no0 = 10;
     spike->yposi.l = 200 << 16;
-    set_actfree_long(spike, 0, 65536);
-    set_actfree_long(spike, 4, 65536);
+    harid4_work_get(spike)->y_velocity = 65536;
+    harid4_work_get(spike)->stop_distance = 65536;
 
     act_down1(spike);
 
     TEST_ASSERT_EQ_INT(ctx, 10, spike->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 201, spike->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 0, get_actfree_long(spike, 4));
+    TEST_ASSERT_EQ_INT(ctx, 0, harid4_work_get(spike)->stop_distance);
 
     act_down1(spike);
 

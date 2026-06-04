@@ -103,9 +103,17 @@ static void reset_pipe8_state(void) {
     reset_logs();
 }
 
-static void set_actfree_word(sprite_status *actor, int offset, Sint16 value) {
-    actor->actfree[offset] = (Uint8)value;
-    actor->actfree[offset + 1] = (Uint8)((Uint16)value >> 8);
+static void set_pipe8_word(sprite_status *actor, int offset, Sint16 value) {
+    pipe8_work *work = pipe8_work_get(actor);
+
+    switch (offset) {
+    case 0:
+        work->animation_timer = value;
+        break;
+    case 20:
+        work->parent_actor = value;
+        break;
+    }
 }
 
 static void assert_action_and_frameout(test_context *ctx,
@@ -249,7 +257,7 @@ static void test_pipe8_negative_pair_frames_out_when_parent_missing(
 
     reset_pipe8_state();
     actor->userflag.b.h = -1;
-    set_actfree_word(actor, 20, 3);
+    set_pipe8_word(actor, 20, 3);
 
     pipe8(actor);
 
@@ -267,7 +275,7 @@ static void test_pipe8_negative_pair_with_parent_runs_without_frameout_s00(
     actwk[3].actno = 32;
     actor->userflag.b.h = -1;
     actor->r_no0 = 6;
-    set_actfree_word(actor, 20, 3);
+    set_pipe8_word(actor, 20, 3);
 
     pipe8(actor);
 
@@ -280,7 +288,7 @@ static void test_pipe8_shatter_frames_out_when_parent_missing(test_context *ctx)
 
     reset_pipe8_state();
     piece->userflag.b.l = -1;
-    set_actfree_word(piece, 20, 3);
+    set_pipe8_word(piece, 20, 3);
 
     pipe8(piece);
 
@@ -295,7 +303,7 @@ static void test_pipe8_shatter_initializes_closed_gate(test_context *ctx) {
     reset_pipe8_state();
     actwk[3].actno = 32;
     piece->userflag.b.l = -1;
-    set_actfree_word(piece, 20, 3);
+    set_pipe8_word(piece, 20, 3);
 
     pipe8(piece);
 
@@ -310,7 +318,7 @@ static void test_pipe8_shatter_closed_clears_switch_flag(test_context *ctx) {
     piece->userflag.b.l = -1;
     piece->userflag.b.h = 5;
     piece->r_no0 = 2;
-    set_actfree_word(piece, 20, 3);
+    set_pipe8_word(piece, 20, 3);
     switchflag[5] = 255;
 
     pipe8(piece);
@@ -328,7 +336,7 @@ static void test_pipe8_shatter_closed1_opens_when_switch_is_set(
     piece->userflag.b.l = -1;
     piece->userflag.b.h = 5;
     piece->r_no0 = 4;
-    set_actfree_word(piece, 20, 3);
+    set_pipe8_word(piece, 20, 3);
     switchflag[5] = 128;
 
     pipe8(piece);
@@ -346,7 +354,7 @@ static void test_pipe8_shatter_closed1_ignores_player_not_moving_up(
     piece->userflag.b.l = -1;
     piece->userflag.b.h = 5;
     piece->r_no0 = 4;
-    set_actfree_word(piece, 20, 3);
+    set_pipe8_word(piece, 20, 3);
     actwk[0].yspeed.w = 0;
 
     pipe8(piece);
@@ -365,7 +373,7 @@ static void test_pipe8_shatter_closed1_opens_b_when_player_hits_from_below(
     piece->r_no0 = 4;
     piece->xposi.w.h = 100;
     piece->yposi.w.h = 200;
-    set_actfree_word(piece, 20, 3);
+    set_pipe8_word(piece, 20, 3);
     actwk[0].xposi.w.h = 100;
     actwk[0].yposi.w.h = 205;
     actwk[0].yspeed.w = -1;
@@ -382,8 +390,8 @@ static void test_pipe8_open_a_animates_until_timer_expires(test_context *ctx) {
     actwk[3].actno = 32;
     piece->userflag.b.l = -1;
     piece->r_no0 = 6;
-    set_actfree_word(piece, 20, 3);
-    set_actfree_word(piece, 0, 1);
+    set_pipe8_word(piece, 20, 3);
+    set_pipe8_word(piece, 0, 1);
 
     pipe8(piece);
 
@@ -408,7 +416,7 @@ static void test_pipe8_opend_a_stays_open_while_player_inside(test_context *ctx)
     piece->r_no0 = 8;
     piece->xposi.w.h = 100;
     piece->yposi.w.h = 200;
-    set_actfree_word(piece, 20, 3);
+    set_pipe8_word(piece, 20, 3);
     actwk[0].xposi.w.h = 100;
     actwk[0].yposi.w.h = 195;
 
@@ -426,7 +434,7 @@ static void test_pipe8_opend_a_closes_when_player_outside(test_context *ctx) {
     piece->r_no0 = 8;
     piece->xposi.w.h = 100;
     piece->yposi.w.h = 200;
-    set_actfree_word(piece, 20, 3);
+    set_pipe8_word(piece, 20, 3);
     actwk[0].xposi.w.h = 1000;
     actwk[0].yposi.w.h = 195;
 
@@ -445,7 +453,7 @@ static void test_pipe8_opend_b_starts_close_when_player_hits_gate(
     piece->r_no0 = 10;
     piece->xposi.w.h = 100;
     piece->yposi.w.h = 200;
-    set_actfree_word(piece, 20, 3);
+    set_pipe8_word(piece, 20, 3);
     actwk[0].xposi.w.h = 100;
     actwk[0].yposi.w.h = 195;
     actwk[0].yspeed.w = -1;
@@ -464,7 +472,7 @@ static void test_pipe8_opend_b_ignores_miss(test_context *ctx) {
     piece->r_no0 = 10;
     piece->xposi.w.h = 100;
     piece->yposi.w.h = 200;
-    set_actfree_word(piece, 20, 3);
+    set_pipe8_word(piece, 20, 3);
     actwk[0].xposi.w.h = 200;
     actwk[0].yposi.w.h = 200;
     actwk[0].yspeed.w = -1;
@@ -483,8 +491,8 @@ static void test_pipe8_close_b_animates_then_returns_closed(test_context *ctx) {
     piece->r_no0 = 12;
     piece->patno = 5;
     piece->mstno.b.h = 1;
-    set_actfree_word(piece, 20, 3);
-    set_actfree_word(piece, 0, 1);
+    set_pipe8_word(piece, 20, 3);
+    set_pipe8_word(piece, 0, 1);
 
     pipe8(piece);
 
