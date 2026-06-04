@@ -13,8 +13,8 @@ static void SetKeybordKey1(void);
 
 Uint16 nSequenceNum;
 Sint32 nTimerCunt;
-Uint32 hSurf;
-Uint32 hWnd;
+UintPtr hSurf;
+UintPtr hWnd;
 PALETTEENTRY *lpColorwk;
 Uint16 swData1;
 Uint16 swData2;

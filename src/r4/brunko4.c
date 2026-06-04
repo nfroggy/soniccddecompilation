@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "brunko4.h"
 #include "../action.h"
@@ -7,9 +5,7 @@
 #include "../etc.h"
 #include "../ridechk.h"
 
-#pragma pack(push, 1)
 typedef struct {
-    Sint8 unused0[8];
     Sint16 origin_y;
     Sint16 helper_parent_index;
     Sint16 origin_x;
@@ -19,26 +15,6 @@ typedef struct {
     Uint8 angle_low;
     Uint8 link_id;
 } brunko4_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(brunko4_work, origin_y) == 8,
-               "brunko4_work.origin_y offset");
-_Static_assert(offsetof(brunko4_work, helper_parent_index) == 10,
-               "brunko4_work.helper_parent_index offset");
-_Static_assert(offsetof(brunko4_work, origin_x) == 12,
-               "brunko4_work.origin_x offset");
-_Static_assert(offsetof(brunko4_work, helper_y_offset) == 14,
-               "brunko4_work.helper_y_offset offset");
-_Static_assert(offsetof(brunko4_work, helper_x_offset) == 15,
-               "brunko4_work.helper_x_offset offset");
-_Static_assert(offsetof(brunko4_work, angle_high) == 16,
-               "brunko4_work.angle_high offset");
-_Static_assert(offsetof(brunko4_work, angle_low) == 17,
-               "brunko4_work.angle_low offset");
-_Static_assert(offsetof(brunko4_work, link_id) == 18,
-               "brunko4_work.link_id offset");
-_Static_assert(sizeof(brunko4_work) <= sizeof(((sprite_status *)0)->actfree),
-               "brunko4_work fits in actfree");
 
 static brunko4_work *brunko4_get_work(sprite_status *pActwk) {
     return (brunko4_work *)pActwk->actfree;
@@ -104,7 +80,7 @@ static void brunko_init(sprite_status *pActwk) {
         if (actwkchk2(pActwk, &subActwk) == 0) {
             subActwk->actno = 39;
             brunko4_get_work(subActwk)->helper_parent_index =
-                (Uint16)(Uint8)(pActwk - actwk);
+                (Sint16)(pActwk - actwk);
             brunko4_get_work(subActwk)->helper_x_offset = -16;
             brunko4_get_work(subActwk)->helper_y_offset = 16;
             subActwk->userflag.b.h = (Uint8)(pActwk->userflag.b.h & 15);

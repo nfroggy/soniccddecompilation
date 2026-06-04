@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "seesaw6.h"
 #include "../action.h"
@@ -8,7 +6,6 @@
 #include "../playsub.h"
 #include "../ridechk.h"
 
-#pragma pack(push, 1)
 typedef struct {
     union {
         Uint16 left_slave_index;
@@ -16,23 +13,8 @@ typedef struct {
     };
     Uint16 right_slave_index;
     Sint16 timer;
-    Uint8 unused6[15];
     Uint8 pressed;
 } seesaw6_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(seesaw6_work, left_slave_index) == 0,
-               "seesaw6_work.left_slave_index offset");
-_Static_assert(offsetof(seesaw6_work, parent_index) == 0,
-               "seesaw6_work.parent_index offset");
-_Static_assert(offsetof(seesaw6_work, right_slave_index) == 2,
-               "seesaw6_work.right_slave_index offset");
-_Static_assert(offsetof(seesaw6_work, timer) == 4,
-               "seesaw6_work.timer offset");
-_Static_assert(offsetof(seesaw6_work, pressed) == 21,
-               "seesaw6_work.pressed offset");
-_Static_assert(sizeof(seesaw6_work) <= sizeof(((sprite_status *)0)->actfree),
-               "seesaw6_work fits in actfree");
 
 static seesaw6_work *seesaw6_get_work(sprite_status *pActwk) {
     return (seesaw6_work *)pActwk->actfree;

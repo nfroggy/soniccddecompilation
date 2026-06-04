@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "trap_r3.h"
 #include "../action.h"
@@ -11,16 +9,12 @@
 #include "../ridechk.h"
 #include "coli3.h"
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 unused0[6];
     Sint16 base_y;
     Sint16 base_x;
-    union {
-        Uint16 linked_actor_index;
-        Sint16 velocity;
-        Sint16 table_offset;
-    };
+    Uint16 linked_actor_index;
+    Sint16 velocity;
+    Sint16 table_offset;
     union {
         Sint16 origin_x;
         Sint16 acceleration;
@@ -30,65 +24,16 @@ typedef struct {
             Uint8 drum_speed_high;
         };
     };
-    union {
-        Sint16 delta;
-        struct {
-            Uint8 wait_timer;
-            Uint8 phase;
-        };
-    };
+    Sint16 delta;
+    Uint8 wait_timer;
+    Uint8 phase;
     Uint8 timer;
     Uint8 travel;
     Uint8 reverse_flag;
-    Uint8 unused19;
-    union {
-        Sint16 bullet_acceleration;
-        struct {
-            Uint8 bob_angle;
-            Uint8 bob_enabled;
-        };
-    };
+    Sint16 bullet_acceleration;
+    Uint8 bob_angle;
+    Uint8 bob_enabled;
 } trap3_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(trap3_work, base_y) == 6,
-               "trap3_work.base_y offset");
-_Static_assert(offsetof(trap3_work, base_x) == 8,
-               "trap3_work.base_x offset");
-_Static_assert(offsetof(trap3_work, linked_actor_index) == 10,
-               "trap3_work.linked_actor_index offset");
-_Static_assert(offsetof(trap3_work, velocity) == 10,
-               "trap3_work.velocity offset");
-_Static_assert(offsetof(trap3_work, table_offset) == 10,
-               "trap3_work.table_offset offset");
-_Static_assert(offsetof(trap3_work, origin_x) == 12,
-               "trap3_work.origin_x offset");
-_Static_assert(offsetof(trap3_work, acceleration) == 12,
-               "trap3_work.acceleration offset");
-_Static_assert(offsetof(trap3_work, bullet_origin_x) == 12,
-               "trap3_work.bullet_origin_x offset");
-_Static_assert(offsetof(trap3_work, drum_speed_high) == 13,
-               "trap3_work.drum_speed_high offset");
-_Static_assert(offsetof(trap3_work, delta) == 14,
-               "trap3_work.delta offset");
-_Static_assert(offsetof(trap3_work, wait_timer) == 14,
-               "trap3_work.wait_timer offset");
-_Static_assert(offsetof(trap3_work, phase) == 15,
-               "trap3_work.phase offset");
-_Static_assert(offsetof(trap3_work, timer) == 16,
-               "trap3_work.timer offset");
-_Static_assert(offsetof(trap3_work, travel) == 17,
-               "trap3_work.travel offset");
-_Static_assert(offsetof(trap3_work, reverse_flag) == 18,
-               "trap3_work.reverse_flag offset");
-_Static_assert(offsetof(trap3_work, bullet_acceleration) == 20,
-               "trap3_work.bullet_acceleration offset");
-_Static_assert(offsetof(trap3_work, bob_angle) == 20,
-               "trap3_work.bob_angle offset");
-_Static_assert(offsetof(trap3_work, bob_enabled) == 21,
-               "trap3_work.bob_enabled offset");
-_Static_assert(sizeof(trap3_work) <= sizeof(((sprite_status *)0)->actfree),
-               "trap3_work fits in actfree");
 
 static trap3_work *trap3_get_work(sprite_status *pActwk) {
     return (trap3_work *)pActwk->actfree;

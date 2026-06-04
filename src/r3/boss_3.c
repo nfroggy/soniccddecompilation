@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "boss_3.h"
 #include "../action.h"
@@ -15,54 +13,21 @@
 
 extern void colorset2(Sint32 ColorNo);
 
-#pragma pack(push, 1)
 typedef struct {
     Uint8 timer;
     Uint8 flash_timer;
     Uint8 flags;
-    Uint8 unused3;
     Sint16 target_position;
     Sint32 vertical_speed;
     Uint16 child_index;
     Uint16 support_index;
     Sint16 x_acceleration;
-    union {
-        Sint16 y_acceleration;
-        struct {
-            Uint8 jaba_count;
-            Uint8 phase;
-        };
-    };
+    Sint16 y_acceleration;
+    Uint8 jaba_count;
+    Uint8 phase;
     Sint16 max_y_speed;
     Sint16 explosion_timer;
 } egg3_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(egg3_work, timer) == 0, "egg3_work.timer offset");
-_Static_assert(offsetof(egg3_work, flash_timer) == 1,
-               "egg3_work.flash_timer offset");
-_Static_assert(offsetof(egg3_work, flags) == 2, "egg3_work.flags offset");
-_Static_assert(offsetof(egg3_work, target_position) == 4,
-               "egg3_work.target_position offset");
-_Static_assert(offsetof(egg3_work, vertical_speed) == 6,
-               "egg3_work.vertical_speed offset");
-_Static_assert(offsetof(egg3_work, child_index) == 10,
-               "egg3_work.child_index offset");
-_Static_assert(offsetof(egg3_work, support_index) == 12,
-               "egg3_work.support_index offset");
-_Static_assert(offsetof(egg3_work, x_acceleration) == 14,
-               "egg3_work.x_acceleration offset");
-_Static_assert(offsetof(egg3_work, y_acceleration) == 16,
-               "egg3_work.y_acceleration offset");
-_Static_assert(offsetof(egg3_work, jaba_count) == 16,
-               "egg3_work.jaba_count offset");
-_Static_assert(offsetof(egg3_work, phase) == 17, "egg3_work.phase offset");
-_Static_assert(offsetof(egg3_work, max_y_speed) == 18,
-               "egg3_work.max_y_speed offset");
-_Static_assert(offsetof(egg3_work, explosion_timer) == 20,
-               "egg3_work.explosion_timer offset");
-_Static_assert(sizeof(egg3_work) <= sizeof(((sprite_status *)0)->actfree),
-               "egg3_work fits in actfree");
 
 static egg3_work *egg3_get_work(sprite_status *actionwk) {
     return (egg3_work *)actionwk->actfree;

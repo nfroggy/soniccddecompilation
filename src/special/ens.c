@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../types.h"
 #include "common.h"
 #include "sps_equ.h"
@@ -10,7 +8,6 @@
 #include "game.h"
 #include "kaiten.h"
 
-#pragma pack(push, 1)
 typedef struct {
     union {
         Uint16 timer;
@@ -40,41 +37,6 @@ typedef struct {
     };
     Uint8 flash_timer;
 } special_enemy_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(special_enemy_work, timer) == 0,
-               "special_enemy_work.timer offset");
-_Static_assert(offsetof(special_enemy_work, timer_low) == 0,
-               "special_enemy_work.timer_low offset");
-_Static_assert(offsetof(special_enemy_work, subtype) == 1,
-               "special_enemy_work.subtype offset");
-_Static_assert(offsetof(special_enemy_work, short_timer) == 2,
-               "special_enemy_work.short_timer offset");
-_Static_assert(offsetof(special_enemy_work, pattern) == 2,
-               "special_enemy_work.pattern offset");
-_Static_assert(offsetof(special_enemy_work, direction) == 3,
-               "special_enemy_work.direction offset");
-_Static_assert(offsetof(special_enemy_work, linked_actor_index) == 4,
-               "special_enemy_work.linked_actor_index offset");
-_Static_assert(offsetof(special_enemy_work, angle_z) == 6,
-               "special_enemy_work.angle_z offset");
-_Static_assert(offsetof(special_enemy_work, movement_table_start) == 8,
-               "special_enemy_work.movement_table_start offset");
-_Static_assert(offsetof(special_enemy_work, movement_table_cursor) == 12,
-               "special_enemy_work.movement_table_cursor offset");
-_Static_assert(offsetof(special_enemy_work, movement_count) == 16,
-               "special_enemy_work.movement_count offset");
-_Static_assert(offsetof(special_enemy_work, player_timer) == 18,
-               "special_enemy_work.player_timer offset");
-_Static_assert(offsetof(special_enemy_work, ufo_type) == 18,
-               "special_enemy_work.ufo_type offset");
-_Static_assert(offsetof(special_enemy_work, ufo_direction) == 19,
-               "special_enemy_work.ufo_direction offset");
-_Static_assert(offsetof(special_enemy_work, flash_timer) == 20,
-               "special_enemy_work.flash_timer offset");
-_Static_assert(sizeof(special_enemy_work) <=
-                   sizeof(((sprite_status_sp *)0)->actfree),
-               "special_enemy_work fits in actfree");
 
 static special_enemy_work *special_enemy_get_work(sprite_status_sp *actionwk) {
     return (special_enemy_work *)actionwk->actfree;

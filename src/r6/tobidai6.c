@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "tobidai6.h"
 #include "../action.h"
@@ -16,25 +14,11 @@
 #define SPRITE_TOBIDAI6_BASE 482
 #endif
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 unused0[4];
     Uint8 ride_height_adjust;
-    Uint8 unused5;
     Sint16 saved_player_yspeed;
-    Uint8 unused8[12];
     Sint16 vertical_acceleration;
 } tobidai6_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(tobidai6_work, ride_height_adjust) == 4,
-               "tobidai6_work.ride_height_adjust offset");
-_Static_assert(offsetof(tobidai6_work, saved_player_yspeed) == 6,
-               "tobidai6_work.saved_player_yspeed offset");
-_Static_assert(offsetof(tobidai6_work, vertical_acceleration) == 20,
-               "tobidai6_work.vertical_acceleration offset");
-_Static_assert(sizeof(tobidai6_work) <= sizeof(((sprite_status *)0)->actfree),
-               "tobidai6_work fits in actfree");
 
 static tobidai6_work *tobidai6_get_work(sprite_status *actionwk) {
     return (tobidai6_work *)actionwk->actfree;

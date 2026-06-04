@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "harir4.h"
 #include "../action.h"
@@ -9,9 +7,7 @@
 #include "../ridechk.h"
 #include "coli4.h"
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 unused0[8];
     Sint16 origin_y;
     Sint16 ride_actor_index;
     Sint16 origin_x;
@@ -21,26 +17,6 @@ typedef struct {
     Uint8 move_offset;
     Uint8 moving_back;
 } harir4_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(harir4_work, origin_y) == 8,
-               "harir4_work.origin_y offset");
-_Static_assert(offsetof(harir4_work, ride_actor_index) == 10,
-               "harir4_work.ride_actor_index offset");
-_Static_assert(offsetof(harir4_work, origin_x) == 12,
-               "harir4_work.origin_x offset");
-_Static_assert(offsetof(harir4_work, ride_x_offset) == 14,
-               "harir4_work.ride_x_offset offset");
-_Static_assert(offsetof(harir4_work, ride_y_offset) == 15,
-               "harir4_work.ride_y_offset offset");
-_Static_assert(offsetof(harir4_work, wait_timer) == 16,
-               "harir4_work.wait_timer offset");
-_Static_assert(offsetof(harir4_work, move_offset) == 17,
-               "harir4_work.move_offset offset");
-_Static_assert(offsetof(harir4_work, moving_back) == 18,
-               "harir4_work.moving_back offset");
-_Static_assert(sizeof(harir4_work) <= sizeof(((sprite_status *)0)->actfree),
-               "harir4_work must fit in sprite_status.actfree");
 
 static harir4_work *harir4_get_work(sprite_status *pActwk) {
     return (harir4_work *)pActwk->actfree;

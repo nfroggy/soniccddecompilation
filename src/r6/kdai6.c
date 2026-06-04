@@ -7,25 +7,11 @@
 #include "../playsub.h"
 #include "../ridechk.h"
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 unused0[8];
     Sint16 origin_y;
-    Uint8 unused10[2];
     Sint16 origin_x;
-    Uint8 unused14[2];
     Uint8 wobble_counter;
 } kdai6_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(kdai6_work, origin_y) == 8,
-               "kdai6_work.origin_y offset");
-_Static_assert(offsetof(kdai6_work, origin_x) == 12,
-               "kdai6_work.origin_x offset");
-_Static_assert(offsetof(kdai6_work, wobble_counter) == 16,
-               "kdai6_work.wobble_counter offset");
-_Static_assert(sizeof(kdai6_work) <= sizeof(((sprite_status *)0)->actfree),
-               "kdai6_work must fit in sprite_status.actfree");
 
 static kdai6_work *kdai6_get_work(sprite_status *pActwk) {
     return (kdai6_work *)pActwk->actfree;

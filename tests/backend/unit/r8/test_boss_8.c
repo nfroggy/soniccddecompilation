@@ -973,7 +973,7 @@ static void test_egg8_tobi_bom_action_and_collision_helpers(test_context *ctx) {
 
     reset_boss8_state();
     egg = &actwk[10];
-    boss8_get_work(&actwk[0])->target_x = 1;
+    player_work_get(&actwk[0])->damage_invulnerability_timer = 1;
     egg8_warai_chk(egg);
     TEST_ASSERT_EQ_INT(ctx, 120, boss8_get_work(egg)->hit_flash);
     TEST_ASSERT_EQ_INT(ctx, 4, egg->mstno.b.h);

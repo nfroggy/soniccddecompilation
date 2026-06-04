@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "movie1.h"
 #include "../action.h"
@@ -38,11 +36,9 @@ char tbl0[37] = {1,   0,  0,   5, -18, -10, 10,  -10, 10,  15, 0,   -18, 20,
                  -10, 18, 22,  8, 23,  25,  13,  -10, 28,  -3, -25, 30,  10,
                  20,  32, -10, 2, 35,  13,  -10, 40,  -10, 10, -1};
 
-#pragma pack(push, 1)
 typedef struct {
     Uint16 explosion_timer;
     char *explosion_script;
-    Uint8 reserved_after_script[20 - 2 - sizeof(char *)];
     union {
         Uint16 parent_actor;
         struct {
@@ -51,18 +47,6 @@ typedef struct {
         };
     };
 } movie1_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(movie1_work, explosion_timer) == 0,
-               "movie1_work.explosion_timer must map to offset 0");
-_Static_assert(offsetof(movie1_work, explosion_script) == 2,
-               "movie1_work.explosion_script must map to offset 2");
-_Static_assert(offsetof(movie1_work, parent_actor) == 20,
-               "movie1_work.parent_actor must map to offset 20");
-_Static_assert(offsetof(movie1_work, parent_destroyed) == 21,
-               "movie1_work.parent_destroyed must map to offset 21");
-_Static_assert(sizeof(movie1_work) <= sizeof(((sprite_status *)0)->actfree),
-               "movie1_work must fit in sprite_status.actfree");
 
 static movie1_work *movie1_work_get(sprite_status *pActwk) {
     return (movie1_work *)pActwk->actfree;
@@ -121,7 +105,7 @@ void mm_init(sprite_status *pActwk) {
     subactwk->yposi.w.h = pActwk->yposi.w.h - 7;
     subactwk->userflag.b.h = -1;
     sub_work = movie1_work_get(subactwk);
-    sub_work->parent_actor = (Uint16)(Uint8)(pActwk - actwk);
+    sub_work->parent_actor = (Uint16)(pActwk - actwk);
 
     if (actwkchk(&subactwk) != 0) {
         die(pActwk);
@@ -132,7 +116,7 @@ void mm_init(sprite_status *pActwk) {
     subactwk->yposi.w.h = pActwk->yposi.w.h - 4;
     subactwk->userflag.b.h = 1;
     sub_work = movie1_work_get(subactwk);
-    sub_work->parent_actor = (Uint16)(Uint8)(pActwk - actwk);
+    sub_work->parent_actor = (Uint16)(pActwk - actwk);
 
     if (actwkchk(&subactwk) != 0) {
         die(pActwk);
@@ -143,7 +127,7 @@ void mm_init(sprite_status *pActwk) {
     subactwk->yposi.w.h = pActwk->yposi.w.h - 24;
     subactwk->userflag.b.h = -128;
     sub_work = movie1_work_get(subactwk);
-    sub_work->parent_actor = (Uint16)(Uint8)(pActwk - actwk);
+    sub_work->parent_actor = (Uint16)(pActwk - actwk);
 
     if (actwkchk(&subactwk) != 0) {
         die(pActwk);
@@ -154,7 +138,7 @@ void mm_init(sprite_status *pActwk) {
     subactwk->yposi.w.h = pActwk->yposi.w.h + 4;
     subactwk->userflag.b.h = -127;
     sub_work = movie1_work_get(subactwk);
-    sub_work->parent_actor = (Uint16)(Uint8)(pActwk - actwk);
+    sub_work->parent_actor = (Uint16)(pActwk - actwk);
 }
 
 void mm_wait(sprite_status *pActwk) {

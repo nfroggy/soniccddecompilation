@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "equ.h"
 #include "branko1.h"
 #include "action.h"
@@ -44,9 +42,7 @@ static brankodata branko1_initbl[8] = {
     {-32768, -1, -256, 0},
     {-32768, 1, 256, 0}};
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 reserved0[5];
     Uint8 total_segments;
     Sint16 swing_speed;
     Sint16 origin_y;
@@ -58,30 +54,6 @@ typedef struct {
     Uint8 direction;
     Sint16 acceleration;
 } branko1_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(branko1_work, total_segments) == 5,
-               "branko1_work.total_segments must map to offset 5");
-_Static_assert(offsetof(branko1_work, swing_speed) == 6,
-               "branko1_work.swing_speed must map to offset 6");
-_Static_assert(offsetof(branko1_work, origin_y) == 8,
-               "branko1_work.origin_y must map to offset 8");
-_Static_assert(offsetof(branko1_work, area1) == 10,
-               "branko1_work.area1 must map to offset 10");
-_Static_assert(offsetof(branko1_work, origin_x) == 12,
-               "branko1_work.origin_x must map to offset 12");
-_Static_assert(offsetof(branko1_work, area2) == 14,
-               "branko1_work.area2 must map to offset 14");
-_Static_assert(offsetof(branko1_work, angle) == 16,
-               "branko1_work.angle must map to offset 16");
-_Static_assert(offsetof(branko1_work, segment_index) == 18,
-               "branko1_work.segment_index must map to offset 18");
-_Static_assert(offsetof(branko1_work, direction) == 19,
-               "branko1_work.direction must map to offset 19");
-_Static_assert(offsetof(branko1_work, acceleration) == 20,
-               "branko1_work.acceleration must map to offset 20");
-_Static_assert(sizeof(branko1_work) <= sizeof(((sprite_status *)0)->actfree),
-               "branko1_work must fit in sprite_status.actfree");
 
 static branko1_work *branko1_work_get(sprite_status *pActwk) {
     return (branko1_work *)pActwk->actfree;

@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "equ.h"
 #include "zone.h"
 #include "action.h"
@@ -40,7 +38,6 @@ static void clear_wait(sprite_status *pAct);
 #define SPRITE_ZONE_BASE 348
 #endif
 
-#pragma pack(push, 1)
 typedef struct {
     union {
         struct {
@@ -54,30 +51,11 @@ typedef struct {
         } title;
         struct {
             Sint16 target_x;
-            Sint8 unused2[6];
-            union {
-                Sint16 slide_timer;
-                Uint8 start_delay;
-            };
+            Sint16 slide_timer;
+            Uint8 start_delay;
         } clear;
     };
 } zone_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(zone_work, over.target_x) == 0,
-               "zone_work.over.target_x offset");
-_Static_assert(offsetof(zone_work, title.start_x) == 2,
-               "zone_work.title.start_x offset");
-_Static_assert(offsetof(zone_work, title.target_y) == 4,
-               "zone_work.title.target_y offset");
-_Static_assert(offsetof(zone_work, title.start_y) == 6,
-               "zone_work.title.start_y offset");
-_Static_assert(offsetof(zone_work, clear.slide_timer) == 8,
-               "zone_work.clear.slide_timer offset");
-_Static_assert(offsetof(zone_work, clear.start_delay) == 8,
-               "zone_work.clear.start_delay offset");
-_Static_assert(sizeof(zone_work) <= sizeof(((sprite_status *)0)->actfree),
-               "zone_work fits in actfree");
 
 static zone_work *zone_get_work(sprite_status *pAct) {
     return (zone_work *)pAct->actfree;

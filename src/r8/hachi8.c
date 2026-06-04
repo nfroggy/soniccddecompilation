@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "hachi8.h"
 #include "../action.h"
@@ -9,7 +7,6 @@
 
 extern void patchg(sprite_status *patchgwk, Uint8 **pat_dat);
 
-#pragma pack(push, 1)
 typedef struct {
     union {
         Sint32 x_speed;
@@ -38,43 +35,10 @@ typedef struct {
         };
         struct {
             Uint8 chain_link_indices[10];
-            Uint8 unused18[2];
             Sint16 parent_index;
         };
     };
 } hachi8_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(hachi8_work, x_speed) == 0,
-               "hachi8_work.x_speed offset");
-_Static_assert(offsetof(hachi8_work, ball_angle) == 0,
-               "hachi8_work.ball_angle offset");
-_Static_assert(offsetof(hachi8_work, ball_angle_speed) == 2,
-               "hachi8_work.ball_angle_speed offset");
-_Static_assert(offsetof(hachi8_work, turn_timer_reset) == 4,
-               "hachi8_work.turn_timer_reset offset");
-_Static_assert(offsetof(hachi8_work, turn_timer) == 6,
-               "hachi8_work.turn_timer offset");
-_Static_assert(offsetof(hachi8_work, chain_link_indices) == 8,
-               "hachi8_work.chain_link_indices offset");
-_Static_assert(offsetof(hachi8_work, wave_phase) == 8,
-               "hachi8_work.wave_phase offset");
-_Static_assert(offsetof(hachi8_work, wave_delta) == 10,
-               "hachi8_work.wave_delta offset");
-_Static_assert(offsetof(hachi8_work, wave_shift) == 12,
-               "hachi8_work.wave_shift offset");
-_Static_assert(offsetof(hachi8_work, origin_x) == 14,
-               "hachi8_work.origin_x offset");
-_Static_assert(offsetof(hachi8_work, origin_y) == 16,
-               "hachi8_work.origin_y offset");
-_Static_assert(offsetof(hachi8_work, first_ball_index) == 18,
-               "hachi8_work.first_ball_index offset");
-_Static_assert(offsetof(hachi8_work, second_ball_index) == 20,
-               "hachi8_work.second_ball_index offset");
-_Static_assert(offsetof(hachi8_work, parent_index) == 20,
-               "hachi8_work.parent_index offset");
-_Static_assert(sizeof(hachi8_work) <= sizeof(((sprite_status *)0)->actfree),
-               "hachi8_work fits in actfree");
 
 static hachi8_work *hachi8_get_work(sprite_status *actionwk) {
     return (hachi8_work *)actionwk->actfree;

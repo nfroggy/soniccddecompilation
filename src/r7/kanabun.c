@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "kanabun.h"
 #include "../action.h"
@@ -8,9 +6,7 @@
 #include "../playsub.h"
 #include "../suicide.h"
 
-#pragma pack(push, 1)
 typedef struct {
-    Sint8 unused0[4];
     Sint32 y_base;
     Sint16 wave_angle;
     Sint16 wave_angle_step;
@@ -18,23 +14,6 @@ typedef struct {
     Sint16 origin_x;
     Sint32 x_speed;
 } kanabun_work;
-#pragma pack(pop)
-
-_Static_assert(sizeof(Uint8 **) == 4, "kanabun_work uses the Win32 DLL layout");
-_Static_assert(offsetof(kanabun_work, y_base) == 4,
-               "kanabun_work.y_base offset");
-_Static_assert(offsetof(kanabun_work, wave_angle) == 8,
-               "kanabun_work.wave_angle offset");
-_Static_assert(offsetof(kanabun_work, wave_angle_step) == 10,
-               "kanabun_work.wave_angle_step offset");
-_Static_assert(offsetof(kanabun_work, patch_data) == 12,
-               "kanabun_work.patch_data offset");
-_Static_assert(offsetof(kanabun_work, origin_x) == 16,
-               "kanabun_work.origin_x offset");
-_Static_assert(offsetof(kanabun_work, x_speed) == 18,
-               "kanabun_work.x_speed offset");
-_Static_assert(sizeof(kanabun_work) <= sizeof(((sprite_status *)0)->actfree),
-               "kanabun_work fits in actfree");
 
 static kanabun_work *kanabun_get_work(sprite_status *pActwk) {
     return (kanabun_work *)pActwk->actfree;

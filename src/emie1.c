@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "equ.h"
 #include "emie1.h"
 #include "action.h"
@@ -43,32 +41,14 @@ static PALETTEENTRY emie1_clr[16] = {
     {224, 0, 0, 1}};
 static void (*ht1_tbl[2])(sprite_status *) = {&heart1_init, &heart1_move};
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 unused0[12];
     Sint16 origin_x;
-    Uint8 unused14[2];
     Uint8 phase;
     Uint8 heart_timer;
     Uint8 heart_done;
-    Uint8 unused19;
     Uint8 flags;
     Uint8 jump_count;
 } emie1_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(emie1_work, origin_x) == 12,
-               "emie1_work.origin_x offset");
-_Static_assert(offsetof(emie1_work, phase) == 16, "emie1_work.phase offset");
-_Static_assert(offsetof(emie1_work, heart_timer) == 17,
-               "emie1_work.heart_timer offset");
-_Static_assert(offsetof(emie1_work, heart_done) == 18,
-               "emie1_work.heart_done offset");
-_Static_assert(offsetof(emie1_work, flags) == 20, "emie1_work.flags offset");
-_Static_assert(offsetof(emie1_work, jump_count) == 21,
-               "emie1_work.jump_count offset");
-_Static_assert(sizeof(emie1_work) <= sizeof(((sprite_status *)0)->actfree),
-               "emie1_work fits in actfree");
 
 static emie1_work *emie1_get_work(sprite_status *pActwk) {
     return (emie1_work *)pActwk->actfree;

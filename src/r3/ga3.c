@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "ga3.h"
 #include "../action.h"
@@ -19,26 +17,12 @@ static void m_init(sprite_status *actionwk);
 static void m_wait(sprite_status *actionwk);
 static void s_init(sprite_status *actionwk);
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 timer;
     Sint32 x_speed;
     Sint32 y_speed;
-    Uint8 unused10[11];
     Uint8 spawn_ring;
 } ga3_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(ga3_work, timer) == 0,
-               "ga3_work.timer offset");
-_Static_assert(offsetof(ga3_work, x_speed) == 2,
-               "ga3_work.x_speed offset");
-_Static_assert(offsetof(ga3_work, y_speed) == 6,
-               "ga3_work.y_speed offset");
-_Static_assert(offsetof(ga3_work, spawn_ring) == 21,
-               "ga3_work.spawn_ring offset");
-_Static_assert(sizeof(ga3_work) <= sizeof(((sprite_status *)0)->actfree),
-               "ga3_work fits in actfree");
 
 static ga3_work *ga3_get_work(sprite_status *actionwk) {
     return (ga3_work *)actionwk->actfree;

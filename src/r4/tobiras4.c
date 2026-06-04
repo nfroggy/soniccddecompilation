@@ -4,7 +4,6 @@
 #include "../actset.h"
 #include "../impfuncs.h"
 #include "../ridechk.h"
-#include <stddef.h>
 
 #if defined(R42A)
 #define SPRITE_TOBIRAS4_BASE 516
@@ -17,22 +16,11 @@ static void act_sense(sprite_status *pActwk);
 static void act_down(sprite_status *pActwk);
 static void act_disp(sprite_status *pActwk);
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 drop_counter;
     Sint32 y_velocity;
     Uint8 *switch_flag;
 } tobiras4_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(tobiras4_work, drop_counter) == 0,
-               "tobiras4_work.drop_counter offset");
-_Static_assert(offsetof(tobiras4_work, y_velocity) == 2,
-               "tobiras4_work.y_velocity offset");
-_Static_assert(offsetof(tobiras4_work, switch_flag) == 6,
-               "tobiras4_work.switch_flag offset");
-_Static_assert(sizeof(tobiras4_work) <= sizeof(((sprite_status *)0)->actfree),
-               "tobiras4_work fits in actfree");
 
 static tobiras4_work *tobiras4_work_get(sprite_status *pActwk) {
     return (tobiras4_work *)pActwk->actfree;

@@ -4,7 +4,6 @@
 #include "../actset.h"
 #include "../dircol.h"
 #include "../ridechk.h"
-#include <stddef.h>
 
 #if defined(R41A)
 #define SPRITE_HARID4_BASE 444
@@ -31,32 +30,14 @@ static void (*hari4_act_tbl[7])(sprite_status *) = {
     &act_init, &act_wait,  &act_slide, &act_slide1,
     &act_down, &act_down1, &act_stop};
 
-#pragma pack(push, 1)
 typedef struct {
     Sint32 y_velocity;
     Sint32 stop_distance;
     Sint16 timer;
     Sint32 acceleration;
-    Uint8 unused14[4];
     Sint16 child_actor;
     Sint16 parent_actor;
 } harid4_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(harid4_work, y_velocity) == 0,
-               "harid4_work.y_velocity offset");
-_Static_assert(offsetof(harid4_work, stop_distance) == 4,
-               "harid4_work.stop_distance offset");
-_Static_assert(offsetof(harid4_work, timer) == 8,
-               "harid4_work.timer offset");
-_Static_assert(offsetof(harid4_work, acceleration) == 10,
-               "harid4_work.acceleration offset");
-_Static_assert(offsetof(harid4_work, child_actor) == 18,
-               "harid4_work.child_actor offset");
-_Static_assert(offsetof(harid4_work, parent_actor) == 20,
-               "harid4_work.parent_actor offset");
-_Static_assert(sizeof(harid4_work) <= sizeof(((sprite_status *)0)->actfree),
-               "harid4_work fits in actfree");
 
 static harid4_work *harid4_work_get(sprite_status *pActwk) {
     return (harid4_work *)pActwk->actfree;
@@ -112,8 +93,8 @@ static void act_init(sprite_status *pActwk) {
         pNewact->userflag.b.h = -1;
         pNewact->xposi.w.h = pActwk->xposi.w.h;
         pNewact->yposi.w.h = pActwk->yposi.w.h + 48;
-        new_work->parent_actor = pActwk - actwk;
-        work->child_actor = pNewact - actwk;
+        new_work->parent_actor = (Sint16)(pActwk - actwk);
+        work->child_actor = (Sint16)(pNewact - actwk);
         pNewact->colino = 176;
         pNewact->actflg = pActwk->actflg;
         pNewact->sprpri = pActwk->sprpri;

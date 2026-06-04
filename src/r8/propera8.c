@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "propera8.h"
 #include "../action.h"
@@ -7,29 +5,13 @@
 #include "../dircol.h"
 #include "../playsub.h"
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 timer;
     Sint32 x_speed;
     Sint16 base_x;
-    Uint8 unused8[10];
     Sint16 child_y_offset;
     Sint16 parent_index;
 } propera8_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(propera8_work, timer) == 0,
-               "propera8_work.timer offset");
-_Static_assert(offsetof(propera8_work, x_speed) == 2,
-               "propera8_work.x_speed offset");
-_Static_assert(offsetof(propera8_work, base_x) == 6,
-               "propera8_work.base_x offset");
-_Static_assert(offsetof(propera8_work, child_y_offset) == 18,
-               "propera8_work.child_y_offset offset");
-_Static_assert(offsetof(propera8_work, parent_index) == 20,
-               "propera8_work.parent_index offset");
-_Static_assert(sizeof(propera8_work) <= sizeof(((sprite_status *)0)->actfree),
-               "propera8_work fits in actfree");
 
 static propera8_work *propera8_get_work(sprite_status *actionwk) {
     return (propera8_work *)actionwk->actfree;

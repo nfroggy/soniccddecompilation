@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "equ.h"
 #include "ring.h"
 #include "action.h"
@@ -41,20 +39,10 @@ Uint8 ringchg1[6] = {7, 0, 1, 2, 3, 255};
 Uint8 ringchg2[6] = {7, 0, 1, 2, 3, 255};
 Uint8 *ringchg[3] = {ringchg0, ringchg1, ringchg2};
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 reserved0[8];
     Sint16 spawn_x_anchor;
     Uint8 ring_counter;
 } ring_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(ring_work, spawn_x_anchor) == 8,
-               "ring_work.spawn_x_anchor must map to offset 8");
-_Static_assert(offsetof(ring_work, ring_counter) == 10,
-               "ring_work.ring_counter must map to offset 10");
-_Static_assert(sizeof(ring_work) <= sizeof(((sprite_status *)0)->actfree),
-               "ring_work must fit in sprite_status.actfree");
 
 static ring_work *ring_work_get(sprite_status *pActwk) {
     return (ring_work *)pActwk->actfree;

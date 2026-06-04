@@ -807,6 +807,8 @@ void scrollwrtb(Uint8 *pScrFlag, Uint8 *pMapWk, Sint32 VramBase) {
 
     wD0 = (Sint16)(scrb_v_posit.w.h + lD4.w.l) / 16;
     wD0 &= 127;
+    if (wD0 + 1 >= sizeof(z81awrttbl) / sizeof(z81awrttbl[0]))
+        wD0 = sizeof(z81awrttbl) / sizeof(z81awrttbl[0]) - 2;
     wD0 = z81awrttbl[wD0 + 1];
 
     wH_posiw = vblockwrtbtbl[wD0]->w.h;
@@ -841,8 +843,9 @@ label1:
 
         if (WrtTblCnt < 0)
             WrtTblCnt = 0;
-        if (WrtTblCnt > 113)
-            WrtTblCnt = 113;
+        if (WrtTblCnt >
+            (Sint32)(sizeof(z81awrttbl) / sizeof(z81awrttbl[0]) - 16))
+            WrtTblCnt = sizeof(z81awrttbl) / sizeof(z81awrttbl[0]) - 16;
 
         for (i = 0; i < 16; ++i) {
             wD0 = z81awrttbl[WrtTblCnt++];

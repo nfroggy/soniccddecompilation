@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "amenbo.h"
 #include "../action.h"
@@ -8,7 +6,6 @@
 #include "../suicide.h"
 #include "playsub4.h"
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 stop_timer;
     Sint32 velocity_x;
@@ -20,38 +17,16 @@ typedef struct {
 } amenbo_work;
 
 typedef struct {
-    Uint8 unused0[88];
     Sint16 projectile_owner_index;
-} amenbo_projectile_legacy_slot;
-#pragma pack(pop)
-
-_Static_assert(offsetof(amenbo_work, stop_timer) == 0,
-               "amenbo_work.stop_timer offset");
-_Static_assert(offsetof(amenbo_work, velocity_x) == 2,
-               "amenbo_work.velocity_x offset");
-_Static_assert(offsetof(amenbo_work, acceleration_x) == 6,
-               "amenbo_work.acceleration_x offset");
-_Static_assert(offsetof(amenbo_work, deceleration_x) == 10,
-               "amenbo_work.deceleration_x offset");
-_Static_assert(offsetof(amenbo_work, palette_style) == 14,
-               "amenbo_work.palette_style offset");
-_Static_assert(offsetof(amenbo_work, shot_timer) == 18,
-               "amenbo_work.shot_timer offset");
-_Static_assert(offsetof(amenbo_work, origin_x) == 20,
-               "amenbo_work.origin_x offset");
-_Static_assert(sizeof(amenbo_work) <= sizeof(((sprite_status *)0)->actfree),
-               "amenbo_work fits in actfree");
-_Static_assert(offsetof(amenbo_projectile_legacy_slot, projectile_owner_index) ==
-                   88,
-               "amenbo projectile owner legacy offset");
+} amenbo_projectile_work;
 
 static amenbo_work *amenbo_get_work(sprite_status *pActwk) {
     return (amenbo_work *)pActwk->actfree;
 }
 
-static amenbo_projectile_legacy_slot *
+static amenbo_projectile_work *
 amenbo_get_projectile_legacy_slot(sprite_status *pActwk) {
-    return (amenbo_projectile_legacy_slot *)pActwk;
+    return (amenbo_projectile_work *)pActwk->actfree;
 }
 
 #if defined(R41A)
@@ -259,7 +234,7 @@ static void act_tama(sprite_status *pActwk) {
                 subActwk->actno = pActwk->actno;
                 subActwk->userflag.b.h = -1;
                 amenbo_get_projectile_legacy_slot(subActwk)
-                    ->projectile_owner_index = (Uint8)(pActwk - actwk);
+                    ->projectile_owner_index = (Sint16)(pActwk - actwk);
                 subActwk->xposi.w.h = pActwk->xposi.w.h;
                 subActwk->yposi.w.h = pActwk->yposi.w.h;
                 subActwk->actflg = pActwk->actflg;

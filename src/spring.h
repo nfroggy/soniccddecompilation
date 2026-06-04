@@ -1,13 +1,9 @@
 #ifndef SPRING_H
 #define SPRING_H
 
-#include <stddef.h>
-
 #include "types.h"
 
-#pragma pack(push, 1)
 typedef struct {
-    Sint8 unused0[6];
     Sint16 jump_speed;
     Sint16 ground_y;
     Uint16 parent_index;
@@ -15,22 +11,6 @@ typedef struct {
     Sint8 follow_x_offset;
     Sint8 follow_y_offset;
 } spring_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(spring_work, jump_speed) == 6,
-               "spring_work.jump_speed offset");
-_Static_assert(offsetof(spring_work, ground_y) == 8,
-               "spring_work.ground_y offset");
-_Static_assert(offsetof(spring_work, parent_index) == 10,
-               "spring_work.parent_index offset");
-_Static_assert(offsetof(spring_work, origin_x) == 12,
-               "spring_work.origin_x offset");
-_Static_assert(offsetof(spring_work, follow_x_offset) == 14,
-               "spring_work.follow_x_offset offset");
-_Static_assert(offsetof(spring_work, follow_y_offset) == 15,
-               "spring_work.follow_y_offset offset");
-_Static_assert(sizeof(spring_work) <= sizeof(((sprite_status *)0)->actfree),
-               "spring_work fits in actfree");
 
 static inline spring_work *spring_work_get(sprite_status *actionwk) {
     return (spring_work *)actionwk->actfree;

@@ -7,11 +7,8 @@
 #include "../player_work.h"
 #include "../ridechk.h"
 #include "../spring.h"
-#include <stddef.h>
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 unused0[2];
     union {
         Sint16 motion_position;
         struct {
@@ -22,41 +19,13 @@ typedef struct {
     Sint16 motion_speed;
     Sint16 motion_delta;
     Sint16 origin_y;
-    Uint8 unused10[2];
     Sint16 origin_x;
-    Uint8 unused14[3];
     Uint8 wait_timer;
     Uint8 moving_backward;
     Uint8 state;
     Uint8 bob_angle;
     Uint8 flags;
 } dai_rd5_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(dai_rd5_work, motion_position) == 2,
-               "dai_rd5_work.motion_position offset");
-_Static_assert(offsetof(dai_rd5_work, motion_high) == 3,
-               "dai_rd5_work.motion_high offset");
-_Static_assert(offsetof(dai_rd5_work, motion_speed) == 4,
-               "dai_rd5_work.motion_speed offset");
-_Static_assert(offsetof(dai_rd5_work, motion_delta) == 6,
-               "dai_rd5_work.motion_delta offset");
-_Static_assert(offsetof(dai_rd5_work, origin_y) == 8,
-               "dai_rd5_work.origin_y offset");
-_Static_assert(offsetof(dai_rd5_work, origin_x) == 12,
-               "dai_rd5_work.origin_x offset");
-_Static_assert(offsetof(dai_rd5_work, wait_timer) == 17,
-               "dai_rd5_work.wait_timer offset");
-_Static_assert(offsetof(dai_rd5_work, moving_backward) == 18,
-               "dai_rd5_work.moving_backward offset");
-_Static_assert(offsetof(dai_rd5_work, state) == 19,
-               "dai_rd5_work.state offset");
-_Static_assert(offsetof(dai_rd5_work, bob_angle) == 20,
-               "dai_rd5_work.bob_angle offset");
-_Static_assert(offsetof(dai_rd5_work, flags) == 21,
-               "dai_rd5_work.flags offset");
-_Static_assert(sizeof(dai_rd5_work) <= sizeof(((sprite_status *)0)->actfree),
-               "dai_rd5_work fits in actfree");
 
 static inline dai_rd5_work *dai_rd5_work_get(sprite_status *pActwk) {
     return (dai_rd5_work *)pActwk->actfree;
@@ -426,7 +395,7 @@ static void belttask(sprite_status *pActwk) {
         return;
     d0 = player_work_get(pPlayerwk)->ride_actor_index;
 
-    if (d0 != (Sint16)(Uint16)(pActwk - actwk))
+    if (d0 != (Sint16)(pActwk - actwk))
         return;
 
     bd1 = time_flag;

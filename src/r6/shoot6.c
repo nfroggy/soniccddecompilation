@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "shoot6.h"
 #include "../action.h"
@@ -39,7 +37,6 @@ extern sprite_pattern *ringpat[9];
 static Sint16 stackpointer;
 extern sprite_pattern *bariapat[13];
 
-#pragma pack(push, 1)
 typedef struct {
     Uint8 ring_timer;
     Uint8 ring_count;
@@ -47,78 +44,26 @@ typedef struct {
 
 typedef struct {
     Uint8 timer;
-    Uint8 unused1;
-    union {
-        sprite_status *parent;
-        struct {
-            Uint8 parent_bytes[4];
-            Uint8 ice_timer;
-            Uint8 ice_table;
-        } ice;
-    } u;
+    sprite_status *parent;
+    Uint8 ice_timer;
+    Uint8 ice_table;
 } gas_work;
 
 typedef struct {
-    Uint8 unused0[2];
-    union {
-        sprite_status *parent;
-        struct {
-            Uint8 parent_bytes[2];
-            Sint16 origin_x;
-        } master;
-    } u;
+    sprite_status *parent;
+    Sint16 origin_x;
 } cata_work;
 
 typedef struct {
-    Uint8 unused0[4];
     Uint8 move_timer_high;
     Uint8 move_timer_low;
-    Uint8 unused6[2];
     Uint8 entry_timer;
-    Uint8 unused9[3];
     Sint16 target_x;
     Sint16 target_y;
     Uint8 move_index;
     Uint8 move_limit;
     Uint16 *move_table;
 } shooter_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(megami_work, ring_timer) == 0,
-               "megami_work.ring_timer offset");
-_Static_assert(offsetof(megami_work, ring_count) == 1,
-               "megami_work.ring_count offset");
-_Static_assert(sizeof(megami_work) <= sizeof(((sprite_status *)0)->actfree),
-               "megami_work fits in actfree");
-_Static_assert(offsetof(gas_work, timer) == 0, "gas_work.timer offset");
-_Static_assert(offsetof(gas_work, u.parent) == 2, "gas_work.parent offset");
-_Static_assert(offsetof(gas_work, u.ice.ice_timer) == 6,
-               "gas_work.ice_timer offset");
-_Static_assert(offsetof(gas_work, u.ice.ice_table) == 7,
-               "gas_work.ice_table offset");
-_Static_assert(sizeof(gas_work) <= sizeof(((sprite_status *)0)->actfree),
-               "gas_work fits in actfree");
-_Static_assert(offsetof(cata_work, u.parent) == 2, "cata_work.parent offset");
-_Static_assert(offsetof(cata_work, u.master.origin_x) == 4,
-               "cata_work.origin_x offset");
-_Static_assert(sizeof(cata_work) <= sizeof(((sprite_status *)0)->actfree),
-               "cata_work fits in actfree");
-_Static_assert(offsetof(shooter_work, move_timer_high) == 4,
-               "shooter_work.move_timer_high offset");
-_Static_assert(offsetof(shooter_work, entry_timer) == 8,
-               "shooter_work.entry_timer offset");
-_Static_assert(offsetof(shooter_work, target_x) == 12,
-               "shooter_work.target_x offset");
-_Static_assert(offsetof(shooter_work, target_y) == 14,
-               "shooter_work.target_y offset");
-_Static_assert(offsetof(shooter_work, move_index) == 16,
-               "shooter_work.move_index offset");
-_Static_assert(offsetof(shooter_work, move_limit) == 17,
-               "shooter_work.move_limit offset");
-_Static_assert(offsetof(shooter_work, move_table) == 18,
-               "shooter_work.move_table offset");
-_Static_assert(sizeof(shooter_work) <= sizeof(((sprite_status *)0)->actfree),
-               "shooter_work fits in actfree");
 
 static megami_work *megami_get_work(sprite_status *megamiwk) {
     return (megami_work *)megamiwk->actfree;
@@ -257,7 +202,7 @@ static void gas_move0(sprite_status *gaswk) {
     if (actwkchk(&new_actwk) != 0)
         return;
 
-    gas_get_work(new_actwk)->u.parent = gaswk;
+    gas_get_work(new_actwk)->parent = gaswk;
     new_actwk->actno = 5;
     new_actwk->sprpri = 3;
     new_actwk->actflg |= 4;
@@ -276,7 +221,7 @@ static void gas_move1(sprite_status *gaswk) {
 static void gas_move2(sprite_status *gaswk) {
     sprite_status *new_actwk;
 
-    new_actwk = gas_get_work(gaswk)->u.parent;
+    new_actwk = gas_get_work(gaswk)->parent;
     gas_get_work(new_actwk)->timer = 120;
     frameout(gaswk);
 }
@@ -290,11 +235,11 @@ static void gas_move3(sprite_status *gaswk) {
     gaswk->yposi.l += gaswk->yspeed.w << 8;
     if ((collision_data = emycol_d(gaswk)) < 0) {
         sub_sync(146);
-        work->u.ice.ice_timer = 15;
+        work->ice_timer = 15;
         gaswk->yposi.w.h += collision_data;
         gaswk->r_no0 += 2;
     }
-    new_actwk = work->u.parent;
+    new_actwk = work->parent;
     new_actwk->yposi.l = gaswk->yposi.l;
 }
 
@@ -303,10 +248,10 @@ static void gas_move4(sprite_status *gaswk) {
     gas_work *work = gas_get_work(gaswk);
     player_work *player;
 
-    new_actwk = work->u.parent;
+    new_actwk = work->parent;
     player = player_work_get(new_actwk);
-    if (work->u.ice.ice_timer != 0) {
-        --work->u.ice.ice_timer;
+    if (work->ice_timer != 0) {
+        --work->ice_timer;
         if (!(swdata.b.l & 112))
             return;
         player->status_flags &= 190;
@@ -324,8 +269,8 @@ static void gas_move4(sprite_status *gaswk) {
     }
     gaswk->r_no0 += 2;
     gaswk->patno = 10;
-    work->u.ice.ice_timer = 20;
-    work->u.ice.ice_table = 2;
+    work->ice_timer = 20;
+    work->ice_table = 2;
     ice_sub_set(gaswk);
 }
 
@@ -340,12 +285,12 @@ static void gas_move5(sprite_status *gaswk) {
     char *tbl[3] = {tbl0, tbl1, tbl2};
     gas_work *work = gas_get_work(gaswk);
 
-    if (--work->u.ice.ice_timer == 0) {
+    if (--work->ice_timer == 0) {
         if (gaswk->patno == 11) {
             frameout(gaswk);
             return;
         }
-        ice_sub0(gaswk, tbl[work->u.ice.ice_table], 3);
+        ice_sub0(gaswk, tbl[work->ice_table], 3);
         frameout(gaswk);
         return;
     }
@@ -377,12 +322,12 @@ void ice_sub0(sprite_status *gaswk, char *tbl, Sint16 loop) {
         new_actwk->patbase = gaspat;
         new_actwk->xposi.w.h += tbl[index];
         new_actwk->yposi.w.h += tbl[index + 1];
-        gas_get_work(new_actwk)->u.ice.ice_timer = tbl[index + 2];
+        gas_get_work(new_actwk)->ice_timer = tbl[index + 2];
         new_actwk->patno = tbl[index + 3];
         new_actwk->actflg |= tbl[index + 4];
         new_actwk->xspeed.w = tbl[index + 5];
         new_actwk->yspeed.w = tbl[index + 6];
-        gas_get_work(new_actwk)->u.ice.ice_table = tbl[index + 7];
+        gas_get_work(new_actwk)->ice_table = tbl[index + 7];
         index += 8;
     }
 }
@@ -393,7 +338,7 @@ void ice_set(sprite_status *plwk) {
     if (actwkchk(&new_actwk) != 0)
         return;
     player_work_get(plwk)->status_flags |= 65;
-    gas_get_work(new_actwk)->u.parent = plwk;
+    gas_get_work(new_actwk)->parent = plwk;
     new_actwk->actno = 5;
     new_actwk->actflg |= 4;
     new_actwk->xposi.w.h = plwk->xposi.w.h;
@@ -457,7 +402,7 @@ static void cata_init(sprite_status *catawk) {
     catawk->actflg |= 4;
 
     catawk->patbase = cata_pat;
-    cata_get_work(catawk)->u.master.origin_x = catawk->xposi.w.h;
+    cata_get_work(catawk)->origin_x = catawk->xposi.w.h;
     catawk->sprhs = catawk->sprhsize = 28;
     catawk->sprvsize = 4;
     catawk->r_no0 += 2;
@@ -470,7 +415,7 @@ static void cata_init(sprite_status *catawk) {
     new_actwk->sprhs = 4;
     new_actwk->sprvsize = 12;
     new_actwk->patno = 1;
-    cata_get_work(new_actwk)->u.parent = catawk;
+    cata_get_work(new_actwk)->parent = catawk;
     new_actwk->r_no0 = 8;
     cata_wait(catawk);
 }
@@ -508,7 +453,7 @@ static void cata_move0(sprite_status *catawk) {
         actwk[0].mstno.b.h = 2;
         soundset(146);
     }
-    cal_position = cata_get_work(catawk)->u.master.origin_x + 912;
+    cal_position = cata_get_work(catawk)->origin_x + 912;
     if (cal_position >= catawk->xposi.w.h)
         return;
     catawk->xposi.w.h = cal_position;
@@ -526,7 +471,7 @@ static void cata_move1(sprite_status *catawk) {
     Sint16 cal_position;
 
     catawk->xposi.w.h -= 4;
-    cal_position = cata_get_work(catawk)->u.master.origin_x;
+    cal_position = cata_get_work(catawk)->origin_x;
     if (cal_position < catawk->xposi.w.h)
         return;
     catawk->xposi.w.h = cal_position;
@@ -536,7 +481,7 @@ static void cata_move1(sprite_status *catawk) {
 static void cata_move2(sprite_status *catawk) {
     sprite_status *new_actwk;
 
-    new_actwk = cata_get_work(catawk)->u.parent;
+    new_actwk = cata_get_work(catawk)->parent;
     if (new_actwk->r_no0 >= 4)
         return;
     catawk->xposi.w.h = new_actwk->xposi.w.h - 24;

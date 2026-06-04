@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "chgban.h"
 #include "../action.h"
@@ -53,46 +51,17 @@ static void gspdset(sprite_status *pMstadr, sprite_status *pGawaadr);
 static void gun7_coli(sprite_status *pActwk);
 static void gun7set(sprite_status *pActwk);
 
-#pragma pack(push, 1)
 typedef struct {
-    union {
-        Uint8 timer;
-        Sint32 master_index;
-        struct {
-            Uint8 unused0[2];
-            Sint16 gun_return_x;
-        };
-    };
+    Uint8 timer;
+    Sint32 master_index;
+    Sint16 gun_return_x;
     Sint32 player_index;
     Uint8 wait_timer;
-    Uint8 unused9;
     Sint16 frameout_x;
     Sint32 side0_index;
     Sint32 side1_index;
     Uint8 frameout_requested;
 } chgban_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(chgban_work, timer) == 0,
-               "chgban_work.timer offset");
-_Static_assert(offsetof(chgban_work, master_index) == 0,
-               "chgban_work.master_index offset");
-_Static_assert(offsetof(chgban_work, gun_return_x) == 2,
-               "chgban_work.gun_return_x offset");
-_Static_assert(offsetof(chgban_work, player_index) == 4,
-               "chgban_work.player_index offset");
-_Static_assert(offsetof(chgban_work, wait_timer) == 8,
-               "chgban_work.wait_timer offset");
-_Static_assert(offsetof(chgban_work, frameout_x) == 10,
-               "chgban_work.frameout_x offset");
-_Static_assert(offsetof(chgban_work, side0_index) == 12,
-               "chgban_work.side0_index offset");
-_Static_assert(offsetof(chgban_work, side1_index) == 16,
-               "chgban_work.side1_index offset");
-_Static_assert(offsetof(chgban_work, frameout_requested) == 20,
-               "chgban_work.frameout_requested offset");
-_Static_assert(sizeof(chgban_work) <= sizeof(((sprite_status *)0)->actfree),
-               "chgban_work fits in actfree");
 
 static chgban_work *chgban_get_work(sprite_status *pActwk) {
     return (chgban_work *)pActwk->actfree;

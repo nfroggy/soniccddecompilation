@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "friend1.h"
 #include "../action.h"
@@ -56,7 +54,6 @@ sprite_pattern *pat_friend1[6] = {&spr_ricky1, &spr_ricky2, &spr_friend0,
 static Uint16 tbl0sproffset[11] = {1271, 904, 1123, 0, 1271, 911,
                                    1121, 0,   0,    0, 975};
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 origin_x;
     union {
@@ -68,7 +65,6 @@ typedef struct {
         Sint32 x_velocity;
     };
     Sint32 y_velocity;
-    Uint8 reserved10[10];
     union {
         Uint16 parent_actor;
         struct {
@@ -77,26 +73,6 @@ typedef struct {
         };
     };
 } friend1_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(friend1_work, origin_x) == 0,
-               "friend1_work.origin_x must map to offset 0");
-_Static_assert(offsetof(friend1_work, origin_y) == 2,
-               "friend1_work.origin_y must map to offset 2");
-_Static_assert(offsetof(friend1_work, x_velocity) == 2,
-               "friend1_work.x_velocity must map to offset 2");
-_Static_assert(offsetof(friend1_work, orbit_angle) == 4,
-               "friend1_work.orbit_angle must map to offset 4");
-_Static_assert(offsetof(friend1_work, orbit_delta) == 5,
-               "friend1_work.orbit_delta must map to offset 5");
-_Static_assert(offsetof(friend1_work, y_velocity) == 6,
-               "friend1_work.y_velocity must map to offset 6");
-_Static_assert(offsetof(friend1_work, parent_actor) == 20,
-               "friend1_work.parent_actor must map to offset 20");
-_Static_assert(offsetof(friend1_work, parent_destroyed) == 21,
-               "friend1_work.parent_destroyed must map to offset 21");
-_Static_assert(sizeof(friend1_work) <= sizeof(((sprite_status *)0)->actfree),
-               "friend1_work must fit in sprite_status.actfree");
 
 static friend1_work *friend1_work_get(sprite_status *pActwk) {
     return (friend1_work *)pActwk->actfree;

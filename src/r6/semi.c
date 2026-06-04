@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "semi.h"
 #include "../action.h"
@@ -19,7 +17,6 @@ static void act_init(sprite_status *actionwk);
 static Sint16 act_check(sprite_status *actionwk, sprite_status *pw);
 static void bomb(sprite_status *actionwk);
 
-#pragma pack(push, 1)
 typedef struct {
     Sint32 x_speed;
     Sint32 y_speed;
@@ -32,20 +29,6 @@ typedef struct {
     };
     Sint16 player_delta_x;
 } semi_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(semi_work, x_speed) == 0,
-               "semi_work.x_speed offset");
-_Static_assert(offsetof(semi_work, y_speed) == 4,
-               "semi_work.y_speed offset");
-_Static_assert(offsetof(semi_work, timer) == 8,
-               "semi_work.timer offset");
-_Static_assert(offsetof(semi_work, subtype) == 8,
-               "semi_work.subtype offset");
-_Static_assert(offsetof(semi_work, player_delta_x) == 10,
-               "semi_work.player_delta_x offset");
-_Static_assert(sizeof(semi_work) <= sizeof(((sprite_status *)0)->actfree),
-               "semi_work fits in actfree");
 
 static semi_work *semi_get_work(sprite_status *actionwk) {
     return (semi_work *)actionwk->actfree;

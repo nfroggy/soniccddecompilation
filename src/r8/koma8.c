@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "koma8.h"
 #include "../action.h"
@@ -15,38 +13,16 @@
 #define SPRITE_KOMA8_BASE 304
 #endif
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 unused0[8];
     Sint16 ground_y;
-    Uint8 unused10[2];
     Sint16 origin_x;
-    Uint8 unused14[2];
     Sint16 travel_range;
 } koma8_work;
 
 typedef struct {
-    Uint8 unused0[10];
     Uint16 parent_index;
-    Uint8 unused12[3];
     Uint8 timer;
 } koma8_spark_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(koma8_work, ground_y) == 8,
-               "koma8_work.ground_y offset");
-_Static_assert(offsetof(koma8_work, origin_x) == 12,
-               "koma8_work.origin_x offset");
-_Static_assert(offsetof(koma8_work, travel_range) == 16,
-               "koma8_work.travel_range offset");
-_Static_assert(sizeof(koma8_work) <= sizeof(((sprite_status *)0)->actfree),
-               "koma8_work fits in actfree");
-_Static_assert(offsetof(koma8_spark_work, parent_index) == 10,
-               "koma8_spark_work.parent_index offset");
-_Static_assert(offsetof(koma8_spark_work, timer) == 15,
-               "koma8_spark_work.timer offset");
-_Static_assert(sizeof(koma8_spark_work) <= sizeof(((sprite_status *)0)->actfree),
-               "koma8_spark_work fits in actfree");
 
 static koma8_work *koma8_get_work(sprite_status *komawk) {
     return (koma8_work *)komawk->actfree;

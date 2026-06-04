@@ -223,7 +223,7 @@ static void test_tentou_a_init_and_fall_paths(test_context *ctx) {
     ten_a_fall(actor);
 
     reset_tentou_state();
-    tentou_get_work(actor)->u0.horizontal_speed = 1;
+    tentou_get_work(actor)->horizontal_speed = 1;
     emycol_d_result = -8;
     ten_a_fall(actor);
 }
@@ -299,7 +299,7 @@ static void test_tentou_a_lr_ground_wall_and_ledge_paths(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, actwk[10].userflag.b.h);
 
     reset_tentou_state();
-    tentou_get_work(actor)->u0.horizontal_speed = -1;
+    tentou_get_work(actor)->horizontal_speed = -1;
     emycol_l_result = -1;
     ten_a_lr(actor);
 
@@ -311,7 +311,7 @@ static void test_tentou_a_lr_ground_wall_and_ledge_paths(test_context *ctx) {
 
     reset_tentou_state();
     actor->r_no0 = 10;
-    tentou_get_work(actor)->u0.horizontal_speed = 1;
+    tentou_get_work(actor)->horizontal_speed = 1;
     actor->xposi.w.h = 100;
     actor->sprhsize = 8;
     emycol_d2_result = 16;
@@ -348,7 +348,7 @@ static void test_tentou_b_init_fall_wait_blink_and_die(test_context *ctx) {
     ten_b_fall(actor);
 
     reset_tentou_state();
-    tentou_get_work(actor)->u0.bomb_timer = 1;
+    tentou_get_work(actor)->bomb_timer = 1;
     ten_b_wait(actor);
 
     reset_tentou_state();
@@ -356,11 +356,11 @@ static void test_tentou_b_init_fall_wait_blink_and_die(test_context *ctx) {
     ten_b_wait(actor);
 
     reset_tentou_state();
-    tentou_get_work(actor)->u0.bomb_timer = 2;
+    tentou_get_work(actor)->bomb_timer = 2;
     ten_b_blink(actor);
     TEST_ASSERT_TRUE(ctx, patchg_table == pchg1);
     reset_tentou_logs();
-    tentou_get_work(actor)->u0.bomb_timer = 1;
+    tentou_get_work(actor)->bomb_timer = 1;
     ten_b_blink(actor);
 
     reset_tentou_state();

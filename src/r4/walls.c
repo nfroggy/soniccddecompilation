@@ -3,7 +3,6 @@
 #include "../action.h"
 #include "../actset.h"
 #include "../ridechk.h"
-#include <stddef.h>
 
 #if defined(R41A) || defined(R42A)
 #define SPRITE_WALLS_BASE 446
@@ -21,32 +20,14 @@ static void main_init(sprite_status *pActwk);
 static void main_move(sprite_status *pActwk);
 static void opt_check(sprite_status *pActwk);
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 timer;
     Sint32 x_velocity;
     Sint16 origin_x;
     Sint16 parent_actor;
     Sint16 data_index;
-    Uint8 reserved0[14 - 12];
-    Uint8 child_actors[8];
+    Sint16 child_actors[8];
 } walls_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(walls_work, timer) == 0,
-               "walls_work.timer offset");
-_Static_assert(offsetof(walls_work, x_velocity) == 2,
-               "walls_work.x_velocity offset");
-_Static_assert(offsetof(walls_work, origin_x) == 6,
-               "walls_work.origin_x offset");
-_Static_assert(offsetof(walls_work, parent_actor) == 8,
-               "walls_work.parent_actor offset");
-_Static_assert(offsetof(walls_work, data_index) == 10,
-               "walls_work.data_index offset");
-_Static_assert(offsetof(walls_work, child_actors) == 14,
-               "walls_work.child_actors offset");
-_Static_assert(sizeof(walls_work) <= sizeof(((sprite_status *)0)->actfree),
-               "walls_work fits in actfree");
 
 static walls_work *walls_work_get(sprite_status *pActwk) {
     return (walls_work *)pActwk->actfree;
@@ -80,7 +61,8 @@ void walls(sprite_status *pActwk) {
 
 static void main_init(sprite_status *pActwk) {
     walls_work *work = walls_work_get(pActwk);
-    Uint8 *pOptwk, *pPatno, patnowk;
+    Sint16 *pOptwk;
+    Uint8 *pPatno, patnowk;
     Sint32 i, j;
     sprite_status *pNewact;
 
@@ -94,7 +76,7 @@ static void main_init(sprite_status *pActwk) {
     pActwk->sproffset = 17514;
     pActwk->patbase = pat_walls;
     pActwk->patno = 4;
-    work->parent_actor = pActwk - actwk;
+    work->parent_actor = (Sint16)(pActwk - actwk);
     work->timer = 192;
     work->x_velocity = -32768;
 
@@ -110,7 +92,7 @@ static void main_init(sprite_status *pActwk) {
                 return;
             }
 
-            *pOptwk++ = pNewact - actwk;
+            *pOptwk++ = (Sint16)(pNewact - actwk);
             pNewact->userflag.b.h = (j - 2) & 255;
             pNewact->yposi.w.h = pActwk->yposi.w.h - 48 + (Sint16)(i * 32);
 
@@ -125,7 +107,7 @@ static void main_init(sprite_status *pActwk) {
                     pActwk->xposi.w.h - 64 + (Sint16)(patnowk * 16);
             }
 
-            walls_work_get(pNewact)->parent_actor = pActwk - actwk;
+            walls_work_get(pNewact)->parent_actor = (Sint16)(pActwk - actwk);
             pNewact->actno = pActwk->actno;
             pNewact->actflg = pActwk->actflg;
             pNewact->sprpri = pActwk->sprpri;
@@ -140,7 +122,7 @@ static void main_init(sprite_status *pActwk) {
 
 static void main_move(sprite_status *pActwk) {
     walls_work *work = walls_work_get(pActwk);
-    Uint8 *pOptwk;
+    Sint16 *pOptwk;
     Sint32 i;
     Sint32 spdwk;
     sprite_status *pChildact;

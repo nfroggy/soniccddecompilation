@@ -4,27 +4,14 @@
 #include "../actset.h"
 #include "../playsub.h"
 #include "../ridechk.h"
-#include <stddef.h>
 
-#pragma pack(push, 1)
 typedef struct {
     union {
         Sint16 origin_x;
         Sint16 animation_timer;
     };
-    Uint8 reserved0[20 - 2];
     Sint16 parent_actor;
 } pipe8_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(pipe8_work, origin_x) == 0,
-               "pipe8_work.origin_x offset");
-_Static_assert(offsetof(pipe8_work, animation_timer) == 0,
-               "pipe8_work.animation_timer offset");
-_Static_assert(offsetof(pipe8_work, parent_actor) == 20,
-               "pipe8_work.parent_actor offset");
-_Static_assert(sizeof(pipe8_work) <= sizeof(((sprite_status *)0)->actfree),
-               "pipe8_work fits in actfree");
 
 static pipe8_work *pipe8_work_get(sprite_status *actionwk) {
     return (pipe8_work *)actionwk->actfree;

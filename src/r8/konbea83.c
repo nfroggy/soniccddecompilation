@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "konbea83.h"
 #include "../action.h"
@@ -13,29 +11,13 @@ static void a_stop(sprite_status *pActwk);
 static void a_stop1(sprite_status *pActwk);
 static void a_move(sprite_status *pActwk);
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 parent_index;
     Sint16 segment_timer;
     Sint16 origin_x;
     Sint16 origin_y;
-    Uint8 unused8[12];
     Uint8 ride_pressed;
 } konbea83_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(konbea83_work, parent_index) == 0,
-               "konbea83_work.parent_index offset");
-_Static_assert(offsetof(konbea83_work, segment_timer) == 2,
-               "konbea83_work.segment_timer offset");
-_Static_assert(offsetof(konbea83_work, origin_x) == 4,
-               "konbea83_work.origin_x offset");
-_Static_assert(offsetof(konbea83_work, origin_y) == 6,
-               "konbea83_work.origin_y offset");
-_Static_assert(offsetof(konbea83_work, ride_pressed) == 20,
-               "konbea83_work.ride_pressed offset");
-_Static_assert(sizeof(konbea83_work) <= sizeof(((sprite_status *)0)->actfree),
-               "konbea83_work fits in actfree");
 
 static konbea83_work *konbea83_get_work(sprite_status *pActwk) {
     return (konbea83_work *)pActwk->actfree;

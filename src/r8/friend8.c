@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "friend8.h"
 #include "../action.h"
@@ -24,38 +22,14 @@ static void p_init(sprite_status *actionwk);
 static void p_move(sprite_status *actionwk);
 static void set_sproffset(sprite_status *actionwk);
 
-#pragma pack(push, 1)
 typedef struct {
-    union {
-        struct {
-            Sint16 base_x;
-            Sint16 base_y;
-            Uint8 angle;
-            Sint8 angle_delta;
-        };
-        struct {
-            Uint8 unused0[2];
-            Sint32 x_speed;
-            Sint32 y_speed;
-        };
-    };
+    Sint16 base_x;
+    Sint16 base_y;
+    Uint8 angle;
+    Sint8 angle_delta;
+    Sint32 x_speed;
+    Sint32 y_speed;
 } friend8_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(friend8_work, base_x) == 0,
-               "friend8_work.base_x offset");
-_Static_assert(offsetof(friend8_work, base_y) == 2,
-               "friend8_work.base_y offset");
-_Static_assert(offsetof(friend8_work, angle) == 4,
-               "friend8_work.angle offset");
-_Static_assert(offsetof(friend8_work, angle_delta) == 5,
-               "friend8_work.angle_delta offset");
-_Static_assert(offsetof(friend8_work, x_speed) == 2,
-               "friend8_work.x_speed offset");
-_Static_assert(offsetof(friend8_work, y_speed) == 6,
-               "friend8_work.y_speed offset");
-_Static_assert(sizeof(friend8_work) <= sizeof(((sprite_status *)0)->actfree),
-               "friend8_work fits in actfree");
 
 static friend8_work *friend8_get_work(sprite_status *actionwk) {
     return (friend8_work *)actionwk->actfree;

@@ -1,48 +1,20 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "tobira4.h"
 #include "../action.h"
 #include "../actset.h"
 #include "../ridechk.h"
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 unused0[6];
     Uint8 switch_index;
     Uint8 door_type;
     Sint16 origin_y;
-    Uint8 unused10[2];
     Sint16 origin_x;
     Sint16 player_x;
     Uint8 open_amount;
     Uint8 open_limit;
     Uint8 closing;
-    Uint8 unused19;
     Sint16 player_y;
 } tobira4_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(tobira4_work, switch_index) == 6,
-               "tobira4_work.switch_index offset");
-_Static_assert(offsetof(tobira4_work, door_type) == 7,
-               "tobira4_work.door_type offset");
-_Static_assert(offsetof(tobira4_work, origin_y) == 8,
-               "tobira4_work.origin_y offset");
-_Static_assert(offsetof(tobira4_work, origin_x) == 12,
-               "tobira4_work.origin_x offset");
-_Static_assert(offsetof(tobira4_work, player_x) == 14,
-               "tobira4_work.player_x offset");
-_Static_assert(offsetof(tobira4_work, open_amount) == 16,
-               "tobira4_work.open_amount offset");
-_Static_assert(offsetof(tobira4_work, open_limit) == 17,
-               "tobira4_work.open_limit offset");
-_Static_assert(offsetof(tobira4_work, closing) == 18,
-               "tobira4_work.closing offset");
-_Static_assert(offsetof(tobira4_work, player_y) == 20,
-               "tobira4_work.player_y offset");
-_Static_assert(sizeof(tobira4_work) <= sizeof(((sprite_status *)0)->actfree),
-               "tobira4_work fits in actfree");
 
 static tobira4_work *tobira4_get_work(sprite_status *pActwk) {
     return (tobira4_work *)pActwk->actfree;

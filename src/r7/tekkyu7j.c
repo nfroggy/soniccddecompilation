@@ -1,41 +1,17 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "tekkyu7j.h"
 #include "../action.h"
 #include "../actset.h"
 
-#pragma pack(push, 1)
 typedef struct {
-    union {
-        Sint16 launcher_timer;
-        Uint8 axis_is_vertical;
-    };
+    Sint16 launcher_timer;
+    Uint8 axis_is_vertical;
     Sint16 origin_position;
     Sint16 phase_timer;
     Sint32 speed;
     Sint32 acceleration;
-    Uint8 unused14[7];
     Uint8 initial_side;
 } tekkyu7j_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(tekkyu7j_work, launcher_timer) == 0,
-               "tekkyu7j_work.launcher_timer offset");
-_Static_assert(offsetof(tekkyu7j_work, axis_is_vertical) == 0,
-               "tekkyu7j_work.axis_is_vertical offset");
-_Static_assert(offsetof(tekkyu7j_work, origin_position) == 2,
-               "tekkyu7j_work.origin_position offset");
-_Static_assert(offsetof(tekkyu7j_work, phase_timer) == 4,
-               "tekkyu7j_work.phase_timer offset");
-_Static_assert(offsetof(tekkyu7j_work, speed) == 6,
-               "tekkyu7j_work.speed offset");
-_Static_assert(offsetof(tekkyu7j_work, acceleration) == 10,
-               "tekkyu7j_work.acceleration offset");
-_Static_assert(offsetof(tekkyu7j_work, initial_side) == 21,
-               "tekkyu7j_work.initial_side offset");
-_Static_assert(sizeof(tekkyu7j_work) <= sizeof(((sprite_status *)0)->actfree),
-               "tekkyu7j_work fits in actfree");
 
 static tekkyu7j_work *tekkyu7j_get_work(sprite_status *pActwk) {
     return (tekkyu7j_work *)pActwk->actfree;

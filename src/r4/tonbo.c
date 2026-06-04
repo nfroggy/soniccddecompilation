@@ -44,7 +44,6 @@ sprite_pattern *pat_tonbo_e[3] = {&spr_tonbo_e_00, &spr_tonbo_e_01,
 sprite_pattern *pat_tonbo_b[3] = {&spr_tonbo_b_00, &spr_tonbo_b_01,
                                   &spr_tonbo_b_02};
 
-#pragma pack(push, 1)
 typedef struct {
     Sint32 base_y;
     short_union angle;
@@ -52,10 +51,8 @@ typedef struct {
     Sint16 turn_step;
     Sint16 turn_timer;
     Sint16 turn_period;
-    Uint8 unused[4];
     Sint16 origin_x;
 } tonbo_work;
-#pragma pack(pop)
 
 static tonbo_work *get_work(sprite_status *pActwk) {
     return (tonbo_work *)pActwk->actfree;

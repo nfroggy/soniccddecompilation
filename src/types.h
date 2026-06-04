@@ -11,6 +11,7 @@ typedef int16_t Sint16;
 typedef uint16_t Uint16;
 typedef int32_t Sint32;
 typedef uint32_t Uint32;
+typedef uintptr_t UintPtr;
 
 typedef struct {
     Sint8 l;
@@ -173,7 +174,10 @@ typedef struct {
     short_union direc;
     short_union userflag;
     Uint8 dummy[2];
-    Uint8 actfree[22];
+    union {
+        uint64_t actfree_align;
+        Uint8 actfree[128];
+    };
 } sprite_status;
 
 static inline Sint32 sprite_status_get_xspeed_yspeed(const sprite_status *actor) {
@@ -347,7 +351,10 @@ typedef struct {
     int_union sy_speed;
     Uint8 colliflg;
     Uint8 dummy[3];
-    Uint8 actfree[128];
+    union {
+        uint64_t actfree_align;
+        Uint8 actfree[128];
+    };
 } sprite_status_sp;
 
 typedef struct {

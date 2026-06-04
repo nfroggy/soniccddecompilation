@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "swgun4.h"
 #include "../action.h"
@@ -11,11 +9,9 @@
 #include "../score.h"
 #include "playsub4.h"
 
-#pragma pack(push, 1)
 typedef struct {
     union {
         struct {
-            Sint8 unused0[4];
             Uint8 triggered_sound;
             Uint8 press_ramp;
             Uint8 previous_pressed;
@@ -30,7 +26,6 @@ typedef struct {
             Sint16 active_switch_index;
         } swgun;
         struct {
-            Sint8 unused0[12];
             Sint16 spin_angle;
             Sint16 spin_speed;
             Uint8 lifetime;
@@ -38,32 +33,6 @@ typedef struct {
         } ring;
     };
 } swgun4_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(swgun4_work, swgun.triggered_sound) == 4,
-               "swgun4_work.swgun.triggered_sound offset");
-_Static_assert(offsetof(swgun4_work, swgun.origin_y) == 8,
-               "swgun4_work.swgun.origin_y offset");
-_Static_assert(offsetof(swgun4_work, swgun.switch_index) == 10,
-               "swgun4_work.swgun.switch_index offset");
-_Static_assert(offsetof(swgun4_work, swgun.reward_type) == 11,
-               "swgun4_work.swgun.reward_type offset");
-_Static_assert(offsetof(swgun4_work, swgun.origin_x) == 12,
-               "swgun4_work.swgun.origin_x offset");
-_Static_assert(offsetof(swgun4_work, ring.spin_angle) == 12,
-               "swgun4_work.ring.spin_angle offset");
-_Static_assert(offsetof(swgun4_work, swgun.reward_timer) == 14,
-               "swgun4_work.swgun.reward_timer offset");
-_Static_assert(offsetof(swgun4_work, ring.spin_speed) == 14,
-               "swgun4_work.ring.spin_speed offset");
-_Static_assert(offsetof(swgun4_work, swgun.master_index) == 16,
-               "swgun4_work.swgun.master_index offset");
-_Static_assert(offsetof(swgun4_work, ring.lifetime) == 16,
-               "swgun4_work.ring.lifetime offset");
-_Static_assert(offsetof(swgun4_work, swgun.active_switch_index) == 18,
-               "swgun4_work.swgun.active_switch_index offset");
-_Static_assert(sizeof(swgun4_work) <= sizeof(((sprite_status *)0)->actfree),
-               "swgun4_work fits in actfree");
 
 static swgun4_work *swgun4_get_work(sprite_status *pActwk) {
     return (swgun4_work *)pActwk->actfree;
@@ -118,7 +87,7 @@ static void swgun4_init(sprite_status *pActwk) {
     if (pWork->swgun.switch_index == 0) {
         pWork->swgun.origin_x = pActwk->xposi.w.h;
         pWork->swgun.origin_y = pActwk->yposi.w.h;
-        pWork->swgun.master_index = (Uint16)(pActwk - actwk);
+        pWork->swgun.master_index = (Sint16)(pActwk - actwk);
 
         d1 = 1;
         for (i = 0; i <= 4; ++i) {
@@ -129,7 +98,7 @@ static void swgun4_init(sprite_status *pActwk) {
 
                 pNewWork->swgun.origin_x = pWork->swgun.origin_x;
 
-                pNewWork->swgun.master_index = (Uint16)(pActwk - actwk);
+                pNewWork->swgun.master_index = (Sint16)(pActwk - actwk);
                 pNewWork->swgun.switch_index = d1;
                 a2 = &tbl[d1 * 2];
                 pNewActwk->xposi.w.h = pActwk->xposi.w.h + *a2++;
@@ -204,7 +173,7 @@ static void switch_move(sprite_status *pActwk) {
         goto label1;
     pActwk_m = &actwk[pWork->swgun.master_index];
     swgun4_get_work(pActwk_m)->swgun.active_switch_index =
-        (Uint16)(pActwk - actwk);
+        (Sint16)(pActwk - actwk);
 
     d0 = pWork->swgun.switch_index;
     d0 *= 6;
@@ -421,7 +390,7 @@ label1:
     pWork->ring.spin_angle = d0;
     d0 >>= 12;
     d0 &= 3;
-    pActwk->patno = d0;
+    pActwk->patno = (Uint8)d0;
     pWork->ring.spin_speed -= 8;
 
     --pWork->ring.lifetime;

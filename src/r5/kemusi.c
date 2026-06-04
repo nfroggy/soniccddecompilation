@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "kemusi.h"
 #include "../action.h"
@@ -7,7 +5,6 @@
 #include "../dircol.h"
 #include "../suicide.h"
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 step_delta;
     Sint16 move_duration;
@@ -16,29 +13,8 @@ typedef struct {
     Sint16 step_counter;
     Sint16 origin_x;
     Sint16 landed_count;
-    Uint8 unused14[2];
     Sint16 link_indices[3];
 } kemusi_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(kemusi_work, step_delta) == 0,
-               "kemusi_work.step_delta offset");
-_Static_assert(offsetof(kemusi_work, move_duration) == 2,
-               "kemusi_work.move_duration offset");
-_Static_assert(offsetof(kemusi_work, move_timer) == 4,
-               "kemusi_work.move_timer offset");
-_Static_assert(offsetof(kemusi_work, step_reset) == 6,
-               "kemusi_work.step_reset offset");
-_Static_assert(offsetof(kemusi_work, step_counter) == 8,
-               "kemusi_work.step_counter offset");
-_Static_assert(offsetof(kemusi_work, origin_x) == 10,
-               "kemusi_work.origin_x offset");
-_Static_assert(offsetof(kemusi_work, landed_count) == 12,
-               "kemusi_work.landed_count offset");
-_Static_assert(offsetof(kemusi_work, link_indices) == 16,
-               "kemusi_work.link_indices offset");
-_Static_assert(sizeof(kemusi_work) <= sizeof(((sprite_status *)0)->actfree),
-               "kemusi_work fits in actfree");
 
 static kemusi_work *kemusi_get_work(sprite_status *pActwk) {
     return (kemusi_work *)pActwk->actfree;
@@ -136,7 +112,7 @@ static void kemusi_init(sprite_status *pActwk) {
             frameout(pActwk);
             return;
         }
-        work->link_indices[(i - 16) / 2] = pNewactwk - actwk;
+        work->link_indices[(i - 16) / 2] = (Sint16)(pNewactwk - actwk);
         kemusi_get_work(pNewactwk)->step_delta = wD6;
         wD5 += 12;
         pNewactwk->xposi.w.h = wD5;
@@ -155,17 +131,17 @@ static void kemusi_init(sprite_status *pActwk) {
     pActwk2 = &actwk[work->link_indices[1]];
     pActwk3 = &actwk[work->link_indices[2]];
 
-    kemusi_get_work(pActwk1)->link_indices[0] = pActwk - actwk;
-    kemusi_get_work(pActwk1)->link_indices[1] = pActwk2 - actwk;
-    kemusi_get_work(pActwk1)->link_indices[2] = pActwk3 - actwk;
+    kemusi_get_work(pActwk1)->link_indices[0] = (Sint16)(pActwk - actwk);
+    kemusi_get_work(pActwk1)->link_indices[1] = (Sint16)(pActwk2 - actwk);
+    kemusi_get_work(pActwk1)->link_indices[2] = (Sint16)(pActwk3 - actwk);
 
-    kemusi_get_work(pActwk2)->link_indices[0] = pActwk - actwk;
-    kemusi_get_work(pActwk2)->link_indices[1] = pActwk1 - actwk;
-    kemusi_get_work(pActwk2)->link_indices[2] = pActwk3 - actwk;
+    kemusi_get_work(pActwk2)->link_indices[0] = (Sint16)(pActwk - actwk);
+    kemusi_get_work(pActwk2)->link_indices[1] = (Sint16)(pActwk1 - actwk);
+    kemusi_get_work(pActwk2)->link_indices[2] = (Sint16)(pActwk3 - actwk);
 
-    kemusi_get_work(pActwk3)->link_indices[0] = pActwk - actwk;
-    kemusi_get_work(pActwk3)->link_indices[1] = pActwk1 - actwk;
-    kemusi_get_work(pActwk3)->link_indices[2] = pActwk2 - actwk;
+    kemusi_get_work(pActwk3)->link_indices[0] = (Sint16)(pActwk - actwk);
+    kemusi_get_work(pActwk3)->link_indices[1] = (Sint16)(pActwk1 - actwk);
+    kemusi_get_work(pActwk3)->link_indices[2] = (Sint16)(pActwk2 - actwk);
 }
 
 static void kemusi_com(sprite_status *pActwk, sprite_status *pNewactwk) {

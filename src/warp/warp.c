@@ -1,25 +1,13 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "warp.h"
 #include "../action.h"
 #include "../io.h"
 
-#pragma pack(push, 1)
 typedef struct {
     Sint32 x_delta;
     Sint32 y_delta;
     Uint8 timer;
 } warp_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(warp_work, x_delta) == 0,
-               "warp_work.x_delta offset");
-_Static_assert(offsetof(warp_work, y_delta) == 4,
-               "warp_work.y_delta offset");
-_Static_assert(offsetof(warp_work, timer) == 8, "warp_work.timer offset");
-_Static_assert(sizeof(warp_work) <= sizeof(((sprite_status *)0)->actfree),
-               "warp_work fits in actfree");
 
 static warp_work *warp_get_work(sprite_status *pActwk) {
     return (warp_work *)pActwk->actfree;

@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "beam.h"
 #include "../action.h"
@@ -276,24 +274,11 @@ static Uint8 beamchg8[4] = {2, 3, 4, 255};
 static Uint8 *beamchg[9] = {beamchg0, beamchg1, beamchg2, beamchg3, beamchg4,
                             beamchg5, beamchg6, beamchg7, beamchg8};
 
-#pragma pack(push, 1)
 typedef struct {
     Uint8 delay_or_release;
-    Uint8 reserved1;
     sprite_status *endcap_actor;
-    Uint8 reserved6[15];
     Uint8 endcap_missing;
 } beam_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(beam_work, delay_or_release) == 0,
-               "beam_work.delay_or_release must map to offset 0");
-_Static_assert(offsetof(beam_work, endcap_actor) == 2,
-               "beam_work.endcap_actor must map to offset 2");
-_Static_assert(offsetof(beam_work, endcap_missing) == 21,
-               "beam_work.endcap_missing must map to offset 21");
-_Static_assert(sizeof(beam_work) <= sizeof(((sprite_status *)0)->actfree),
-               "beam_work must fit in sprite_status.actfree");
 
 static beam_work *beam_work_get(sprite_status *beamwk) {
     return (beam_work *)beamwk->actfree;

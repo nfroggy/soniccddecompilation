@@ -4,57 +4,20 @@
 #include "../actset.h"
 #include "../dircol.h"
 #include "../playsub.h"
-#include <stddef.h>
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 unused0;
     Uint8 phase_flags;
     Sint16 target_x;
     Sint16 target_y;
-    Uint8 unused6[2];
     Sint16 origin_y;
     Uint16 linked_actor_index;
     Sint16 origin_x;
-    Uint8 unused14[2];
     Uint8 timer;
     Uint8 sub_timer;
     Uint8 sequence_index;
-    Uint8 unused19;
-    union {
-        Uint16 door_actor_index;
-        struct {
-            Uint8 unused20;
-            Uint8 beam_accumulator;
-        };
-    };
+    Uint16 door_actor_index;
+    Uint8 beam_accumulator;
 } hota8d_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(hota8d_work, phase_flags) == 1,
-               "hota8d_work.phase_flags offset");
-_Static_assert(offsetof(hota8d_work, target_x) == 2,
-               "hota8d_work.target_x offset");
-_Static_assert(offsetof(hota8d_work, target_y) == 4,
-               "hota8d_work.target_y offset");
-_Static_assert(offsetof(hota8d_work, origin_y) == 8,
-               "hota8d_work.origin_y offset");
-_Static_assert(offsetof(hota8d_work, linked_actor_index) == 10,
-               "hota8d_work.linked_actor_index offset");
-_Static_assert(offsetof(hota8d_work, origin_x) == 12,
-               "hota8d_work.origin_x offset");
-_Static_assert(offsetof(hota8d_work, timer) == 16,
-               "hota8d_work.timer offset");
-_Static_assert(offsetof(hota8d_work, sub_timer) == 17,
-               "hota8d_work.sub_timer offset");
-_Static_assert(offsetof(hota8d_work, sequence_index) == 18,
-               "hota8d_work.sequence_index offset");
-_Static_assert(offsetof(hota8d_work, door_actor_index) == 20,
-               "hota8d_work.door_actor_index offset");
-_Static_assert(offsetof(hota8d_work, beam_accumulator) == 21,
-               "hota8d_work.beam_accumulator offset");
-_Static_assert(sizeof(hota8d_work) <= sizeof(((sprite_status *)0)->actfree),
-               "hota8d_work fits in actfree");
 
 static inline hota8d_work *hota8d_work_get(sprite_status *hotaru) {
     return (hota8d_work *)hotaru->actfree;

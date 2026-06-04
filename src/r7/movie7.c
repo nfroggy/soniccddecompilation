@@ -5,7 +5,6 @@
 #include "../loader2.h"
 #include "../playsub.h"
 #include "../ridechk.h"
-#include <stddef.h>
 
 #if defined(R71) || defined(R72)
 #define SPRITE_MOVIE7_BASE 503
@@ -15,36 +14,15 @@
 #define SPRITE_MOVIE7_BASE 462
 #endif
 
-#pragma pack(push, 1)
 typedef struct {
     union {
         Uint16 explosion_timer;
         Sint16 wait_timer;
     };
     char *script;
-    Uint8 reserved0[20 - 2 - sizeof(char *)];
-    union {
-        Sint16 parent_actor;
-        struct {
-            Uint8 parent_actor_low;
-            Uint8 parent_destroyed;
-        };
-    };
+    Sint16 parent_actor;
+    Uint8 parent_destroyed;
 } movie7_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(movie7_work, explosion_timer) == 0,
-               "movie7_work.explosion_timer offset");
-_Static_assert(offsetof(movie7_work, wait_timer) == 0,
-               "movie7_work.wait_timer offset");
-_Static_assert(offsetof(movie7_work, script) == 2,
-               "movie7_work.script offset");
-_Static_assert(offsetof(movie7_work, parent_actor) == 20,
-               "movie7_work.parent_actor offset");
-_Static_assert(offsetof(movie7_work, parent_destroyed) == 21,
-               "movie7_work.parent_destroyed offset");
-_Static_assert(sizeof(movie7_work) <= sizeof(((sprite_status *)0)->actfree),
-               "movie7_work fits in actfree");
 
 static movie7_work *movie7_work_get(sprite_status *pActwk) {
     return (movie7_work *)pActwk->actfree;
@@ -121,8 +99,7 @@ void m_init(sprite_status *pActwk) {
     subactwk->xposi.w.h = pActwk->xposi.w.h - 21;
     subactwk->yposi.w.h = pActwk->yposi.w.h - 7;
     subactwk->userflag.b.h = -1;
-    movie7_work_get(subactwk)->parent_actor =
-        (Sint16)(Uint8)(pActwk - actwk);
+    movie7_work_get(subactwk)->parent_actor = (Sint16)(pActwk - actwk);
 
     if (actwkchk(&subactwk) != 0) {
         die(pActwk);
@@ -132,8 +109,7 @@ void m_init(sprite_status *pActwk) {
     subactwk->xposi.w.h = pActwk->xposi.w.h - 88;
     subactwk->yposi.w.h = pActwk->yposi.w.h - 4;
     subactwk->userflag.b.h = 1;
-    movie7_work_get(subactwk)->parent_actor =
-        (Sint16)(Uint8)(pActwk - actwk);
+    movie7_work_get(subactwk)->parent_actor = (Sint16)(pActwk - actwk);
 
     if (actwkchk(&subactwk) != 0) {
         die(pActwk);
@@ -143,8 +119,7 @@ void m_init(sprite_status *pActwk) {
     subactwk->xposi.w.h = pActwk->xposi.w.h - 88;
     subactwk->yposi.w.h = pActwk->yposi.w.h - 24;
     subactwk->userflag.b.h = -128;
-    movie7_work_get(subactwk)->parent_actor =
-        (Sint16)(Uint8)(pActwk - actwk);
+    movie7_work_get(subactwk)->parent_actor = (Sint16)(pActwk - actwk);
 
     if (actwkchk(&subactwk) != 0) {
         die(pActwk);
@@ -154,8 +129,7 @@ void m_init(sprite_status *pActwk) {
     subactwk->xposi.w.h = pActwk->xposi.w.h - 98;
     subactwk->yposi.w.h = (Sint32)pActwk->yposi.w.h;
     subactwk->userflag.b.h = -127;
-    movie7_work_get(subactwk)->parent_actor =
-        (Sint16)(Uint8)(pActwk - actwk);
+    movie7_work_get(subactwk)->parent_actor = (Sint16)(pActwk - actwk);
 }
 
 void m_wait(sprite_status *pActwk) {

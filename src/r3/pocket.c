@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "pocket.h"
 #include "../action.h"
@@ -34,27 +32,13 @@ void (*pocket_move_tbl[11])(sprite_status *) = {
     &a_init,  &a_move0, &a_move00, &a_move1, &a_move2, &a_move3,
     &a_move4, &a_move5, &a_move6,  &a_move7, &a_move8};
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 timer;
     Uint16 child_index;
     Uint16 parent_index;
     Uint16 bonus_remaining;
-    Uint8 unused8[12];
     Uint8 active;
 } pocket_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(pocket_work, timer) == 0, "pocket_work.timer offset");
-_Static_assert(offsetof(pocket_work, child_index) == 2,
-               "pocket_work.child_index offset");
-_Static_assert(offsetof(pocket_work, parent_index) == 4,
-               "pocket_work.parent_index offset");
-_Static_assert(offsetof(pocket_work, bonus_remaining) == 6,
-               "pocket_work.bonus_remaining offset");
-_Static_assert(offsetof(pocket_work, active) == 20, "pocket_work.active offset");
-_Static_assert(sizeof(pocket_work) <= sizeof(((sprite_status *)0)->actfree),
-               "pocket_work fits in actfree");
 
 static pocket_work *pocket_get_work(sprite_status *actionwk) {
     return (pocket_work *)actionwk->actfree;

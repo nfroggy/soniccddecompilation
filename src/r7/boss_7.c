@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "boss_7.h"
 #include "../action.h"
@@ -215,7 +213,6 @@ Sint16 QuickReturn;
 extern Uint16 scr_dir_tbl[];
 extern sprite_pattern *bakupat[7];
 
-#pragma pack(push, 1)
 typedef struct {
     union {
         Sint16 timer;
@@ -230,64 +227,15 @@ typedef struct {
     Sint16 accel_x;
     Sint16 accel_y;
     Sint16 max_xspeed;
-    union {
-        Sint16 x_offset;
-        struct {
-            Uint8 attack_mode;
-            Uint8 unused13;
-        };
-    };
-    union {
-        Sint16 y_offset;
-        struct {
-            Uint8 hscroll_state;
-            Uint8 goal_state;
-        };
-    };
-    union {
-        Sint16 owner_index;
-        Sint16 approach_counter;
-    };
+    Sint16 x_offset;
+    Uint8 attack_mode;
+    Sint16 y_offset;
+    Uint8 hscroll_state;
+    Uint8 goal_state;
+    Sint16 owner_index;
     Sint16 close_counter;
     Sint16 boost_timer;
 } boss7_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(boss7_work, timer) == 0, "boss7_work.timer offset");
-_Static_assert(offsetof(boss7_work, timer_low) == 0,
-               "boss7_work.timer_low offset");
-_Static_assert(offsetof(boss7_work, byte_timer) == 1,
-               "boss7_work.byte_timer offset");
-_Static_assert(offsetof(boss7_work, flags) == 2, "boss7_work.flags offset");
-_Static_assert(offsetof(boss7_work, step) == 3, "boss7_work.step offset");
-_Static_assert(offsetof(boss7_work, parent_index) == 4,
-               "boss7_work.parent_index offset");
-_Static_assert(offsetof(boss7_work, accel_x) == 6,
-               "boss7_work.accel_x offset");
-_Static_assert(offsetof(boss7_work, accel_y) == 8,
-               "boss7_work.accel_y offset");
-_Static_assert(offsetof(boss7_work, max_xspeed) == 10,
-               "boss7_work.max_xspeed offset");
-_Static_assert(offsetof(boss7_work, x_offset) == 12,
-               "boss7_work.x_offset offset");
-_Static_assert(offsetof(boss7_work, attack_mode) == 12,
-               "boss7_work.attack_mode offset");
-_Static_assert(offsetof(boss7_work, y_offset) == 14,
-               "boss7_work.y_offset offset");
-_Static_assert(offsetof(boss7_work, hscroll_state) == 14,
-               "boss7_work.hscroll_state offset");
-_Static_assert(offsetof(boss7_work, goal_state) == 15,
-               "boss7_work.goal_state offset");
-_Static_assert(offsetof(boss7_work, owner_index) == 16,
-               "boss7_work.owner_index offset");
-_Static_assert(offsetof(boss7_work, approach_counter) == 16,
-               "boss7_work.approach_counter offset");
-_Static_assert(offsetof(boss7_work, close_counter) == 18,
-               "boss7_work.close_counter offset");
-_Static_assert(offsetof(boss7_work, boost_timer) == 20,
-               "boss7_work.boost_timer offset");
-_Static_assert(sizeof(boss7_work) <= sizeof(((sprite_status *)0)->actfree),
-               "boss7_work fits in actfree");
 
 static boss7_work *boss7_get_work(sprite_status *pActwk) {
     return (boss7_work *)pActwk->actfree;

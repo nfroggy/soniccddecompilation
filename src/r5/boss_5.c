@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "boss_5.h"
 #include "../action.h"
@@ -12,7 +10,6 @@
 #include "../score.h"
 #include "scr53c.h"
 
-#pragma pack(push, 1)
 typedef struct {
     union {
         struct {
@@ -52,58 +49,9 @@ typedef struct {
     Sint32 velocity;
     union {
         Sint16 counter;
-        struct {
-            Uint8 palette_index;
-            Uint8 unused21;
-        };
+        Uint8 palette_index;
     };
 } egg5_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(egg5_work, timer) == 0, "egg5_work.timer offset");
-_Static_assert(offsetof(egg5_work, timer_word) == 0,
-               "egg5_work.timer_word offset");
-_Static_assert(offsetof(egg5_work, anim_timer) == 1,
-               "egg5_work.anim_timer offset");
-_Static_assert(offsetof(egg5_work, flags) == 2, "egg5_work.flags offset");
-_Static_assert(offsetof(egg5_work, phase) == 3, "egg5_work.phase offset");
-_Static_assert(offsetof(egg5_work, parent_index) == 4,
-               "egg5_work.parent_index offset");
-_Static_assert(offsetof(egg5_work, child_index) == 6,
-               "egg5_work.child_index offset");
-_Static_assert(offsetof(egg5_work, belt_actor_index) == 8,
-               "egg5_work.belt_actor_index offset");
-_Static_assert(offsetof(egg5_work, belt_speed) == 8,
-               "egg5_work.belt_speed offset");
-_Static_assert(offsetof(egg5_work, angle) == 8, "egg5_work.angle offset");
-_Static_assert(offsetof(egg5_work, angle_high) == 9,
-               "egg5_work.angle_high offset");
-_Static_assert(offsetof(egg5_work, progress) == 10,
-               "egg5_work.progress offset");
-_Static_assert(offsetof(egg5_work, progress_u) == 10,
-               "egg5_work.progress_u offset");
-_Static_assert(offsetof(egg5_work, toggle) == 10,
-               "egg5_work.toggle offset");
-_Static_assert(offsetof(egg5_work, saved_xspeed) == 12,
-               "egg5_work.saved_xspeed offset");
-_Static_assert(offsetof(egg5_work, target_y_inner) == 12,
-               "egg5_work.target_y_inner offset");
-_Static_assert(offsetof(egg5_work, belt_progress) == 12,
-               "egg5_work.belt_progress offset");
-_Static_assert(offsetof(egg5_work, saved_yspeed) == 14,
-               "egg5_work.saved_yspeed offset");
-_Static_assert(offsetof(egg5_work, target_y_outer) == 14,
-               "egg5_work.target_y_outer offset");
-_Static_assert(offsetof(egg5_work, y_offset) == 14,
-               "egg5_work.y_offset offset");
-_Static_assert(offsetof(egg5_work, velocity) == 16,
-               "egg5_work.velocity offset");
-_Static_assert(offsetof(egg5_work, counter) == 20,
-               "egg5_work.counter offset");
-_Static_assert(offsetof(egg5_work, palette_index) == 20,
-               "egg5_work.palette_index offset");
-_Static_assert(sizeof(egg5_work) <= sizeof(((sprite_status *)0)->actfree),
-               "egg5_work fits in actfree");
 
 static egg5_work *egg5_get_work(sprite_status *pActwk) {
     return (egg5_work *)pActwk->actfree;
@@ -704,7 +652,7 @@ static void egg5pipe_1(sprite_status *pActwk) {
     subact = egg5_get_work(pActwk)->parent_index;
     temp = (actwk[subact].yposi.w.h - pActwk->yposi.w.h) / 32;
     temp &= 255;
-    pActwk->patno = temp;
+    pActwk->patno = (Uint8)temp;
 }
 
 void egg5catch(sprite_status *pActwk) {
@@ -1274,7 +1222,7 @@ static void egg5belt_2(sprite_status *pActwk) {
         belt_anime(pActwk);
 }
 
-static void egg5belt_3(sprite_status *pActwk) { pActwk + 1; }
+static void egg5belt_3(sprite_status *pActwk) { (void)pActwk; }
 
 static Sint32 belt_spdset(sprite_status *pActwk) {
     egg5_work *work = egg5_get_work(pActwk);
@@ -1480,7 +1428,7 @@ static Sint32 egg5bakuha_1(sprite_status *pActwk) {
 }
 
 static Sint32 frameout_sp4(sprite_status *pActwk) {
-    pActwk + 1;
+    (void)pActwk;
     return 0;
 }
 
@@ -1510,7 +1458,7 @@ void make_hibana2(sprite_status *pActwk) {
         if (actwkchk(&ppActwk) == 0) {
             new_work = egg5_get_work(ppActwk);
             new_work->phase = 1;
-            new_work->parent_index = (Uint16)(Uint8)(pActwk - actwk);
+            new_work->parent_index = (Sint16)(pActwk - actwk);
             ppActwk->actno = 32;
             ppActwk->xposi.w.h = pActwk->xposi.w.h;
             ppActwk->yposi.w.h = pActwk->yposi.w.h;
@@ -1550,10 +1498,8 @@ static void make_meca2(sprite_status *pActwk) {
     sprite_status *ppActwk;
 
     if (actwkchk(&ppActwk) == 0) {
-        egg5_get_work(ppActwk)->parent_index =
-            (Uint16)(Uint8)(pActwk - actwk);
-        egg5_get_work(pActwk)->child_index =
-            (Uint16)(Uint8)(ppActwk - actwk);
+        egg5_get_work(ppActwk)->parent_index = (Sint16)(pActwk - actwk);
+        egg5_get_work(pActwk)->child_index = (Sint16)(ppActwk - actwk);
         ppActwk->actno = 52;
         ppActwk->xposi.w.h = pActwk->xposi.w.h;
         ppActwk->yposi.w.h = pActwk->yposi.w.h + 56;
@@ -1564,10 +1510,8 @@ static void make_egg5(sprite_status *pActwk) {
     sprite_status *ppActwk;
 
     if (actwkchk(&ppActwk) == 0) {
-        egg5_get_work(ppActwk)->parent_index =
-            (Uint16)(Uint8)(pActwk - actwk);
-        egg5_get_work(pActwk)->child_index =
-            (Uint16)(Uint8)(ppActwk - actwk);
+        egg5_get_work(ppActwk)->parent_index = (Sint16)(pActwk - actwk);
+        egg5_get_work(pActwk)->child_index = (Sint16)(ppActwk - actwk);
         ppActwk->actno = 50;
         ppActwk->xposi.w.h = pActwk->xposi.w.h;
         ppActwk->yposi.w.h = pActwk->yposi.w.h;
@@ -1578,10 +1522,8 @@ static void make_catch(sprite_status *pActwk) {
     sprite_status *ppActwk;
 
     if (actwkchk(&ppActwk) == 0) {
-        egg5_get_work(ppActwk)->parent_index =
-            (Uint16)(Uint8)(pActwk - actwk);
-        egg5_get_work(pActwk)->child_index =
-            (Uint16)(Uint8)(ppActwk - actwk);
+        egg5_get_work(ppActwk)->parent_index = (Sint16)(pActwk - actwk);
+        egg5_get_work(pActwk)->child_index = (Sint16)(ppActwk - actwk);
         ppActwk->actno = 55;
         ppActwk->xposi.w.h = pActwk->xposi.w.h - 128;
         ppActwk->yposi.w.h = pActwk->yposi.w.h - 68;
@@ -1592,8 +1534,7 @@ static void make_pipe(sprite_status *pActwk) {
     sprite_status *ppActwk;
 
     if (actwkchk(&ppActwk) == 0) {
-        egg5_get_work(ppActwk)->parent_index =
-            (Uint16)(Uint8)(pActwk - actwk);
+        egg5_get_work(ppActwk)->parent_index = (Sint16)(pActwk - actwk);
         ppActwk->actno = 54;
         ppActwk->xposi.w.h = pActwk->xposi.w.h;
         ppActwk->yposi.w.h = pActwk->yposi.w.h;
@@ -1604,8 +1545,7 @@ static void make_meca3(sprite_status *pActwk) {
     sprite_status *ppActwk;
 
     if (actwkchk(&ppActwk) == 0) {
-        egg5_get_work(ppActwk)->parent_index =
-            (Uint16)(Uint8)(pActwk - actwk);
+        egg5_get_work(ppActwk)->parent_index = (Sint16)(pActwk - actwk);
         ppActwk->actno = 53;
         ppActwk->xposi.w.h = pActwk->xposi.w.h;
         ppActwk->yposi.w.h = pActwk->yposi.w.h + 56;
@@ -1616,8 +1556,7 @@ static void make_bomb(sprite_status *pActwk) {
     sprite_status *ppActwk;
 
     if (actwkchk(&ppActwk) == 0) {
-        egg5_get_work(ppActwk)->parent_index =
-            (Uint16)(Uint8)(pActwk - actwk);
+        egg5_get_work(ppActwk)->parent_index = (Sint16)(pActwk - actwk);
         ppActwk->actno = 56;
         ppActwk->xposi.w.h = pActwk->xposi.w.h;
         ppActwk->yposi.w.h = pActwk->yposi.w.h + 24;
@@ -1630,8 +1569,7 @@ static void make_bomb2(sprite_status *pActwk) {
 
     for (i = 3; i >= 0; --i) {
         if (actwkchk(&ppActwk) == 0) {
-            egg5_get_work(ppActwk)->parent_index =
-                (Uint16)(Uint8)(pActwk - actwk);
+            egg5_get_work(ppActwk)->parent_index = (Sint16)(pActwk - actwk);
             ppActwk->actno = 57;
             ppActwk->xposi.w.h = pActwk->xposi.w.h;
             ppActwk->yposi.w.h = pActwk->yposi.w.h;
@@ -1645,16 +1583,14 @@ static void make_belt(sprite_status *pActwk) {
     sprite_status *ppActwk;
 
     if (actwkchk(&ppActwk) == 0) {
-        egg5_get_work(ppActwk)->parent_index =
-            (Uint16)(Uint8)(pActwk - actwk);
-        egg5_get_work(pActwk)->belt_actor_index =
-            (Uint16)(Uint8)(ppActwk - actwk);
+        egg5_get_work(ppActwk)->parent_index = (Sint16)(pActwk - actwk);
+        egg5_get_work(pActwk)->belt_actor_index = (Sint16)(ppActwk - actwk);
         ppActwk->actno = 34;
     }
 }
 
 static void chg_mstno(Uint8 num, sprite_status *pActwk) {
-    chg_mstno2(num, (Uint16)(Uint8)(pActwk - actwk));
+    chg_mstno2(num, (Sint16)(pActwk - actwk));
 }
 
 static void chg_mstno2(Uint8 num, Sint16 subact) {

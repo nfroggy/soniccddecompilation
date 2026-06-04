@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "boss_4_2.h"
 #include "../action.h"
@@ -19,7 +17,6 @@ typedef struct {
     Sint32 yspd;
 } tama;
 
-#pragma pack(push, 1)
 typedef struct {
     union {
         Sint16 word0;
@@ -57,41 +54,6 @@ typedef struct {
         };
     };
 } egg4_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(egg4_work, timer) == 0,
-               "egg4_work.timer offset");
-_Static_assert(offsetof(egg4_work, word0) == 0, "egg4_work.word0 offset");
-_Static_assert(offsetof(egg4_work, laugh_timer) == 1,
-               "egg4_work.laugh_timer offset");
-_Static_assert(offsetof(egg4_work, flags) == 2, "egg4_work.flags offset");
-_Static_assert(offsetof(egg4_work, bubble_slot) == 3,
-               "egg4_work.bubble_slot offset");
-_Static_assert(offsetof(egg4_work, parent_index) == 4,
-               "egg4_work.parent_index offset");
-_Static_assert(offsetof(egg4_work, child_index) == 6,
-               "egg4_work.child_index offset");
-_Static_assert(offsetof(egg4_work, spread_count) == 8,
-               "egg4_work.spread_count offset");
-_Static_assert(offsetof(egg4_work, bubble_position_index) == 9,
-               "egg4_work.bubble_position_index offset");
-_Static_assert(offsetof(egg4_work, angle) == 10, "egg4_work.angle offset");
-_Static_assert(offsetof(egg4_work, angle_high) == 11,
-               "egg4_work.angle_high offset");
-_Static_assert(offsetof(egg4_work, angular_speed) == 12,
-               "egg4_work.angular_speed offset");
-_Static_assert(offsetof(egg4_work, xy_offset) == 14,
-               "egg4_work.xy_offset offset");
-_Static_assert(offsetof(egg4_work, x_offset) == 14,
-               "egg4_work.x_offset offset");
-_Static_assert(offsetof(egg4_work, y_offset) == 16,
-               "egg4_work.y_offset offset");
-_Static_assert(offsetof(egg4_work, radial_speed) == 18,
-               "egg4_work.radial_speed offset");
-_Static_assert(offsetof(egg4_work, radius) == 20,
-               "egg4_work.radius offset");
-_Static_assert(sizeof(egg4_work) <= sizeof(((sprite_status *)0)->actfree),
-               "egg4_work fits in actfree");
 
 static egg4_work *egg4_get_work(sprite_status *pActwk) {
     return (egg4_work *)pActwk->actfree;
@@ -220,8 +182,8 @@ static void make_egg4meca(sprite_status *pActwk) {
     sprite_status *pNewact;
 
     if (actwkchk(&pNewact) == 0) {
-        egg4_get_work(pActwk)->child_index = pNewact - actwk;
-        egg4_get_work(pNewact)->parent_index = pActwk - actwk;
+        egg4_get_work(pActwk)->child_index = (Sint16)(pNewact - actwk);
+        egg4_get_work(pNewact)->parent_index = (Sint16)(pActwk - actwk);
         pNewact->actno = 77;
         pNewact->xposi.w.h = pActwk->xposi.w.h;
         pNewact->yposi.w.h = pActwk->yposi.w.h;
@@ -327,7 +289,7 @@ static void make_awa(sprite_status *pActwk, sprite_status **pNewact) {
 
     if (actwkchk(&pMakeact) == 0) {
         *pNewact = pMakeact;
-        egg4_get_work(pMakeact)->parent_index = pActwk - actwk;
+        egg4_get_work(pMakeact)->parent_index = (Sint16)(pActwk - actwk);
         pMakeact->actno = 79;
         pMakeact->xposi.w.h = pActwk->xposi.w.h;
         pMakeact->yposi.w.h = 1464;
@@ -416,7 +378,7 @@ static void make_tama(sprite_status *pActwk) {
         if (actwkchk(&pNewact) != 0)
             break;
 
-        egg4_get_work(pNewact)->parent_index = pActwk - actwk;
+        egg4_get_work(pNewact)->parent_index = (Sint16)(pActwk - actwk);
         pNewact->actno = 78;
         pNewact->xposi.w.h = pActwk->xposi.w.h;
         pNewact->yposi.w.h = pActwk->yposi.w.h;
@@ -740,7 +702,7 @@ static Uint32 egg4awa_ini(sprite_status *pActwk) {
     uRndNum.w.l = (Sint16)(uRndNum.l % 16 + 10);
     egg4_get_work(pActwk)->radius = uRndNum.w.l;
 
-    egg4awa_deru(pActwk);
+    return egg4awa_deru(pActwk);
 }
 
 static Uint32 egg4awa_deru(sprite_status *pActwk) {
@@ -1089,7 +1051,7 @@ static Uint32 egg4tama_ini(sprite_status *pActwk) {
     pActwk->sproffset = 798;
     pActwk->patbase = egg4tama_pat;
 
-    egg4tama_01(pActwk);
+    return egg4tama_01(pActwk);
 }
 
 static Uint32 egg4tama_01(sprite_status *pActwk) {

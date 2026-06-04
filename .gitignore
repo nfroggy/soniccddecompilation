@@ -12,7 +12,9 @@
 # Debug files
 *.dSYM/
 
+.vscode/
 build/
 build-backend-tests-win32/
+build-backend-tests-x64/
 assets/
 savedata.bin

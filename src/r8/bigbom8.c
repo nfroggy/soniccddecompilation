@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "bigbom8.h"
 #include "../action.h"
@@ -7,62 +5,29 @@
 #include "../dircol.h"
 #include "../playsub.h"
 
-#pragma pack(push, 1)
 typedef struct {
     union {
         struct {
             Sint16 timer;
             Sint16 origin_x;
-            Uint8 unused4[2];
             Sint16 anim_timer;
-        };
-        struct {
-            Sint8 unused0[2];
-            Sint32 body_x_speed;
         };
         struct {
             Sint32 fire_x_speed;
             Sint32 fire_y_speed;
         };
     };
+    Sint32 body_x_speed;
     Sint32 fire_x_accel;
     Sint32 fire_y_accel;
-    Sint8 unused16[2];
     union {
         Sint16 body_index;
         struct {
-            Uint8 unused18;
             Uint8 collision_id;
             Sint16 parent_index;
         };
     };
 } bigbom8_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(bigbom8_work, timer) == 0,
-               "bigbom8_work.timer offset");
-_Static_assert(offsetof(bigbom8_work, fire_x_speed) == 0,
-               "bigbom8_work.fire_x_speed offset");
-_Static_assert(offsetof(bigbom8_work, origin_x) == 2,
-               "bigbom8_work.origin_x offset");
-_Static_assert(offsetof(bigbom8_work, body_x_speed) == 2,
-               "bigbom8_work.body_x_speed offset");
-_Static_assert(offsetof(bigbom8_work, fire_y_speed) == 4,
-               "bigbom8_work.fire_y_speed offset");
-_Static_assert(offsetof(bigbom8_work, anim_timer) == 6,
-               "bigbom8_work.anim_timer offset");
-_Static_assert(offsetof(bigbom8_work, fire_x_accel) == 8,
-               "bigbom8_work.fire_x_accel offset");
-_Static_assert(offsetof(bigbom8_work, fire_y_accel) == 12,
-               "bigbom8_work.fire_y_accel offset");
-_Static_assert(offsetof(bigbom8_work, body_index) == 18,
-               "bigbom8_work.body_index offset");
-_Static_assert(offsetof(bigbom8_work, collision_id) == 19,
-               "bigbom8_work.collision_id offset");
-_Static_assert(offsetof(bigbom8_work, parent_index) == 20,
-               "bigbom8_work.parent_index offset");
-_Static_assert(sizeof(bigbom8_work) <= sizeof(((sprite_status *)0)->actfree),
-               "bigbom8_work fits in actfree");
 
 static bigbom8_work *bigbom8_get_work(sprite_status *pActwk) {
     return (bigbom8_work *)pActwk->actfree;

@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "kuzure8.h"
 #include "../action.h"
@@ -15,24 +13,11 @@
 #define SPRITE_KUZURE8_BASE 444
 #endif
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 timer;
-    union {
-        Sint16 horizontal_step;
-        Sint32 fall_speed;
-    };
+    Sint16 horizontal_step;
+    Sint32 fall_speed;
 } kuzure8_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(kuzure8_work, timer) == 0,
-               "kuzure8_work.timer offset");
-_Static_assert(offsetof(kuzure8_work, horizontal_step) == 2,
-               "kuzure8_work.horizontal_step offset");
-_Static_assert(offsetof(kuzure8_work, fall_speed) == 2,
-               "kuzure8_work.fall_speed offset");
-_Static_assert(sizeof(kuzure8_work) <= sizeof(((sprite_status *)0)->actfree),
-               "kuzure8_work fits in actfree");
 
 static kuzure8_work *kuzure8_get_work(sprite_status *actionwk) {
     return (kuzure8_work *)actionwk->actfree;

@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "banpa.h"
 #include "../action.h"
@@ -9,22 +7,12 @@
 static void act_init(sprite_status *bumperwk);
 static void act_move(sprite_status *bumperwk);
 
-#pragma pack(push, 1)
 typedef struct {
     Sint32 speed;
     Uint16 timer;
     Uint16 interval;
-    Uint8 unused8[12];
     Sint16 origin_x;
 } banpa_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(banpa_work, speed) == 0, "banpa_work.speed offset");
-_Static_assert(offsetof(banpa_work, timer) == 4, "banpa_work.timer offset");
-_Static_assert(offsetof(banpa_work, interval) == 6, "banpa_work.interval offset");
-_Static_assert(offsetof(banpa_work, origin_x) == 20, "banpa_work.origin_x offset");
-_Static_assert(sizeof(banpa_work) <= sizeof(((sprite_status *)0)->actfree),
-               "banpa_work fits in actfree");
 
 static banpa_work *banpa_get_work(sprite_status *bumperwk) {
     return (banpa_work *)bumperwk->actfree;

@@ -4,12 +4,10 @@
 #include "../actset.h"
 #include "../etc.h"
 #include "../ridechk.h"
-#include <stddef.h>
 
 static void iwa5roll_init(sprite_status *pActwk);
 static void iwa5roll_move(sprite_status *pActwk);
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 parent_actor;
     int_union origin_x;
@@ -17,20 +15,6 @@ typedef struct {
     short_union angle;
     Sint16 angular_speed;
 } iwa5roll_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(iwa5roll_work, parent_actor) == 0,
-               "iwa5roll_work.parent_actor offset");
-_Static_assert(offsetof(iwa5roll_work, origin_x) == 2,
-               "iwa5roll_work.origin_x offset");
-_Static_assert(offsetof(iwa5roll_work, origin_y) == 6,
-               "iwa5roll_work.origin_y offset");
-_Static_assert(offsetof(iwa5roll_work, angle) == 10,
-               "iwa5roll_work.angle offset");
-_Static_assert(offsetof(iwa5roll_work, angular_speed) == 12,
-               "iwa5roll_work.angular_speed offset");
-_Static_assert(sizeof(iwa5roll_work) <= sizeof(((sprite_status *)0)->actfree),
-               "iwa5roll_work fits in actfree");
 
 static iwa5roll_work *iwa5roll_work_get(sprite_status *pActwk) {
     return (iwa5roll_work *)pActwk->actfree;
@@ -78,7 +62,7 @@ static void iwa5roll_init(sprite_status *pActwk) {
 
         label1:
             new_work = iwa5roll_work_get(pNewactwk);
-            new_work->parent_actor = pActwk - actwk;
+            new_work->parent_actor = (Sint16)(pActwk - actwk);
             pNewactwk->actflg |= 4;
             pNewactwk->r_no0 = 2;
             pNewactwk->sprpri = 3;
@@ -133,7 +117,7 @@ static void iwa5roll_move(sprite_status *pActwk) {
     lD3 = pActwk->xposi.l;
     pActwk->xposi.l = lD5.l;
     pActwk->yposi.l = lD4.l;
-    lD5.l = lD5.l - lD3 >> 8;
+    lD5.l = (lD5.l - lD3) >> 8;
     pActwk->xspeed.w = lD5.w.l;
 
     Sp = pActwk->xspeed.w;

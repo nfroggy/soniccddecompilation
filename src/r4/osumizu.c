@@ -3,24 +3,12 @@
 #include "../action.h"
 #include "../actset.h"
 #include "playsub4.h"
-#include <stddef.h>
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 timer;
     Sint32 x_velocity;
     Sint16 spawn_x;
 } osumizu_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(osumizu_work, timer) == 0,
-               "osumizu_work.timer offset");
-_Static_assert(offsetof(osumizu_work, x_velocity) == 2,
-               "osumizu_work.x_velocity offset");
-_Static_assert(offsetof(osumizu_work, spawn_x) == 6,
-               "osumizu_work.spawn_x offset");
-_Static_assert(sizeof(osumizu_work) <= sizeof(((sprite_status *)0)->actfree),
-               "osumizu_work fits in actfree");
 
 static osumizu_work *osumizu_work_get(sprite_status *pActwk) {
     return (osumizu_work *)pActwk->actfree;

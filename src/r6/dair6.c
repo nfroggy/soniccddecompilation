@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "dair6.h"
 #include "../action.h"
@@ -7,25 +5,11 @@
 #include "../etc.h"
 #include "../ridechk.h"
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 unused0[8];
     Sint16 origin_y;
-    Uint8 unused10[2];
     Sint16 origin_x;
-    Uint8 unused14[2];
     Uint8 phase_counter;
 } dair6_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(dair6_work, origin_y) == 8,
-               "dair6_work.origin_y offset");
-_Static_assert(offsetof(dair6_work, origin_x) == 12,
-               "dair6_work.origin_x offset");
-_Static_assert(offsetof(dair6_work, phase_counter) == 16,
-               "dair6_work.phase_counter offset");
-_Static_assert(sizeof(dair6_work) <= sizeof(((sprite_status *)0)->actfree),
-               "dair6_work fits in actfree");
 
 static dair6_work *dair6_get_work(sprite_status *actionwk) {
     return (dair6_work *)actionwk->actfree;

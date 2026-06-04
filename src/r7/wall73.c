@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "wall73.h"
 #include "../action.h"
@@ -11,16 +9,9 @@ static Sint16 move_blk(sprite_status *pActwk);
 static Uint8 wall7_tbl0[12] = {11, 16, 32, 16, 48, 16, 64, 16, 11, 32, 11, 48};
 extern sprite_pattern *pat_wall7[];
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 move_target_y;
 } wall73_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(wall73_work, move_target_y) == 0,
-               "wall73_work.move_target_y must map to offset 0");
-_Static_assert(sizeof(wall73_work) <= sizeof(((sprite_status *)0)->actfree),
-               "wall73_work must fit in sprite_status.actfree");
 
 static wall73_work *wall73_work_get(sprite_status *pActwk) {
     return (wall73_work *)pActwk->actfree;

@@ -170,22 +170,6 @@ static void queue_actwkchk2(sprite_status *actor) {
     actwkchk2_queue[actwkchk2_queue_count++] = actor;
 }
 
-static void set_kabasira_work_long(sprite_status *actor, int offset,
-                                   Sint32 value) {
-    kabasira_work *work = kabasira_get_work(actor);
-
-    switch (offset) {
-    case 0:
-        work->x_speed = value;
-        break;
-    case 4:
-        work->y_speed = value;
-        break;
-    default:
-        break;
-    }
-}
-
 static void assert_render_callbacks(test_context *ctx, sprite_status *actor) {
     TEST_ASSERT_EQ_INT(ctx, 1, patchg_count);
     TEST_ASSERT_TRUE(ctx, patchg_actor == actor);
@@ -365,8 +349,8 @@ static void test_kabasira_projectile_collision_becomes_explosion(
     projectile->xposi.l = 100 << 16;
     projectile->yposi.l = 200 << 16;
     projectile->colicnt = 1;
-    set_kabasira_work_long(projectile, 0, 3 << 16);
-    set_kabasira_work_long(projectile, 4, -2 << 16);
+    kabasira_get_work(projectile)->x_speed = 3 << 16;
+    kabasira_get_work(projectile)->y_speed = -2 << 16;
 
     kabasira(projectile);
 

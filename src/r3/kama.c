@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "kama.h"
 #include "../action.h"
@@ -10,7 +8,6 @@
 #include "../playsub.h"
 #include "../suicide.h"
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 gravity;
     Sint16 timer;
@@ -18,29 +15,10 @@ typedef struct {
         Uint8 copied_userflag;
         Uint8 parent_flags;
     };
-    Uint8 unused5;
     Uint16 parent_index;
     Sint16 origin_x;
     Sint16 display_timer;
 } kama_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(kama_work, gravity) == 0,
-               "kama_work.gravity offset");
-_Static_assert(offsetof(kama_work, timer) == 2,
-               "kama_work.timer offset");
-_Static_assert(offsetof(kama_work, copied_userflag) == 4,
-               "kama_work.copied_userflag offset");
-_Static_assert(offsetof(kama_work, parent_flags) == 4,
-               "kama_work.parent_flags offset");
-_Static_assert(offsetof(kama_work, parent_index) == 6,
-               "kama_work.parent_index offset");
-_Static_assert(offsetof(kama_work, origin_x) == 8,
-               "kama_work.origin_x offset");
-_Static_assert(offsetof(kama_work, display_timer) == 10,
-               "kama_work.display_timer offset");
-_Static_assert(sizeof(kama_work) <= sizeof(((sprite_status *)0)->actfree),
-               "kama_work fits in actfree");
 
 static kama_work *kama_get_work(sprite_status *pActwk) {
     return (kama_work *)pActwk->actfree;

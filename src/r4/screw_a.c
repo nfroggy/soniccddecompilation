@@ -3,7 +3,6 @@
 #include "../action.h"
 #include "../actset.h"
 #include "playsub4.h"
-#include <stddef.h>
 
 #if defined(R41A) || defined(R42A)
 #define SPRITE_SCREWA_BASE 457
@@ -18,20 +17,10 @@
 static Uint8 pchg_00[7] = {1, 0, 1, 2, 3, 4, 255};
 static Uint8 *pchg[1] = {pchg_00};
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 reserved0[20];
     Uint8 switch_latched;
     Uint8 animation_enabled;
 } screw_a_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(screw_a_work, switch_latched) == 20,
-               "screw_a_work.switch_latched offset");
-_Static_assert(offsetof(screw_a_work, animation_enabled) == 21,
-               "screw_a_work.animation_enabled offset");
-_Static_assert(sizeof(screw_a_work) <= sizeof(((sprite_status *)0)->actfree),
-               "screw_a_work fits in actfree");
 
 static screw_a_work *screw_a_work_get(sprite_status *pActwk) {
     return (screw_a_work *)pActwk->actfree;

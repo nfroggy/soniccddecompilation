@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "minomusi.h"
 #include "../action.h"
@@ -16,29 +14,13 @@
 
 static Sint16 act_check(sprite_status *actionwk, sprite_status *pw);
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 timer;
-    Uint8 unused2[4];
     Sint32 y_speed;
     Sint16 top_y;
     Sint16 bottom_y;
     Uint16 parent_index;
 } minomusi_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(minomusi_work, timer) == 0,
-               "minomusi_work.timer offset");
-_Static_assert(offsetof(minomusi_work, y_speed) == 6,
-               "minomusi_work.y_speed offset");
-_Static_assert(offsetof(minomusi_work, top_y) == 10,
-               "minomusi_work.top_y offset");
-_Static_assert(offsetof(minomusi_work, bottom_y) == 12,
-               "minomusi_work.bottom_y offset");
-_Static_assert(offsetof(minomusi_work, parent_index) == 14,
-               "minomusi_work.parent_index offset");
-_Static_assert(sizeof(minomusi_work) <= sizeof(((sprite_status *)0)->actfree),
-               "minomusi_work fits in actfree");
 
 static minomusi_work *minomusi_get_work(sprite_status *actionwk) {
     return (minomusi_work *)actionwk->actfree;

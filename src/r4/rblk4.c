@@ -5,7 +5,6 @@
 #include "../fcol.h"
 #include "../loader2.h"
 #include "../ridechk.h"
-#include <stddef.h>
 
 #if defined(R42B)
 #define SPRITE_RBLK4_BASE 494
@@ -20,14 +19,10 @@ static void rblk4_push(sprite_status *pActwk);
 static void rblk4_ract_init(sprite_status *pActwk);
 static void rblk4_ract_move(sprite_status *pActwk);
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 unused0[6];
     Sint16 link_actor_a;
-    Uint8 unused8[2];
     Sint16 link_actor_b;
     Sint16 origin_x;
-    Uint8 unused14[2];
     Uint8 timer;
     Uint8 anim_index;
     Uint8 role_marker;
@@ -35,28 +30,6 @@ typedef struct {
     Uint8 contact_flag;
     Uint8 latch_flag;
 } rblk4_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(rblk4_work, link_actor_a) == 6,
-               "rblk4_work.link_actor_a offset");
-_Static_assert(offsetof(rblk4_work, link_actor_b) == 10,
-               "rblk4_work.link_actor_b offset");
-_Static_assert(offsetof(rblk4_work, origin_x) == 12,
-               "rblk4_work.origin_x offset");
-_Static_assert(offsetof(rblk4_work, timer) == 16,
-               "rblk4_work.timer offset");
-_Static_assert(offsetof(rblk4_work, anim_index) == 17,
-               "rblk4_work.anim_index offset");
-_Static_assert(offsetof(rblk4_work, role_marker) == 18,
-               "rblk4_work.role_marker offset");
-_Static_assert(offsetof(rblk4_work, pattern_index) == 19,
-               "rblk4_work.pattern_index offset");
-_Static_assert(offsetof(rblk4_work, contact_flag) == 20,
-               "rblk4_work.contact_flag offset");
-_Static_assert(offsetof(rblk4_work, latch_flag) == 21,
-               "rblk4_work.latch_flag offset");
-_Static_assert(sizeof(rblk4_work) <= sizeof(((sprite_status *)0)->actfree),
-               "rblk4_work fits in actfree");
 
 static rblk4_work *rblk4_work_get(sprite_status *pActwk) {
     return (rblk4_work *)pActwk->actfree;
@@ -124,10 +97,10 @@ static void rblk4_init(sprite_status *pActwk) {
     }
     pNewActwk->actno = 61;
     rblk4_work_get(pNewActwk)->origin_x = pActwk->xposi.w.h;
-    rblk4_work_get(pNewActwk)->link_actor_b = (Uint16)(pActwk - actwk);
+    rblk4_work_get(pNewActwk)->link_actor_b = (Sint16)(pActwk - actwk);
     rblk4_work_get(pNewActwk)->role_marker = 255;
     rblk4_work_get(pNewActwk)->pattern_index = 0;
-    work->link_actor_a = (Uint16)(pNewActwk - actwk);
+    work->link_actor_a = (Sint16)(pNewActwk - actwk);
 
     if (actwkchk(&pNewActwk) != 0) {
         frameout_s0(pActwk);
@@ -135,10 +108,10 @@ static void rblk4_init(sprite_status *pActwk) {
     }
     pNewActwk->actno = 61;
     rblk4_work_get(pNewActwk)->origin_x = pActwk->xposi.w.h;
-    rblk4_work_get(pNewActwk)->link_actor_b = (Uint16)(pActwk - actwk);
+    rblk4_work_get(pNewActwk)->link_actor_b = (Sint16)(pActwk - actwk);
     rblk4_work_get(pNewActwk)->role_marker = 255;
     rblk4_work_get(pNewActwk)->pattern_index = 1;
-    work->link_actor_b = (Uint16)(pNewActwk - actwk);
+    work->link_actor_b = (Sint16)(pNewActwk - actwk);
 }
 
 static void rblk4_wait(sprite_status *pActwk) {

@@ -9,99 +9,37 @@
 #include "../player_work.h"
 #include "../ridechk.h"
 #include "coli3.h"
-#include <stddef.h>
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 unused0[6];
     Uint8 wait_timer;
-    Uint8 unused7;
     Sint16 base_y;
     Uint16 ride_actor_index;
-    Uint8 unused12[4];
     Uint8 hover_angle;
     Uint8 lift_timer;
-    Uint8 unused18;
     Uint8 ready_flag;
     Sint16 acceleration;
 } mecasnc3_work;
 
 typedef struct {
-    Uint8 unused0[10];
     Uint16 ride_actor_index;
-    Uint8 unused12[5];
     Uint8 heart_timer;
-    Uint8 unused18[2];
     Uint8 initialized_flag;
 } emie3_work;
 
 typedef struct {
-    Uint8 unused0[16];
     Uint8 timer;
-    Uint8 unused17;
     Uint8 piece_index;
-    Uint8 unused19;
     Sint16 gravity;
 } hari3x_work;
 
 typedef struct {
-    Uint8 unused0[16];
     Uint8 timer;
-    Uint8 unused17;
     Uint8 no_wave;
 } heart3_work;
 
 typedef struct {
-    Uint8 unused0[10];
     Uint16 parent_index;
 } msnc3fire_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(mecasnc3_work, wait_timer) == 6,
-               "mecasnc3_work.wait_timer offset");
-_Static_assert(offsetof(mecasnc3_work, base_y) == 8,
-               "mecasnc3_work.base_y offset");
-_Static_assert(offsetof(mecasnc3_work, ride_actor_index) == 10,
-               "mecasnc3_work.ride_actor_index offset");
-_Static_assert(offsetof(mecasnc3_work, hover_angle) == 16,
-               "mecasnc3_work.hover_angle offset");
-_Static_assert(offsetof(mecasnc3_work, lift_timer) == 17,
-               "mecasnc3_work.lift_timer offset");
-_Static_assert(offsetof(mecasnc3_work, ready_flag) == 19,
-               "mecasnc3_work.ready_flag offset");
-_Static_assert(offsetof(mecasnc3_work, acceleration) == 20,
-               "mecasnc3_work.acceleration offset");
-_Static_assert(sizeof(mecasnc3_work) <= sizeof(((sprite_status *)0)->actfree),
-               "mecasnc3_work fits in actfree");
-
-_Static_assert(offsetof(emie3_work, ride_actor_index) == 10,
-               "emie3_work.ride_actor_index offset");
-_Static_assert(offsetof(emie3_work, heart_timer) == 17,
-               "emie3_work.heart_timer offset");
-_Static_assert(offsetof(emie3_work, initialized_flag) == 20,
-               "emie3_work.initialized_flag offset");
-_Static_assert(sizeof(emie3_work) <= sizeof(((sprite_status *)0)->actfree),
-               "emie3_work fits in actfree");
-
-_Static_assert(offsetof(hari3x_work, timer) == 16,
-               "hari3x_work.timer offset");
-_Static_assert(offsetof(hari3x_work, piece_index) == 18,
-               "hari3x_work.piece_index offset");
-_Static_assert(offsetof(hari3x_work, gravity) == 20,
-               "hari3x_work.gravity offset");
-_Static_assert(sizeof(hari3x_work) <= sizeof(((sprite_status *)0)->actfree),
-               "hari3x_work fits in actfree");
-
-_Static_assert(offsetof(heart3_work, timer) == 16, "heart3_work.timer offset");
-_Static_assert(offsetof(heart3_work, no_wave) == 18,
-               "heart3_work.no_wave offset");
-_Static_assert(sizeof(heart3_work) <= sizeof(((sprite_status *)0)->actfree),
-               "heart3_work fits in actfree");
-
-_Static_assert(offsetof(msnc3fire_work, parent_index) == 10,
-               "msnc3fire_work.parent_index offset");
-_Static_assert(sizeof(msnc3fire_work) <= sizeof(((sprite_status *)0)->actfree),
-               "msnc3fire_work fits in actfree");
 
 static inline mecasnc3_work *mecasnc3_work_get(sprite_status *pActwk) {
     return (mecasnc3_work *)pActwk->actfree;

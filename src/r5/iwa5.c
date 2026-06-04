@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "../dircol.h"
 #include "../action.h"
@@ -14,19 +12,10 @@ typedef struct {
     Sint32 sy;
 } init_data;
 
-#pragma pack(push, 1)
 typedef struct {
     Sint32 x_velocity;
     Sint32 y_velocity;
 } iwa5_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(iwa5_work, x_velocity) == 0,
-               "iwa5_work.x_velocity must map to offset 0");
-_Static_assert(offsetof(iwa5_work, y_velocity) == 4,
-               "iwa5_work.y_velocity must map to offset 4");
-_Static_assert(sizeof(iwa5_work) <= sizeof(((sprite_status *)0)->actfree),
-               "iwa5_work must fit in sprite_status.actfree");
 
 static iwa5_work *iwa5_work_get(sprite_status *pActwk) {
     return (iwa5_work *)pActwk->actfree;

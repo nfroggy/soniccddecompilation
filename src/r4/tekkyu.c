@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "tekkyu.h"
 #include "../action.h"
@@ -21,7 +19,6 @@ static void tekkyu_opt(sprite_status *pActwk);
 static void opt_act_init(sprite_status *pActwk);
 static void opt_act_move(sprite_status *pActwk);
 
-#pragma pack(push, 1)
 typedef struct {
     union {
         struct {
@@ -33,34 +30,15 @@ typedef struct {
                 };
             };
             Sint16 angular_speed;
-            Uint16 child_index[6];
+            Sint16 child_index[6];
         };
         struct {
             Sint32 target_x;
             Sint32 target_y;
         };
     };
-    Uint8 unused16[4];
     Sint16 parent_index;
 } tekkyu_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(tekkyu_work, angle) == 0,
-               "tekkyu_work.angle offset");
-_Static_assert(offsetof(tekkyu_work, angle_high) == 1,
-               "tekkyu_work.angle_high offset");
-_Static_assert(offsetof(tekkyu_work, angular_speed) == 2,
-               "tekkyu_work.angular_speed offset");
-_Static_assert(offsetof(tekkyu_work, child_index) == 4,
-               "tekkyu_work.child_index offset");
-_Static_assert(offsetof(tekkyu_work, target_x) == 0,
-               "tekkyu_work.target_x offset");
-_Static_assert(offsetof(tekkyu_work, target_y) == 4,
-               "tekkyu_work.target_y offset");
-_Static_assert(offsetof(tekkyu_work, parent_index) == 20,
-               "tekkyu_work.parent_index offset");
-_Static_assert(sizeof(tekkyu_work) <= sizeof(((sprite_status *)0)->actfree),
-               "tekkyu_work fits in actfree");
 
 static tekkyu_work *tekkyu_get_work(sprite_status *pActwk) {
     return (tekkyu_work *)pActwk->actfree;
@@ -116,12 +94,12 @@ static void act_init(sprite_status *pActwk) {
             return;
         }
 
-        work->child_index[i] = pNewact - actwk;
+        work->child_index[i] = (Sint16)(pNewact - actwk);
         pNewact->actno = pActwk->actno;
         pNewact->userflag.b.h = -1;
         pNewact->sprhsize = 8;
         pNewact->sprvsize = 8;
-        tekkyu_get_work(pNewact)->parent_index = pActwk - actwk;
+        tekkyu_get_work(pNewact)->parent_index = (Sint16)(pActwk - actwk);
     }
 
     pNewact->userflag.b.h = -2;

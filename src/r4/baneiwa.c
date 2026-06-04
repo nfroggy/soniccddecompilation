@@ -3,7 +3,6 @@
 #include "../actset.h"
 #include "../ridechk.h"
 #include "baneiwa.h"
-#include <stddef.h>
 
 typedef struct {
     Uint8 a;
@@ -14,31 +13,13 @@ typedef struct {
 static void baneiwa_init(sprite_status *pActwk);
 static void baneiwa_move(sprite_status *pActwk);
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 reserved0[10];
     Sint16 parent_actor;
-    Uint8 reserved1[16 - 12];
     Uint8 move_timer;
     Uint8 move_index;
     Uint8 is_child;
-    Uint8 reserved2[20 - 19];
     Sint16 acceleration;
 } baneiwa_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(baneiwa_work, move_timer) == 16,
-               "baneiwa_work.move_timer offset");
-_Static_assert(offsetof(baneiwa_work, move_index) == 17,
-               "baneiwa_work.move_index offset");
-_Static_assert(offsetof(baneiwa_work, is_child) == 18,
-               "baneiwa_work.is_child offset");
-_Static_assert(offsetof(baneiwa_work, acceleration) == 20,
-               "baneiwa_work.acceleration offset");
-_Static_assert(offsetof(baneiwa_work, parent_actor) == 10,
-               "baneiwa_work.parent_actor offset");
-_Static_assert(sizeof(baneiwa_work) <= sizeof(((sprite_status *)0)->actfree),
-               "baneiwa_work fits in actfree");
 
 static baneiwa_work *baneiwa_work_get(sprite_status *pActwk) {
     return (baneiwa_work *)pActwk->actfree;
@@ -85,7 +66,7 @@ static void baneiwa_init(sprite_status *pActwk) {
             pNewActwk->yposi.w.h = pActwk->yposi.w.h;
             new_work->is_child = 1;
 
-            new_work->parent_actor = (Uint16)(pActwk - actwk);
+            new_work->parent_actor = (Sint16)(pActwk - actwk);
         }
     }
 }

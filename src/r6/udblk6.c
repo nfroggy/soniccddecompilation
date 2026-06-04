@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "udblk6.h"
 #include "../action.h"
@@ -17,12 +15,9 @@
 static sprite_pattern udblk6pat0 = {1, {{-48, -80, 0, SPRITE_UDBLK6_BASE}}};
 sprite_pattern *udblk6pat[1] = {&udblk6pat0};
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 unused0[6];
     Sint16 speed_reset;
     Sint16 origin_y;
-    Uint8 unused10[6];
     union {
         Sint16 reset_word;
         struct {
@@ -31,27 +26,8 @@ typedef struct {
         };
     };
     Uint8 direction;
-    Uint8 unused19;
     Sint16 acceleration;
 } udblk6_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(udblk6_work, speed_reset) == 6,
-               "udblk6_work.speed_reset offset");
-_Static_assert(offsetof(udblk6_work, origin_y) == 8,
-               "udblk6_work.origin_y offset");
-_Static_assert(offsetof(udblk6_work, reset_word) == 16,
-               "udblk6_work.reset_word offset");
-_Static_assert(offsetof(udblk6_work, phase_timer) == 16,
-               "udblk6_work.phase_timer offset");
-_Static_assert(offsetof(udblk6_work, phase_index) == 17,
-               "udblk6_work.phase_index offset");
-_Static_assert(offsetof(udblk6_work, direction) == 18,
-               "udblk6_work.direction offset");
-_Static_assert(offsetof(udblk6_work, acceleration) == 20,
-               "udblk6_work.acceleration offset");
-_Static_assert(sizeof(udblk6_work) <= sizeof(((sprite_status *)0)->actfree),
-               "udblk6_work fits in actfree");
 
 static udblk6_work *udblk6_get_work(sprite_status *actionwk) {
     return (udblk6_work *)actionwk->actfree;

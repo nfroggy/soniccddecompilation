@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "sikake.h"
 #include "../action.h"
@@ -15,16 +13,9 @@
 #define SPRITE_SIKAKE_BASE 471
 #endif
 
-#pragma pack(push, 1)
 typedef struct {
     Uint8 wobble_timer;
 } tobita1_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(tobita1_work, wobble_timer) == 0,
-               "tobita1_work.wobble_timer offset");
-_Static_assert(sizeof(tobita1_work) <= sizeof(((sprite_status *)0)->actfree),
-               "tobita1_work fits in actfree");
 
 static tobita1_work *tobita1_get_work(sprite_status *pActwk) {
     return (tobita1_work *)pActwk->actfree;

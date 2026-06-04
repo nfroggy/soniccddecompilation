@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "tentou.h"
 #include "../action.h"
@@ -18,31 +16,14 @@
 #define SPRITE_TENTOU_BASE 474
 #endif
 
-#pragma pack(push, 1)
 typedef struct {
-    union {
-        Sint32 horizontal_speed;
-        Sint16 bomb_timer;
-    } u0;
+    Sint32 horizontal_speed;
+    Sint16 bomb_timer;
     Sint32 hover_speed;
     Sint32 hover_y;
     Uint16 hover_counter;
-    Uint8 reserved14[7];
     Uint8 spawn_bombs;
 } tentou_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(tentou_work, u0) == 0, "tentou_work u0 offset");
-_Static_assert(offsetof(tentou_work, hover_speed) == 4,
-               "tentou_work hover_speed offset");
-_Static_assert(offsetof(tentou_work, hover_y) == 8,
-               "tentou_work hover_y offset");
-_Static_assert(offsetof(tentou_work, hover_counter) == 12,
-               "tentou_work hover_counter offset");
-_Static_assert(offsetof(tentou_work, spawn_bombs) == 21,
-               "tentou_work spawn_bombs offset");
-_Static_assert(sizeof(tentou_work) <= sizeof(((sprite_status *)0)->actfree),
-               "tentou_work fits in actfree");
 
 static tentou_work *tentou_get_work(sprite_status *pActwk) {
     return (tentou_work *)pActwk->actfree;
@@ -115,7 +96,7 @@ void ten_a_fall(sprite_status *pActwk) {
         work->hover_speed = 12288;
         work->hover_counter = 8;
         pActwk->r_no0 += 2;
-        if (work->u0.horizontal_speed != 0)
+        if (work->horizontal_speed != 0)
             pActwk->r_no0 += 2;
     }
 }
@@ -144,11 +125,11 @@ void ten_a_wait(sprite_status *pActwk) {
         if (iD0 <= 80) {
 
             pActwk->r_no0 += 2;
-            work->u0.horizontal_speed = -49152;
+            work->horizontal_speed = -49152;
             if (iD1 >= 0) {
                 pActwk->actflg ^= 1;
                 pActwk->cddat ^= 1;
-                work->u0.horizontal_speed = -work->u0.horizontal_speed;
+                work->horizontal_speed = -work->horizontal_speed;
             }
         }
     }
@@ -159,10 +140,10 @@ void ten_a_lr(sprite_status *pActwk) {
     Sint16 iD1;
     sprite_status *pActfree;
 
-    pActwk->xposi.l += work->u0.horizontal_speed;
+    pActwk->xposi.l += work->horizontal_speed;
     pActwk->yposi.l = work->hover_y;
 
-    if (work->u0.horizontal_speed >= 0)
+    if (work->horizontal_speed >= 0)
         iD1 = emycol_r(pActwk, pActwk->sprhs);
     else
         iD1 = emycol_l(pActwk, pActwk->sprhs);
@@ -205,11 +186,11 @@ void ten_a_gake(sprite_status *pActwk) {
     char cwk, cRwk;
     Sint16 iD1, iD3, iD4;
 
-    pActwk->xposi.l += work->u0.horizontal_speed;
+    pActwk->xposi.l += work->horizontal_speed;
     iD3 = pActwk->xposi.w.h;
     iD4 = pActwk->sprhsize;
     iD3 -= iD4;
-    if (work->u0.horizontal_speed > 0)
+    if (work->horizontal_speed > 0)
         iD3 += iD4 + iD4;
     iD1 = emycol_d2(pActwk, iD3);
     if (iD1 >= 16) {
@@ -284,7 +265,7 @@ void ten_b_fall(sprite_status *pActwk) {
     iD1 = emycol_d(pActwk);
     if (iD1 < 0) {
         pActwk->yposi.w.h += iD1;
-        work->u0.bomb_timer = 120;
+        work->bomb_timer = 120;
         pActwk->r_no0 += 2;
     }
 }
@@ -296,9 +277,9 @@ void ten_b_wait(sprite_status *pActwk) {
         ten_b_die(pActwk);
         return;
     }
-    --work->u0.bomb_timer;
-    if (work->u0.bomb_timer == 0) {
-        work->u0.bomb_timer = 120;
+    --work->bomb_timer;
+    if (work->bomb_timer == 0) {
+        work->bomb_timer = 120;
         pActwk->r_no0 += 2;
     }
 }
@@ -310,8 +291,8 @@ void ten_b_blink(sprite_status *pActwk) {
         ten_b_die(pActwk);
         return;
     }
-    --work->u0.bomb_timer;
-    if (work->u0.bomb_timer == 0) {
+    --work->bomb_timer;
+    if (work->bomb_timer == 0) {
         pActwk->r_no0 += 2;
     }
     patchg(pActwk, pchg1);

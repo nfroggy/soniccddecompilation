@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "branko7.h"
 #include "../action.h"
@@ -30,9 +28,7 @@ sprite_pattern *branko7pat[3] = {&pat0, &pat1, &pat2};
 static void (*branko7_act_tbl[2])(sprite_status *) = {&branko7_init,
                                                       &branko7_move};
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 reserved0[5];
     Uint8 total_segments;
     Sint16 swing_speed;
     Sint16 origin_y;
@@ -44,30 +40,6 @@ typedef struct {
     Uint8 direction;
     Sint16 acceleration;
 } branko7_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(branko7_work, total_segments) == 5,
-               "branko7_work.total_segments must map to offset 5");
-_Static_assert(offsetof(branko7_work, swing_speed) == 6,
-               "branko7_work.swing_speed must map to offset 6");
-_Static_assert(offsetof(branko7_work, origin_y) == 8,
-               "branko7_work.origin_y must map to offset 8");
-_Static_assert(offsetof(branko7_work, area1) == 10,
-               "branko7_work.area1 must map to offset 10");
-_Static_assert(offsetof(branko7_work, origin_x) == 12,
-               "branko7_work.origin_x must map to offset 12");
-_Static_assert(offsetof(branko7_work, area2) == 14,
-               "branko7_work.area2 must map to offset 14");
-_Static_assert(offsetof(branko7_work, angle) == 16,
-               "branko7_work.angle must map to offset 16");
-_Static_assert(offsetof(branko7_work, segment_index) == 18,
-               "branko7_work.segment_index must map to offset 18");
-_Static_assert(offsetof(branko7_work, direction) == 19,
-               "branko7_work.direction must map to offset 19");
-_Static_assert(offsetof(branko7_work, acceleration) == 20,
-               "branko7_work.acceleration must map to offset 20");
-_Static_assert(sizeof(branko7_work) <= sizeof(((sprite_status *)0)->actfree),
-               "branko7_work must fit in sprite_status.actfree");
 
 static branko7_work *branko7_work_get(sprite_status *pActwk) {
     return (branko7_work *)pActwk->actfree;

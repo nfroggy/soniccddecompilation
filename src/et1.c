@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "equ.h"
 #include "et1.h"
 #include "action.h"
@@ -60,7 +58,6 @@ static char tbl0[64] = {
 static char pchg0[6] = {3, 3, 4, 5, 6, -1};
 static char *pchg[1] = {pchg0};
 
-#pragma pack(push, 1)
 typedef struct {
     union {
         Sint16 hover_counter;
@@ -70,24 +67,9 @@ typedef struct {
         };
     };
     Sint16 explosion_table_index;
-    Uint8 reserved4[2];
     Sint16 base_y;
     Sint16 hover_direction;
 } et1_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(et1_work, hover_counter) == 0,
-               "et1_work.hover_counter must map to offset 0");
-_Static_assert(offsetof(et1_work, delay_timer) == 0,
-               "et1_work.delay_timer must map to offset 0");
-_Static_assert(offsetof(et1_work, explosion_table_index) == 2,
-               "et1_work.explosion_table_index must map to offset 2");
-_Static_assert(offsetof(et1_work, base_y) == 6,
-               "et1_work.base_y must map to offset 6");
-_Static_assert(offsetof(et1_work, hover_direction) == 8,
-               "et1_work.hover_direction must map to offset 8");
-_Static_assert(sizeof(et1_work) <= sizeof(((sprite_status *)0)->actfree),
-               "et1_work must fit in sprite_status.actfree");
 
 static et1_work *et1_work_get(sprite_status *actionwk) {
     return (et1_work *)actionwk->actfree;

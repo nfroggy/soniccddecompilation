@@ -1,31 +1,15 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "emie8.h"
 #include "../action.h"
 #include "../impfuncs.h"
 #include "../playsub.h"
 
-#pragma pack(push, 1)
 typedef struct {
     Uint8 flash_timer;
     Uint8 flash_count;
-    Uint8 unused2;
     Uint8 scripted_control_state;
     Uint8 shake_timer;
 } emie8_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(emie8_work, flash_timer) == 0,
-               "emie8_work.flash_timer offset");
-_Static_assert(offsetof(emie8_work, flash_count) == 1,
-               "emie8_work.flash_count offset");
-_Static_assert(offsetof(emie8_work, scripted_control_state) == 3,
-               "emie8_work.scripted_control_state offset");
-_Static_assert(offsetof(emie8_work, shake_timer) == 4,
-               "emie8_work.shake_timer offset");
-_Static_assert(sizeof(emie8_work) <= sizeof(((sprite_status *)0)->actfree),
-               "emie8_work fits in actfree");
 
 static emie8_work *emie8_get_work(sprite_status *pActwk) {
     return (emie8_work *)pActwk->actfree;

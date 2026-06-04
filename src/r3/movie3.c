@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "movie3.h"
 #include "../action.h"
@@ -14,36 +12,15 @@
 #define SPRITE_MOVIE3_BASE 316
 #endif
 
-#pragma pack(push, 1)
 typedef struct {
     union {
         Uint8 explosion_timer;
         Sint16 wait_timer;
     };
     char *explosion_table;
-    Uint8 unused_after_explosion_table[20 - 2 - sizeof(char *)];
-    union {
-        Uint16 parent_index;
-        struct {
-            Uint8 unused20;
-            Uint8 destroyed_flag;
-        };
-    };
+    Uint16 parent_index;
+    Uint8 destroyed_flag;
 } movie3_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(movie3_work, explosion_timer) == 0,
-               "movie3_work.explosion_timer offset");
-_Static_assert(offsetof(movie3_work, wait_timer) == 0,
-               "movie3_work.wait_timer offset");
-_Static_assert(offsetof(movie3_work, explosion_table) == 2,
-               "movie3_work.explosion_table offset");
-_Static_assert(offsetof(movie3_work, parent_index) == 20,
-               "movie3_work.parent_index offset");
-_Static_assert(offsetof(movie3_work, destroyed_flag) == 21,
-               "movie3_work.destroyed_flag offset");
-_Static_assert(sizeof(movie3_work) <= sizeof(((sprite_status *)0)->actfree),
-               "movie3_work fits in actfree");
 
 static movie3_work *movie3_get_work(sprite_status *moviewk) {
     return (movie3_work *)moviewk->actfree;

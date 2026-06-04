@@ -1,64 +1,29 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "togebl6a.h"
 #include "../action.h"
 #include "../actset.h"
 #include "../etc.h"
 
-#pragma pack(push, 1)
 typedef struct {
+    Sint16 angle;
+    Sint16 angular_speed;
+    Uint16 child_index[6];
     union {
+        Sint32 target_x_long;
         struct {
-            Sint16 angle;
-            Sint16 angular_speed;
-            union {
-                Uint16 child_index[6];
-                Uint8 first_child_index_byte;
-            };
-        };
-        struct {
-            union {
-                Sint32 target_x_long;
-                struct {
-                    Uint16 target_x_fraction;
-                    Sint16 target_x;
-                };
-            };
-            union {
-                Sint32 target_y_long;
-                struct {
-                    Uint16 target_y_fraction;
-                    Sint16 target_y;
-                };
-            };
+            Uint16 target_x_fraction;
+            Sint16 target_x;
         };
     };
-    Uint8 unused16[4];
+    union {
+        Sint32 target_y_long;
+        struct {
+            Uint16 target_y_fraction;
+            Sint16 target_y;
+        };
+    };
     Uint16 parent_index;
 } togeball6d_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(togeball6d_work, angle) == 0,
-               "togeball6d_work.angle offset");
-_Static_assert(offsetof(togeball6d_work, angular_speed) == 2,
-               "togeball6d_work.angular_speed offset");
-_Static_assert(offsetof(togeball6d_work, child_index) == 4,
-               "togeball6d_work.child_index offset");
-_Static_assert(offsetof(togeball6d_work, first_child_index_byte) == 4,
-               "togeball6d_work.first_child_index_byte offset");
-_Static_assert(offsetof(togeball6d_work, target_x_long) == 0,
-               "togeball6d_work.target_x_long offset");
-_Static_assert(offsetof(togeball6d_work, target_x) == 2,
-               "togeball6d_work.target_x offset");
-_Static_assert(offsetof(togeball6d_work, target_y_long) == 4,
-               "togeball6d_work.target_y_long offset");
-_Static_assert(offsetof(togeball6d_work, target_y) == 6,
-               "togeball6d_work.target_y offset");
-_Static_assert(offsetof(togeball6d_work, parent_index) == 20,
-               "togeball6d_work.parent_index offset");
-_Static_assert(sizeof(togeball6d_work) <= sizeof(((sprite_status *)0)->actfree),
-               "togeball6d_work fits in actfree");
 
 static togeball6d_work *togeball6d_get_work(sprite_status *actionwk) {
     return (togeball6d_work *)actionwk->actfree;
@@ -206,7 +171,7 @@ static void act_move(sprite_status *actionwk) {
     d3l = d1l;
     d0l >>= 1;
     d1l >>= 1;
-    ano = work->first_child_index_byte;
+    ano = (Uint8)work->child_index[0];
     togeball6d_get_work(&actwk[ano])->target_y_long = actionwk->yposi.l + d0l;
     togeball6d_get_work(&actwk[ano])->target_x_long = actionwk->xposi.l + d1l;
 

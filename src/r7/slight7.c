@@ -2,7 +2,6 @@
 #include "slight7.h"
 #include "../action.h"
 #include "../actset.h"
-#include <stddef.h>
 
 static void slight7_init(sprite_status *pActwk);
 static void slight7_move(sprite_status *pActwk);
@@ -14,32 +13,13 @@ static void type3(sprite_status *pActwk);
 static void type4(sprite_status *pActwk);
 static void type7(sprite_status *pActwk);
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 reserved0[6];
     Uint8 display_phase;
-    Uint8 reserved1[12 - 7];
     Sint16 origin_x;
-    Uint8 reserved2[16 - 14];
     Uint8 frame_timer;
-    Uint8 reserved3;
     Uint8 anim_index;
     Uint8 anim_count;
 } slight7_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(slight7_work, display_phase) == 6,
-               "slight7_work.display_phase offset");
-_Static_assert(offsetof(slight7_work, origin_x) == 12,
-               "slight7_work.origin_x offset");
-_Static_assert(offsetof(slight7_work, frame_timer) == 16,
-               "slight7_work.frame_timer offset");
-_Static_assert(offsetof(slight7_work, anim_index) == 18,
-               "slight7_work.anim_index offset");
-_Static_assert(offsetof(slight7_work, anim_count) == 19,
-               "slight7_work.anim_count offset");
-_Static_assert(sizeof(slight7_work) <= sizeof(((sprite_status *)0)->actfree),
-               "slight7_work fits in actfree");
 
 static slight7_work *slight7_work_get(sprite_status *pActwk) {
     return (slight7_work *)pActwk->actfree;

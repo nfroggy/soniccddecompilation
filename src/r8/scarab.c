@@ -8,9 +8,7 @@
 #include "../player_work.h"
 #include "../ridechk.h"
 #include "../suicide.h"
-#include <stddef.h>
 
-#pragma pack(push, 1)
 typedef struct {
     union {
         Uint8 *flag_work;
@@ -32,34 +30,6 @@ typedef struct {
     Uint8 **pattern_change;
     Sint16 shell_actor_index;
 } scarab_work;
-#pragma pack(pop)
-
-_Static_assert(sizeof(Uint8 *) == 4, "scarab_work pointer fields are 32-bit");
-_Static_assert(sizeof(Uint8 **) == 4, "scarab_work pointer fields are 32-bit");
-_Static_assert(offsetof(scarab_work, flag_work) == 0,
-               "scarab_work.flag_work offset");
-_Static_assert(offsetof(scarab_work, parent_index) == 0,
-               "scarab_work.parent_index offset");
-_Static_assert(offsetof(scarab_work, origin_x) == 2,
-               "scarab_work.origin_x offset");
-_Static_assert(offsetof(scarab_work, child_enemy_index) == 4,
-               "scarab_work.child_enemy_index offset");
-_Static_assert(offsetof(scarab_work, x_velocity) == 4,
-               "scarab_work.x_velocity offset");
-_Static_assert(offsetof(scarab_work, child_item_index) == 6,
-               "scarab_work.child_item_index offset");
-_Static_assert(offsetof(scarab_work, carried_actor_index) == 8,
-               "scarab_work.carried_actor_index offset");
-_Static_assert(offsetof(scarab_work, animation_timer) == 10,
-               "scarab_work.animation_timer offset");
-_Static_assert(offsetof(scarab_work, hold_timer) == 12,
-               "scarab_work.hold_timer offset");
-_Static_assert(offsetof(scarab_work, pattern_change) == 14,
-               "scarab_work.pattern_change offset");
-_Static_assert(offsetof(scarab_work, shell_actor_index) == 18,
-               "scarab_work.shell_actor_index offset");
-_Static_assert(sizeof(scarab_work) <= sizeof(((sprite_status *)0)->actfree),
-               "scarab_work fits in actfree");
 
 static inline scarab_work *scarab_work_get(sprite_status *pActwk) {
     return (scarab_work *)pActwk->actfree;

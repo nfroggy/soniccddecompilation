@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "togebl3a.h"
 #include "../action.h"
@@ -17,47 +15,17 @@ static sprite_pattern spat_chg1 = {1, {{-8, -8, 0, SPRITE_TOGEBL3D_BASE + 1}}};
 sprite_pattern *pat_chg[1] = {&spat_chg0};
 sprite_pattern *togeball_pat[1] = {&spat_chg1};
 
-#pragma pack(push, 1)
 typedef struct {
-    union {
-        struct {
-            Sint16 angle;
-            Sint16 angular_speed;
-            Uint16 first_option_index;
-            Uint16 second_option_index;
-            Uint16 third_option_index;
-            Uint16 fourth_option_index;
-        };
-        struct {
-            Sint32 target_x;
-            Sint32 target_y;
-        };
-    };
-    Uint8 unused12[8];
+    Sint16 angle;
+    Sint16 angular_speed;
+    Uint16 first_option_index;
+    Uint16 second_option_index;
+    Uint16 third_option_index;
+    Uint16 fourth_option_index;
+    Sint32 target_x;
+    Sint32 target_y;
     Uint16 parent_index;
 } togeball3d_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(togeball3d_work, angle) == 0,
-               "togeball3d_work.angle offset");
-_Static_assert(offsetof(togeball3d_work, angular_speed) == 2,
-               "togeball3d_work.angular_speed offset");
-_Static_assert(offsetof(togeball3d_work, first_option_index) == 4,
-               "togeball3d_work.first_option_index offset");
-_Static_assert(offsetof(togeball3d_work, second_option_index) == 6,
-               "togeball3d_work.second_option_index offset");
-_Static_assert(offsetof(togeball3d_work, third_option_index) == 8,
-               "togeball3d_work.third_option_index offset");
-_Static_assert(offsetof(togeball3d_work, fourth_option_index) == 10,
-               "togeball3d_work.fourth_option_index offset");
-_Static_assert(offsetof(togeball3d_work, target_x) == 0,
-               "togeball3d_work.target_x offset");
-_Static_assert(offsetof(togeball3d_work, target_y) == 4,
-               "togeball3d_work.target_y offset");
-_Static_assert(offsetof(togeball3d_work, parent_index) == 20,
-               "togeball3d_work.parent_index offset");
-_Static_assert(sizeof(togeball3d_work) <= sizeof(((sprite_status *)0)->actfree),
-               "togeball3d_work fits in actfree");
 
 static togeball3d_work *togeball3d_get_work(sprite_status *actionwk) {
     return (togeball3d_work *)actionwk->actfree;

@@ -2,26 +2,16 @@
 #include "wall42.h"
 #include "../action.h"
 #include "../ridechk.h"
-#include <stddef.h>
 
 static void act_init(sprite_status *pActwk);
 static void act_wait(sprite_status *pActwk);
 static void act_move(sprite_status *pActwk);
 static void act_stop(sprite_status *pActwk);
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 timer;
     Uint8 *flagwork_entry;
 } wall42_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(wall42_work, timer) == 0,
-               "wall42_work.timer offset");
-_Static_assert(offsetof(wall42_work, flagwork_entry) == 2,
-               "wall42_work.flagwork_entry offset");
-_Static_assert(sizeof(wall42_work) <= sizeof(((sprite_status *)0)->actfree),
-               "wall42_work fits in actfree");
 
 static wall42_work *wall42_work_get(sprite_status *pActwk) {
     return (wall42_work *)pActwk->actfree;

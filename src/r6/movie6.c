@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "movie6.h"
 #include "../action.h"
@@ -8,36 +6,15 @@
 #include "../playsub.h"
 #include "../ridechk.h"
 
-#pragma pack(push, 1)
 typedef struct {
     union {
         Uint8 explosion_timer;
         Sint16 wait_timer;
     };
     char *explosion_table;
-    Uint8 unused_after_explosion_table[20 - 2 - sizeof(char *)];
-    union {
-        Uint16 parent_index;
-        struct {
-            Uint8 unused20;
-            Uint8 destroyed_flag;
-        };
-    };
+    Sint16 parent_index;
+    Uint8 destroyed_flag;
 } movie6_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(movie6_work, explosion_timer) == 0,
-               "movie6_work.explosion_timer offset");
-_Static_assert(offsetof(movie6_work, wait_timer) == 0,
-               "movie6_work.wait_timer offset");
-_Static_assert(offsetof(movie6_work, explosion_table) == 2,
-               "movie6_work.explosion_table offset");
-_Static_assert(offsetof(movie6_work, parent_index) == 20,
-               "movie6_work.parent_index offset");
-_Static_assert(offsetof(movie6_work, destroyed_flag) == 21,
-               "movie6_work.destroyed_flag offset");
-_Static_assert(sizeof(movie6_work) <= sizeof(((sprite_status *)0)->actfree),
-               "movie6_work fits in actfree");
 
 static movie6_work *movie6_get_work(sprite_status *moviewk) {
     return (movie6_work *)moviewk->actfree;
@@ -115,7 +92,7 @@ static void m_init(sprite_status *moviewk) {
     new_actwk->xposi.w.h = moviewk->xposi.w.h - 21;
     new_actwk->yposi.w.h = moviewk->yposi.w.h - 7;
     new_actwk->userflag.b.h = -1;
-    movie6_get_work(new_actwk)->parent_index = moviewk - actwk;
+    movie6_get_work(new_actwk)->parent_index = (Sint16)(moviewk - actwk);
 
     if (actwkchk(&new_actwk) != 0) {
         die(moviewk);
@@ -125,7 +102,7 @@ static void m_init(sprite_status *moviewk) {
     new_actwk->xposi.w.h = moviewk->xposi.w.h - 72;
     new_actwk->yposi.w.h = moviewk->yposi.w.h - 4;
     new_actwk->userflag.b.h = 1;
-    movie6_get_work(new_actwk)->parent_index = moviewk - actwk;
+    movie6_get_work(new_actwk)->parent_index = (Sint16)(moviewk - actwk);
 
     if (actwkchk(&new_actwk) != 0) {
         die(moviewk);
@@ -135,7 +112,7 @@ static void m_init(sprite_status *moviewk) {
     new_actwk->xposi.w.h = moviewk->xposi.w.h - 72;
     new_actwk->yposi.w.h = moviewk->yposi.w.h - 24;
     new_actwk->userflag.b.h = -128;
-    movie6_get_work(new_actwk)->parent_index = moviewk - actwk;
+    movie6_get_work(new_actwk)->parent_index = (Sint16)(moviewk - actwk);
 
     if (actwkchk(&new_actwk) != 0) {
         die(moviewk);
@@ -145,7 +122,7 @@ static void m_init(sprite_status *moviewk) {
     new_actwk->xposi.w.h = moviewk->xposi.w.h - 84;
     new_actwk->yposi.w.h = moviewk->yposi.w.h + 7;
     new_actwk->userflag.b.h = -127;
-    movie6_get_work(new_actwk)->parent_index = moviewk - actwk;
+    movie6_get_work(new_actwk)->parent_index = (Sint16)(moviewk - actwk);
 }
 
 static void m_wait(sprite_status *moviewk) {

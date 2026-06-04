@@ -1,21 +1,14 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "beem6.h"
 #include "../action.h"
 #include "../actset.h"
 #include "../loader2.h"
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 unused0[4];
     Uint8 flash_toggle;
-    Uint8 unused5;
     Sint16 pre_flash_timer;
-    Uint8 unused8[8];
     Sint16 cycle_timer;
     Uint8 phase;
-    Uint8 unused19;
     union {
         Sint16 palette_indices_word;
         struct {
@@ -24,24 +17,6 @@ typedef struct {
         };
     };
 } beem6_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(beem6_work, flash_toggle) == 4,
-               "beem6_work.flash_toggle offset");
-_Static_assert(offsetof(beem6_work, pre_flash_timer) == 6,
-               "beem6_work.pre_flash_timer offset");
-_Static_assert(offsetof(beem6_work, cycle_timer) == 16,
-               "beem6_work.cycle_timer offset");
-_Static_assert(offsetof(beem6_work, phase) == 18,
-               "beem6_work.phase offset");
-_Static_assert(offsetof(beem6_work, palette_indices_word) == 20,
-               "beem6_work.palette_indices_word offset");
-_Static_assert(offsetof(beem6_work, palette_index) == 20,
-               "beem6_work.palette_index offset");
-_Static_assert(offsetof(beem6_work, secondary_palette_index) == 21,
-               "beem6_work.secondary_palette_index offset");
-_Static_assert(sizeof(beem6_work) <= sizeof(((sprite_status *)0)->actfree),
-               "beem6_work fits in actfree");
 
 static beem6_work *beem6_get_work(sprite_status *actionwk) {
     return (beem6_work *)actionwk->actfree;

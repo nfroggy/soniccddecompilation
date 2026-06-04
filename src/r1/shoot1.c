@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "shoot1.h"
 #include "../action.h"
@@ -33,38 +31,16 @@ static Uint16 shooterposi_2[35] = {
 Uint16 *shooterpositbl[3] = {shooterposi_0, shooterposi_1, shooterposi_2};
 extern sprite_pattern *bariapat[];
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 unused0[4];
     Uint8 move_timer_high;
     Uint8 move_timer_low;
-    Uint8 unused6[2];
     Uint8 entry_timer;
-    Uint8 unused9[3];
     Sint16 target_x;
     Sint16 target_y;
     Uint8 move_index;
     Uint8 move_limit;
     Uint16 *move_table;
 } shooter_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(shooter_work, move_timer_high) == 4,
-               "shooter_work.move_timer_high offset");
-_Static_assert(offsetof(shooter_work, entry_timer) == 8,
-               "shooter_work.entry_timer offset");
-_Static_assert(offsetof(shooter_work, target_x) == 12,
-               "shooter_work.target_x offset");
-_Static_assert(offsetof(shooter_work, target_y) == 14,
-               "shooter_work.target_y offset");
-_Static_assert(offsetof(shooter_work, move_index) == 16,
-               "shooter_work.move_index offset");
-_Static_assert(offsetof(shooter_work, move_limit) == 17,
-               "shooter_work.move_limit offset");
-_Static_assert(offsetof(shooter_work, move_table) == 18,
-               "shooter_work.move_table offset");
-_Static_assert(sizeof(shooter_work) <= sizeof(((sprite_status *)0)->actfree),
-               "shooter_work fits in actfree");
 
 static shooter_work *shooter_get_work(sprite_status *shootwk) {
     return (shooter_work *)shootwk->actfree;

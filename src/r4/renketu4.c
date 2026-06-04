@@ -19,19 +19,14 @@ sprite_pattern renketu4_pat0 = {1, {{-32, -8, 0, SPRITE_RENKETU4_BASE}}};
 sprite_pattern renketu4_pat1 = {1, {{-8, -8, 0, SPRITE_RENKETU4_BASE + 1}}};
 sprite_pattern *renketu4pat[2] = {&renketu4_pat0, &renketu4_pat1};
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 unused0[6];
     Sint16 angular_speed;
     Sint16 origin_y;
-    Uint8 unused10[2];
     Sint16 origin_x;
-    Uint8 unused14[4];
     Uint8 segment_index;
     Uint8 switch_latch;
     short_union angle;
 } renketu4_work;
-#pragma pack(pop)
 
 static renketu4_work *get_work(sprite_status *pActwk) {
     return (renketu4_work *)pActwk->actfree;

@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "hari73.h"
 #include "../action.h"
@@ -16,29 +14,13 @@ static void msnc_hit(sprite_status *pActwk);
 static void hari73_tobi(sprite_status *pActwk);
 static Sint16 act_search(sprite_status **ppActwk, Uint8 bD0);
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 linked_actor_index;
-    Uint8 unused2[4];
     Sint16 x_speed_delta;
     Sint16 y_speed_delta;
     Uint8 blink_counter;
     Uint8 player_was_riding;
 } hari73_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(hari73_work, linked_actor_index) == 0,
-               "hari73_work.linked_actor_index offset");
-_Static_assert(offsetof(hari73_work, x_speed_delta) == 6,
-               "hari73_work.x_speed_delta offset");
-_Static_assert(offsetof(hari73_work, y_speed_delta) == 8,
-               "hari73_work.y_speed_delta offset");
-_Static_assert(offsetof(hari73_work, blink_counter) == 10,
-               "hari73_work.blink_counter offset");
-_Static_assert(offsetof(hari73_work, player_was_riding) == 11,
-               "hari73_work.player_was_riding offset");
-_Static_assert(sizeof(hari73_work) <= sizeof(((sprite_status *)0)->actfree),
-               "hari73_work fits in actfree");
 
 static hari73_work *hari73_get_work(sprite_status *pActwk) {
     return (hari73_work *)pActwk->actfree;

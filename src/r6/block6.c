@@ -1,12 +1,9 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "block6.h"
 #include "../action.h"
 #include "../actset.h"
 #include "../ridechk.h"
 
-#pragma pack(push, 1)
 typedef struct {
     Uint16 parent_index;
     char *speed_table;
@@ -20,29 +17,6 @@ typedef struct {
     Sint32 x_speed;
     Sint32 y_speed;
 } block6_work;
-#pragma pack(pop)
-
-_Static_assert(sizeof(char *) == 4, "block6_work uses the Win32 DLL layout");
-_Static_assert(offsetof(block6_work, parent_index) == 0,
-               "block6_work.parent_index offset");
-_Static_assert(offsetof(block6_work, speed_table) == 2,
-               "block6_work.speed_table offset");
-_Static_assert(offsetof(block6_work, move_timer) == 6,
-               "block6_work.move_timer offset");
-_Static_assert(offsetof(block6_work, sequence_index) == 8,
-               "block6_work.sequence_index offset");
-_Static_assert(offsetof(block6_work, trigger) == 10,
-               "block6_work.trigger offset");
-_Static_assert(offsetof(block6_work, y_speed_direction) == 10,
-               "block6_work.y_speed_direction offset");
-_Static_assert(offsetof(block6_work, previous_child_index) == 12,
-               "block6_work.previous_child_index offset");
-_Static_assert(offsetof(block6_work, x_speed) == 14,
-               "block6_work.x_speed offset");
-_Static_assert(offsetof(block6_work, y_speed) == 18,
-               "block6_work.y_speed offset");
-_Static_assert(sizeof(block6_work) <= sizeof(((sprite_status *)0)->actfree),
-               "block6_work fits in actfree");
 
 static block6_work *block6_get_work(sprite_status *blockwk) {
     return (block6_work *)blockwk->actfree;

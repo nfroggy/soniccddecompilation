@@ -1,36 +1,16 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "okusieso.h"
 #include "../action.h"
 #include "../actset.h"
 #include "../ridechk.h"
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 unused0[6];
     Sint8 anim_phase;
     Sint8 anim_timer;
     Sint16 parent_index;
-    Uint8 unused10[2];
     Sint16 base_y;
-    Uint8 unused14[6];
     Uint8 flags;
 } okusieso_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(okusieso_work, anim_phase) == 6,
-               "okusieso_work.anim_phase offset");
-_Static_assert(offsetof(okusieso_work, anim_timer) == 7,
-               "okusieso_work.anim_timer offset");
-_Static_assert(offsetof(okusieso_work, parent_index) == 8,
-               "okusieso_work.parent_index offset");
-_Static_assert(offsetof(okusieso_work, base_y) == 12,
-               "okusieso_work.base_y offset");
-_Static_assert(offsetof(okusieso_work, flags) == 20,
-               "okusieso_work.flags offset");
-_Static_assert(sizeof(okusieso_work) <= sizeof(((sprite_status *)0)->actfree),
-               "okusieso_work fits in actfree");
 
 static okusieso_work *okusieso_get_work(sprite_status *pActwk) {
     return (okusieso_work *)pActwk->actfree;
@@ -117,7 +97,7 @@ static void okusieso_init(sprite_status *pActwk) {
         subActwk->yposi.l = pActwk->yposi.l;
         okusieso_get_work(subActwk)->base_y = pActwk->yposi.w.h;
         okusieso_get_work(subActwk)->parent_index =
-            (Uint16)(Uint8)(pActwk - actwk);
+            (Sint16)(pActwk - actwk);
     } else
         return;
 
@@ -139,7 +119,7 @@ static void okusieso_init(sprite_status *pActwk) {
         okusieso_get_work(subActwk)->base_y = pActwk->yposi.w.h;
         subActwk->yposi.w.h = (Uint16)subActwk->yposi.w.h + 65492;
         okusieso_get_work(subActwk)->parent_index =
-            (Uint16)(Uint8)(pActwk - actwk);
+            (Sint16)(pActwk - actwk);
     }
 }
 

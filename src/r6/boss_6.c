@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "boss_6.h"
 #include "../action.h"
@@ -16,7 +14,6 @@
 #include "col6c.h"
 #include "coli6.h"
 
-#pragma pack(push, 1)
 typedef struct {
     union {
         Sint16 timer_word;
@@ -57,51 +54,6 @@ typedef struct {
     Uint8 fade_timer;
     Uint8 fade_count;
 } egg6_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(egg6_work, timer_word) == 0,
-               "egg6_work.timer_word offset");
-_Static_assert(offsetof(egg6_work, timer) == 0, "egg6_work.timer offset");
-_Static_assert(offsetof(egg6_work, anim_timer) == 1,
-               "egg6_work.anim_timer offset");
-_Static_assert(offsetof(egg6_work, flags) == 2, "egg6_work.flags offset");
-_Static_assert(offsetof(egg6_work, floor_index) == 3,
-               "egg6_work.floor_index offset");
-_Static_assert(offsetof(egg6_work, parent_index) == 4,
-               "egg6_work.parent_index offset");
-_Static_assert(offsetof(egg6_work, x_acceleration) == 6,
-               "egg6_work.x_acceleration offset");
-_Static_assert(offsetof(egg6_work, y_acceleration) == 8,
-               "egg6_work.y_acceleration offset");
-_Static_assert(offsetof(egg6_work, state_timer) == 10,
-               "egg6_work.state_timer offset");
-_Static_assert(offsetof(egg6_work, state) == 11, "egg6_work.state offset");
-_Static_assert(offsetof(egg6_work, table_offset) == 10,
-               "egg6_work.table_offset offset");
-_Static_assert(offsetof(egg6_work, release_flag) == 12,
-               "egg6_work.release_flag offset");
-_Static_assert(offsetof(egg6_work, hit_timer) == 13,
-               "egg6_work.hit_timer offset");
-_Static_assert(offsetof(egg6_work, ride_x_offset) == 12,
-               "egg6_work.ride_x_offset offset");
-_Static_assert(offsetof(egg6_work, quake_timer) == 14,
-               "egg6_work.quake_timer offset");
-_Static_assert(offsetof(egg6_work, hit_count) == 15,
-               "egg6_work.hit_count offset");
-_Static_assert(offsetof(egg6_work, ride_y_offset) == 14,
-               "egg6_work.ride_y_offset offset");
-_Static_assert(offsetof(egg6_work, bob_offset) == 16,
-               "egg6_work.bob_offset offset");
-_Static_assert(offsetof(egg6_work, bob_angle) == 18,
-               "egg6_work.bob_angle offset");
-_Static_assert(offsetof(egg6_work, side_selector) == 19,
-               "egg6_work.side_selector offset");
-_Static_assert(offsetof(egg6_work, fade_timer) == 20,
-               "egg6_work.fade_timer offset");
-_Static_assert(offsetof(egg6_work, fade_count) == 21,
-               "egg6_work.fade_count offset");
-_Static_assert(sizeof(egg6_work) <= sizeof(((sprite_status *)0)->actfree),
-               "egg6_work fits in actfree");
 
 static egg6_work *egg6_get_work(sprite_status *pActwk) {
     return (egg6_work *)pActwk->actfree;

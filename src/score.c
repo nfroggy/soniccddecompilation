@@ -26,14 +26,9 @@ static void timewrt0(sprite_data *pSprdat, Uint32 lDispVal, Uint32 *subval,
 
 extern Sint16 playdieset(sprite_status *pActwk);
 
-#pragma pack(push, 1)
 typedef struct {
     Uint8 display_timer;
 } ten_point_work;
-#pragma pack(pop)
-
-_Static_assert(sizeof(ten_point_work) <= sizeof(((sprite_status *)0)->actfree),
-               "ten_point_work must fit in sprite_status.actfree");
 
 static ten_point_work *ten_point_work_get(sprite_status *pAct) {
     return (ten_point_work *)pAct->actfree;

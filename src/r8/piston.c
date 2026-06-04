@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "piston.h"
 #include "../action.h"
@@ -20,37 +18,15 @@ static void init_piston0(sprite_status *pistonwk);
 static void init_piston1(sprite_status *pistonwk);
 static void piston_move(sprite_status *pistonwk);
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 unused0[6];
     Sint16 base_y;
     Sint16 angle;
     Sint16 angular_speed;
     Sint16 radius;
     Uint8 delay_time;
-    Uint8 unused15;
     Uint8 pause_timer;
-    Uint8 unused17[3];
     Uint8 flags;
 } piston_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(piston_work, base_y) == 6,
-               "piston_work.base_y offset");
-_Static_assert(offsetof(piston_work, angle) == 8,
-               "piston_work.angle offset");
-_Static_assert(offsetof(piston_work, angular_speed) == 10,
-               "piston_work.angular_speed offset");
-_Static_assert(offsetof(piston_work, radius) == 12,
-               "piston_work.radius offset");
-_Static_assert(offsetof(piston_work, delay_time) == 14,
-               "piston_work.delay_time offset");
-_Static_assert(offsetof(piston_work, pause_timer) == 16,
-               "piston_work.pause_timer offset");
-_Static_assert(offsetof(piston_work, flags) == 20,
-               "piston_work.flags offset");
-_Static_assert(sizeof(piston_work) <= sizeof(((sprite_status *)0)->actfree),
-               "piston_work fits in actfree");
 
 static piston_work *piston_get_work(sprite_status *pistonwk) {
     return (piston_work *)pistonwk->actfree;

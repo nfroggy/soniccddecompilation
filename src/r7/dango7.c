@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "dango7.h"
 #include "../action.h"
@@ -10,17 +8,10 @@
 #include "../playsub.h"
 #include "../suicide.h"
 
-#pragma pack(push, 1)
 typedef struct {
     Sint32 speed;
     Sint32 form;
 } dango_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(dango_work, speed) == 0, "dango_work.speed offset");
-_Static_assert(offsetof(dango_work, form) == 4, "dango_work.form offset");
-_Static_assert(sizeof(dango_work) <= sizeof(((sprite_status *)0)->actfree),
-               "dango_work must fit in sprite_status.actfree");
 
 static dango_work *dango_get_work(sprite_status *pActwk) {
     return (dango_work *)pActwk->actfree;

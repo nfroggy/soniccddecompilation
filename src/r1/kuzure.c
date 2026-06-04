@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "kuzure.h"
 #include "../action.h"
@@ -14,26 +12,12 @@ extern sprite_pattern *patbase_kuzure_a[];
 extern sprite_pattern *patc[];
 extern sprite_pattern *patd[];
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 wait_timer;
     Sint32 y_velocity;
-    Uint8 reserved6[14];
     Uint8 top_piece;
     Uint8 source_actno;
 } kuzure_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(kuzure_work, wait_timer) == 0,
-               "kuzure_work.wait_timer must map to offset 0");
-_Static_assert(offsetof(kuzure_work, y_velocity) == 2,
-               "kuzure_work.y_velocity must map to offset 2");
-_Static_assert(offsetof(kuzure_work, top_piece) == 20,
-               "kuzure_work.top_piece must map to offset 20");
-_Static_assert(offsetof(kuzure_work, source_actno) == 21,
-               "kuzure_work.source_actno must map to offset 21");
-_Static_assert(sizeof(kuzure_work) <= sizeof(((sprite_status *)0)->actfree),
-               "kuzure_work must fit in sprite_status.actfree");
 
 static kuzure_work *kuzure_work_get(sprite_status *pActwk) {
     return (kuzure_work *)pActwk->actfree;

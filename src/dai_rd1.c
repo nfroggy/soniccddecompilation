@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "equ.h"
 #include "dai_rd1.h"
 #include "action.h"
@@ -10,61 +8,21 @@
 #include "loader2.h"
 #include "ridechk.h"
 
-#pragma pack(push, 1)
 typedef struct {
     Uint8 phase;
     Uint8 state;
     Uint8 ride_offset;
     Sint8 amplitude;
     Uint8 wait_timer;
-    Uint8 unused5[5];
     Uint16 parent_index;
     Sint16 frameout_x;
-    union {
-        Sint16 origin_x;
-        struct {
-            Uint8 vfuta_x_offset;
-            Sint8 vfuta_y_offset;
-        };
-    };
-    union {
-        Sint16 origin_y;
-        struct {
-            Uint8 vfuta_phase;
-            Uint8 vfuta_phase_low;
-        };
-    };
+    Sint16 origin_x;
+    Sint16 origin_y;
+    Uint8 vfuta_x_offset;
+    Sint8 vfuta_y_offset;
+    Uint8 vfuta_phase;
+    Uint8 vfuta_phase_low;
 } dai_rd1_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(dai_rd1_work, phase) == 0,
-               "dai_rd1_work.phase offset");
-_Static_assert(offsetof(dai_rd1_work, state) == 1,
-               "dai_rd1_work.state offset");
-_Static_assert(offsetof(dai_rd1_work, ride_offset) == 2,
-               "dai_rd1_work.ride_offset offset");
-_Static_assert(offsetof(dai_rd1_work, amplitude) == 3,
-               "dai_rd1_work.amplitude offset");
-_Static_assert(offsetof(dai_rd1_work, wait_timer) == 4,
-               "dai_rd1_work.wait_timer offset");
-_Static_assert(offsetof(dai_rd1_work, parent_index) == 10,
-               "dai_rd1_work.parent_index offset");
-_Static_assert(offsetof(dai_rd1_work, frameout_x) == 12,
-               "dai_rd1_work.frameout_x offset");
-_Static_assert(offsetof(dai_rd1_work, origin_x) == 14,
-               "dai_rd1_work.origin_x offset");
-_Static_assert(offsetof(dai_rd1_work, vfuta_x_offset) == 14,
-               "dai_rd1_work.vfuta_x_offset offset");
-_Static_assert(offsetof(dai_rd1_work, vfuta_y_offset) == 15,
-               "dai_rd1_work.vfuta_y_offset offset");
-_Static_assert(offsetof(dai_rd1_work, origin_y) == 16,
-               "dai_rd1_work.origin_y offset");
-_Static_assert(offsetof(dai_rd1_work, vfuta_phase) == 16,
-               "dai_rd1_work.vfuta_phase offset");
-_Static_assert(offsetof(dai_rd1_work, vfuta_phase_low) == 17,
-               "dai_rd1_work.vfuta_phase_low offset");
-_Static_assert(sizeof(dai_rd1_work) <= sizeof(((sprite_status *)0)->actfree),
-               "dai_rd1_work fits in actfree");
 
 static dai_rd1_work *dai_rd1_get_work(sprite_status *pActwk) {
     return (dai_rd1_work *)pActwk->actfree;

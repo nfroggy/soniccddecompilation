@@ -362,11 +362,11 @@ static void test_gas_floor_launch_damage_and_ice_fragments(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 1, emycol_d_count);
     TEST_ASSERT_EQ_INT(ctx, 1, sub_sync_count);
     TEST_ASSERT_EQ_INT(ctx, 146, sub_sync_requests[0]);
-    TEST_ASSERT_EQ_INT(ctx, 15, gas_get_work(cloud)->u.ice.ice_timer);
+    TEST_ASSERT_EQ_INT(ctx, 15, gas_get_work(cloud)->ice_timer);
     TEST_ASSERT_EQ_INT(ctx, 6, cloud->r_no0);
     TEST_ASSERT_EQ_INT(ctx, cloud->yposi.l, gaswk->yposi.l);
 
-    gas_get_work(cloud)->u.ice.ice_timer = 1;
+    gas_get_work(cloud)->ice_timer = 1;
     player_work_get(&actwk[0])->status_flags = 255;
     actwk[0].cddat = 32;
     swdata.b.l = 16;
@@ -388,7 +388,7 @@ static void test_gas_floor_launch_damage_and_ice_fragments(test_context *ctx) {
     queue_actwkchk(cloud);
     gas_get_work(gaswk)->timer = 1;
     gas_move0(gaswk);
-    gas_get_work(cloud)->u.ice.ice_timer = 0;
+    gas_get_work(cloud)->ice_timer = 0;
     reset_logs();
     gas_move4(cloud);
 
@@ -406,18 +406,18 @@ static void test_gas_floor_launch_damage_and_ice_fragments(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 12, piece0->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 99, piece0->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 202, piece0->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 3, gas_get_work(piece0)->u.ice.ice_timer);
+    TEST_ASSERT_EQ_INT(ctx, 3, gas_get_work(piece0)->ice_timer);
     TEST_ASSERT_EQ_INT(ctx, -2, piece0->xspeed.w);
     TEST_ASSERT_EQ_INT(ctx, 106, piece1->xposi.w.h);
 
-    gas_get_work(piece0)->u.ice.ice_timer = 2;
+    gas_get_work(piece0)->ice_timer = 2;
     piece0->xspeed.w = 3;
     piece0->yspeed.w = -4;
     gas_move5(piece0);
-    TEST_ASSERT_EQ_INT(ctx, 1, gas_get_work(piece0)->u.ice.ice_timer);
+    TEST_ASSERT_EQ_INT(ctx, 1, gas_get_work(piece0)->ice_timer);
     TEST_ASSERT_EQ_INT(ctx, 102, piece0->xposi.w.h);
 
-    gas_get_work(piece0)->u.ice.ice_timer = 1;
+    gas_get_work(piece0)->ice_timer = 1;
     piece0->patno = 11;
     gas_move5(piece0);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
@@ -479,11 +479,11 @@ static void test_gas_and_ice_early_return_edges(test_context *ctx) {
     queue_actwkchk(cloud);
     gas_get_work(gaswk)->timer = 1;
     gas_move0(gaswk);
-    gas_get_work(cloud)->u.ice.ice_timer = 2;
+    gas_get_work(cloud)->ice_timer = 2;
     reset_logs();
     swdata.b.l = 0;
     gas_move4(cloud);
-    TEST_ASSERT_EQ_INT(ctx, 1, gas_get_work(cloud)->u.ice.ice_timer);
+    TEST_ASSERT_EQ_INT(ctx, 1, gas_get_work(cloud)->ice_timer);
     TEST_ASSERT_EQ_INT(ctx, 4, cloud->r_no0);
     TEST_ASSERT_EQ_INT(ctx, 0, soundset_count);
 
@@ -496,9 +496,9 @@ static void test_gas_and_ice_early_return_edges(test_context *ctx) {
     TEST_ASSERT_EQ_INT(ctx, 3, actwkchk_count);
 
     reset_logs();
-    gas_get_work(piece0)->u.ice.ice_timer = 1;
+    gas_get_work(piece0)->ice_timer = 1;
     piece0->patno = 10;
-    gas_get_work(piece0)->u.ice.ice_table = 0;
+    gas_get_work(piece0)->ice_table = 0;
     gas_move5(piece0);
     TEST_ASSERT_EQ_INT(ctx, 1, frameout_count);
     TEST_ASSERT_TRUE(ctx, frameout_actor == piece0);

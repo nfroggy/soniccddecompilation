@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "tekkyu7.h"
 #include "../action.h"
@@ -17,7 +15,6 @@ static void tekkyu7_init(sprite_status *pActwk);
 static void tekkyu7_move(sprite_status *pActwk);
 static void tekkyu7_stop(sprite_status *pActwk);
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 origin_x;
     Sint16 move_duration;
@@ -26,22 +23,6 @@ typedef struct {
     Sint32 x_velocity;
     Sint32 y_velocity;
 } tekkyu7_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(tekkyu7_work, origin_x) == 0,
-               "tekkyu7_work.origin_x offset");
-_Static_assert(offsetof(tekkyu7_work, move_duration) == 2,
-               "tekkyu7_work.move_duration offset");
-_Static_assert(offsetof(tekkyu7_work, stop_duration) == 4,
-               "tekkyu7_work.stop_duration offset");
-_Static_assert(offsetof(tekkyu7_work, counter) == 6,
-               "tekkyu7_work.counter offset");
-_Static_assert(offsetof(tekkyu7_work, x_velocity) == 8,
-               "tekkyu7_work.x_velocity offset");
-_Static_assert(offsetof(tekkyu7_work, y_velocity) == 12,
-               "tekkyu7_work.y_velocity offset");
-_Static_assert(sizeof(tekkyu7_work) <= sizeof(((sprite_status *)0)->actfree),
-               "tekkyu7_work fits in actfree");
 
 static tekkyu7_work *tekkyu7_get_work(sprite_status *pActwk) {
     return (tekkyu7_work *)pActwk->actfree;

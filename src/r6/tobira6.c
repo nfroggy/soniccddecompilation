@@ -1,41 +1,17 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "tobira6.h"
 #include "../action.h"
 #include "../actset.h"
 #include "../ridechk.h"
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 unused0[6];
     Uint8 switch_index;
-    Uint8 unused7;
     Sint16 base_y;
-    Uint8 unused10[4];
     Sint16 previous_player_x;
     Uint8 open_amount;
-    Uint8 unused17;
     Uint8 close_flag;
-    Uint8 unused19;
     Sint16 previous_player_y;
 } tobira6_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(tobira6_work, switch_index) == 6,
-               "tobira6_work.switch_index offset");
-_Static_assert(offsetof(tobira6_work, base_y) == 8,
-               "tobira6_work.base_y offset");
-_Static_assert(offsetof(tobira6_work, previous_player_x) == 14,
-               "tobira6_work.previous_player_x offset");
-_Static_assert(offsetof(tobira6_work, open_amount) == 16,
-               "tobira6_work.open_amount offset");
-_Static_assert(offsetof(tobira6_work, close_flag) == 18,
-               "tobira6_work.close_flag offset");
-_Static_assert(offsetof(tobira6_work, previous_player_y) == 20,
-               "tobira6_work.previous_player_y offset");
-_Static_assert(sizeof(tobira6_work) <= sizeof(((sprite_status *)0)->actfree),
-               "tobira6_work fits in actfree");
 
 static tobira6_work *tobira6_get_work(sprite_status *pActwk) {
     return (tobira6_work *)pActwk->actfree;

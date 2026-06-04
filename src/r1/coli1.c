@@ -1,36 +1,18 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "coli1.h"
 #include "../fcol.h"
 #include "../loader2.h"
 #include "../player.h"
+#include "../player_work.h"
 #include "../score.h"
 
 extern Sint16 actwkchk(sprite_status **ppActwk);
 
-#pragma pack(push, 1)
 typedef struct {
     Uint8 damage_flag;
-    Uint8 unused1[5];
-    Sint16 damage_timer;
-    Uint8 unused8[6];
     Sint16 death_y;
-    Uint8 unused16[4];
     Sint16 score_index;
 } coli1_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(coli1_work, damage_flag) == 0,
-               "coli1_work.damage_flag offset");
-_Static_assert(offsetof(coli1_work, damage_timer) == 6,
-               "coli1_work.damage_timer offset");
-_Static_assert(offsetof(coli1_work, death_y) == 14,
-               "coli1_work.death_y offset");
-_Static_assert(offsetof(coli1_work, score_index) == 20,
-               "coli1_work.score_index offset");
-_Static_assert(sizeof(coli1_work) <= sizeof(((sprite_status *)0)->actfree),
-               "coli1_work fits in actfree");
 
 static coli1_work *coli1_get_work(sprite_status *pActwk) {
     return (coli1_work *)pActwk->actfree;
@@ -172,7 +154,7 @@ Sint16 pcolitem(sprite_status *pActwk, sprite_status *pColliAct) {
 
     if ((pColliAct->colino & 63) != 6) {
 
-        if ((Uint16)coli1_get_work(pActwk)->damage_timer < 90)
+        if (player_work_get(pActwk)->damage_invulnerability_timer < 90)
             pColliAct->r_no0 += 2;
     } else {
 
@@ -259,7 +241,7 @@ Sint16 pcolplay(sprite_status *pActwk, sprite_status *pColliAct) {
 }
 
 Sint16 pcole(sprite_status *pActwk, sprite_status *pColliAct) {
-    if ((Uint16)coli1_get_work(pActwk)->damage_timer != 0)
+    if (player_work_get(pActwk)->damage_invulnerability_timer != 0)
         return -1;
 
     return playdamageset(pActwk, pColliAct);
@@ -289,7 +271,7 @@ void playdamagechk(sprite_status *pActwk, sprite_status *pColliAct) {
 
     pActwk->mspeed.w = 0;
     pActwk->mstno.b.h = 26;
-    coli1_get_work(pActwk)->damage_timer = 120;
+    player_work_get(pActwk)->damage_invulnerability_timer = 120;
 }
 
 Sint16 playdamageset(sprite_status *pActwk, sprite_status *pColliAct) {

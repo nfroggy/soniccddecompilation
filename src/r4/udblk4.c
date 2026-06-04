@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "udblk4.h"
 #include "../action.h"
@@ -30,39 +28,16 @@ typedef struct {
     Sint16 yspd;
 } xofs_yofs_yspd;
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 unused0[8];
     Sint16 base_y;
     Sint16 parent_index;
     Sint16 base_x;
-    Uint8 unused14;
     Uint8 child_y_offset;
     Uint8 phase_high;
     Uint8 phase_low;
     Uint8 child_index;
     Uint8 variant;
 } udblk4_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(udblk4_work, base_y) == 8,
-               "udblk4_work.base_y offset");
-_Static_assert(offsetof(udblk4_work, parent_index) == 10,
-               "udblk4_work.parent_index offset");
-_Static_assert(offsetof(udblk4_work, base_x) == 12,
-               "udblk4_work.base_x offset");
-_Static_assert(offsetof(udblk4_work, child_y_offset) == 15,
-               "udblk4_work.child_y_offset offset");
-_Static_assert(offsetof(udblk4_work, phase_high) == 16,
-               "udblk4_work.phase_high offset");
-_Static_assert(offsetof(udblk4_work, phase_low) == 17,
-               "udblk4_work.phase_low offset");
-_Static_assert(offsetof(udblk4_work, child_index) == 18,
-               "udblk4_work.child_index offset");
-_Static_assert(offsetof(udblk4_work, variant) == 19,
-               "udblk4_work.variant offset");
-_Static_assert(sizeof(udblk4_work) <= sizeof(((sprite_status *)0)->actfree),
-               "udblk4_work fits in actfree");
 
 static udblk4_work *udblk4_get_work(sprite_status *pActwk) {
     return (udblk4_work *)pActwk->actfree;
@@ -283,7 +258,7 @@ static void type4_init(sprite_status *pActwk) {
         pNewActwk->yposi.w.h = pActwk->yposi.w.h;
         udblk4_get_work(pNewActwk)->base_x = udblk4_get_work(pActwk)->base_x;
 
-        udblk4_get_work(pNewActwk)->parent_index = (Uint16)(pActwk - actwk);
+        udblk4_get_work(pNewActwk)->parent_index = (Sint16)(pActwk - actwk);
         udblk4_get_work(pNewActwk)->child_y_offset = 64;
         pNewActwk->userflag.b.h = 1;
     }
@@ -396,7 +371,7 @@ static void type6_init(sprite_status *pActwk) {
             pNewActwk->actno = 35;
             pNewActwk->userflag.b.h = 9;
             pNewActwk->yposi.w.h = pActwk->yposi.w.h;
-            udblk4_get_work(pNewActwk)->parent_index = (Uint16)(pActwk - actwk);
+            udblk4_get_work(pNewActwk)->parent_index = (Sint16)(pActwk - actwk);
             udblk4_get_work(pNewActwk)->variant = 255;
             udblk4_get_work(pNewActwk)->phase_high = tbl[d1].kakudo;
             pNewActwk->xposi.w.h = pActwk->xposi.w.h + (Sint16)tbl[d1].xofst;

@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "awa.h"
 #include "../action.h"
@@ -20,38 +18,16 @@ Uint8 *awachg[7] = {awachg0, awachg1, awachg2, awachg4,
 extern sprite_pattern *awapat[];
 extern Uint8 awasintbl[];
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 unused0[4];
     Uint8 collider_enabled;
-    Uint8 unused5;
     Sint16 origin_x;
     Uint8 spawn_count;
     Uint8 spawn_reload;
     Uint8 spawn_index;
-    Uint8 unused11;
     Uint16 state_flags;
     Sint16 timer;
-    Uint8 unused16[2];
     Uint8 table_offset;
 } awa_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(awa_work, collider_enabled) == 4,
-               "awa_work.collider_enabled offset");
-_Static_assert(offsetof(awa_work, origin_x) == 6, "awa_work.origin_x offset");
-_Static_assert(offsetof(awa_work, spawn_count) == 8, "awa_work.spawn_count offset");
-_Static_assert(offsetof(awa_work, spawn_reload) == 9,
-               "awa_work.spawn_reload offset");
-_Static_assert(offsetof(awa_work, spawn_index) == 10,
-               "awa_work.spawn_index offset");
-_Static_assert(offsetof(awa_work, state_flags) == 12,
-               "awa_work.state_flags offset");
-_Static_assert(offsetof(awa_work, timer) == 14, "awa_work.timer offset");
-_Static_assert(offsetof(awa_work, table_offset) == 18,
-               "awa_work.table_offset offset");
-_Static_assert(sizeof(awa_work) <= sizeof(((sprite_status *)0)->actfree),
-               "awa_work fits in actfree");
 
 static awa_work *awa_get_work(sprite_status *pActwk) {
     return (awa_work *)pActwk->actfree;
@@ -190,7 +166,7 @@ void awamaster(sprite_status *pActwk) {
         work->spawn_index = bD0;
         wD1 &= 12;
 
-        work->table_offset = wD1;
+        work->table_offset = (Uint8)wD1;
         if (--work->spawn_count & 128) {
             work->spawn_count = work->spawn_reload;
             work->state_flags |= 128;

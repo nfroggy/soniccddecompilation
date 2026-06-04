@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "et8.h"
 #include "../action.h"
@@ -15,7 +13,6 @@
 #define SPRITE_ET8_BASE 481
 #endif
 
-#pragma pack(push, 1)
 typedef struct {
     union {
         Uint8 explosion_timer;
@@ -24,24 +21,9 @@ typedef struct {
         Sint16 hover_counter_signed;
     };
     Sint16 explosion_table_offset;
-    Uint8 unused4[2];
     Sint16 origin_y;
     Sint16 hover_direction;
 } et8_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(et8_work, explosion_timer) == 0,
-               "et8_work.explosion_timer offset");
-_Static_assert(offsetof(et8_work, hover_counter) == 0,
-               "et8_work.hover_counter offset");
-_Static_assert(offsetof(et8_work, explosion_table_offset) == 2,
-               "et8_work.explosion_table_offset offset");
-_Static_assert(offsetof(et8_work, origin_y) == 6,
-               "et8_work.origin_y offset");
-_Static_assert(offsetof(et8_work, hover_direction) == 8,
-               "et8_work.hover_direction offset");
-_Static_assert(sizeof(et8_work) <= sizeof(((sprite_status *)0)->actfree),
-               "et8_work fits in actfree");
 
 static et8_work *et8_get_work(sprite_status *actionwk) {
     return (et8_work *)actionwk->actfree;

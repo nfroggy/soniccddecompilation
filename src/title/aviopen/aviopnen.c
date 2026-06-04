@@ -89,7 +89,7 @@ void (*WaveRequest)(Sint16);
 void (*CDPause)(void);
 void (*CDPlay)(Sint16);
 Uint32 *lpbFullScreen;
-Uint32 hWnd;
+UintPtr hWnd;
 
 void OESetSequenceNum(Uint16 num) {
     nSequenceNum = num;

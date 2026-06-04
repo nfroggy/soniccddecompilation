@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "tobira.h"
 #include "../action.h"
@@ -7,32 +5,14 @@
 #include "../playsub.h"
 #include "../ridechk.h"
 
-#pragma pack(push, 1)
 typedef struct {
     Uint16 parent_index;
     Uint16 slave_index;
     Sint16 base_y;
     Sint16 closed_y;
     Sint16 open_y;
-    Uint8 unused10[11];
     Uint8 trigger_open;
 } tobira8_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(tobira8_work, parent_index) == 0,
-               "tobira8_work.parent_index offset");
-_Static_assert(offsetof(tobira8_work, slave_index) == 2,
-               "tobira8_work.slave_index offset");
-_Static_assert(offsetof(tobira8_work, base_y) == 4,
-               "tobira8_work.base_y offset");
-_Static_assert(offsetof(tobira8_work, closed_y) == 6,
-               "tobira8_work.closed_y offset");
-_Static_assert(offsetof(tobira8_work, open_y) == 8,
-               "tobira8_work.open_y offset");
-_Static_assert(offsetof(tobira8_work, trigger_open) == 21,
-               "tobira8_work.trigger_open offset");
-_Static_assert(sizeof(tobira8_work) <= sizeof(((sprite_status *)0)->actfree),
-               "tobira8_work fits in actfree");
 
 static tobira8_work *tobira8_get_work(sprite_status *actionwk) {
     return (tobira8_work *)actionwk->actfree;

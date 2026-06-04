@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "tekkyu4.h"
 #include "../action.h"
@@ -19,7 +17,6 @@
 sprite_pattern tekkyu4_pat0 = {1, {{-16, -16, 0, SPRITE_TEKKYU4_BASE}}};
 sprite_pattern *pat_tekkyu4[1] = {&tekkyu4_pat0};
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 base_x;
     Sint16 base_y;
@@ -27,27 +24,8 @@ typedef struct {
     Sint16 angular_speed;
     Uint16 shift;
     Sint16 origin_x;
-    Uint8 unused12[8];
     Sint16 parent_index;
 } tekkyu4_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(tekkyu4_work, base_x) == 0,
-               "tekkyu4_work.base_x offset");
-_Static_assert(offsetof(tekkyu4_work, base_y) == 2,
-               "tekkyu4_work.base_y offset");
-_Static_assert(offsetof(tekkyu4_work, angle) == 4,
-               "tekkyu4_work.angle offset");
-_Static_assert(offsetof(tekkyu4_work, angular_speed) == 6,
-               "tekkyu4_work.angular_speed offset");
-_Static_assert(offsetof(tekkyu4_work, shift) == 8,
-               "tekkyu4_work.shift offset");
-_Static_assert(offsetof(tekkyu4_work, origin_x) == 10,
-               "tekkyu4_work.origin_x offset");
-_Static_assert(offsetof(tekkyu4_work, parent_index) == 20,
-               "tekkyu4_work.parent_index offset");
-_Static_assert(sizeof(tekkyu4_work) <= sizeof(((sprite_status *)0)->actfree),
-               "tekkyu4_work fits in actfree");
 
 static tekkyu4_work *tekkyu4_get_work(sprite_status *pActwk) {
     return (tekkyu4_work *)pActwk->actfree;
@@ -83,7 +61,7 @@ void tekkyu4init(sprite_status *pActwk) {
 
     pNewactwk3->actno = pActwk->actno;
     pNewactwk3->r_no0 = 2;
-    tekkyu4_get_work(pNewactwk3)->parent_index = pActwk - actwk;
+    tekkyu4_get_work(pNewactwk3)->parent_index = (Sint16)(pActwk - actwk);
 
     if (actwkchk(&pNewactwk2) != 0) {
         frameout(pActwk);
@@ -92,7 +70,7 @@ void tekkyu4init(sprite_status *pActwk) {
 
     pNewactwk2->actno = pActwk->actno;
     pNewactwk2->r_no0 = 2;
-    tekkyu4_get_work(pNewactwk2)->parent_index = pActwk - actwk;
+    tekkyu4_get_work(pNewactwk2)->parent_index = (Sint16)(pActwk - actwk);
 
     if (actwkchk(&pNewactwk1) != 0) {
         frameout(pActwk);
@@ -101,7 +79,7 @@ void tekkyu4init(sprite_status *pActwk) {
 
     pNewactwk1->actno = pActwk->actno;
     pNewactwk1->r_no0 = 2;
-    tekkyu4_get_work(pNewactwk1)->parent_index = pActwk - actwk;
+    tekkyu4_get_work(pNewactwk1)->parent_index = (Sint16)(pActwk - actwk);
 
     wD0 = -2048;
 

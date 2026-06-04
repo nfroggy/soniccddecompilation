@@ -4,8 +4,8 @@
 #include "score_data_types.h"
 
 typedef struct {
-    Uint32 hWnd;
-    Uint32 hSurf;
+    UintPtr hWnd;
+    UintPtr hSurf;
     PALETTEENTRY *lpColorwk;
     Uint32 *lpbFullScreen;
     Uint32 bFirstTitle;

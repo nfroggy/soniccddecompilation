@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "dai8.h"
 #include "../action.h"
@@ -17,29 +15,13 @@
 
 static void act_init(sprite_status *actionwk);
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 timer;
     Sint16 parent_index;
     Sint16 origin_x;
     Sint16 origin_y;
-    Uint8 unused8[13];
     Uint8 ride_pressed;
 } dai8_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(dai8_work, timer) == 0,
-               "dai8_work.timer offset");
-_Static_assert(offsetof(dai8_work, parent_index) == 2,
-               "dai8_work.parent_index offset");
-_Static_assert(offsetof(dai8_work, origin_x) == 4,
-               "dai8_work.origin_x offset");
-_Static_assert(offsetof(dai8_work, origin_y) == 6,
-               "dai8_work.origin_y offset");
-_Static_assert(offsetof(dai8_work, ride_pressed) == 21,
-               "dai8_work.ride_pressed offset");
-_Static_assert(sizeof(dai8_work) <= sizeof(((sprite_status *)0)->actfree),
-               "dai8_work fits in actfree");
 
 static dai8_work *dai8_get_work(sprite_status *actionwk) {
     return (dai8_work *)actionwk->actfree;

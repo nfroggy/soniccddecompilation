@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "sw6.h"
 #include "../action.h"
@@ -8,11 +6,8 @@
 #include "../loader2.h"
 #include "../ridechk.h"
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 unused0[18];
     Uint8 switch_index;
-    Uint8 unused19;
     union {
         Uint16 transition;
         struct {
@@ -21,18 +16,6 @@ typedef struct {
         };
     };
 } sw6_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(sw6_work, switch_index) == 18,
-               "sw6_work.switch_index offset");
-_Static_assert(offsetof(sw6_work, transition) == 20,
-               "sw6_work.transition offset");
-_Static_assert(offsetof(sw6_work, current_state) == 20,
-               "sw6_work.current_state offset");
-_Static_assert(offsetof(sw6_work, previous_state) == 21,
-               "sw6_work.previous_state offset");
-_Static_assert(sizeof(sw6_work) <= sizeof(((sprite_status *)0)->actfree),
-               "sw6_work fits in actfree");
 
 static sw6_work *sw6_get_work(sprite_status *pActwk) {
     return (sw6_work *)pActwk->actfree;

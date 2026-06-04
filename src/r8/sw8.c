@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "sw8.h"
 #include "../action.h"
@@ -24,23 +22,11 @@ static sprite_pattern sw01 = {
     2, {{-16, -4, 0, SPRITE_SW8_BASE + 1}, {0, -4, 8, SPRITE_SW8_BASE + 1}}};
 sprite_pattern *pat_sw[2] = {&sw00, &sw01};
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 reserved0[18];
     Sint16 switch_index;
     Uint8 previous_pressed;
     Uint8 current_pressed;
 } sw8_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(sw8_work, switch_index) == 18,
-               "sw8_work.switch_index must map to offset 18");
-_Static_assert(offsetof(sw8_work, previous_pressed) == 20,
-               "sw8_work.previous_pressed must map to offset 20");
-_Static_assert(offsetof(sw8_work, current_pressed) == 21,
-               "sw8_work.current_pressed must map to offset 21");
-_Static_assert(sizeof(sw8_work) <= sizeof(((sprite_status *)0)->actfree),
-               "sw8_work must fit in sprite_status.actfree");
 
 static sw8_work *sw8_work_get(sprite_status *swwk) {
     return (sw8_work *)swwk->actfree;

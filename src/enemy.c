@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "equ.h"
 #include "enemy.h"
 #include "action.h"
@@ -11,7 +9,6 @@
 #include "playsub.h"
 #include "suicide.h"
 
-#pragma pack(push, 1)
 typedef struct {
     Sint32 x_velocity;
     Sint16 frameout_x;
@@ -57,95 +54,17 @@ typedef struct {
     Sint32 y_velocity;
     Sint32 x_acceleration;
     Sint32 y_acceleration;
-    Uint8 unused16[5];
     Uint8 direction;
 } tama_work;
 
 typedef struct {
     Sint16 origin_x;
     Sint16 origin_y;
-    Uint8 unused4[2];
     Sint32 initial_y_velocity;
     Sint32 current_y_velocity;
     Sint32 gravity;
     Uint8 **change_table;
 } tagame_work;
-#pragma pack(pop)
-
-_Static_assert(sizeof(Uint8 **) == 4,
-               "enemy work animation table pointers are 32-bit");
-_Static_assert(offsetof(ari_work, x_velocity) == 0,
-               "ari_work.x_velocity offset");
-_Static_assert(offsetof(ari_work, frameout_x) == 4,
-               "ari_work.frameout_x offset");
-_Static_assert(sizeof(ari_work) <= sizeof(((sprite_status *)0)->actfree),
-               "ari_work fits in actfree");
-_Static_assert(offsetof(chou_work, origin_x) == 0,
-               "chou_work.origin_x offset");
-_Static_assert(offsetof(chou_work, sine_low_word) == 2,
-               "chou_work.sine_low_word offset");
-_Static_assert(offsetof(chou_work, sine_base_y) == 2,
-               "chou_work.sine_base_y offset");
-_Static_assert(offsetof(chou_work, origin_y) == 4,
-               "chou_work.origin_y offset");
-_Static_assert(offsetof(chou_work, x_velocity) == 6,
-               "chou_work.x_velocity offset");
-_Static_assert(offsetof(chou_work, angle) == 10,
-               "chou_work.angle offset");
-_Static_assert(offsetof(chou_work, angle_high) == 11,
-               "chou_work.angle_high offset");
-_Static_assert(offsetof(chou_work, angle_step) == 12,
-               "chou_work.angle_step offset");
-_Static_assert(offsetof(chou_work, sine_shift) == 14,
-               "chou_work.sine_shift offset");
-_Static_assert(sizeof(chou_work) <= sizeof(((sprite_status *)0)->actfree),
-               "chou_work fits in actfree");
-_Static_assert(offsetof(ka_work, origin_x) == 0,
-               "ka_work.origin_x offset");
-_Static_assert(offsetof(ka_work, x_velocity) == 2,
-               "ka_work.x_velocity offset");
-_Static_assert(offsetof(ka_work, change_table) == 6,
-               "ka_work.change_table offset");
-_Static_assert(offsetof(ka_work, stop_timer) == 10,
-               "ka_work.stop_timer offset");
-_Static_assert(sizeof(ka_work) <= sizeof(((sprite_status *)0)->actfree),
-               "ka_work fits in actfree");
-_Static_assert(offsetof(kamemusi_work, origin_x) == 0,
-               "kamemusi_work.origin_x offset");
-_Static_assert(offsetof(kamemusi_work, x_velocity) == 2,
-               "kamemusi_work.x_velocity offset");
-_Static_assert(offsetof(kamemusi_work, change_table) == 6,
-               "kamemusi_work.change_table offset");
-_Static_assert(offsetof(kamemusi_work, wait_timer) == 10,
-               "kamemusi_work.wait_timer offset");
-_Static_assert(sizeof(kamemusi_work) <= sizeof(((sprite_status *)0)->actfree),
-               "kamemusi_work fits in actfree");
-_Static_assert(offsetof(tama_work, x_velocity) == 0,
-               "tama_work.x_velocity offset");
-_Static_assert(offsetof(tama_work, y_velocity) == 4,
-               "tama_work.y_velocity offset");
-_Static_assert(offsetof(tama_work, x_acceleration) == 8,
-               "tama_work.x_acceleration offset");
-_Static_assert(offsetof(tama_work, y_acceleration) == 12,
-               "tama_work.y_acceleration offset");
-_Static_assert(offsetof(tama_work, direction) == 21,
-               "tama_work.direction offset");
-_Static_assert(sizeof(tama_work) <= sizeof(((sprite_status *)0)->actfree),
-               "tama_work fits in actfree");
-_Static_assert(offsetof(tagame_work, origin_x) == 0,
-               "tagame_work.origin_x offset");
-_Static_assert(offsetof(tagame_work, origin_y) == 2,
-               "tagame_work.origin_y offset");
-_Static_assert(offsetof(tagame_work, initial_y_velocity) == 6,
-               "tagame_work.initial_y_velocity offset");
-_Static_assert(offsetof(tagame_work, current_y_velocity) == 10,
-               "tagame_work.current_y_velocity offset");
-_Static_assert(offsetof(tagame_work, gravity) == 14,
-               "tagame_work.gravity offset");
-_Static_assert(offsetof(tagame_work, change_table) == 18,
-               "tagame_work.change_table offset");
-_Static_assert(sizeof(tagame_work) <= sizeof(((sprite_status *)0)->actfree),
-               "tagame_work fits in actfree");
 
 static ari_work *ari_get_work(sprite_status *pActwk) {
     return (ari_work *)pActwk->actfree;

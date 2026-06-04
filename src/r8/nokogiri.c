@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "nokogiri.h"
 #include "../action.h"
@@ -7,7 +5,6 @@
 #include "../loader2.h"
 #include "../playsub.h"
 
-#pragma pack(push, 1)
 typedef struct {
     union {
         Sint16 timer;
@@ -20,26 +17,6 @@ typedef struct {
     Sint16 sound_counter;
     Uint16 bar_index;
 } nokogiri_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(nokogiri_work, timer) == 0,
-               "nokogiri_work.timer offset");
-_Static_assert(offsetof(nokogiri_work, parent_index) == 0,
-               "nokogiri_work.parent_index offset");
-_Static_assert(offsetof(nokogiri_work, x_step) == 2,
-               "nokogiri_work.x_step offset");
-_Static_assert(offsetof(nokogiri_work, y_step) == 6,
-               "nokogiri_work.y_step offset");
-_Static_assert(offsetof(nokogiri_work, frame_count) == 10,
-               "nokogiri_work.frame_count offset");
-_Static_assert(offsetof(nokogiri_work, origin_x) == 12,
-               "nokogiri_work.origin_x offset");
-_Static_assert(offsetof(nokogiri_work, sound_counter) == 14,
-               "nokogiri_work.sound_counter offset");
-_Static_assert(offsetof(nokogiri_work, bar_index) == 16,
-               "nokogiri_work.bar_index offset");
-_Static_assert(sizeof(nokogiri_work) <= sizeof(((sprite_status *)0)->actfree),
-               "nokogiri_work fits in actfree");
 
 static nokogiri_work *nokogiri_get_work(sprite_status *actionwk) {
     return (nokogiri_work *)actionwk->actfree;

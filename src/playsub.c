@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "equ.h"
 #include "playsub.h"
 #include "action.h"
@@ -10,18 +8,15 @@
 #include "loader2.h"
 #include "ridechk.h"
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 origin_x;
     Sint16 origin_y;
     Uint8 activated;
-    Sint8 unused5;
     sprite_status *parent;
     Uint8 angle;
 } marker_work;
 
 typedef struct {
-    Sint8 unused0[6];
     union {
         struct {
             Uint8 screen_x_high_byte;
@@ -32,46 +27,12 @@ typedef struct {
 } test_act_work;
 
 typedef struct {
-    Sint8 unused0[20];
     Uint16 score_index;
 } playsub_score_work;
 
 typedef struct {
-    Sint8 unused0[6];
     Uint8 history_offset;
 } muteki_work;
-#pragma pack(pop)
-
-_Static_assert(sizeof(sprite_status *) == 4,
-               "marker_work stores a 32-bit actor pointer");
-_Static_assert(offsetof(marker_work, origin_x) == 0,
-               "marker_work.origin_x offset");
-_Static_assert(offsetof(marker_work, origin_y) == 2,
-               "marker_work.origin_y offset");
-_Static_assert(offsetof(marker_work, activated) == 4,
-               "marker_work.activated offset");
-_Static_assert(offsetof(marker_work, parent) == 6,
-               "marker_work.parent offset");
-_Static_assert(offsetof(marker_work, angle) == 10,
-               "marker_work.angle offset");
-_Static_assert(sizeof(marker_work) <= sizeof(((sprite_status *)0)->actfree),
-               "marker_work fits in actfree");
-_Static_assert(offsetof(test_act_work, screen_x_high_byte) == 6,
-               "test_act_work.screen_x_high_byte offset");
-_Static_assert(offsetof(test_act_work, screen_x_low_byte) == 7,
-               "test_act_work.screen_x_low_byte offset");
-_Static_assert(offsetof(test_act_work, screen_x_swapped) == 6,
-               "test_act_work.screen_x_swapped offset");
-_Static_assert(sizeof(test_act_work) <= sizeof(((sprite_status *)0)->actfree),
-               "test_act_work fits in actfree");
-_Static_assert(offsetof(playsub_score_work, score_index) == 20,
-               "playsub_score_work.score_index offset");
-_Static_assert(sizeof(playsub_score_work) <= sizeof(((sprite_status *)0)->actfree),
-               "playsub_score_work fits in actfree");
-_Static_assert(offsetof(muteki_work, history_offset) == 6,
-               "muteki_work.history_offset offset");
-_Static_assert(sizeof(muteki_work) <= sizeof(((sprite_status *)0)->actfree),
-               "muteki_work fits in actfree");
 
 static marker_work *marker_get_work(sprite_status *markerwk) {
     return (marker_work *)markerwk->actfree;

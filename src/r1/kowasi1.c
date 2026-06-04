@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "kowasi1.h"
 #include "../action.h"
@@ -26,7 +24,6 @@ sprite_pattern *pat_kowasi[14] = {
     &spr_kowasi05, &spr_kowasi06, &spr_kowasi07, &spr_kowasi08, &spr_kowasi09,
     &spr_kowasi0a, &spr_kowasi0b, &spr_kowasi0c, &spr_kowasi0d};
 
-#pragma pack(push, 1)
 typedef struct {
     union {
         Sint32 x_velocity;
@@ -37,18 +34,6 @@ typedef struct {
         Sint16 saved_player_yspeed;
     };
 } kowasi1_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(kowasi1_work, x_velocity) == 0,
-               "kowasi1_work.x_velocity must map to offset 0");
-_Static_assert(offsetof(kowasi1_work, saved_player_xspeed) == 0,
-               "kowasi1_work.saved_player_xspeed must map to offset 0");
-_Static_assert(offsetof(kowasi1_work, y_velocity) == 4,
-               "kowasi1_work.y_velocity must map to offset 4");
-_Static_assert(offsetof(kowasi1_work, saved_player_yspeed) == 4,
-               "kowasi1_work.saved_player_yspeed must map to offset 4");
-_Static_assert(sizeof(kowasi1_work) <= sizeof(((sprite_status *)0)->actfree),
-               "kowasi1_work must fit in sprite_status.actfree");
 
 static kowasi1_work *kowasi1_work_get(sprite_status *pActwk) {
     return (kowasi1_work *)pActwk->actfree;

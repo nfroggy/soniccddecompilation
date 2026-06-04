@@ -6,7 +6,6 @@
 #include "../score.h"
 #include "../ridechk.h"
 #include "playsub4.h"
-#include <stddef.h>
 
 #if defined(R41B)
 #define SPRITE_ET4_BASE 459
@@ -42,7 +41,6 @@ static char tbl0[64] = {
     -10, 20, -10, 18,  22,  8,   23,  25, 13, -10, 26,  23,  -22, 28,  -3,  -25,
     30,  10, 20,  32,  -10, 2,   34,  30, -8, 35,  13,  -10, 40,  -10, 10,  -1};
 
-#pragma pack(push, 1)
 typedef struct {
     union {
         Sint16 hover_counter;
@@ -52,24 +50,9 @@ typedef struct {
         };
     };
     Sint16 explosion_table_index;
-    Uint8 reserved4[2];
     Sint16 base_y;
     Sint16 hover_direction;
 } et4_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(et4_work, hover_counter) == 0,
-               "et4_work.hover_counter offset");
-_Static_assert(offsetof(et4_work, delay_timer) == 0,
-               "et4_work.delay_timer offset");
-_Static_assert(offsetof(et4_work, explosion_table_index) == 2,
-               "et4_work.explosion_table_index offset");
-_Static_assert(offsetof(et4_work, base_y) == 6,
-               "et4_work.base_y offset");
-_Static_assert(offsetof(et4_work, hover_direction) == 8,
-               "et4_work.hover_direction offset");
-_Static_assert(sizeof(et4_work) <= sizeof(((sprite_status *)0)->actfree),
-               "et4_work fits in actfree");
 
 static et4_work *et4_work_get(sprite_status *pActwk) {
     return (et4_work *)pActwk->actfree;

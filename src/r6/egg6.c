@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "egg6.h"
 #include "../action.h"
@@ -8,11 +6,8 @@
 #include "../playsub.h"
 #include "../ridechk.h"
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 unused0[2];
     char *spawn_table;
-    Uint8 unused_after_spawn_table[21 - 2 - sizeof(char *)];
     Uint8 spawn_timer;
 } egg6_work;
 
@@ -20,20 +15,6 @@ typedef struct {
     Sint32 fall_speed;
     Sint16 target_y;
 } egg6_bomb_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(egg6_work, spawn_table) == 2,
-               "egg6_work.spawn_table offset");
-_Static_assert(offsetof(egg6_work, spawn_timer) == 21,
-               "egg6_work.spawn_timer offset");
-_Static_assert(sizeof(egg6_work) <= sizeof(((sprite_status *)0)->actfree),
-               "egg6_work fits in actfree");
-_Static_assert(offsetof(egg6_bomb_work, fall_speed) == 0,
-               "egg6_bomb_work.fall_speed offset");
-_Static_assert(offsetof(egg6_bomb_work, target_y) == 4,
-               "egg6_bomb_work.target_y offset");
-_Static_assert(sizeof(egg6_bomb_work) <= sizeof(((sprite_status *)0)->actfree),
-               "egg6_bomb_work fits in actfree");
 
 static egg6_work *egg6_get_work(sprite_status *eggwk) {
     return (egg6_work *)eggwk->actfree;

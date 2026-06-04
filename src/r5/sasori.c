@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "sasori.h"
 #include "../action.h"
@@ -9,33 +7,14 @@
 #include "../playsub.h"
 #include "../suicide.h"
 
-#pragma pack(push, 1)
 typedef struct {
-    union {
-        Sint16 origin_x;
-        Sint16 parent_index;
-    };
+    Sint16 origin_x;
+    Sint16 parent_index;
     Sint32 x_speed;
     Sint16 tail_index;
     Sint16 tail_x_offset;
     Sint16 timer;
 } sasori_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(sasori_work, origin_x) == 0,
-               "sasori_work.origin_x offset");
-_Static_assert(offsetof(sasori_work, parent_index) == 0,
-               "sasori_work.parent_index offset");
-_Static_assert(offsetof(sasori_work, x_speed) == 2,
-               "sasori_work.x_speed offset");
-_Static_assert(offsetof(sasori_work, tail_index) == 6,
-               "sasori_work.tail_index offset");
-_Static_assert(offsetof(sasori_work, tail_x_offset) == 8,
-               "sasori_work.tail_x_offset offset");
-_Static_assert(offsetof(sasori_work, timer) == 10,
-               "sasori_work.timer offset");
-_Static_assert(sizeof(sasori_work) <= sizeof(((sprite_status *)0)->actfree),
-               "sasori_work fits in actfree");
 
 static sasori_work *sasori_get_work(sprite_status *pActwk) {
     return (sasori_work *)pActwk->actfree;

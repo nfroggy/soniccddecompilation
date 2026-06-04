@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "batta.h"
 #include "../action.h"
@@ -22,7 +20,6 @@ sprite_pattern bp_batta0 = {1, {{-16, -18, 0, SPRITE_BATTA_BASE + 2}}};
 sprite_pattern bp_batta1 = {1, {{-16, -29, 0, SPRITE_BATTA_BASE + 3}}};
 sprite_pattern *pat_batta_b[2] = {&bp_batta0, &bp_batta1};
 
-#pragma pack(push, 1)
 typedef struct {
     Sint32 x_velocity;
     Sint32 y_velocity;
@@ -30,31 +27,9 @@ typedef struct {
     Uint8 hop_count_reset;
     Sint16 wall_probe_offset;
     Uint8 facing_flag;
-    Uint8 reserved13[3];
     Sint16 wait_timer;
-    Uint8 reserved18[2];
     Sint16 collision_delta;
 } batta_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(batta_work, x_velocity) == 0,
-               "batta_work.x_velocity must map to offset 0");
-_Static_assert(offsetof(batta_work, y_velocity) == 4,
-               "batta_work.y_velocity must map to offset 4");
-_Static_assert(offsetof(batta_work, hop_count) == 8,
-               "batta_work.hop_count must map to offset 8");
-_Static_assert(offsetof(batta_work, hop_count_reset) == 9,
-               "batta_work.hop_count_reset must map to offset 9");
-_Static_assert(offsetof(batta_work, wall_probe_offset) == 10,
-               "batta_work.wall_probe_offset must map to offset 10");
-_Static_assert(offsetof(batta_work, facing_flag) == 12,
-               "batta_work.facing_flag must map to offset 12");
-_Static_assert(offsetof(batta_work, wait_timer) == 16,
-               "batta_work.wait_timer must map to offset 16");
-_Static_assert(offsetof(batta_work, collision_delta) == 20,
-               "batta_work.collision_delta must map to offset 20");
-_Static_assert(sizeof(batta_work) <= sizeof(((sprite_status *)0)->actfree),
-               "batta_work must fit in sprite_status.actfree");
 
 static batta_work *batta_work_get(sprite_status *pActwk) {
     return (batta_work *)pActwk->actfree;

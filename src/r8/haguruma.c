@@ -1,38 +1,16 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "haguruma.h"
 #include "../actset.h"
 #include "../player_work.h"
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 unused0[6];
     Sint16 origin_y;
     Sint16 origin_x;
     Uint8 inner_radius;
-    Uint8 unused11;
     Sint16 speed_marker;
     Uint8 radius;
-    Uint8 unused15;
     Uint8 engaged;
 } haguruma_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(haguruma_work, origin_y) == 6,
-               "haguruma_work.origin_y offset");
-_Static_assert(offsetof(haguruma_work, origin_x) == 8,
-               "haguruma_work.origin_x offset");
-_Static_assert(offsetof(haguruma_work, inner_radius) == 10,
-               "haguruma_work.inner_radius offset");
-_Static_assert(offsetof(haguruma_work, speed_marker) == 12,
-               "haguruma_work.speed_marker offset");
-_Static_assert(offsetof(haguruma_work, radius) == 14,
-               "haguruma_work.radius offset");
-_Static_assert(offsetof(haguruma_work, engaged) == 16,
-               "haguruma_work.engaged offset");
-_Static_assert(sizeof(haguruma_work) <= sizeof(((sprite_status *)0)->actfree),
-               "haguruma_work must fit in sprite_status.actfree");
 
 static haguruma_work *haguruma_get_work(sprite_status *wheelwk) {
     return (haguruma_work *)wheelwk->actfree;

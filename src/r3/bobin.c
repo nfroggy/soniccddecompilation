@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "bobin.h"
 #include "../action.h"
@@ -49,7 +47,6 @@ char frip_posi_r[64] = {18, 19, 20, 20, 20, 20, 20, 20, 20, 19, 19, 19, 19,
                         15, 14, 14, 14, 14, 14, 14, 13, 13, 13, 13, 13, 13,
                         12, 12, 12, 12, 11, 11, 10, 10, 9,  8,  6,  4};
 
-#pragma pack(push, 1)
 typedef struct {
     Sint32 speed;
     Sint16 timer;
@@ -57,15 +54,6 @@ typedef struct {
     Sint16 origin_x;
     Sint16 hit_count;
 } bobin_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(bobin_work, speed) == 0, "bobin_work.speed offset");
-_Static_assert(offsetof(bobin_work, timer) == 4, "bobin_work.timer offset");
-_Static_assert(offsetof(bobin_work, interval) == 6, "bobin_work.interval offset");
-_Static_assert(offsetof(bobin_work, origin_x) == 8, "bobin_work.origin_x offset");
-_Static_assert(offsetof(bobin_work, hit_count) == 10, "bobin_work.hit_count offset");
-_Static_assert(sizeof(bobin_work) <= sizeof(((sprite_status *)0)->actfree),
-               "bobin_work fits in actfree");
 
 static bobin_work *bobin_get_work(sprite_status *actionwk) {
     return (bobin_work *)actionwk->actfree;

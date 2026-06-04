@@ -11,7 +11,6 @@ static void com(sprite_status *pActwk);
 static sprite_pattern pat00 = {1, {{-32, -16, 0, 455}}};
 sprite_pattern *pat_iwa5wave[1] = {&pat00};
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 parent_actor;
     Sint16 origin_x;
@@ -21,7 +20,6 @@ typedef struct {
     Sint16 angle;
     Sint16 saved_xspeed;
 } iwa5wave_work;
-#pragma pack(pop)
 
 static iwa5wave_work *get_work(sprite_status *pActwk) {
     return (iwa5wave_work *)pActwk->actfree;
@@ -76,7 +74,7 @@ static void a_init(sprite_status *pActwk) {
                 return;
 
             new_work = get_work(pNewActwk);
-            new_work->parent_actor = (Uint16)(pActwk - actwk);
+            new_work->parent_actor = (Sint16)(pActwk - actwk);
             pNewActwk->actno = pActwk->actno;
             new_work->left_bound = work->left_bound;
             new_work->right_bound = work->right_bound;

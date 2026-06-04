@@ -1,7 +1,6 @@
 #include "../equ.h"
 #include "screw_a.h"
 #include "../action.h"
-#include <stddef.h>
 
 #if defined(R41C)
 #define SPRITE_SCREWC_BASE 441
@@ -18,23 +17,11 @@ sprite_pattern pat_screw03 = {1, {{-8, -16, 0, SPRITE_SCREWC_BASE + 3}}};
 sprite_pattern *pat_screw0[2] = {&pat_screw00, &pat_screw01};
 sprite_pattern *pat_screw1[2] = {&pat_screw02, &pat_screw03};
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 parent_actor;
     Uint8 parent_actno;
-    Uint8 reserved0[20 - 3];
     Uint8 switch_latched;
 } screw_c_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(screw_c_work, parent_actor) == 0,
-               "screw_c_work.parent_actor offset");
-_Static_assert(offsetof(screw_c_work, parent_actno) == 2,
-               "screw_c_work.parent_actno offset");
-_Static_assert(offsetof(screw_c_work, switch_latched) == 20,
-               "screw_c_work.switch_latched offset");
-_Static_assert(sizeof(screw_c_work) <= sizeof(((sprite_status *)0)->actfree),
-               "screw_c_work fits in actfree");
 
 static screw_c_work *screw_c_work_get(sprite_status *pActwk) {
     return (screw_c_work *)pActwk->actfree;

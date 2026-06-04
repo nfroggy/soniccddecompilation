@@ -5,7 +5,6 @@
 #include "../loader2.h"
 #include "../playsub.h"
 #include "../ridechk.h"
-#include <stddef.h>
 
 static void m_init(sprite_status *pActwk);
 static void m_wait(sprite_status *pActwk);
@@ -15,36 +14,15 @@ static void m1wait(sprite_status *pActwk);
 static void s_init(sprite_status *pActwk);
 static void s_move(sprite_status *pActwk);
 
-#pragma pack(push, 1)
 typedef struct {
     union {
         Uint8 explosion_counter;
         Sint16 wait_timer;
     };
     char *script;
-    Uint8 reserved0[20 - 2 - sizeof(char *)];
-    union {
-        Sint16 parent_actor;
-        struct {
-            Uint8 parent_actor_low;
-            Uint8 parent_destroyed;
-        };
-    };
+    Sint16 parent_actor;
+    Uint8 parent_destroyed;
 } movie5_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(movie5_work, explosion_counter) == 0,
-               "movie5_work.explosion_counter offset");
-_Static_assert(offsetof(movie5_work, wait_timer) == 0,
-               "movie5_work.wait_timer offset");
-_Static_assert(offsetof(movie5_work, script) == 2,
-               "movie5_work.script offset");
-_Static_assert(offsetof(movie5_work, parent_actor) == 20,
-               "movie5_work.parent_actor offset");
-_Static_assert(offsetof(movie5_work, parent_destroyed) == 21,
-               "movie5_work.parent_destroyed offset");
-_Static_assert(sizeof(movie5_work) <= sizeof(((sprite_status *)0)->actfree),
-               "movie5_work fits in actfree");
 
 static movie5_work *movie5_work_get(sprite_status *pActwk) {
     return (movie5_work *)pActwk->actfree;

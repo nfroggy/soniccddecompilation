@@ -4,36 +4,18 @@
 #include "../actset.h"
 #include "../loader2.h"
 #include "../ridechk.h"
-#include <stddef.h>
 
 static void m_init(sprite_status *pActwk);
 static void m_wait(sprite_status *pActwk);
 static void m_down(sprite_status *pActwk);
 static void m_make(sprite_status *pActwk);
 
-#pragma pack(push, 1)
 typedef struct {
-    union {
-        Sint32 x_velocity;
-        Sint16 saved_player_xspeed;
-    };
-    union {
-        Sint32 y_velocity;
-        Sint16 saved_player_yspeed;
-    };
+    Sint32 x_velocity;
+    Sint32 y_velocity;
+    Sint16 saved_player_xspeed;
+    Sint16 saved_player_yspeed;
 } kowasi5_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(kowasi5_work, x_velocity) == 0,
-               "kowasi5_work.x_velocity offset");
-_Static_assert(offsetof(kowasi5_work, saved_player_xspeed) == 0,
-               "kowasi5_work.saved_player_xspeed offset");
-_Static_assert(offsetof(kowasi5_work, y_velocity) == 4,
-               "kowasi5_work.y_velocity offset");
-_Static_assert(offsetof(kowasi5_work, saved_player_yspeed) == 4,
-               "kowasi5_work.saved_player_yspeed offset");
-_Static_assert(sizeof(kowasi5_work) <= sizeof(((sprite_status *)0)->actfree),
-               "kowasi5_work fits in actfree");
 
 static kowasi5_work *kowasi5_work_get(sprite_status *pActwk) {
     return (kowasi5_work *)pActwk->actfree;

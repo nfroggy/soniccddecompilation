@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "emie7.h"
 #include "../actset.h"
@@ -11,44 +9,17 @@
 void actionsub(sprite_status *pActwk);
 void frameout(sprite_status *pActwk);
 
-#pragma pack(push, 1)
 typedef struct {
     Uint8 goal_started;
-    Uint8 unused1[5];
     Sint16 timer;
-    Uint8 unused8[4];
     Sint16 home_x;
     Uint8 goal_flag;
-    Uint8 unused15;
     Uint8 motion_counter;
     Uint8 heart_counter;
     Uint8 stop_flag;
-    Uint8 unused19;
     Uint8 daki_flags;
     Uint8 daki_delay;
 } emie7_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(emie7_work, goal_started) == 0,
-               "emie7_work.goal_started offset");
-_Static_assert(offsetof(emie7_work, timer) == 6,
-               "emie7_work.timer offset");
-_Static_assert(offsetof(emie7_work, home_x) == 12,
-               "emie7_work.home_x offset");
-_Static_assert(offsetof(emie7_work, goal_flag) == 14,
-               "emie7_work.goal_flag offset");
-_Static_assert(offsetof(emie7_work, motion_counter) == 16,
-               "emie7_work.motion_counter offset");
-_Static_assert(offsetof(emie7_work, heart_counter) == 17,
-               "emie7_work.heart_counter offset");
-_Static_assert(offsetof(emie7_work, stop_flag) == 18,
-               "emie7_work.stop_flag offset");
-_Static_assert(offsetof(emie7_work, daki_flags) == 20,
-               "emie7_work.daki_flags offset");
-_Static_assert(offsetof(emie7_work, daki_delay) == 21,
-               "emie7_work.daki_delay offset");
-_Static_assert(sizeof(emie7_work) <= sizeof(((sprite_status *)0)->actfree),
-               "emie7_work fits in actfree");
 
 static emie7_work *emie7_get_work(sprite_status *pActwk) {
     return (emie7_work *)pActwk->actfree;

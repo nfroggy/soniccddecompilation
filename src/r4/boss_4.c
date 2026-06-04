@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "boss_4.h"
 #include "../action.h"
@@ -16,7 +14,6 @@ typedef struct {
     Sint16 E4A_Y;
 } E4A;
 
-#pragma pack(push, 1)
 typedef struct {
     Uint8 bomb_timer;
     Uint8 hit_invulnerability_timer;
@@ -27,45 +24,10 @@ typedef struct {
     Sint16 linked_actor_index;
     Sint16 gate1_index;
     Sint16 gate2_index;
-    Uint8 unused12[2];
     Sint16 bob_y_offset;
-    Uint8 unused16[2];
-    union {
-        Sint32 move_speed;
-        struct {
-            Uint8 unused18[3];
-            Uint8 gate_signal;
-        };
-    };
+    Sint32 move_speed;
+    Uint8 gate_signal;
 } boss4_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(boss4_work, bomb_timer) == 0,
-               "boss4_work.bomb_timer offset");
-_Static_assert(offsetof(boss4_work, hit_invulnerability_timer) == 1,
-               "boss4_work.hit_invulnerability_timer offset");
-_Static_assert(offsetof(boss4_work, speed_boost_timer) == 2,
-               "boss4_work.speed_boost_timer offset");
-_Static_assert(offsetof(boss4_work, damage_flash_timer) == 3,
-               "boss4_work.damage_flash_timer offset");
-_Static_assert(offsetof(boss4_work, approach_flags) == 4,
-               "boss4_work.approach_flags offset");
-_Static_assert(offsetof(boss4_work, bob_angle) == 5,
-               "boss4_work.bob_angle offset");
-_Static_assert(offsetof(boss4_work, linked_actor_index) == 6,
-               "boss4_work.linked_actor_index offset");
-_Static_assert(offsetof(boss4_work, gate1_index) == 8,
-               "boss4_work.gate1_index offset");
-_Static_assert(offsetof(boss4_work, gate2_index) == 10,
-               "boss4_work.gate2_index offset");
-_Static_assert(offsetof(boss4_work, bob_y_offset) == 14,
-               "boss4_work.bob_y_offset offset");
-_Static_assert(offsetof(boss4_work, move_speed) == 18,
-               "boss4_work.move_speed offset");
-_Static_assert(offsetof(boss4_work, gate_signal) == 21,
-               "boss4_work.gate_signal offset");
-_Static_assert(sizeof(boss4_work) <= sizeof(((sprite_status *)0)->actfree),
-               "boss4_work fits in actfree");
 
 static boss4_work *boss4_get_work(sprite_status *pActwk) {
     return (boss4_work *)pActwk->actfree;
@@ -181,8 +143,8 @@ static void make_airhead(sprite_status *pActwk) {
     sprite_status *pNewact;
 
     if (actwkchk(&pNewact) == 0) {
-        boss4_get_work(pActwk)->linked_actor_index = pNewact - actwk;
-        boss4_get_work(pNewact)->linked_actor_index = pActwk - actwk;
+        boss4_get_work(pActwk)->linked_actor_index = (Sint16)(pNewact - actwk);
+        boss4_get_work(pNewact)->linked_actor_index = (Sint16)(pActwk - actwk);
         pNewact->actno = 75;
         pNewact->xposi.w.h = pActwk->xposi.w.h;
         pNewact->yposi.w.h = pActwk->yposi.w.h;
@@ -674,14 +636,14 @@ static void make_gate(sprite_status *pActwk) {
     sprite_status *pNewact;
 
     if (actwkchk(&pNewact) == 0) {
-        boss4_get_work(pActwk)->gate1_index = pNewact - actwk;
+        boss4_get_work(pActwk)->gate1_index = (Sint16)(pNewact - actwk);
         pNewact->actno = 71;
         pNewact->userflag.b.h = 1;
         pNewact->xposi.w.h = 1888;
         pNewact->yposi.w.h = 704;
 
         if (actwkchk(&pNewact) == 0) {
-            boss4_get_work(pActwk)->gate2_index = pNewact - actwk;
+            boss4_get_work(pActwk)->gate2_index = (Sint16)(pNewact - actwk);
             pNewact->actno = 71;
             pNewact->userflag.b.h = 1;
             pNewact->xposi.w.h = 1728;

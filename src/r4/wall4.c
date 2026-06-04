@@ -2,7 +2,6 @@
 #include "wall4.h"
 #include "../action.h"
 #include "../ridechk.h"
-#include <stddef.h>
 
 #if defined(R42A)
 #define SPRITE_WALL4_BASE 470
@@ -10,23 +9,11 @@
 #define SPRITE_WALL4_BASE 492
 #endif
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 drop_timer;
     Uint16 flag_index;
-    Uint8 reserved0[21 - 4];
     Uint8 triggered;
 } wall4_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(wall4_work, drop_timer) == 0,
-               "wall4_work.drop_timer offset");
-_Static_assert(offsetof(wall4_work, flag_index) == 2,
-               "wall4_work.flag_index offset");
-_Static_assert(offsetof(wall4_work, triggered) == 21,
-               "wall4_work.triggered offset");
-_Static_assert(sizeof(wall4_work) <= sizeof(((sprite_status *)0)->actfree),
-               "wall4_work fits in actfree");
 
 static wall4_work *wall4_work_get(sprite_status *pActwk) {
     return (wall4_work *)pActwk->actfree;

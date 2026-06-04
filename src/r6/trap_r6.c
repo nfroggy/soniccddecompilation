@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "trap_r6.h"
 #include "../action.h"
@@ -7,28 +5,15 @@
 #include "../loader2.h"
 #include "../ridechk.h"
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 unused0[16];
     union {
         Sint16 animation_counter;
         struct {
             Uint8 animation_counter_low;
-            Uint8 unused17;
         };
     };
     Uint8 closing;
 } optbr6_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(optbr6_work, animation_counter) == 16,
-               "optbr6_work.animation_counter offset");
-_Static_assert(offsetof(optbr6_work, animation_counter_low) == 16,
-               "optbr6_work.animation_counter_low offset");
-_Static_assert(offsetof(optbr6_work, closing) == 18,
-               "optbr6_work.closing offset");
-_Static_assert(sizeof(optbr6_work) <= sizeof(((sprite_status *)0)->actfree),
-               "optbr6_work fits in actfree");
 
 static optbr6_work *optbr6_get_work(sprite_status *pActwk) {
     return (optbr6_work *)pActwk->actfree;

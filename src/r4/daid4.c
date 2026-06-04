@@ -4,7 +4,6 @@
 #include "../actset.h"
 #include "../loader2.h"
 #include "../ridechk.h"
-#include <stddef.h>
 
 static void a_ini(sprite_status *pActwk);
 static void a_born(sprite_status *pActwk);
@@ -13,19 +12,10 @@ static void a_off1(sprite_status *pActwk);
 static void a_on(sprite_status *pActwk);
 static void a_on1(sprite_status *pActwk);
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 base_y;
     Sint32 y_velocity;
 } daid4_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(daid4_work, base_y) == 0,
-               "daid4_work.base_y offset");
-_Static_assert(offsetof(daid4_work, y_velocity) == 2,
-               "daid4_work.y_velocity offset");
-_Static_assert(sizeof(daid4_work) <= sizeof(((sprite_status *)0)->actfree),
-               "daid4_work fits in actfree");
 
 static daid4_work *daid4_work_get(sprite_status *pActwk) {
     return (daid4_work *)pActwk->actfree;

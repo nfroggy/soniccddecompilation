@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "kabasira.h"
 #include "../action.h"
@@ -9,60 +7,18 @@
 #include "../playsub.h"
 #include "../suicide.h"
 
-#pragma pack(push, 1)
 typedef struct {
-    union {
-        Sint32 x_base;
-        Sint32 x_speed;
-        struct {
-            Sint16 x_base_frac;
-            Sint16 origin_x;
-        };
-    };
-    union {
-        Sint32 y_base;
-        Sint32 y_speed;
-        struct {
-            Sint16 y_base_frac;
-            Sint16 origin_y;
-        };
-    };
+    Sint32 x_base;
+    Sint32 y_base;
+    Sint32 x_speed;
+    Sint32 y_speed;
     Sint16 x_angle;
     Sint16 y_angle;
     Sint16 x_angle_step;
     Sint16 y_angle_step;
     Sint16 shot_timer;
-    Sint8 unused18[2];
     Sint16 parent_index;
 } kabasira_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(kabasira_work, x_base) == 0,
-               "kabasira_work.x_base offset");
-_Static_assert(offsetof(kabasira_work, x_speed) == 0,
-               "kabasira_work.x_speed offset");
-_Static_assert(offsetof(kabasira_work, origin_x) == 2,
-               "kabasira_work.origin_x offset");
-_Static_assert(offsetof(kabasira_work, y_base) == 4,
-               "kabasira_work.y_base offset");
-_Static_assert(offsetof(kabasira_work, y_speed) == 4,
-               "kabasira_work.y_speed offset");
-_Static_assert(offsetof(kabasira_work, origin_y) == 6,
-               "kabasira_work.origin_y offset");
-_Static_assert(offsetof(kabasira_work, x_angle) == 8,
-               "kabasira_work.x_angle offset");
-_Static_assert(offsetof(kabasira_work, y_angle) == 10,
-               "kabasira_work.y_angle offset");
-_Static_assert(offsetof(kabasira_work, x_angle_step) == 12,
-               "kabasira_work.x_angle_step offset");
-_Static_assert(offsetof(kabasira_work, y_angle_step) == 14,
-               "kabasira_work.y_angle_step offset");
-_Static_assert(offsetof(kabasira_work, shot_timer) == 16,
-               "kabasira_work.shot_timer offset");
-_Static_assert(offsetof(kabasira_work, parent_index) == 20,
-               "kabasira_work.parent_index offset");
-_Static_assert(sizeof(kabasira_work) <= sizeof(((sprite_status *)0)->actfree),
-               "kabasira_work fits in actfree");
 
 static kabasira_work *kabasira_get_work(sprite_status *pActwk) {
     return (kabasira_work *)pActwk->actfree;

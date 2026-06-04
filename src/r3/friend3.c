@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "friend3.h"
 #include "../action.h"
@@ -9,50 +7,16 @@
 #include "../playsub.h"
 #include "../suicide.h"
 
-#pragma pack(push, 1)
 typedef struct {
-    union {
-        struct {
-            Sint16 base_x;
-            Sint16 base_y;
-            Uint8 angle;
-            Sint8 angle_delta;
-        };
-        struct {
-            Uint8 unused0[2];
-            Sint32 x_speed;
-            Sint32 y_speed;
-        };
-    };
-    Uint8 unused10[10];
-    union {
-        Uint16 movie_parent_index;
-        struct {
-            Uint8 unused20;
-            Uint8 movie_done;
-        };
-    };
+    Sint16 base_x;
+    Sint16 base_y;
+    Uint8 angle;
+    Sint8 angle_delta;
+    Sint32 x_speed;
+    Sint32 y_speed;
+    Uint16 movie_parent_index;
+    Uint8 movie_done;
 } friend3_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(friend3_work, base_x) == 0,
-               "friend3_work.base_x offset");
-_Static_assert(offsetof(friend3_work, base_y) == 2,
-               "friend3_work.base_y offset");
-_Static_assert(offsetof(friend3_work, angle) == 4,
-               "friend3_work.angle offset");
-_Static_assert(offsetof(friend3_work, angle_delta) == 5,
-               "friend3_work.angle_delta offset");
-_Static_assert(offsetof(friend3_work, x_speed) == 2,
-               "friend3_work.x_speed offset");
-_Static_assert(offsetof(friend3_work, y_speed) == 6,
-               "friend3_work.y_speed offset");
-_Static_assert(offsetof(friend3_work, movie_parent_index) == 20,
-               "friend3_work.movie_parent_index offset");
-_Static_assert(offsetof(friend3_work, movie_done) == 21,
-               "friend3_work.movie_done offset");
-_Static_assert(sizeof(friend3_work) <= sizeof(((sprite_status *)0)->actfree),
-               "friend3_work fits in actfree");
 
 static friend3_work *friend3_get_work(sprite_status *actionwk) {
     return (friend3_work *)actionwk->actfree;

@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "boss_8.h"
 #include "../action.h"
@@ -36,7 +34,6 @@ typedef struct {
     char Dummy;
 } egg8spd;
 
-#pragma pack(push, 1)
 typedef struct {
     union {
         Sint16 timer;
@@ -89,50 +86,6 @@ typedef struct {
         };
     };
 } boss8_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(boss8_work, timer) == 0, "boss8_work.timer offset");
-_Static_assert(offsetof(boss8_work, timer_low) == 0,
-               "boss8_work.timer_low offset");
-_Static_assert(offsetof(boss8_work, angle) == 1, "boss8_work.angle offset");
-_Static_assert(offsetof(boss8_work, flags) == 2, "boss8_work.flags offset");
-_Static_assert(offsetof(boss8_work, step) == 3, "boss8_work.step offset");
-_Static_assert(offsetof(boss8_work, parent_index) == 4,
-               "boss8_work.parent_index offset");
-_Static_assert(offsetof(boss8_work, target_x) == 6,
-               "boss8_work.target_x offset");
-_Static_assert(offsetof(boss8_work, target_y) == 8,
-               "boss8_work.target_y offset");
-_Static_assert(offsetof(boss8_work, x_velocity) == 10,
-               "boss8_work.x_velocity offset");
-_Static_assert(offsetof(boss8_work, hane_mode) == 10,
-               "boss8_work.hane_mode offset");
-_Static_assert(offsetof(boss8_work, hane_base_patno) == 11,
-               "boss8_work.hane_base_patno offset");
-_Static_assert(offsetof(boss8_work, hane_target) == 12,
-               "boss8_work.hane_target offset");
-_Static_assert(offsetof(boss8_work, roll_speed) == 13,
-               "boss8_work.roll_speed offset");
-_Static_assert(offsetof(boss8_work, target_pos) == 14,
-               "boss8_work.target_pos offset");
-_Static_assert(offsetof(boss8_work, wait_time) == 14,
-               "boss8_work.wait_time offset");
-_Static_assert(offsetof(boss8_work, spin_frame) == 15,
-               "boss8_work.spin_frame offset");
-_Static_assert(offsetof(boss8_work, hane_count) == 16,
-               "boss8_work.hane_count offset");
-_Static_assert(offsetof(boss8_work, action_index) == 17,
-               "boss8_work.action_index offset");
-_Static_assert(offsetof(boss8_work, hit_flash) == 18,
-               "boss8_work.hit_flash offset");
-_Static_assert(offsetof(boss8_work, hit_timer) == 19,
-               "boss8_work.hit_timer offset");
-_Static_assert(offsetof(boss8_work, color_a) == 20,
-               "boss8_work.color_a offset");
-_Static_assert(offsetof(boss8_work, color_b) == 21,
-               "boss8_work.color_b offset");
-_Static_assert(sizeof(boss8_work) <= sizeof(((sprite_status *)0)->actfree),
-               "boss8_work fits in actfree");
 
 static boss8_work *boss8_get_work(sprite_status *pActwk) {
     return (boss8_work *)pActwk->actfree;

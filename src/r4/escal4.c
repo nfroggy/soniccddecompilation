@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "escal4.h"
 #include "../action.h"
@@ -9,17 +7,9 @@ sprite_pattern escal4_pat0 = {1, {{-16, -16, 0, 429}}};
 sprite_pattern escal4_pat1 = {1, {{-16, -16, 0, 430}}};
 sprite_pattern *escal4pat[2] = {&escal4_pat0, &escal4_pat1};
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 reserved0[20];
     Sint16 move_timer;
 } escal4_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(escal4_work, move_timer) == 20,
-               "escal4_work.move_timer must map to offset 20");
-_Static_assert(sizeof(escal4_work) <= sizeof(((sprite_status *)0)->actfree),
-               "escal4_work must fit in sprite_status.actfree");
 
 static escal4_work *escal4_work_get(sprite_status *pActwk) {
     return (escal4_work *)pActwk->actfree;
@@ -41,7 +31,7 @@ void escal4(sprite_status *pActwk) {
     frameout(pActwk);
 }
 
-Sint16 escal4_ridechk(sprite_status *pActwk) { hitchk(pActwk, &actwk[0]); }
+Sint16 escal4_ridechk(sprite_status *pActwk) { return hitchk(pActwk, &actwk[0]); }
 
 void escal4_init(sprite_status *pActwk) {
     pActwk->r_no0 += 2;

@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "konbea.h"
 #include "../action.h"
@@ -7,7 +5,6 @@
 #include "../ridechk.h"
 #include "../playsub.h"
 
-#pragma pack(push, 1)
 typedef struct {
     union {
         struct {
@@ -15,14 +12,12 @@ typedef struct {
             Sint16 timer;
             Sint16 origin_x;
             Sint16 origin_y;
-            Sint8 unused8[12];
             Uint8 riding_flag;
         } straight;
         struct {
             Sint16 parent_index;
             Sint16 origin_x;
             Sint16 origin_y;
-            Sint8 unused6[2];
             union {
                 Sint32 rotation_accumulator;
                 struct {
@@ -31,37 +26,10 @@ typedef struct {
                 };
             };
             Sint16 roll_timer;
-            Sint8 unused14[6];
             Uint8 riding_flag;
         } moving;
     };
 } konbea_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(konbea_work, straight.parent_index) == 0,
-               "konbea_work.straight.parent_index offset");
-_Static_assert(offsetof(konbea_work, straight.timer) == 2,
-               "konbea_work.straight.timer offset");
-_Static_assert(offsetof(konbea_work, moving.origin_x) == 2,
-               "konbea_work.moving.origin_x offset");
-_Static_assert(offsetof(konbea_work, straight.origin_x) == 4,
-               "konbea_work.straight.origin_x offset");
-_Static_assert(offsetof(konbea_work, moving.origin_y) == 4,
-               "konbea_work.moving.origin_y offset");
-_Static_assert(offsetof(konbea_work, straight.origin_y) == 6,
-               "konbea_work.straight.origin_y offset");
-_Static_assert(offsetof(konbea_work, moving.rotation_accumulator) == 8,
-               "konbea_work.moving.rotation_accumulator offset");
-_Static_assert(offsetof(konbea_work, moving.angle_index) == 10,
-               "konbea_work.moving.angle_index offset");
-_Static_assert(offsetof(konbea_work, moving.roll_timer) == 12,
-               "konbea_work.moving.roll_timer offset");
-_Static_assert(offsetof(konbea_work, straight.riding_flag) == 20,
-               "konbea_work.straight.riding_flag offset");
-_Static_assert(offsetof(konbea_work, moving.riding_flag) == 20,
-               "konbea_work.moving.riding_flag offset");
-_Static_assert(sizeof(konbea_work) <= sizeof(((sprite_status *)0)->actfree),
-               "konbea_work fits in actfree");
 
 static konbea_work *konbea_get_work(sprite_status *pActwk) {
     return (konbea_work *)pActwk->actfree;

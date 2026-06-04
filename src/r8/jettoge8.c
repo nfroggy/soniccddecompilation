@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "jettoge8.h"
 #include "../action.h"
@@ -12,26 +10,12 @@
 #define SPRITE_JETTOGE8_BASE 475
 #endif
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 turn_timer;
     Sint32 x_velocity;
     Sint16 origin_x;
-    Uint8 unused8;
     Uint8 saved_colino;
 } jettoge8_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(jettoge8_work, turn_timer) == 0,
-               "jettoge8_work.turn_timer offset");
-_Static_assert(offsetof(jettoge8_work, x_velocity) == 2,
-               "jettoge8_work.x_velocity offset");
-_Static_assert(offsetof(jettoge8_work, origin_x) == 6,
-               "jettoge8_work.origin_x offset");
-_Static_assert(offsetof(jettoge8_work, saved_colino) == 9,
-               "jettoge8_work.saved_colino offset");
-_Static_assert(sizeof(jettoge8_work) <= sizeof(((sprite_status *)0)->actfree),
-               "jettoge8_work fits in actfree");
 
 static jettoge8_work *jettoge8_get_work(sprite_status *actionwk) {
     return (jettoge8_work *)actionwk->actfree;

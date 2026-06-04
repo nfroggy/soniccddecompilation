@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "legmeca8.h"
 #include "../action.h"
@@ -8,25 +6,12 @@
 #include "../etc.h"
 #include "../ridechk.h"
 
-#pragma pack(push, 1)
 typedef struct {
     Uint8 routine;
     Uint8 roll_start_timer;
     Sint16 rotation;
     Sint16 segment_indices[9];
 } legmeca8_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(legmeca8_work, routine) == 0,
-               "legmeca8_work.routine offset");
-_Static_assert(offsetof(legmeca8_work, roll_start_timer) == 1,
-               "legmeca8_work.roll_start_timer offset");
-_Static_assert(offsetof(legmeca8_work, rotation) == 2,
-               "legmeca8_work.rotation offset");
-_Static_assert(offsetof(legmeca8_work, segment_indices) == 4,
-               "legmeca8_work.segment_indices offset");
-_Static_assert(sizeof(legmeca8_work) <= sizeof(((sprite_status *)0)->actfree),
-               "legmeca8_work fits in actfree");
 
 static legmeca8_work *legmeca8_get_work(sprite_status *pActwk) {
     return (legmeca8_work *)pActwk->actfree;

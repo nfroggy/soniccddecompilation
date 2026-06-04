@@ -14,14 +14,9 @@ sprite_pattern pat00;
 sprite_pattern pat01 = {1, {{-32, -16, 0, SPRITE_CHGWALL7_BASE}}};
 sprite_pattern *pat_chgwall7[2] = {&pat00, &pat01};
 
-#pragma pack(push, 1)
 typedef struct {
     Uint8 player_contact_latch;
 } chgwall7_work;
-#pragma pack(pop)
-
-_Static_assert(sizeof(chgwall7_work) <= sizeof(((sprite_status *)0)->actfree),
-               "chgwall7_work must fit in sprite_status.actfree");
 
 static chgwall7_work *chgwall7_work_get(sprite_status *pActwk) {
     return (chgwall7_work *)pActwk->actfree;

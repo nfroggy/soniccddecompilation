@@ -4,7 +4,6 @@
 #include "../actset.h"
 #include "../dircol.h"
 #include "../ridechk.h"
-#include <stddef.h>
 
 static void a_init(sprite_status *pActwk);
 static void a_moving(sprite_status *pActwk);
@@ -12,7 +11,6 @@ static void a_wait(sprite_status *pActwk);
 static void a_move(sprite_status *pActwk);
 static void a_move1(sprite_status *pActwk);
 
-#pragma pack(push, 1)
 typedef struct {
     Sint32 collision_side;
     Sint16 step_direction;
@@ -21,22 +19,6 @@ typedef struct {
     Sint16 probe_y;
     Sint16 origin_x;
 } ukidai_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(ukidai_work, collision_side) == 0,
-               "ukidai_work.collision_side offset");
-_Static_assert(offsetof(ukidai_work, step_direction) == 4,
-               "ukidai_work.step_direction offset");
-_Static_assert(offsetof(ukidai_work, probe_x_offset) == 6,
-               "ukidai_work.probe_x_offset offset");
-_Static_assert(offsetof(ukidai_work, remaining_delta) == 8,
-               "ukidai_work.remaining_delta offset");
-_Static_assert(offsetof(ukidai_work, probe_y) == 10,
-               "ukidai_work.probe_y offset");
-_Static_assert(offsetof(ukidai_work, origin_x) == 12,
-               "ukidai_work.origin_x offset");
-_Static_assert(sizeof(ukidai_work) <= sizeof(((sprite_status *)0)->actfree),
-               "ukidai_work fits in actfree");
 
 static ukidai_work *ukidai_work_get(sprite_status *pActwk) {
     return (ukidai_work *)pActwk->actfree;

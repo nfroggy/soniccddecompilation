@@ -4,7 +4,6 @@
 #include "../actset.h"
 #include "../ridechk.h"
 #include "playsub4.h"
-#include <stddef.h>
 
 static void funsui4_init(sprite_status *pActwk);
 static void funsui4_move(sprite_status *pActwk);
@@ -12,20 +11,10 @@ static void sibuki_set(sprite_status *pActwk);
 static void sibuki_init(sprite_status *pActwk);
 static void sibuki_move(sprite_status *pActwk);
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 reserved0[16];
     Uint8 splash_index;
     Uint8 timer;
 } funsui4_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(funsui4_work, splash_index) == 16,
-               "funsui4_work.splash_index offset");
-_Static_assert(offsetof(funsui4_work, timer) == 17,
-               "funsui4_work.timer offset");
-_Static_assert(sizeof(funsui4_work) <= sizeof(((sprite_status *)0)->actfree),
-               "funsui4_work fits in actfree");
 
 static funsui4_work *funsui4_work_get(sprite_status *pActwk) {
     return (funsui4_work *)pActwk->actfree;

@@ -2,30 +2,17 @@
 #include "gaitou73.h"
 #include "../action.h"
 #include "../actset.h"
-#include <stddef.h>
 
 static void gaitou73_ini(sprite_status *pActwk);
 static void gaitou73_01(sprite_status *pActwk);
 static Sint16 get_x(sprite_status *pActwk);
 static void gaitou73_02(sprite_status *pActwk);
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 reserved0[4];
     Sint16 partner_actor;
     Sint16 cached_x;
     Sint16 cached_y;
 } gaitou73_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(gaitou73_work, partner_actor) == 4,
-               "gaitou73_work.partner_actor offset");
-_Static_assert(offsetof(gaitou73_work, cached_x) == 6,
-               "gaitou73_work.cached_x offset");
-_Static_assert(offsetof(gaitou73_work, cached_y) == 8,
-               "gaitou73_work.cached_y offset");
-_Static_assert(sizeof(gaitou73_work) <= sizeof(((sprite_status *)0)->actfree),
-               "gaitou73_work fits in actfree");
 
 static gaitou73_work *gaitou73_work_get(sprite_status *pActwk) {
     return (gaitou73_work *)pActwk->actfree;

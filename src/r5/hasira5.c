@@ -4,25 +4,15 @@
 #include "../actset.h"
 #include "../loader2.h"
 #include "../ridechk.h"
-#include <stddef.h>
 
 static void m_init(sprite_status *pActwk);
 static void m_wait(sprite_status *pActwk);
 static void m_down(sprite_status *pActwk);
 
-#pragma pack(push, 1)
 typedef struct {
     Sint32 x_velocity;
     Sint32 y_velocity;
 } hasira5_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(hasira5_work, x_velocity) == 0,
-               "hasira5_work.x_velocity offset");
-_Static_assert(offsetof(hasira5_work, y_velocity) == 4,
-               "hasira5_work.y_velocity offset");
-_Static_assert(sizeof(hasira5_work) <= sizeof(((sprite_status *)0)->actfree),
-               "hasira5_work fits in actfree");
 
 static hasira5_work *hasira5_work_get(sprite_status *pActwk) {
     return (hasira5_work *)pActwk->actfree;

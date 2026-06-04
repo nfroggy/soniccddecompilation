@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "stopper.h"
 #include "../action.h"
@@ -17,17 +15,9 @@ static char pchg0[5] = {9, 0, 1, 2, -4};
 static char pchg1[5] = {9, 2, 1, 0, -4};
 static char *pchg[2] = {pchg0, pchg1};
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 reserved0[12];
     Uint16 parent_actor;
 } stopper_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(stopper_work, parent_actor) == 12,
-               "stopper_work.parent_actor must map to offset 12");
-_Static_assert(sizeof(stopper_work) <= sizeof(((sprite_status *)0)->actfree),
-               "stopper_work must fit in sprite_status.actfree");
 
 static stopper_work *stopper_work_get(sprite_status *actionwk) {
     return (stopper_work *)actionwk->actfree;

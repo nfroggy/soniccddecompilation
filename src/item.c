@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "equ.h"
 #include "item.h"
 #include "action.h"
@@ -10,17 +8,9 @@
 #include "playsub.h"
 #include "ridechk.h"
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 unused0;
     Uint8 collection_timer;
 } time_item_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(time_item_work, collection_timer) == 1,
-               "time_item_work.collection_timer offset");
-_Static_assert(sizeof(time_item_work) <= sizeof(((sprite_status *)0)->actfree),
-               "time_item_work must fit in sprite_status.actfree");
 
 static time_item_work *time_item_get_work(sprite_status *t_itemwk) {
     return (time_item_work *)t_itemwk->actfree;
@@ -192,7 +182,6 @@ void t_item_move0(sprite_status *t_itemwk) {
         }
     }
 
-    work->unused0 = 0;
     work->collection_timer = 60;
     t_itemwk->r_no0 += 2;
     flag_no = flagwkadr(t_itemwk);

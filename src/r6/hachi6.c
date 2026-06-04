@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "hachi6.h"
 #include "../action.h"
@@ -8,32 +6,13 @@
 #include "../playsub.h"
 #include "../suicide.h"
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 timer;
     Sint32 x_speed;
-    union {
-        Sint32 y_speed;
-        struct {
-            Sint16 shot_x_offset;
-            Sint16 shot_cooldown;
-        };
-    };
+    Sint32 y_speed;
+    Sint16 shot_x_offset;
+    Sint16 shot_cooldown;
 } hachi6_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(hachi6_work, timer) == 0,
-               "hachi6_work.timer offset");
-_Static_assert(offsetof(hachi6_work, x_speed) == 2,
-               "hachi6_work.x_speed offset");
-_Static_assert(offsetof(hachi6_work, y_speed) == 6,
-               "hachi6_work.y_speed offset");
-_Static_assert(offsetof(hachi6_work, shot_x_offset) == 6,
-               "hachi6_work.shot_x_offset offset");
-_Static_assert(offsetof(hachi6_work, shot_cooldown) == 8,
-               "hachi6_work.shot_cooldown offset");
-_Static_assert(sizeof(hachi6_work) <= sizeof(((sprite_status *)0)->actfree),
-               "hachi6_work fits in actfree");
 
 static hachi6_work *hachi6_get_work(sprite_status *actionwk) {
     return (hachi6_work *)actionwk->actfree;

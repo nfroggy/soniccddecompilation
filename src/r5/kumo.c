@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "kumo.h"
 #include "../action.h"
@@ -10,24 +8,12 @@
 #include "../playsub.h"
 #include "../suicide.h"
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 timer;
     Uint8 **change_table;
     Sint32 initial_y_speed;
     Sint32 velocity;
 } kumo_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(kumo_work, timer) == 0, "kumo_work.timer offset");
-_Static_assert(offsetof(kumo_work, change_table) == 2,
-               "kumo_work.change_table offset");
-_Static_assert(offsetof(kumo_work, initial_y_speed) == 6,
-               "kumo_work.initial_y_speed offset");
-_Static_assert(offsetof(kumo_work, velocity) == 10,
-               "kumo_work.velocity offset");
-_Static_assert(sizeof(kumo_work) <= sizeof(((sprite_status *)0)->actfree),
-               "kumo_work must fit in sprite_status.actfree");
 
 static kumo_work *kumo_get_work(sprite_status *pActwk) {
     return (kumo_work *)pActwk->actfree;

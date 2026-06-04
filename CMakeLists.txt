@@ -4847,7 +4847,7 @@ endif()
 
 if(SONICCD_BUILD_TESTS)
   if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    message(FATAL_ERROR "SONICCD_BUILD_TESTS requires a 32-bit build. Configure MSVC with the Win32 platform, not x64.")
+    message(WARNING "SONICCD_BUILD_TESTS is experimental on x64 while backend actfree work structs are being ported.")
   endif()
 
   enable_testing()

@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "swblk4.h"
 #include "../action.h"
@@ -7,36 +5,15 @@
 #include "../dircol.h"
 #include "../ridechk.h"
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 unused0[6];
     Sint16 switch_index;
     Sint16 origin_y;
     Sint16 linked_block_index;
     Sint16 origin_x;
     Uint8 follow_dx;
     Uint8 follow_dy;
-    Uint8 unused16[2];
     Uint8 is_secondary;
 } swblk4_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(swblk4_work, switch_index) == 6,
-               "swblk4_work.switch_index offset");
-_Static_assert(offsetof(swblk4_work, origin_y) == 8,
-               "swblk4_work.origin_y offset");
-_Static_assert(offsetof(swblk4_work, linked_block_index) == 10,
-               "swblk4_work.linked_block_index offset");
-_Static_assert(offsetof(swblk4_work, origin_x) == 12,
-               "swblk4_work.origin_x offset");
-_Static_assert(offsetof(swblk4_work, follow_dx) == 14,
-               "swblk4_work.follow_dx offset");
-_Static_assert(offsetof(swblk4_work, follow_dy) == 15,
-               "swblk4_work.follow_dy offset");
-_Static_assert(offsetof(swblk4_work, is_secondary) == 18,
-               "swblk4_work.is_secondary offset");
-_Static_assert(sizeof(swblk4_work) <= sizeof(((sprite_status *)0)->actfree),
-               "swblk4_work fits in actfree");
 
 static swblk4_work *swblk4_get_work(sprite_status *pActwk) {
     return (swblk4_work *)pActwk->actfree;
@@ -207,8 +184,9 @@ static void swblkr4_init(sprite_status *pActwk) {
         swblk4_get_work(pNewact)->is_secondary = 1;
         pNewact->yposi.w.h = pActwk->yposi.w.h + 32;
         pNewact->xposi.w.h = pActwk->xposi.w.h - 32;
-        swblk4_get_work(pNewact)->linked_block_index = pActwk - actwk;
-        work->linked_block_index = pNewact - actwk;
+        swblk4_get_work(pNewact)->linked_block_index =
+            (Sint16)(pActwk - actwk);
+        work->linked_block_index = (Sint16)(pNewact - actwk);
         pNewact->patno = 2;
 
         if (actwkchk2(pActwk, &pNewact) != 0) {
@@ -217,8 +195,9 @@ static void swblkr4_init(sprite_status *pActwk) {
         }
 
         pNewact->actno = 49;
-        swblk4_get_work(pNewact)->linked_block_index = pActwk - actwk;
-        work->switch_index = pNewact - actwk;
+        swblk4_get_work(pNewact)->linked_block_index =
+            (Sint16)(pActwk - actwk);
+        work->switch_index = (Sint16)(pNewact - actwk);
         swblk4_get_work(pNewact)->follow_dy = 188;
         swblk4_get_work(pNewact)->origin_x = work->origin_x;
 

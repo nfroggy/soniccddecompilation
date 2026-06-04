@@ -10,7 +10,7 @@ hmx_environment *g_loader_module;
 Sint32 nTimerCunt;
 Uint16 nSequenceNum;
 Uint32 *lpbFullScreen;
-Uint32 hWnd;
+UintPtr hWnd;
 PALETTEENTRY *lpColorwk;
 draw_context *s_ctx;
 draw_context *(*get_draw_context_module)(void);

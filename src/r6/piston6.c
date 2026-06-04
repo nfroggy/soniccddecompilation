@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "piston6.h"
 #include "../action.h"
@@ -18,33 +16,14 @@ static sprite_pattern nullpat = {1, {{0, 0, 0, 0}}};
 static sprite_pattern piston6pat0 = {1, {{-32, -40, 0, SPRITE_PISTON6_BASE}}};
 sprite_pattern *piston6pat[2] = {&piston6pat0, &nullpat};
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 unused0[8];
     Sint16 base_y;
     Uint16 parent_index;
     Sint16 base_x;
-    Uint8 unused14[2];
     Uint8 wait_timer;
     Uint8 extension;
     Uint8 retracting;
 } piston6_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(piston6_work, base_y) == 8,
-               "piston6_work.base_y offset");
-_Static_assert(offsetof(piston6_work, parent_index) == 10,
-               "piston6_work.parent_index offset");
-_Static_assert(offsetof(piston6_work, base_x) == 12,
-               "piston6_work.base_x offset");
-_Static_assert(offsetof(piston6_work, wait_timer) == 16,
-               "piston6_work.wait_timer offset");
-_Static_assert(offsetof(piston6_work, extension) == 17,
-               "piston6_work.extension offset");
-_Static_assert(offsetof(piston6_work, retracting) == 18,
-               "piston6_work.retracting offset");
-_Static_assert(sizeof(piston6_work) <= sizeof(((sprite_status *)0)->actfree),
-               "piston6_work fits in actfree");
 
 static piston6_work *piston6_get_work(sprite_status *actionwk) {
     return (piston6_work *)actionwk->actfree;

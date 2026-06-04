@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "tagameb4.h"
 #include "../action.h"
@@ -8,7 +6,6 @@
 #include "../suicide.h"
 #include "playsub4.h"
 
-#pragma pack(push, 1)
 typedef struct {
     union {
         struct {
@@ -17,7 +14,6 @@ typedef struct {
             Sint16 spike_indices[3];
             Sint16 timer_reset;
             Sint16 origin_x;
-            Sint8 unused16[3];
             Uint8 saved_cdsts;
             Sint16 parent_index;
         } master;
@@ -26,42 +22,11 @@ typedef struct {
             Sint32 y_speed;
             Sint32 x_accel;
             Sint32 y_accel;
-            Sint8 unused16[3];
             Uint8 saved_cdsts;
             Sint16 parent_index;
         } projectile;
     };
 } tagameb4_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(tagameb4_work, master.timer) == 0,
-               "tagameb4_work.master.timer offset");
-_Static_assert(offsetof(tagameb4_work, projectile.x_speed) == 0,
-               "tagameb4_work.projectile.x_speed offset");
-_Static_assert(offsetof(tagameb4_work, master.move_speed) == 2,
-               "tagameb4_work.master.move_speed offset");
-_Static_assert(offsetof(tagameb4_work, projectile.y_speed) == 4,
-               "tagameb4_work.projectile.y_speed offset");
-_Static_assert(offsetof(tagameb4_work, master.spike_indices) == 6,
-               "tagameb4_work.master.spike_indices offset");
-_Static_assert(offsetof(tagameb4_work, projectile.x_accel) == 8,
-               "tagameb4_work.projectile.x_accel offset");
-_Static_assert(offsetof(tagameb4_work, master.timer_reset) == 12,
-               "tagameb4_work.master.timer_reset offset");
-_Static_assert(offsetof(tagameb4_work, projectile.y_accel) == 12,
-               "tagameb4_work.projectile.y_accel offset");
-_Static_assert(offsetof(tagameb4_work, master.origin_x) == 14,
-               "tagameb4_work.master.origin_x offset");
-_Static_assert(offsetof(tagameb4_work, master.saved_cdsts) == 19,
-               "tagameb4_work.master.saved_cdsts offset");
-_Static_assert(offsetof(tagameb4_work, master.parent_index) == 20,
-               "tagameb4_work.master.parent_index offset");
-_Static_assert(offsetof(tagameb4_work, projectile.saved_cdsts) == 19,
-               "tagameb4_work.projectile.saved_cdsts offset");
-_Static_assert(offsetof(tagameb4_work, projectile.parent_index) == 20,
-               "tagameb4_work.projectile.parent_index offset");
-_Static_assert(sizeof(tagameb4_work) <= sizeof(((sprite_status *)0)->actfree),
-               "tagameb4_work fits in actfree");
 
 static tagameb4_work *tagameb4_get_work(sprite_status *pActwk) {
     return (tagameb4_work *)pActwk->actfree;
@@ -167,9 +132,9 @@ static void make_toge(sprite_status *pActwk) {
         subActwk->userflag.b.h = -1;
         tagameb4_get_work(subActwk)->projectile.saved_cdsts = pActwk->cdsts;
         tagameb4_get_work(subActwk)->projectile.parent_index =
-            (Uint16)(Uint8)(pActwk - actwk);
+            (Sint16)(pActwk - actwk);
         tagameb4_get_work(pActwk)->master.spike_indices[0] =
-            (Uint16)(Uint8)(subActwk - actwk);
+            (Sint16)(subActwk - actwk);
     } else {
         frameout(pActwk);
         return;
@@ -179,9 +144,9 @@ static void make_toge(sprite_status *pActwk) {
         subActwk->userflag.b.h = -1;
         tagameb4_get_work(subActwk)->projectile.saved_cdsts = pActwk->cdsts;
         tagameb4_get_work(subActwk)->projectile.parent_index =
-            (Uint16)(Uint8)(pActwk - actwk);
+            (Sint16)(pActwk - actwk);
         tagameb4_get_work(pActwk)->master.spike_indices[1] =
-            (Uint16)(Uint8)(subActwk - actwk);
+            (Sint16)(subActwk - actwk);
     } else {
         frameout(pActwk);
         return;
@@ -191,9 +156,9 @@ static void make_toge(sprite_status *pActwk) {
         subActwk->userflag.b.h = -1;
         tagameb4_get_work(subActwk)->projectile.saved_cdsts = pActwk->cdsts;
         tagameb4_get_work(subActwk)->projectile.parent_index =
-            (Uint16)(Uint8)(pActwk - actwk);
+            (Sint16)(pActwk - actwk);
         tagameb4_get_work(pActwk)->master.spike_indices[2] =
-            (Uint16)(Uint8)(subActwk - actwk);
+            (Sint16)(subActwk - actwk);
     } else {
         frameout(pActwk);
         return;

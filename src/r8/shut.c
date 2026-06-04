@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "shut.h"
 #include "../action.h"
@@ -27,21 +25,12 @@ static Sint16 ridechk_k(sprite_status *loopwk);
 static void kaiten_bou0(sprite_status *loopwk);
 static void kaiten_bou1(sprite_status *loopwk);
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 origin_x;
     Uint8 counter;
     Uint8 angle;
     Uint8 return_angle;
 } shut_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(shut_work, origin_x) == 0, "shut_work.origin_x offset");
-_Static_assert(offsetof(shut_work, counter) == 2, "shut_work.counter offset");
-_Static_assert(offsetof(shut_work, angle) == 3, "shut_work.angle offset");
-_Static_assert(offsetof(shut_work, return_angle) == 4, "shut_work.return_angle offset");
-_Static_assert(sizeof(shut_work) <= sizeof(((sprite_status *)0)->actfree),
-               "shut_work fits in actfree");
 
 static shut_work *shut_get_work(sprite_status *shutwk) {
     return (shut_work *)shutwk->actfree;

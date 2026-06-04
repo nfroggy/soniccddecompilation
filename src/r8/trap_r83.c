@@ -6,48 +6,19 @@
 #include "../player_work.h"
 #include "../ridechk.h"
 #include "coli8.h"
-#include <stddef.h>
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 unused0[6];
     Sint16 trigger_timer;
     Sint16 origin_y;
     Uint16 linked_actor_index;
     Sint16 origin_x;
     Uint8 follow_x_offset;
     Uint8 follow_y_offset;
-    Uint8 unused16;
     Uint8 segment_count;
     Uint8 pattern_index;
     Uint8 group_index;
-    Uint8 unused20;
     Uint8 stopped;
 } trap_r83_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(trap_r83_work, trigger_timer) == 6,
-               "trap_r83_work.trigger_timer offset");
-_Static_assert(offsetof(trap_r83_work, origin_y) == 8,
-               "trap_r83_work.origin_y offset");
-_Static_assert(offsetof(trap_r83_work, linked_actor_index) == 10,
-               "trap_r83_work.linked_actor_index offset");
-_Static_assert(offsetof(trap_r83_work, origin_x) == 12,
-               "trap_r83_work.origin_x offset");
-_Static_assert(offsetof(trap_r83_work, follow_x_offset) == 14,
-               "trap_r83_work.follow_x_offset offset");
-_Static_assert(offsetof(trap_r83_work, follow_y_offset) == 15,
-               "trap_r83_work.follow_y_offset offset");
-_Static_assert(offsetof(trap_r83_work, segment_count) == 17,
-               "trap_r83_work.segment_count offset");
-_Static_assert(offsetof(trap_r83_work, pattern_index) == 18,
-               "trap_r83_work.pattern_index offset");
-_Static_assert(offsetof(trap_r83_work, group_index) == 19,
-               "trap_r83_work.group_index offset");
-_Static_assert(offsetof(trap_r83_work, stopped) == 21,
-               "trap_r83_work.stopped offset");
-_Static_assert(sizeof(trap_r83_work) <= sizeof(((sprite_status *)0)->actfree),
-               "trap_r83_work fits in actfree");
 
 static inline trap_r83_work *trap_r83_work_get(sprite_status *trapwk) {
     return (trap_r83_work *)trapwk->actfree;

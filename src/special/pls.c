@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../types.h"
 #include "common.h"
 #include "sps_equ.h"
@@ -10,7 +8,6 @@
 #include "game.h"
 #include "sin.h"
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 timer;
     Uint16 angle_x;
@@ -21,30 +18,10 @@ typedef struct {
             Uint16 angle_z;
         };
     };
-    Uint8 unused8[8];
     Uint8 facing_frame;
     Uint8 state_timer;
     Sint16 speed_boost_timer;
 } special_player_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(special_player_work, timer) == 0,
-               "special_player_work.timer offset");
-_Static_assert(offsetof(special_player_work, angle_x) == 2,
-               "special_player_work.angle_x offset");
-_Static_assert(offsetof(special_player_work, angle_z_accum) == 4,
-               "special_player_work.angle_z_accum offset");
-_Static_assert(offsetof(special_player_work, angle_z) == 6,
-               "special_player_work.angle_z offset");
-_Static_assert(offsetof(special_player_work, facing_frame) == 16,
-               "special_player_work.facing_frame offset");
-_Static_assert(offsetof(special_player_work, state_timer) == 17,
-               "special_player_work.state_timer offset");
-_Static_assert(offsetof(special_player_work, speed_boost_timer) == 18,
-               "special_player_work.speed_boost_timer offset");
-_Static_assert(sizeof(special_player_work) <=
-                   sizeof(((sprite_status_sp *)0)->actfree),
-               "special_player_work fits in actfree");
 
 static special_player_work *special_player_get_work(sprite_status_sp *plwk) {
     return (special_player_work *)plwk->actfree;

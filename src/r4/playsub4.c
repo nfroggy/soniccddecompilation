@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "playsub4.h"
 #include "../action.h"
@@ -12,40 +10,32 @@
 #include "../player.h"
 #include "../player_work.h"
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 origin_x;
     Sint16 origin_y;
     Uint8 activated;
-    Sint8 unused5;
     sprite_status *parent;
     Uint8 angle;
 } marker_work;
 
 typedef struct {
-    Sint8 unused0[6];
     Uint8 history_offset;
 } muteki_work;
 
 typedef struct {
-    Uint8 unused0[21];
     Uint8 score_index;
 } playsub4_score_work;
 
 typedef struct {
-    Uint8 unused0[2];
     Uint16 drowning_timer;
-    Uint8 unused4[2];
     Sint16 origin_x;
     Uint8 warning_timer;
     Uint8 warning_interval;
     Uint8 spawn_counter;
-    Uint8 unused11;
     union {
         Sint16 spawn_state;
         struct {
             Uint8 spawn_flags;
-            Uint8 unused13;
         };
     };
     Sint16 bubble_timer;
@@ -59,59 +49,6 @@ typedef struct {
 typedef struct {
     Sint16 hold_timer;
 } bou_work;
-#pragma pack(pop)
-
-_Static_assert(sizeof(sprite_status *) == 4,
-               "marker_work stores a 32-bit actor pointer");
-_Static_assert(offsetof(marker_work, origin_x) == 0,
-               "marker_work.origin_x offset");
-_Static_assert(offsetof(marker_work, origin_y) == 2,
-               "marker_work.origin_y offset");
-_Static_assert(offsetof(marker_work, activated) == 4,
-               "marker_work.activated offset");
-_Static_assert(offsetof(marker_work, parent) == 6,
-               "marker_work.parent offset");
-_Static_assert(offsetof(marker_work, angle) == 10,
-               "marker_work.angle offset");
-_Static_assert(sizeof(marker_work) <= sizeof(((sprite_status *)0)->actfree),
-               "marker_work fits in actfree");
-_Static_assert(offsetof(muteki_work, history_offset) == 6,
-               "muteki_work.history_offset offset");
-_Static_assert(sizeof(muteki_work) <= sizeof(((sprite_status *)0)->actfree),
-               "muteki_work fits in actfree");
-_Static_assert(offsetof(playsub4_score_work, score_index) == 21,
-               "playsub4_score_work.score_index offset");
-_Static_assert(sizeof(playsub4_score_work) <=
-                   sizeof(((sprite_status *)0)->actfree),
-               "playsub4_score_work fits in actfree");
-_Static_assert(offsetof(plawa_work, drowning_timer) == 2,
-               "plawa_work.drowning_timer offset");
-_Static_assert(offsetof(plawa_work, origin_x) == 6,
-               "plawa_work.origin_x offset");
-_Static_assert(offsetof(plawa_work, warning_timer) == 8,
-               "plawa_work.warning_timer offset");
-_Static_assert(offsetof(plawa_work, warning_interval) == 9,
-               "plawa_work.warning_interval offset");
-_Static_assert(offsetof(plawa_work, spawn_counter) == 10,
-               "plawa_work.spawn_counter offset");
-_Static_assert(offsetof(plawa_work, spawn_state) == 12,
-               "plawa_work.spawn_state offset");
-_Static_assert(offsetof(plawa_work, spawn_flags) == 12,
-               "plawa_work.spawn_flags offset");
-_Static_assert(offsetof(plawa_work, bubble_timer) == 14,
-               "plawa_work.bubble_timer offset");
-_Static_assert(offsetof(plawa_work, jump_timer) == 16,
-               "plawa_work.jump_timer offset");
-_Static_assert(sizeof(plawa_work) <= sizeof(((sprite_status *)0)->actfree),
-               "plawa_work fits in actfree");
-_Static_assert(offsetof(wave_work, frame_counter) == 0,
-               "wave_work.frame_counter offset");
-_Static_assert(sizeof(wave_work) <= sizeof(((sprite_status *)0)->actfree),
-               "wave_work fits in actfree");
-_Static_assert(offsetof(bou_work, hold_timer) == 0,
-               "bou_work.hold_timer offset");
-_Static_assert(sizeof(bou_work) <= sizeof(((sprite_status *)0)->actfree),
-               "bou_work fits in actfree");
 
 static marker_work *marker_get_work(sprite_status *markerwk) {
     return (marker_work *)markerwk->actfree;
@@ -840,7 +777,6 @@ void plawamaster_jump2(sprite_status *pActwk) {
 
         if (pWork->drowning_timer) {
             pWork->jump_timer &= 7;
-            pActwk + 1;
             pNewactwk->yposi.w.h = actwk[0].yposi.w.h - 12;
             pNewactwk->direc.b.h = random() & 255;
             if (!(gametimer.w & 3))

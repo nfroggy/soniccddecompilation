@@ -6,7 +6,6 @@
 #include "../loader2.h"
 #include "../playsub.h"
 #include "../suicide.h"
-#include <stddef.h>
 
 static void m_init(sprite_status *pActwk);
 static void m_fall(sprite_status *pActwk);
@@ -14,23 +13,11 @@ static void m_move(sprite_status *pActwk);
 static Sint16 m_check(sprite_status *pActwk);
 static void sub(sprite_status *pActwk);
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 origin_x;
     Sint32 x_velocity;
-    Uint8 reserved0[20 - 6];
     Sint16 linked_actor;
 } denden_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(denden_work, origin_x) == 0,
-               "denden_work.origin_x offset");
-_Static_assert(offsetof(denden_work, x_velocity) == 2,
-               "denden_work.x_velocity offset");
-_Static_assert(offsetof(denden_work, linked_actor) == 20,
-               "denden_work.linked_actor offset");
-_Static_assert(sizeof(denden_work) <= sizeof(((sprite_status *)0)->actfree),
-               "denden_work fits in actfree");
 
 static denden_work *denden_work_get(sprite_status *pActwk) {
     return (denden_work *)pActwk->actfree;

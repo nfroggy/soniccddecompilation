@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "rollplat.h"
 #include "../action.h"
@@ -10,7 +8,6 @@ static void act_init(sprite_status *banwk);
 static void act_move(sprite_status *banwk);
 static void act_check(sprite_status *banwk);
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 spin_timer;
     Uint16 initial_child_index;
@@ -19,32 +16,9 @@ typedef struct {
     Uint16 previous_child_index;
     Uint16 oldest_child_index;
     Uint16 parent_index;
-    Uint8 unused14[6];
     Uint8 touch_latch;
     Uint8 initial_trigger;
 } rollplat_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(rollplat_work, spin_timer) == 0,
-               "rollplat_work.spin_timer offset");
-_Static_assert(offsetof(rollplat_work, initial_child_index) == 2,
-               "rollplat_work.initial_child_index offset");
-_Static_assert(offsetof(rollplat_work, sequence_step) == 4,
-               "rollplat_work.sequence_step offset");
-_Static_assert(offsetof(rollplat_work, active_child_index) == 6,
-               "rollplat_work.active_child_index offset");
-_Static_assert(offsetof(rollplat_work, previous_child_index) == 8,
-               "rollplat_work.previous_child_index offset");
-_Static_assert(offsetof(rollplat_work, oldest_child_index) == 10,
-               "rollplat_work.oldest_child_index offset");
-_Static_assert(offsetof(rollplat_work, parent_index) == 12,
-               "rollplat_work.parent_index offset");
-_Static_assert(offsetof(rollplat_work, touch_latch) == 20,
-               "rollplat_work.touch_latch offset");
-_Static_assert(offsetof(rollplat_work, initial_trigger) == 21,
-               "rollplat_work.initial_trigger offset");
-_Static_assert(sizeof(rollplat_work) <= sizeof(((sprite_status *)0)->actfree),
-               "rollplat_work fits in actfree");
 
 static rollplat_work *rollplat_get_work(sprite_status *banwk) {
     return (rollplat_work *)banwk->actfree;

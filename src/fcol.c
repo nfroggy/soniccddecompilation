@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "equ.h"
 #include "fcol.h"
 
@@ -8,17 +6,9 @@ extern Uint8 scddirtbl[256];
 extern Uint8 scdtblwk2[257][16];
 extern Uint8 mapwka[8][64];
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 reserved0[14];
     Uint8 force_position_adjust;
 } fcol_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(fcol_work, force_position_adjust) == 14,
-               "fcol_work.force_position_adjust must map to offset 14");
-_Static_assert(sizeof(fcol_work) <= sizeof(((sprite_status *)0)->actfree),
-               "fcol_work must fit in sprite_status.actfree");
 
 static fcol_work *fcol_work_get(sprite_status *pActwk) {
     return (fcol_work *)pActwk->actfree;

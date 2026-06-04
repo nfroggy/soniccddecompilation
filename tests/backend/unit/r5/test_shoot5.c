@@ -223,7 +223,6 @@ static void test_shootermove_captures_player_and_rejects_misses(
     TEST_ASSERT_EQ_INT(ctx, 2, player->cddat & 2);
     TEST_ASSERT_EQ_INT(ctx, 100, player->xposi.w.h);
     TEST_ASSERT_EQ_INT(ctx, 120, player->yposi.w.h);
-    TEST_ASSERT_EQ_INT(ctx, 0, shoot5_get_work(shoot)->unused6[2]);
     TEST_ASSERT_EQ_INT(ctx, 1, soundset_count);
     TEST_ASSERT_EQ_INT(ctx, 145, soundset_requests[0]);
 

@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "light.h"
 #include "../action.h"
@@ -9,17 +7,9 @@ static void act_init(sprite_status *actionwk);
 static sprite_pattern light_pat0 = {1, {{-8, -8, 0, 570}}};
 static sprite_pattern *light_pat[1] = {&light_pat0};
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 reserved0[12];
     Uint16 parent_actor;
 } light_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(light_work, parent_actor) == 12,
-               "light_work.parent_actor must map to offset 12");
-_Static_assert(sizeof(light_work) <= sizeof(((sprite_status *)0)->actfree),
-               "light_work must fit in sprite_status.actfree");
 
 static light_work *light_work_get(sprite_status *actionwk) {
     return (light_work *)actionwk->actfree;

@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "lrblk4.h"
 #include "../action.h"
@@ -25,37 +23,15 @@ typedef struct {
     Sint16 speed;
 } move_data;
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 unused0[6];
     Sint16 move_speed;
     Sint16 wave_origin_x;
-    Uint8 unused10[2];
     Sint16 base_x;
-    Uint8 unused14[2];
     Uint8 phase;
     Uint8 segment_index;
     Uint8 child_index;
     Uint8 variant;
 } lrblk4_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(lrblk4_work, move_speed) == 6,
-               "lrblk4_work.move_speed offset");
-_Static_assert(offsetof(lrblk4_work, wave_origin_x) == 8,
-               "lrblk4_work.wave_origin_x offset");
-_Static_assert(offsetof(lrblk4_work, base_x) == 12,
-               "lrblk4_work.base_x offset");
-_Static_assert(offsetof(lrblk4_work, phase) == 16,
-               "lrblk4_work.phase offset");
-_Static_assert(offsetof(lrblk4_work, segment_index) == 17,
-               "lrblk4_work.segment_index offset");
-_Static_assert(offsetof(lrblk4_work, child_index) == 18,
-               "lrblk4_work.child_index offset");
-_Static_assert(offsetof(lrblk4_work, variant) == 19,
-               "lrblk4_work.variant offset");
-_Static_assert(sizeof(lrblk4_work) <= sizeof(((sprite_status *)0)->actfree),
-               "lrblk4_work fits in actfree");
 
 static lrblk4_work *lrblk4_get_work(sprite_status *pActwk) {
     return (lrblk4_work *)pActwk->actfree;

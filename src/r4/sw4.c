@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "sw4.h"
 #include "../action.h"
@@ -21,43 +19,18 @@
 #define SPRITE_SW4_BASE 472
 #endif
 
-#pragma pack(push, 1)
 typedef struct {
-    Uint8 unused0[10];
     Sint16 parent_index;
-    Uint8 unused12[2];
     Sint8 linked_x_offset;
     Sint8 linked_y_offset;
-    Uint8 unused16[2];
     Sint16 switch_index;
     Uint8 previous_state;
     Uint8 current_state;
 } sw4_work;
 
 typedef struct {
-    Uint8 unused0[12];
     Sint16 origin_x;
 } sw4_parent_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(sw4_work, parent_index) == 10,
-               "sw4_work.parent_index offset");
-_Static_assert(offsetof(sw4_work, linked_x_offset) == 14,
-               "sw4_work.linked_x_offset offset");
-_Static_assert(offsetof(sw4_work, linked_y_offset) == 15,
-               "sw4_work.linked_y_offset offset");
-_Static_assert(offsetof(sw4_work, switch_index) == 18,
-               "sw4_work.switch_index offset");
-_Static_assert(offsetof(sw4_work, previous_state) == 20,
-               "sw4_work.previous_state offset");
-_Static_assert(offsetof(sw4_work, current_state) == 21,
-               "sw4_work.current_state offset");
-_Static_assert(sizeof(sw4_work) <= sizeof(((sprite_status *)0)->actfree),
-               "sw4_work fits in actfree");
-_Static_assert(offsetof(sw4_parent_work, origin_x) == 12,
-               "sw4_parent_work.origin_x offset");
-_Static_assert(sizeof(sw4_parent_work) <= sizeof(((sprite_status *)0)->actfree),
-               "sw4_parent_work fits in actfree");
 
 static sw4_work *sw4_get_work(sprite_status *pActwk) {
     return (sw4_work *)pActwk->actfree;

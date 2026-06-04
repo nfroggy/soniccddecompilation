@@ -4,9 +4,7 @@
 #include "../actset.h"
 #include "../playsub.h"
 #include "../suicide.h"
-#include <stddef.h>
 
-#pragma pack(push, 1)
 typedef struct {
     union {
         Uint8 *flag_work;
@@ -32,36 +30,6 @@ typedef struct {
     };
     Uint8 parent_cdsts;
 } hotaru7_work;
-#pragma pack(pop)
-
-_Static_assert(sizeof(Uint8 *) == 4, "hotaru7_work pointer fields are 32-bit");
-_Static_assert(sizeof(Sint16 *) == 4, "hotaru7_work pointer fields are 32-bit");
-_Static_assert(sizeof(Uint8 **) == 4,
-               "hotaru7_work pointer fields are 32-bit");
-_Static_assert(offsetof(hotaru7_work, flag_work) == 0,
-               "hotaru7_work.flag_work offset");
-_Static_assert(offsetof(hotaru7_work, parent_index) == 0,
-               "hotaru7_work.parent_index offset");
-_Static_assert(offsetof(hotaru7_work, origin_x) == 2,
-               "hotaru7_work.origin_x offset");
-_Static_assert(offsetof(hotaru7_work, partner2_index) == 0,
-               "hotaru7_work.partner2_index offset");
-_Static_assert(offsetof(hotaru7_work, partner1_index) == 2,
-               "hotaru7_work.partner1_index offset");
-_Static_assert(offsetof(hotaru7_work, position_table) == 4,
-               "hotaru7_work.position_table offset");
-_Static_assert(offsetof(hotaru7_work, speed) == 4,
-               "hotaru7_work.speed offset");
-_Static_assert(offsetof(hotaru7_work, pattern_change) == 8,
-               "hotaru7_work.pattern_change offset");
-_Static_assert(offsetof(hotaru7_work, child2_index) == 8,
-               "hotaru7_work.child2_index offset");
-_Static_assert(offsetof(hotaru7_work, child1_index) == 10,
-               "hotaru7_work.child1_index offset");
-_Static_assert(offsetof(hotaru7_work, parent_cdsts) == 12,
-               "hotaru7_work.parent_cdsts offset");
-_Static_assert(sizeof(hotaru7_work) <= sizeof(((sprite_status *)0)->actfree),
-               "hotaru7_work fits in actfree");
 
 static inline hotaru7_work *hotaru7_work_get(sprite_status *pActwk) {
     return (hotaru7_work *)pActwk->actfree;

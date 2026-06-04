@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "kabuto8.h"
 #include "../action.h"
@@ -17,39 +15,15 @@ static void kabuto1(sprite_status *tunowk);
 static void b_init(sprite_status *tunowk);
 static void b_move(sprite_status *tunowk);
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 timer;
-    union {
-        Sint32 x_speed;
-        struct {
-            Sint16 offset_x;
-            Sint16 offset_y;
-        };
-    };
+    Sint16 offset_x;
+    Sint16 offset_y;
+    Sint32 x_speed;
     Sint16 base_x;
     Sint16 sound_timer;
-    Uint8 unused10[10];
     Uint16 parent_index;
 } kabuto8_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(kabuto8_work, timer) == 0,
-               "kabuto8_work.timer offset");
-_Static_assert(offsetof(kabuto8_work, x_speed) == 2,
-               "kabuto8_work.x_speed offset");
-_Static_assert(offsetof(kabuto8_work, offset_x) == 2,
-               "kabuto8_work.offset_x offset");
-_Static_assert(offsetof(kabuto8_work, offset_y) == 4,
-               "kabuto8_work.offset_y offset");
-_Static_assert(offsetof(kabuto8_work, base_x) == 6,
-               "kabuto8_work.base_x offset");
-_Static_assert(offsetof(kabuto8_work, sound_timer) == 8,
-               "kabuto8_work.sound_timer offset");
-_Static_assert(offsetof(kabuto8_work, parent_index) == 20,
-               "kabuto8_work.parent_index offset");
-_Static_assert(sizeof(kabuto8_work) <= sizeof(((sprite_status *)0)->actfree),
-               "kabuto8_work fits in actfree");
 
 static kabuto8_work *kabuto8_get_work(sprite_status *kabutowk) {
     return (kabuto8_work *)kabutowk->actfree;

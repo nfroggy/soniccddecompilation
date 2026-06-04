@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "../equ.h"
 #include "et6.h"
 #include "../action.h"
@@ -9,7 +7,6 @@
 #include "../ridechk.h"
 #include "../score.h"
 
-#pragma pack(push, 1)
 typedef struct {
     union {
         Uint8 explosion_timer;
@@ -18,24 +15,9 @@ typedef struct {
         Sint16 hover_counter_signed;
     };
     Sint16 explosion_table_offset;
-    Uint8 unused4[2];
     Sint16 origin_y;
     Sint16 hover_direction;
 } et6_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(et6_work, explosion_timer) == 0,
-               "et6_work.explosion_timer offset");
-_Static_assert(offsetof(et6_work, hover_counter) == 0,
-               "et6_work.hover_counter offset");
-_Static_assert(offsetof(et6_work, explosion_table_offset) == 2,
-               "et6_work.explosion_table_offset offset");
-_Static_assert(offsetof(et6_work, origin_y) == 6,
-               "et6_work.origin_y offset");
-_Static_assert(offsetof(et6_work, hover_direction) == 8,
-               "et6_work.hover_direction offset");
-_Static_assert(sizeof(et6_work) <= sizeof(((sprite_status *)0)->actfree),
-               "et6_work fits in actfree");
 
 static et6_work *et6_get_work(sprite_status *actionwk) {
     return (et6_work *)actionwk->actfree;

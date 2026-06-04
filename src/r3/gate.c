@@ -21,14 +21,9 @@ sprite_pattern *gate_pat[8] = {&pat00, &pat01, &pat02, &pat03,
 static char pchg0[10] = {0, 0, 1, 2, 3, 4, 5, 6, 7, 7};
 static char *pchg[1] = {pchg0};
 
-#pragma pack(push, 1)
 typedef struct {
     Uint8 target_patno;
 } gate_work;
-#pragma pack(pop)
-
-_Static_assert(sizeof(gate_work) <= sizeof(((sprite_status *)0)->actfree),
-               "gate_work must fit in sprite_status.actfree");
 
 static gate_work *gate_work_get(sprite_status *actionwk) {
     return (gate_work *)actionwk->actfree;

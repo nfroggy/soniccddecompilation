@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "equ.h"
 #include "goal.h"
 #include "action.h"
@@ -22,20 +20,10 @@ extern Uint8 *bringchg[];
 extern sprite_pattern *goalpat[];
 extern Uint8 *goalchg[];
 
-#pragma pack(push, 1)
 typedef struct {
     Uint8 timer;
-    Uint8 reserved1[7];
     Sint16 score_display_delay;
 } goal_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(goal_work, timer) == 0,
-               "goal_work.timer must map to offset 0");
-_Static_assert(offsetof(goal_work, score_display_delay) == 8,
-               "goal_work.score_display_delay must map to offset 8");
-_Static_assert(sizeof(goal_work) <= sizeof(((sprite_status *)0)->actfree),
-               "goal_work must fit in sprite_status.actfree");
 
 static goal_work *goal_work_get(sprite_status *pActwk) {
     return (goal_work *)pActwk->actfree;

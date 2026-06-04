@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #include "equ.h"
 #include "tree.h"
 #include "action.h"
@@ -7,22 +5,11 @@
 #include "player_work.h"
 #include "playsub.h"
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 origin_x;
     Sint16 base_x;
     Uint8 bounce_timer;
 } tree_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(tree_work, origin_x) == 0,
-               "tree_work.origin_x offset");
-_Static_assert(offsetof(tree_work, base_x) == 2,
-               "tree_work.base_x offset");
-_Static_assert(offsetof(tree_work, bounce_timer) == 4,
-               "tree_work.bounce_timer offset");
-_Static_assert(sizeof(tree_work) <= sizeof(((sprite_status *)0)->actfree),
-               "tree_work must fit in sprite_status.actfree");
 
 static tree_work *tree_get_work(sprite_status *pActwk) {
     return (tree_work *)pActwk->actfree;

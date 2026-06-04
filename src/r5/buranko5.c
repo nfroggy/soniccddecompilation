@@ -4,14 +4,12 @@
 #include "../actset.h"
 #include "../etc.h"
 #include "../ridechk.h"
-#include <stddef.h>
 
 static void c_init(sprite_status *pActwk);
 static void c_move(sprite_status *pActwk);
 static void middle(sprite_status *pActwk);
 static void radius(sprite_status *pActwk);
 
-#pragma pack(push, 1)
 typedef union {
     int_union angle;
     Sint16 parent_actor;
@@ -22,22 +20,8 @@ typedef struct {
     int_union angle_limit;
     int_union angle_delta;
     Sint16 segment_count;
-    Uint8 child_actors[8];
+    Sint16 child_actors[8];
 } buranko5_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(buranko5_work, anchor) == 0,
-               "buranko5_work.anchor offset");
-_Static_assert(offsetof(buranko5_work, angle_limit) == 4,
-               "buranko5_work.angle_limit offset");
-_Static_assert(offsetof(buranko5_work, angle_delta) == 8,
-               "buranko5_work.angle_delta offset");
-_Static_assert(offsetof(buranko5_work, segment_count) == 12,
-               "buranko5_work.segment_count offset");
-_Static_assert(offsetof(buranko5_work, child_actors) == 14,
-               "buranko5_work.child_actors offset");
-_Static_assert(sizeof(buranko5_work) <= sizeof(((sprite_status *)0)->actfree),
-               "buranko5_work fits in actfree");
 
 static buranko5_work *buranko5_work_get(sprite_status *pActwk) {
     return (buranko5_work *)pActwk->actfree;
@@ -100,10 +84,10 @@ static void c_init(sprite_status *pActwk) {
             frameout(pActwk);
             return;
         }
-        work->child_actors[i] = pNewactwk - actwk;
+        work->child_actors[i] = (Sint16)(pNewactwk - actwk);
         new_work = buranko5_work_get(pNewactwk);
         pNewactwk->userflag.b.l = 1;
-        new_work->anchor.parent_actor = pActwk - actwk;
+        new_work->anchor.parent_actor = (Sint16)(pActwk - actwk);
         pNewactwk->actno = pActwk->actno;
         pNewactwk->xposi.w.h = pActwk->xposi.w.h;
         pNewactwk->yposi.w.h = pActwk->yposi.w.h;

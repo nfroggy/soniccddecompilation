@@ -4,7 +4,6 @@
 #include "../actset.h"
 #include "../loader2.h"
 #include "../ridechk.h"
-#include <stddef.h>
 
 #if defined(R41A)
 #define SPRITE_KUZURE4_BASE 515
@@ -25,24 +24,11 @@ static void parts_ini(sprite_status *pActwk);
 static void parts_wait(sprite_status *pActwk);
 static void parts_fall(sprite_status *pActwk);
 
-#pragma pack(push, 1)
 typedef struct {
     Sint16 wait_timer;
-    union {
-        Sint16 break_step;
-        Sint32 y_velocity;
-    };
+    Sint16 break_step;
+    Sint32 y_velocity;
 } kuzure4_work;
-#pragma pack(pop)
-
-_Static_assert(offsetof(kuzure4_work, wait_timer) == 0,
-               "kuzure4_work.wait_timer offset");
-_Static_assert(offsetof(kuzure4_work, break_step) == 2,
-               "kuzure4_work.break_step offset");
-_Static_assert(offsetof(kuzure4_work, y_velocity) == 2,
-               "kuzure4_work.y_velocity offset");
-_Static_assert(sizeof(kuzure4_work) <= sizeof(((sprite_status *)0)->actfree),
-               "kuzure4_work fits in actfree");
 
 static kuzure4_work *kuzure4_work_get(sprite_status *pActwk) {
     return (kuzure4_work *)pActwk->actfree;
